@@ -9,21 +9,54 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up()
+public function up()
 {
     Schema::create('products', function (Blueprint $table) {
         $table->id();
-        $table->foreignId('vendor_id')->nullable()->constrained('vendors')->nullOnDelete();
-        $table->foreignId('category_id')->constrained('categories')->onDelete('cascade');
+
+        $table->foreignId('vendor_id')
+            ->nullable()
+            ->constrained('vendors')
+            ->nullOnDelete();
+
+        $table->foreignId('category_id')
+            ->constrained('categories')
+            ->cascadeOnDelete();
+
+        $table->foreignId('sub_category_id')
+            ->nullable()
+            ->constrained('sub_categories')
+            ->nullOnDelete();
+
         $table->string('name');
         $table->string('slug')->unique();
-        $table->text('description')->nullable();
+
+        $table->string('sku')->nullable()->index();
+        $table->string('barcode')->nullable();
+
+        $table->string('thumbnail')->nullable();
+        $table->json('gallery')->nullable();
+
+        $table->text('short_description')->nullable();
+        $table->longText('long_description')->nullable();
+
         $table->decimal('price', 12, 2)->default(0);
         $table->decimal('sale_price', 12, 2)->nullable();
-        $table->string('sku')->nullable()->index();
+
+        $table->integer('stock_qty')->default(0);
+        $table->integer('stock_alert')->default(5);
+        $table->json('tags')->nullable();
+
         $table->boolean('featured')->default(false);
         $table->boolean('status')->default(true);
+
         $table->integer('sort_order')->default(0);
+
+        // SEO Fields
+        $table->string('meta_title')->nullable();
+        $table->text('meta_description')->nullable();
+        $table->text('meta_keywords')->nullable();
+
         $table->timestamps();
         $table->softDeletes();
     });

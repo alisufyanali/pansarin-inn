@@ -10,9 +10,8 @@ class RoleController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
-    {
-        //
+    public function index() {
+        return Role::with('permissions')->get();
     }
 
     /**
@@ -26,10 +25,11 @@ class RoleController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
-    {
-        //
-    }
+    public function store(Request $request) {
+    return Role::create([
+        'name' => $request->name
+    ]);
+}
 
     /**
      * Display the specified resource.
@@ -58,8 +58,7 @@ class RoleController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
-    {
-        //
+    public function destroy($id) {
+        Role::find($id)->delete();
     }
 }
