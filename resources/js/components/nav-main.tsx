@@ -7,7 +7,14 @@ import {
 } from '@/components/ui/sidebar';
 import { resolveUrl } from '@/lib/utils';
 import { type NavItem } from '@/types';
-import { Link, usePage } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react'; 'next/link';
+import { useState } from 'react';
+
+interface NavMainProps {
+    items: NavItem[];
+}
+
+
 
 export function NavMain({ items = [] }: { items: NavItem[] }) {
     const page = usePage();
@@ -19,9 +26,11 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
                     <SidebarMenuItem key={item.title}>
                         <SidebarMenuButton
                             asChild
-                            isActive={page.url.startsWith(
-                                resolveUrl(item.href),
-                            )}
+                            isActive={
+                                item.href
+                                    ? page.url.startsWith(resolveUrl(item.href))
+                                    : false
+                            }
                             tooltip={{ children: item.title }}
                         >
                             <Link href={item.href} prefetch>
