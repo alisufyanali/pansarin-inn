@@ -21,7 +21,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('users', UserController::class);
 
     // Role Management resources Controllers
-    Route::resource('roles', \App\Http\Controllers\Admin\RoleController::class);
+    Route::resource('roles', RoleController::class);
 });
 
 require __DIR__.'/settings.php';

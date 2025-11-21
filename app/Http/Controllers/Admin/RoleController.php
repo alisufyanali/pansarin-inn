@@ -16,7 +16,7 @@ class RoleController extends Controller
     public function index() {
 
         return Inertia::render('Admin/Roles/Index', [
-            'roles' => Role::all()
+            'roles' => Role::with('permissions')->get()
         ]);
 
     }
@@ -37,22 +37,25 @@ class RoleController extends Controller
     public function store(Request $request) {
         $request->validate([
             'name' => 'required|unique:roles,name',
+            'permission' => 'required|array|min:1'
         ]);
-
-        Role::create(['name' => $request->name]);
-
-        return redirect()->route('admin.roles.index')->with([
+        $role = Role::create(['name' => $request->name]);
+        $role->syncPermissions($request->permission);
+        return to_route('roles.index')->with([
             'message' => 'Role created successfully.',
             'alert-type' => 'success',
-    ]);
-}
-
+        ]);
+    }
     /**
      * Display the specified resource.
      */
     public function show(string $id)
     {
-        //
+        $role = Role::with('permissions')->findOrFail($id);
+        return Inertia::render('Admin/Roles/Show', [
+            'role' => $role,
+            'rolepermissions' => $role->permissions->pluck('name')->toArray(),
+        ]);
     }
 
     /**
@@ -60,7 +63,12 @@ class RoleController extends Controller
      */
     public function edit(string $id)
     {
-        //
+        $role = Role::with('permissions')->findOrFail($id);
+        return Inertia::render('Admin/Roles/Edit', [
+            'role' => $role,
+            'rolepermissions' => $role->permissions->pluck('name')->toArray(),
+            'permissions' => Permission::all(['id', 'name'])
+        ]);
     }
 
     /**
@@ -68,13 +76,30 @@ class RoleController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
-    }
+        // dd($request->all());
+        $request->validate([
+            'name' => 'required|unique:roles,name,'.$id,
+            'permission' => 'required|array|min:1'
+        ]);
+        $role = Role::findOrFail($id);
+        $role->name = $request->name;
+        $role->save();
+        $role->syncPermissions($request->permission);
+        return to_route('roles.index')->with([
+            'message' => 'Role updated successfully.',
+            'alert-type' => 'success',
+        ]);
+    } 
 
     /**
      * Remove the specified resource from storage.
      */
     public function destroy($id) {
-        Role::find($id)->delete();
+        $role = Role::findOrFail($id);
+        $role->delete();
+        return to_route('roles.index')->with([
+            'message' => 'Role deleted successfully.',
+            'alert-type' => 'success',
+        ]);
     }
 }

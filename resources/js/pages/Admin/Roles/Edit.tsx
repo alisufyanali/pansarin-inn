@@ -2,35 +2,54 @@ import React, { useMemo } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, Check, X } from 'lucide-react';
+import { ArrowLeft, X, Check } from 'lucide-react';
 
 type Permission = {
     id: number;
     name: string;
-    category?: string;
+    category?: string; // optional category for grouping
+};
+
+type Role = {
+    id: number;
+    name: string;
+    // role.permissions may be array of Permission or array of names
+    permissions?: Permission[] | string[];
 };
 
 interface Props {
+    role: Role;
+    // rolepermissions: names of permissions assigned to role (optional)
+    rolepermissions?: string[];
+    // all available permissions
     permissions: Permission[];
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Roles', href: '/roles' },
-
 ];
 
 type FormShape = {
     name: string;
-    permission: string[];
+    permission: string[]; // store permission names
 };
 
-export default function RoleCreate({ permissions }: Props) {
-    const { data, setData, errors, post } = useForm<FormShape>({
-        name: '',
-        permission: [],
+export default function RoleEdit({ role, rolepermissions = [], permissions }: Props) {
+    // Determine initial selected permission names: prefer explicit rolepermissions prop,
+    // otherwise derive from role.permissions if it's provided as objects or names.
+    const initialPermissions: string[] =
+        rolepermissions.length > 0
+            ? rolepermissions
+            : (role.permissions
+                ? role.permissions.map((p) => (typeof p === 'string' ? p : p.name))
+                : []);
+
+    const { data, setData, errors, put } = useForm<FormShape>({
+        name: role.name ?? '',
+        permission: initialPermissions,
     });
 
-    // group by category
+    // Group permissions by category (fallback to 'General')
     const grouped = useMemo(() => {
         const map = new Map<string, Permission[]>();
         permissions.forEach((p) => {
@@ -39,30 +58,39 @@ export default function RoleCreate({ permissions }: Props) {
             arr.push(p);
             map.set(cat, arr);
         });
-        return Array.from(map.entries());
+        return Array.from(map.entries()); // [ [category, Permission[]], ... ]
     }, [permissions]);
 
     function submit(e: React.FormEvent) {
         e.preventDefault();
-        post('/roles');
+        put(`/roles/${role.id}`);
     }
 
     function handleCheckboxChange(permission: Permission, checked: boolean) {
         const name = permission.name;
         if (checked) {
-            if (!data.permission.includes(name)) setData('permission', [...data.permission, name]);
+            // add if not present
+            if (!data.permission.includes(name)) {
+                setData('permission', [...data.permission, name]);
+            }
         } else {
             setData('permission', data.permission.filter((n) => n !== name));
         }
     }
 
+    // Select all across all permissions
     const allSelected = permissions.length > 0 && permissions.every((p) => data.permission.includes(p.name));
 
     function handleSelectAll(checked: boolean) {
-        if (checked) setData('permission', permissions.map((p) => p.name));
-        else setData('permission', []);
+        if (checked) {
+            const allNames = permissions.map((p) => p.name);
+            setData('permission', Array.from(new Set([...data.permission, ...allNames])));
+        } else {
+            setData('permission', []);
+        }
     }
 
+    // Category specific helpers
     const groupedMap = useMemo(() => new Map(grouped), [grouped]);
 
     function categoryAllSelected(category: string) {
@@ -72,34 +100,36 @@ export default function RoleCreate({ permissions }: Props) {
 
     function handleCategorySelect(category: string, checked: boolean) {
         const list = groupedMap.get(category) ?? [];
-        const names = list.map((p) => p.name);
-        if (checked) setData('permission', Array.from(new Set([...data.permission, ...names])));
-        else setData('permission', data.permission.filter((n) => !names.includes(n)));
-    }
-
-    function handleReset() {
-        setData('name', '');
-        setData('permission', []);
+        if (checked) {
+            const names = list.map((p) => p.name);
+            setData('permission', Array.from(new Set([...data.permission, ...names])));
+        } else {
+            const names = new Set(list.map((p) => p.name));
+            setData('permission', data.permission.filter((n) => !names.has(n)));
+        }
     }
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Create Role" />
+            <Head title="Edit Role" />
             <div className="p-3">
-                <Link
-                    href="/roles"
-                    className="inline-flex items-center justify-center rounded-md bg-gray-700 hover:bg-gray-600 text-white mb-4 w-10 h-10"
-                >
-                    <ArrowLeft />
-                </Link>
+                <div className="flex items-center gap-2 mb-4">
+                    <Link
+                        href="/roles"
+                        className="inline-flex items-center justify-center rounded-md bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-white w-10 h-10"
+                    >
+                        <ArrowLeft />
+                    </Link>
+                </div>
 
                 <div className="py-6">
                     <div className="w-full max-w-3xl mx-auto bg-white dark:bg-gray-900 rounded-xl p-6 shadow-lg">
-                        <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-6 text-center">Create New Role</h2>
+                        <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-6 text-center">Edit Role</h2>
 
                         <form onSubmit={submit} className="space-y-6 font-sans text-sm">
+                            {/* Name */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-300">Name</label>
+                                <label className="block text-sm font-medium text-gray-500 dark:text-gray-300">Name</label>
                                 <input
                                     type="text"
                                     name="name"
@@ -111,8 +141,7 @@ export default function RoleCreate({ permissions }: Props) {
                                 {errors.name && <div className="text-red-500 text-sm mt-1">{errors.name}</div>}
                             </div>
 
-                            {/* description removed as requested */}
-
+                            {/* Permissions with select-all */}
                             <div>
                                 <div className="flex items-center justify-between mb-2">
                                     <label className="block text-sm font-medium text-gray-300">Permissions</label>
@@ -131,7 +160,7 @@ export default function RoleCreate({ permissions }: Props) {
                                     {grouped.map(([category, perms]) => (
                                         <div key={category} className="bg-gray-700/30 rounded-md p-3">
                                             <div className="flex items-center justify-between mb-2">
-                                                <div className="text-sm font-semibold text-gray-200">{category}</div>
+                                                <div className="text-sm font-semibold text-gray-700 dark:text-gray-200">{category}</div>
                                                 <label className="inline-flex items-center space-x-2 text-sm text-gray-300">
                                                     <input
                                                         type="checkbox"
@@ -154,7 +183,7 @@ export default function RoleCreate({ permissions }: Props) {
                                                             id={`perm-${permission.id}`}
                                                             className="form-checkbox h-4 w-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 outline-none"
                                                         />
-                                                        <span className="text-sm text-white capitalize">{permission.name}</span>
+                                                        <span className="text-sm text-gray-900 dark:text-gray-100 capitalize">{permission.name}</span>
                                                     </label>
                                                 ))}
                                             </div>
@@ -168,10 +197,13 @@ export default function RoleCreate({ permissions }: Props) {
                             <div className="flex gap-3 justify-end">
                                 <button
                                     type="button"
-                                    onClick={handleReset}
+                                    onClick={() => {
+                                        // reset to initial role values
+                                        setData('name', role.name ?? '');
+                                        setData('permission', initialPermissions);
+                                    }}
                                     className="inline-flex items-center justify-center rounded-md bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-white w-10 h-10 shadow"
                                     title="Reset"
-                                    aria-label="Reset form"
                                 >
                                     <X />
                                 </button>
@@ -179,8 +211,7 @@ export default function RoleCreate({ permissions }: Props) {
                                 <button
                                     type="submit"
                                     className="inline-flex items-center justify-center rounded-md bg-blue-600 hover:bg-blue-700 text-white w-10 h-10 shadow"
-                                    title="Create"
-                                    aria-label="Create role"
+                                    title="Update"
                                 >
                                     <Check />
                                 </button>
@@ -188,9 +219,7 @@ export default function RoleCreate({ permissions }: Props) {
                         </form>
                     </div>
                 </div>
-
             </div>
-
         </AppLayout>
     );
 }
