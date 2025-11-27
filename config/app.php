@@ -123,4 +123,9 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+   'providers' => ServiceProvider::defaultProviders()->merge([
+        // ...
+        App\Providers\BroadcastServiceProvider::class,  // ✅ Make sure this exists
+    ])->toArray(),
+
 ];

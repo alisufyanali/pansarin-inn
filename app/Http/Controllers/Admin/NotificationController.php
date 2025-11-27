@@ -4,62 +4,65 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
+
 
 class NotificationController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+     // Get all notifications
+    public function index(Request $request)
     {
-        //
+        $notifications = $request->user()
+            ->notifications()
+            ->latest()
+            ->paginate(10);
+
+        return Inertia::render('Admin/Notifications/Index', [
+            'notifications' => $notifications,
+        ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    // Get unread notifications (for dropdown)
+    public function unread(Request $request)
     {
-        //
+        return response()->json([
+            'notifications' => $request->user()
+                ->unreadNotifications()
+                ->latest()
+                ->limit(5)
+                ->get(),
+            'count' => $request->user()->unreadNotifications()->count(),
+        ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    // Mark as read
+    public function markAsRead(Request $request, $id)
     {
-        //
+        $notification = $request->user()
+            ->notifications()
+            ->findOrFail($id);
+        
+        $notification->markAsRead();
+
+        return back();
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    // Mark all as read
+    public function markAllAsRead(Request $request)
     {
-        //
+        $request->user()->unreadNotifications->markAsRead();
+        
+        return back();
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
+    // Delete notification
+    public function destroy(Request $request, $id)
     {
-        //
-    }
+        $request->user()
+            ->notifications()
+            ->findOrFail($id)
+            ->delete();
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        return back();
     }
 }

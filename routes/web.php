@@ -3,8 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\Admin\RoleController;
+
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -12,16 +11,18 @@ Route::get('/', function () {
     ]);
 })->name('home');
 
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
-    })->name('dashboard');
 
-    // User Management resources Controllers
-    Route::resource('users', UserController::class);
-
-    // Role Management resources Controllers
-    Route::resource('roles', RoleController::class);
+Route::get('/clear-cache', function () {
+    try {
+        Artisan::call('cache:clear');
+        Artisan::call('config:clear');
+        Artisan::call('route:clear');
+        Artisan::call('view:clear');
+        return 'cache cleared successfully';
+    } catch (\Exception $e){
+        return 'Error Clearing cache: ' . $e->getMessage();
+    }
 });
 
+require __DIR__.'/admin.php';
 require __DIR__.'/settings.php';
