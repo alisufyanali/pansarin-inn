@@ -23,17 +23,27 @@ class NotificationController extends Controller
     }
 
     // Get unread notifications (for dropdown)
-    public function unread(Request $request)
+    // public function unread(Request $request)
+    // {
+    //     return response()->json([
+    //         'notifications' => $request->user()
+    //             ->unreadNotifications()
+    //             ->latest()
+    //             ->limit(5)
+    //             ->get(),
+    //         'count' => $request->user()->unreadNotifications()->count(),
+    //     ]);
+    // }
+
+
+    public function unread()
     {
         return response()->json([
-            'notifications' => $request->user()
-                ->unreadNotifications()
-                ->latest()
-                ->limit(5)
-                ->get(),
-            'count' => $request->user()->unreadNotifications()->count(),
+            'count' => auth()->user()->unreadNotifications->count(),
+            'notifications' => auth()->user()->unreadNotifications->take(5)
         ]);
     }
+
 
     // Mark as read
     public function markAsRead(Request $request, $id)

@@ -1,12 +1,18 @@
 import { useState, FC } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
-import { PageProps } from '@/types';
+import { PageProps ,type BreadcrumbItem  } from '@/types';
 import { Notification, PaginatedNotifications } from '@/types/notification';
+import AppLayout from '@/layouts/app-layout';
 import axios from 'axios';
 
 interface NotificationsPageProps extends PageProps {
     notifications: PaginatedNotifications;
 }
+
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Notifications', href: '/notifications' },
+];
+
 
 const Index: FC<NotificationsPageProps> = ({ auth, notifications: initialNotifications }) => {
     const [notificationList, setNotificationList] = useState<Notification[]>(
@@ -65,7 +71,7 @@ const Index: FC<NotificationsPageProps> = ({ auth, notifications: initialNotific
     const unreadCount = notificationList.filter(n => !n.read_at).length;
 
     return (
-        <>
+        <AppLayout>
             <Head title="Notifications" />
 
             <div className="py-12">
@@ -172,7 +178,7 @@ const Index: FC<NotificationsPageProps> = ({ auth, notifications: initialNotific
                     </div>
                 </div>
             </div>
-        </>
+        </AppLayout>
     );
 };
 

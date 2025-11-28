@@ -3,6 +3,7 @@
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\NotificationController;
+use Inertia\Inertia;   // ← ADD THIS
 
   
 

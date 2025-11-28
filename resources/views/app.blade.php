@@ -46,4 +46,8 @@
     <body class="font-sans antialiased">
         @inertia
     </body>
+    <script>
+        window.authUserId = {{ auth()->id() ?? 'null' }};
+    </script>
+
 </html>

@@ -20,9 +20,7 @@ export function AppSidebarHeader({
             </div>
 
             <div className="ml-auto">
-                <NotificationBell 
-                    unreadCount={auth?.user?.unread_notifications_count || 0} 
-                />
+                <NotificationBell auth={auth} />
             </div>
         </header>
     );

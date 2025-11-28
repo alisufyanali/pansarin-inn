@@ -4,8 +4,9 @@ namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 
-class OrderShipped extends Notification
+class OrderShipped extends Notification implements ShouldBroadcast
 {
     use Queueable;
 
@@ -14,29 +15,28 @@ class OrderShipped extends Notification
         public $message = 'Your order has been shipped!'
     ) {}
 
-    // Store in database
     public function via($notifiable): array
     {
-        return ['database', 'broadcast']; // database + real-time
+        return ['database', 'broadcast'];
     }
 
-    // Database notification structure
     public function toArray($notifiable): array
     {
         return [
-            'order_id' => $this->order->id,
             'message' => $this->message,
+            'order_id' => $this->order->id ?? null,
             'type' => 'order_shipped',
+            'action_url' => '1',
         ];
     }
 
-    // Broadcasting (for real-time)
     public function toBroadcast($notifiable)
     {
         return [
-            'order_id' => $this->order->id,
             'message' => $this->message,
+            'order_id' => $this->order->id ?? null,
             'type' => 'order_shipped',
+            'action_url' => '1',
         ];
     }
 }
