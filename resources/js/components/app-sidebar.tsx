@@ -13,7 +13,7 @@ import {
 import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid, Shield, PlusCircle, List, UsersRound ,ShieldCheck } from 'lucide-react';
+import { BookOpen, Folder, LayoutGrid, Shield, PlusCircle, Sprout, UsersRound ,ShieldCheck, ChevronDown, Palette } from 'lucide-react';
 import { can } from '@/lib/can';
 
 import AppLogo from './app-logo';
@@ -60,6 +60,30 @@ export function AppSidebar() {
 
     const hasAnyUserPerm = canCreateUser || canEditUser || canDeleteUser || canViewUser;
 
+    // Product permissions
+    const canCreateProduct = can('create.products');
+    const canEditProduct = can('edit.products');
+    const canDeleteProduct = can('delete.products');
+    const canViewProduct = can('view.products');
+
+    const hasAnyProductPerm = canCreateProduct || canEditProduct || canDeleteProduct || canViewProduct;
+
+    // Category permissions
+    const canCreateCategory = can('create.categories');
+    const canEditCategory = can('edit.categories');
+    const canDeleteCategory = can('delete.categories');
+    const canViewCategory = can('view.categories');
+
+    const hasAnyCategoryPerm = canCreateCategory || canEditCategory || canDeleteCategory || canViewCategory;
+
+    // Variant permissions
+    const canCreateVariant = can('create.variants');
+    const canEditVariant = can('edit.variants');
+    const canDeleteVariant = can('delete.variants');
+    const canViewVariant = can('view.variants');
+
+    const hasAnyVariantPerm = canCreateVariant || canEditVariant || canDeleteVariant || canViewVariant;
+
     const mainNavItems: NavItem[] = [
       {
         title: 'Dashboard',
@@ -67,6 +91,51 @@ export function AppSidebar() {
         icon: LayoutGrid,
       },
     ];
+
+    // Products اور اس کے submenu
+    if (hasAnyProductPerm || hasAnyCategoryPerm || hasAnyVariantPerm) {
+      const productSubmenu: NavItem[] = [];
+
+      if (hasAnyProductPerm) {
+        productSubmenu.push({
+          title: 'Products',
+          href: '/admin/products',
+          icon: Sprout,
+        });
+      }
+
+      if (hasAnyCategoryPerm) {
+        productSubmenu.push({
+          title: 'Categories',
+          href: '/admin/categories',
+          icon: Folder,
+        });
+      }
+
+      if (hasAnyVariantPerm) {
+        productSubmenu.push({
+          title: 'Variants',
+          href: '/admin/product-variants',
+          icon: Shield,
+        });
+      }
+
+      // Add Attributes to submenu
+      productSubmenu.push({
+        title: 'Attributes',
+        href: '/admin/attributes',
+        icon: Palette,
+      });
+
+      if (productSubmenu.length > 0) {
+        mainNavItems.push({
+          title: 'Products Management',
+          href: '#',
+          icon: Sprout,
+          children: productSubmenu,
+        });
+      }
+    }
 
     if (hasAnyUserPerm) {
       mainNavItems.push({ title: 'Users', href: '/users', icon: UsersRound });

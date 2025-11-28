@@ -11,6 +11,46 @@ use Spatie\Permission\Models\Role;
 class RoleController extends Controller
 {
     /**
+     * Organize permissions by category
+     */
+    private function getOrganizedPermissions()
+    {
+        $permissions = Permission::all(['id', 'name']);
+        
+        $organized = [];
+        foreach ($permissions as $permission) {
+            // Extract category from permission name (e.g., "view.users" -> "users")
+            $parts = explode('.', $permission->name);
+            $category = ucfirst(end($parts)); // Get last part and capitalize
+            
+            // Map category names to readable format
+            $categoryMap = [
+                'Users' => 'User Management',
+                'Roles' => 'Role Management',
+                'Products' => 'Product Management',
+                'Categories' => 'Category Management',
+                'Variants' => 'Variant Management',
+            ];
+            
+            $categoryLabel = $categoryMap[$category] ?? ucfirst($category) . ' Management';
+            
+            if (!isset($organized[$categoryLabel])) {
+                $organized[$categoryLabel] = [];
+            }
+            
+            $organized[$categoryLabel][] = $permission;
+        }
+        
+        // Convert to array format expected by frontend
+        return array_map(function ($category, $perms) {
+            return [
+                'category' => $category,
+                'permissions' => $perms
+            ];
+        }, array_keys($organized), array_values($organized));
+    }
+
+    /**
      * Display a listing of the resource.
      */
     public function index() {
@@ -26,8 +66,10 @@ class RoleController extends Controller
      */
     public function create()
     {
+        $allPermissions = Permission::all(['id', 'name'])->toArray();
+        
         return Inertia::render('Admin/Roles/Create', [
-            'permissions' => Permission::all(['id', 'name'])
+            'permissions' => $allPermissions
         ]);
     }
 
@@ -64,10 +106,12 @@ class RoleController extends Controller
     public function edit(string $id)
     {
         $role = Role::with('permissions')->findOrFail($id);
+        $allPermissions = Permission::all(['id', 'name'])->toArray();
+        
         return Inertia::render('Admin/Roles/Edit', [
             'role' => $role,
             'rolepermissions' => $role->permissions->pluck('name')->toArray(),
-            'permissions' => Permission::all(['id', 'name'])
+            'permissions' => $allPermissions
         ]);
     }
 

@@ -2,12 +2,13 @@
 
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\NotificationController;
-use Inertia\Inertia;   // ← ADD THIS
+use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\ProductVariantController;
+use Inertia\Inertia; 
 
-  
-
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
     Route::get('dashboard', function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
@@ -17,9 +18,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Role Management resources Controllers
     Route::resource('roles', RoleController::class);
+
+    // Category Management resource Controllers
+    Route::resource('categories', \App\Http\Controllers\Admin\CategoryController::class);
+
+    // Product Management resource Controllers
+    Route::resource('products', \App\Http\Controllers\Admin\ProductController::class);
+    Route::resource('product-variants', \App\Http\Controllers\Admin\ProductVariantController::class);
+    Route::resource('attributes', \App\Http\Controllers\Admin\ProductAttributeController::class);
+
 });
 
-Route::middleware('auth')->group(function () {
+Route::middleware('auth')->prefix('admin')->group(function () {
     // Notification routes
     Route::get('/notifications', [NotificationController::class, 'index'])
         ->name('notifications.index');
