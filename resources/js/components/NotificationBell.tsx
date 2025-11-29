@@ -31,7 +31,7 @@ export default function NotificationBell({ auth }: Props) {
 
     const fetchNotifications = async () => {
         try {
-            const res = await axios.get<{ notifications: Notification[]; count: number }>('/notifications/unread');
+            const res = await axios.get<{ notifications: Notification[]; count: number }>('/admin/notifications/unread');
             setNotifications(res.data.notifications);
             setUnreadCount(res.data.count);
         } catch (err) {
@@ -65,7 +65,7 @@ export default function NotificationBell({ auth }: Props) {
 
     const markAllAsRead = async () => {
         try {
-            await axios.post('/notifications/read-all');
+            await axios.post('/admin/notifications/read-all');
             setUnreadCount(0);
             setNotifications(prev => prev.map(n => ({ ...n, read_at: new Date().toISOString() })));
             toast.success('All notifications marked as read');
