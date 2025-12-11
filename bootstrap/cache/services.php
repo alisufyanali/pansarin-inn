@@ -40,9 +40,10 @@
     36 => 'Pest\\Laravel\\PestServiceProvider',
     37 => 'Spatie\\Permission\\PermissionServiceProvider',
     38 => 'Tighten\\Ziggy\\ZiggyServiceProvider',
-    39 => 'App\\Providers\\AppServiceProvider',
-    40 => 'App\\Providers\\BroadcastServiceProvider',
-    41 => 'App\\Providers\\FortifyServiceProvider',
+    39 => 'Yajra\\DataTables\\DataTablesServiceProvider',
+    40 => 'App\\Providers\\AppServiceProvider',
+    41 => 'App\\Providers\\BroadcastServiceProvider',
+    42 => 'App\\Providers\\FortifyServiceProvider',
   ),
   'eager' => 
   array (
@@ -69,9 +70,10 @@
     20 => 'Pest\\Laravel\\PestServiceProvider',
     21 => 'Spatie\\Permission\\PermissionServiceProvider',
     22 => 'Tighten\\Ziggy\\ZiggyServiceProvider',
-    23 => 'App\\Providers\\AppServiceProvider',
-    24 => 'App\\Providers\\BroadcastServiceProvider',
-    25 => 'App\\Providers\\FortifyServiceProvider',
+    23 => 'Yajra\\DataTables\\DataTablesServiceProvider',
+    24 => 'App\\Providers\\AppServiceProvider',
+    25 => 'App\\Providers\\BroadcastServiceProvider',
+    26 => 'App\\Providers\\FortifyServiceProvider',
   ),
   'deferred' => 
   array (

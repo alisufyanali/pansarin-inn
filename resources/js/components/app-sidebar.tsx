@@ -138,12 +138,13 @@ export function AppSidebar() {
     }
 
     if (hasAnyUserPerm) {
-      mainNavItems.push({ title: 'Users', href: '/users', icon: UsersRound });
+      mainNavItems.push({ title: 'Users', href: '/admin/users', icon: UsersRound });
     }
 
     if (hasAnyRolePerm) {
-      mainNavItems.push({ title: 'Roles', href: '/roles', icon: ShieldCheck });
+      mainNavItems.push({ title: 'Roles', href: '/admin/roles', icon: ShieldCheck });
     }
+      mainNavItems.push({ title: 'Orders', href: '/admin/orders', icon: ShieldCheck });
 
     return (
         <Sidebar collapsible="icon" variant="inset">
