@@ -50,11 +50,10 @@ export default function DeleteConfirm({
     <button
       onClick={handleDelete}
       disabled={loading}
-      className={`p-2 rounded text-white flex items-center justify-center ${
-        loading
+      className={`p-2 rounded text-white flex items-center justify-center ${loading
           ? "bg-gray-400 cursor-not-allowed"
           : "bg-red-500 hover:bg-red-600"
-      }`}
+        }`}
     >
       {loading ? (
         <Loader2 size={16} className="animate-spin" />

@@ -4,8 +4,8 @@ import { Head } from '@inertiajs/react';
 import ProductForm from './Form';
 
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Products', href: '/Products' },
-    { title: 'Create', href: '/Products/create' },
+    { title: 'Products', href: '/admin/products' },
+    { title: 'Create', href: '/admin/products/create' },
 ];
 
 type Category = { id: number; name: string };

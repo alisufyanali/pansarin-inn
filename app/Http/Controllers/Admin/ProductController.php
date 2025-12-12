@@ -8,6 +8,7 @@ use Inertia\Inertia;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Vendor;
+use Yajra\DataTables\Facades\DataTables;
 
 class ProductController extends Controller
 {
@@ -22,14 +23,87 @@ class ProductController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+   public function index(Request $request)
     {
-        $products = Product::with(['category', 'vendor'])->get();
-        
         return Inertia::render('Admin/Products/Index', [
-            'products' => $products
-        ]); 
+            'userRole' => $request->user()->role ?? 'admin',
+        ]);
     }
+
+    /**
+     * Get DataTable data - API endpoint for DataTableWrapper
+     */
+    public function getData(Request $request)
+    {
+        $query = Product::with(['category', 'vendor'])->latest();
+        
+        // Search handling
+        if ($request->has('search') && $request->search !== '') {
+            if (is_string($request->search)) {
+                $search = $request->search;
+                $query->where(function($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                      ->orWhere('sku', 'like', "%{$search}%")
+                      ->orWhere('price', 'like', "%{$search}%")
+                      ->orWhereHas('category', function($q) use ($search) {
+                          $q->where('name', 'like', "%{$search}%");
+                      })
+                      ->orWhereHas('vendor', function($q) use ($search) {
+                          $q->where('shop_name', 'like', "%{$search}%");
+                      });
+                });
+            }
+            elseif (is_array($request->search) && isset($request->search['value'])) {
+                $search = $request->search['value'];
+                if (!empty($search)) {
+                    $query->where(function($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%")
+                          ->orWhere('sku', 'like', "%{$search}%")
+                          ->orWhere('price', 'like', "%{$search}%")
+                          ->orWhereHas('category', function($q) use ($search) {
+                              $q->where('name', 'like', "%{$search}%");
+                          })
+                          ->orWhereHas('vendor', function($q) use ($search) {
+                              $q->where('shop_name', 'like', "%{$search}%");
+                          });
+                    });
+                }
+            }
+        }
+        
+        // Additional filters
+        if ($request->has('status') && $request->status !== '') {
+            $query->where('status', $request->status === 'active');
+        }
+        
+        if ($request->has('category_id') && $request->category_id !== '') {
+            $query->where('category_id', $request->category_id);
+        }
+
+        if ($request->has('vendor_id') && $request->vendor_id !== '') {
+            $query->where('vendor_id', $request->vendor_id);
+        }
+
+        if ($request->has('featured') && $request->featured !== '') {
+            $query->where('featured', $request->featured === 'yes');
+        }
+
+        return DataTables::of($query)
+            ->addColumn('category_name', function($product) {
+                return $product->category ? $product->category->name : null;
+            })
+            ->addColumn('vendor_name', function($product) {
+                return $product->vendor ? $product->vendor->shop_name : null;
+            })
+            ->addColumn('status_text', function($product) {
+                return $product->status ? 'Active' : 'Inactive';
+            })
+            ->addColumn('featured_text', function($product) {
+                return $product->featured ? 'Yes' : 'No';
+            })
+            ->make(true);
+    }
+
 
     /**
      * Show the form for creating a new resource.
