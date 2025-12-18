@@ -34,24 +34,27 @@ class AttributeSeeder extends Seeder
             );
         }
 
-        // Color Attribute
-        $colorAttribute = Attribute::firstOrCreate(
-            ['slug' => 'color'],
-            ['name' => 'Color']
+        // Unit Attribute
+        $unitAttribute = Attribute::firstOrCreate(
+            ['slug' => 'unit'],
+            ['name' => 'Unit']
         );
 
-        $colors = [
-            ['value' => 'Red', 'slug' => 'red'],
-            ['value' => 'Blue', 'slug' => 'blue'],
-            ['value' => 'Green', 'slug' => 'green'],
-            ['value' => 'Black', 'slug' => 'black'],
-            ['value' => 'White', 'slug' => 'white'],
+        $units = [
+            ['value' => 'kg', 'slug' => 'kg'],
+            ['value' => 'g', 'slug' => 'g'],
+            ['value' => 'L', 'slug' => 'l'],
+            ['value' => 'ml', 'slug' => 'ml'],
+            ['value' => 'Piece', 'slug' => 'piece'],
+            ['value' => 'Box', 'slug' => 'box'],
+            ['value' => 'Bottle', 'slug' => 'bottle'],
+            ['value' => 'Jar', 'slug' => 'jar'],
         ];
 
-        foreach ($colors as $color) {
+        foreach ($units as $unit) {
             AttributeValue::firstOrCreate(
-                ['attribute_id' => $colorAttribute->id, 'value' => $color['value']],
-                ['slug' => $color['slug']]
+                ['attribute_id' => $unitAttribute->id, 'value' => $unit['value']],
+                ['slug' => $unit['slug']]
             );
         }
 

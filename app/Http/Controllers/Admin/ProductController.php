@@ -8,6 +8,7 @@ use Inertia\Inertia;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Vendor;
+use App\Models\Attribute;
 
 class ProductController extends Controller
 {
@@ -39,6 +40,7 @@ class ProductController extends Controller
         return Inertia::render('Admin/Products/Create', [
             'categories' => Category::all(['id', 'name']),
             'vendors' => Vendor::all(['id', 'shop_name']),
+            'attributes' => Attribute::with('values')->get(),
         ]);
     }
 
@@ -47,26 +49,75 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'category_id' => 'required|exists:categories,id',
-            'vendor_id' => 'nullable|exists:vendors,id',
-            'short_description' => 'nullable|string',
-            'long_description' => 'nullable|string',
-            'price' => 'required|numeric|min:0',
-            'sale_price' => 'nullable|numeric|min:0',
-            'sku' => 'nullable|string|unique:products,sku',
-            'thumbnail' => 'nullable|string',
-            'status' => 'boolean',
-            'featured' => 'boolean',
-        ]);
+        try {
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'category_id' => 'required|exists:categories,id',
+                'sub_category_id' => 'nullable|exists:sub_categories,id',
+                'short_description' => 'nullable|string',
+                'long_description' => 'nullable|string',
+                'urdu_name' => 'nullable|string',
+                'scientific_name' => 'nullable|string',
+                'alternative_name' => 'nullable|string',
+                'other_name' => 'nullable|string',
+                'slug' => 'nullable|string|unique:products,slug',
+                'unit' => 'nullable|string',
+                'price' => 'required|numeric|min:0',
+                'sale_price' => 'nullable|numeric|min:0',
+                'sku' => 'nullable|string|unique:products,sku',
+                'barcode' => 'nullable|string',
+                'stock_qty' => 'nullable|integer|min:0',
+                'stock_alert' => 'nullable|integer|min:0',
+                'status' => 'sometimes|boolean',
+                'featured' => 'sometimes|boolean',
+                'meta_title' => 'nullable|string|max:60',
+                'meta_description' => 'nullable|string|max:160',
+                'meta_keywords' => 'nullable|string',
+                'tags' => 'nullable|array',
+                'tags.*' => 'nullable|string',
+                'schema_markup' => 'nullable|string',
+                'social_description' => 'nullable|string|max:300',
+                'thumbnail' => 'nullable|image|max:2048',
+                'social_image' => 'nullable|image|max:2048',
+                'gallery' => 'nullable',
+            ]);
 
-        // Slug generate karein
-        $validated['slug'] = str()->slug($validated['name']);
+            // Generate slug if not provided
+            if (empty($validated['slug'])) {
+                $validated['slug'] = str()->slug($validated['name']);
+            }
 
-        Product::create($validated);
+            // Auto-generate SKU if not provided
+            if (empty($validated['sku'])) {
+                $lastProduct = Product::latest('id')->first();
+                $nextNumber = ($lastProduct?->id ?? 0) + 1;
+                $validated['sku'] = 'PROD-' . str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
+            }
 
-        return to_route('Products.index')->with('success', 'Product successfully created!');
+            // Handle file uploads
+            if ($request->hasFile('thumbnail')) {
+                $validated['thumbnail'] = $request->file('thumbnail')->store('products', 'public');
+            }
+
+            if ($request->hasFile('social_image')) {
+                $validated['social_image'] = $request->file('social_image')->store('products', 'public');
+            }
+
+            if ($request->hasFile('gallery')) {
+                $images = [];
+                foreach ($request->file('gallery') as $img) {
+                    $images[] = $img->store('products/gallery', 'public');
+                }
+                $validated['gallery'] = $images;
+            }
+
+            Product::create($validated);
+
+            return to_route('products.index')->with('success', 'Product successfully created!');
+        } catch (\Exception $e) {
+            \Log::error('Product creation error: ' . $e->getMessage());
+            throw $e;
+        }
     }
 
     /**
@@ -92,6 +143,7 @@ class ProductController extends Controller
             'product' => $product,
             'categories' => Category::all(['id', 'name']),
             'vendors' => Vendor::all(['id', 'shop_name']),
+            'attributes' => Attribute::with('values')->get(),
         ]);
     }
 
@@ -100,30 +152,70 @@ class ProductController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $product = Product::findOrFail($id);
+        try {
+            $product = Product::findOrFail($id);
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'category_id' => 'required|exists:categories,id',
-            'vendor_id' => 'nullable|exists:vendors,id',
-            'short_description' => 'nullable|string',
-            'long_description' => 'nullable|string',
-            'price' => 'required|numeric|min:0',
-            'sale_price' => 'nullable|numeric|min:0',
-            'sku' => 'nullable|string|unique:products,sku,' . $id,
-            'thumbnail' => 'nullable|string',
-            'status' => 'boolean',
-            'featured' => 'boolean',
-        ]);
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'category_id' => 'required|exists:categories,id',
+                'sub_category_id' => 'nullable|exists:sub_categories,id',
+                'short_description' => 'nullable|string',
+                'long_description' => 'nullable|string',
+                'urdu_name' => 'nullable|string',
+                'scientific_name' => 'nullable|string',
+                'alternative_name' => 'nullable|string',
+                'other_name' => 'nullable|string',
+                'slug' => 'nullable|string|unique:products,slug,' . $id,
+                'unit' => 'nullable|string',
+                'price' => 'required|numeric|min:0',
+                'sale_price' => 'nullable|numeric|min:0',
+                'sku' => 'nullable|string|unique:products,sku,' . $id,
+                'barcode' => 'nullable|string',
+                'stock_qty' => 'nullable|integer|min:0',
+                'stock_alert' => 'nullable|integer|min:0',
+                'status' => 'sometimes|boolean',
+                'featured' => 'sometimes|boolean',
+                'meta_title' => 'nullable|string|max:60',
+                'meta_description' => 'nullable|string|max:160',
+                'meta_keywords' => 'nullable|string',
+                'tags' => 'nullable|array',
+                'tags.*' => 'nullable|string',
+                'schema_markup' => 'nullable|string',
+                'social_description' => 'nullable|string|max:300',
+                'thumbnail' => 'nullable|image|max:2048',
+                'social_image' => 'nullable|image|max:2048',
+                'gallery' => 'nullable',
+            ]);
 
-        // Slug update karein agar name change ho gaya
-        if ($validated['name'] !== $product->name) {
-            $validated['slug'] = str()->slug($validated['name']);
+            // Update slug if name changed
+            if ($validated['name'] !== $product->name) {
+                $validated['slug'] = str()->slug($validated['name']);
+            }
+
+            // Handle file uploads
+            if ($request->hasFile('thumbnail')) {
+                $validated['thumbnail'] = $request->file('thumbnail')->store('products', 'public');
+            }
+
+            if ($request->hasFile('social_image')) {
+                $validated['social_image'] = $request->file('social_image')->store('products', 'public');
+            }
+
+            if ($request->hasFile('gallery')) {
+                $images = [];
+                foreach ($request->file('gallery') as $img) {
+                    $images[] = $img->store('products/gallery', 'public');
+                }
+                $validated['gallery'] = $images;
+            }
+
+            $product->update($validated);
+
+            return to_route('products.index')->with('success', 'Product successfully updated!');
+        } catch (\Exception $e) {
+            \Log::error('Product update error: ' . $e->getMessage());
+            throw $e;
         }
-
-        $product->update($validated);
-
-        return to_route('Products.index')->with('success', 'Product successfully updated!');
     }
 
     /**
@@ -133,6 +225,6 @@ class ProductController extends Controller
     {
         Product::destroy($id);
         
-        return to_route('Products.index')->with('success', 'Product successfully deleted!');
+        return to_route('products.index')->with('success', 'Product successfully deleted!');
     }
 }

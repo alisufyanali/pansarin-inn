@@ -8,12 +8,12 @@ type Category = { id: number; name: string };
 export type CategoryFormData = {
     name: string;
     parent_id: string | number;
-    image: string;
+    image: File | string;
     status: boolean;
 };
 
 interface CategoryFormProps {
-    category?: CategoryFormData & { id?: number };
+    category?: CategoryFormData & { id?: number; image?: string };
     categories: Category[];
     isEdit?: boolean;
 }
@@ -22,7 +22,7 @@ export default function CategoryForm({ category, categories, isEdit = false }: C
     const { data, setData, errors, post, put, processing } = useForm<CategoryFormData>({
         name: category?.name || '',
         parent_id: category?.parent_id || '',
-        image: category?.image || '',
+        image: '',
         status: category?.status ?? true,
     });
 
@@ -89,14 +89,25 @@ export default function CategoryForm({ category, categories, isEdit = false }: C
 
                         {/* Image */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Category Image URL</label>
-                            <input
-                                type="text"
-                                placeholder="https://example.com/image.jpg"
-                                className="w-full mt-1 px-3 py-2 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none"
-                                value={data.image}
-                                onChange={e => setData('image', e.target.value)}
-                            />
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Category Image</label>
+                            <div className="mt-1 relative">
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={e => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                            setData('image', file);
+                                        }
+                                    }}
+                                    className="w-full px-3 py-2 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none"
+                                />
+                                {category?.image && (
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                        Current image: {typeof category.image === 'string' ? category.image : 'New file selected'}
+                                    </p>
+                                )}
+                            </div>
                             {errors.image && <div className="text-red-500 text-sm mt-1">{errors.image}</div>}
                         </div>
 

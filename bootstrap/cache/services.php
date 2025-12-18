@@ -41,8 +41,9 @@
     37 => 'Spatie\\Permission\\PermissionServiceProvider',
     38 => 'Tighten\\Ziggy\\ZiggyServiceProvider',
     39 => 'App\\Providers\\AppServiceProvider',
-    40 => 'App\\Providers\\BroadcastServiceProvider',
-    41 => 'App\\Providers\\FortifyServiceProvider',
+    40 => 'App\\Providers\\AuthServiceProvider',
+    41 => 'App\\Providers\\BroadcastServiceProvider',
+    42 => 'App\\Providers\\FortifyServiceProvider',
   ),
   'eager' => 
   array (
@@ -70,8 +71,9 @@
     21 => 'Spatie\\Permission\\PermissionServiceProvider',
     22 => 'Tighten\\Ziggy\\ZiggyServiceProvider',
     23 => 'App\\Providers\\AppServiceProvider',
-    24 => 'App\\Providers\\BroadcastServiceProvider',
-    25 => 'App\\Providers\\FortifyServiceProvider',
+    24 => 'App\\Providers\\AuthServiceProvider',
+    25 => 'App\\Providers\\BroadcastServiceProvider',
+    26 => 'App\\Providers\\FortifyServiceProvider',
   ),
   'deferred' => 
   array (

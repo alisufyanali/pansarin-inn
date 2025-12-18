@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -14,6 +15,10 @@ class Product extends Model
         'category_id',
         'sub_category_id',
         'name',
+        'urdu_name',
+        'scientific_name',
+        'alternative_name',
+        'other_name',
         'slug',
         'sku',
         'barcode',
@@ -25,6 +30,7 @@ class Product extends Model
         'sale_price',
         'stock_qty',
         'stock_alert',
+        'unit',
         'tags',
         'featured',
         'status',
@@ -32,10 +38,13 @@ class Product extends Model
         'meta_title',
         'meta_description',
         'meta_keywords',
+        'schema_markup',
+        'social_image',
+        'social_description',
     ];
 
     protected $casts = [
-        'gallery' => 'array',
+        'gallery' => 'array',  // Multiple images
         'tags' => 'array',
         'featured' => 'boolean',
         'status' => 'boolean',
@@ -82,7 +91,7 @@ class Product extends Model
         return $this->hasManyThrough(Inventory::class, ProductVariant::class, 'product_id', 'product_variant_id');
     }
 
-    // Accessor for image URL
+    // Accessor for Thumbnail URL
     public function getThumbnailUrlAttribute()
     {
         if ($this->thumbnail && !str_starts_with($this->thumbnail, 'http')) {
@@ -91,12 +100,20 @@ class Product extends Model
         return $this->thumbnail ?? asset('images/placeholder.png');
     }
 
-    // Helper methods
+    // Accessor for Gallery URLs
+    public function getGalleryUrlsAttribute()
+    {
+        if (!$this->gallery) return [];
+        return array_map(fn($img) => str_starts_with($img, 'http') ? $img : asset('storage/' . $img), $this->gallery);
+    }
+
+    // Stock check
     public function isInStock(): bool
     {
         return $this->stock_qty > 0;
     }
 
+    // Discount calculation
     public function getDiscountPercentage(): float
     {
         if (!$this->sale_price || $this->price <= 0) {

@@ -84,6 +84,14 @@ export function AppSidebar() {
 
     const hasAnyVariantPerm = canCreateVariant || canEditVariant || canDeleteVariant || canViewVariant;
 
+    // Attribute permissions
+    const canCreateAttribute = can('create.attributes');
+    const canEditAttribute = can('edit.attributes');
+    const canDeleteAttribute = can('delete.attributes');
+    const canViewAttribute = can('view.attributes');
+
+    const hasAnyAttributePerm = canCreateAttribute || canEditAttribute || canDeleteAttribute || canViewAttribute;
+
     const mainNavItems: NavItem[] = [
       {
         title: 'Dashboard',
@@ -93,7 +101,7 @@ export function AppSidebar() {
     ];
 
     // Products اور اس کے submenu
-    if (hasAnyProductPerm || hasAnyCategoryPerm || hasAnyVariantPerm) {
+    if (hasAnyProductPerm || hasAnyCategoryPerm || hasAnyVariantPerm || hasAnyAttributePerm) {
       const productSubmenu: NavItem[] = [];
 
       if (hasAnyProductPerm) {
@@ -121,11 +129,13 @@ export function AppSidebar() {
       }
 
       // Add Attributes to submenu
-      productSubmenu.push({
-        title: 'Attributes',
-        href: '/admin/attributes',
-        icon: Palette,
-      });
+      if (hasAnyAttributePerm) {
+        productSubmenu.push({
+          title: 'Attributes',
+          href: '/admin/attributes',
+          icon: Palette,
+        });
+      }
 
       if (productSubmenu.length > 0) {
         mainNavItems.push({
@@ -138,11 +148,11 @@ export function AppSidebar() {
     }
 
     if (hasAnyUserPerm) {
-      mainNavItems.push({ title: 'Users', href: '/users', icon: UsersRound });
+      mainNavItems.push({ title: 'Users', href: '/admin/users', icon: UsersRound });
     }
 
     if (hasAnyRolePerm) {
-      mainNavItems.push({ title: 'Roles', href: '/roles', icon: ShieldCheck });
+      mainNavItems.push({ title: 'Roles', href: '/admin/roles', icon: ShieldCheck });
     }
 
     return (

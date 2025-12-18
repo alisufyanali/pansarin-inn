@@ -63,7 +63,7 @@ export default function Index({ categories }: { categories: Category[] }) {
                             {categories.length === 0 ? (
                                 <tr>
                                     <td colSpan={6} className="py-6 px-4 text-center text-gray-500 dark:text-gray-400">
-                                        Koi category nahi hain
+                                        "There are no categories."
                                     </td>
                                 </tr>
                             ) : (

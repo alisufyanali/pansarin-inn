@@ -37,6 +37,10 @@ class RolePermissionSeeder extends Seeder
             "create.variants",
             "edit.variants",
             "delete.variants",
+            "view.attributes",
+            "create.attributes",
+            "edit.attributes",
+            "delete.attributes",
         ];
 
         foreach ($permissions as $permission) {
