@@ -6,6 +6,9 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductVariantController;
+use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\CustomerController;
+
 use Inertia\Inertia; 
 
 Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
@@ -20,13 +23,26 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
     Route::resource('roles', RoleController::class);
 
     // Category Management resource Controllers
-    Route::resource('categories', \App\Http\Controllers\Admin\CategoryController::class);
+    Route::resource('categories', CategoryController::class);
+    Route::get('categories-data', [CategoryController::class, 'getData'])->name('categories-data');
+    Route::delete('/categories/{id}', [CategoryController::class, 'destroy'])->name('categories.destroy');
 
     // Product Management resource Controllers
-    Route::resource('products', \App\Http\Controllers\Admin\ProductController::class);
-    Route::resource('product-variants', \App\Http\Controllers\Admin\ProductVariantController::class);
-    Route::resource('attributes', \App\Http\Controllers\Admin\ProductAttributeController::class);
+    Route::resource('products', ProductController::class);
+    Route::get('products-data', [ProductController::class, 'getData'])->name('products.data');
 
+    Route::resource('product-variants', ProductVariantController::class);
+    Route::get('product-variants-data', [ProductVariantController::class, 'getData'])->name('product-variants.data');
+
+    Route::resource('attributes', ProductAttributeController::class);
+
+    Route::resource('orders', OrderController::class);
+
+    // Customers Routes
+    Route::resource('customers', CustomerController::class);
+    Route::get('customers-data', [CustomerController::class, 'getData'])->name('customers.data');
+    
+    
 });
 
 Route::middleware('auth')->prefix('admin')->group(function () {

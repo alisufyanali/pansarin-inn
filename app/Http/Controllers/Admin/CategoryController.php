@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Category;
+use Yajra\DataTables\Facades\DataTables;
 
 class CategoryController extends Controller
 {
@@ -19,13 +20,66 @@ class CategoryController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $categories = Category::with('parent')->get();
-        
         return Inertia::render('Admin/Categories/Index', [
-            'categories' => $categories
+            'userRole' => $request->user()->role ?? 'admin',
         ]);
+    }
+
+    /**
+     * Get DataTable data - API endpoint for DataTableWrapper
+     */
+  
+    public function getData(Request $request)
+    {
+        $query = Category::with('parent')->latest();
+        
+        // ✅ DataTables format mein search handle karo
+        if ($request->has('search') && $request->search !== '') {
+            // Agar 'search' string hai (tumhara format)
+            if (is_string($request->search)) {
+                $search = $request->search;
+                $query->where(function($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('slug', 'like', "%{$search}%")
+                    ->orWhereHas('parent', function($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%");
+                    });
+                });
+            }
+            // Agar 'search' array hai (DataTables format)
+            elseif (is_array($request->search) && isset($request->search['value'])) {
+                $search = $request->search['value'];
+                if (!empty($search)) {
+                    $query->where(function($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('slug', 'like', "%{$search}%")
+                        ->orWhereHas('parent', function($q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%");
+                        });
+                    });
+                }
+            }
+        }
+        
+        // ✅ Additional filters
+        if ($request->has('status') && $request->status !== '') {
+            $query->where('status', $request->status === 'active');
+        }
+        
+        if ($request->has('parent_id') && $request->parent_id !== '') {
+            $query->where('parent_id', $request->parent_id);
+        }
+
+        return DataTables::of($query)
+            ->addColumn('parent_name', function($category) {
+                return $category->parent ? $category->parent->name : null;
+            })
+            ->addColumn('status_text', function($category) {
+                return $category->status ? 'Active' : 'Inactive';
+            })
+            ->make(true);
     }
 
     /**
@@ -108,10 +162,24 @@ class CategoryController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
-    {
-        Category::destroy($id);
+   public function destroy(string $id)
+{
+    try {
+        $category = Category::findOrFail($id);
         
-        return to_route('categories.index')->with('success', 'Category successfully deleted!');
+        // Option 1: Delete with children
+        $category->delete(); // This should cascade if foreign key is set
+        
+        // Option 2: Or manually delete children first
+        // $category->children()->delete();
+        // $category->delete();
+
+        return redirect()->route('categories.index')
+            ->with('success', 'Category successfully deleted!');
+            
+    } catch (\Exception $e) {
+        return redirect()->route('categories.index')
+            ->with('error', 'Failed to delete category: ' . $e->getMessage());
     }
+}
 }

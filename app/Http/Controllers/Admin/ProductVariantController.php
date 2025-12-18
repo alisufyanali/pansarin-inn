@@ -8,6 +8,7 @@ use Inertia\Inertia;
 use App\Models\ProductVariant;
 use App\Models\Product;
 use App\Models\Attribute;
+use Yajra\DataTables\Facades\DataTables;
 
 class ProductVariantController extends Controller
 {
@@ -21,13 +22,83 @@ class ProductVariantController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $variants = ProductVariant::with('product')->get();
-        
         return Inertia::render('Admin/Variants/Index', [
-            'variants' => $variants
+            'userRole' => $request->user()->role ?? 'admin',
         ]);
+    }
+
+    /**
+     * Get DataTable data - API endpoint for DataTableWrapper
+     */
+    public function getData(Request $request)
+    {
+        $query = ProductVariant::with('product')->latest();
+        
+        // Search handling
+        if ($request->has('search') && $request->search !== '') {
+            if (is_string($request->search)) {
+                $search = $request->search;
+                $query->where(function($q) use ($search) {
+                    $q->where('sku', 'like', "%{$search}%")
+                      ->orWhere('price', 'like', "%{$search}%")
+                      ->orWhere('stock', 'like', "%{$search}%")
+                      ->orWhereHas('product', function($q) use ($search) {
+                          $q->where('name', 'like', "%{$search}%");
+                      });
+                });
+            }
+            elseif (is_array($request->search) && isset($request->search['value'])) {
+                $search = $request->search['value'];
+                if (!empty($search)) {
+                    $query->where(function($q) use ($search) {
+                        $q->where('sku', 'like', "%{$search}%")
+                          ->orWhere('price', 'like', "%{$search}%")
+                          ->orWhere('stock', 'like', "%{$search}%")
+                          ->orWhereHas('product', function($q) use ($search) {
+                              $q->where('name', 'like', "%{$search}%");
+                          });
+                    });
+                }
+            }
+        }
+        
+        // Additional filters
+        if ($request->has('status') && $request->status !== '') {
+            $query->where('status', $request->status === 'active');
+        }
+        
+        if ($request->has('product_id') && $request->product_id !== '') {
+            $query->where('product_id', $request->product_id);
+        }
+
+        if ($request->has('is_default') && $request->is_default !== '') {
+            $query->where('is_default', $request->is_default === 'yes');
+        }
+
+        if ($request->has('stock_status') && $request->stock_status !== '') {
+            if ($request->stock_status === 'in_stock') {
+                $query->where('stock', '>', 0);
+            } elseif ($request->stock_status === 'out_of_stock') {
+                $query->where('stock', '<=', 0);
+            }
+        }
+
+        return DataTables::of($query)
+            ->addColumn('product_name', function($variant) {
+                return $variant->product ? $variant->product->name : null;
+            })
+            ->addColumn('status_text', function($variant) {
+                return $variant->status ? 'Active' : 'Inactive';
+            })
+            ->addColumn('is_default_text', function($variant) {
+                return $variant->is_default ? 'Yes' : 'No';
+            })
+            ->addColumn('stock_status', function($variant) {
+                return $variant->stock > 0 ? 'In Stock' : 'Out of Stock';
+            })
+            ->make(true);
     }
 
     /**
@@ -114,8 +185,15 @@ class ProductVariantController extends Controller
      */
     public function destroy(string $id)
     {
-        ProductVariant::destroy($id);
-        
-        return to_route('product-variants.index')->with('success', 'Variant successfully deleted!');
+        try {
+            ProductVariant::destroy($id);
+            
+            return redirect()->route('product-variants.index')
+                ->with('success', 'Variant successfully deleted!');
+                
+        } catch (\Exception $e) {
+            return redirect()->route('product-variants.index')
+                ->with('error', 'Failed to delete variant: ' . $e->getMessage());
+        }
     }
 }

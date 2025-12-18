@@ -154,6 +154,7 @@ export function AppSidebar() {
     if (hasAnyRolePerm) {
       mainNavItems.push({ title: 'Roles', href: '/admin/roles', icon: ShieldCheck });
     }
+      mainNavItems.push({ title: 'Orders', href: '/admin/orders', icon: ShieldCheck });
 
     return (
         <Sidebar collapsible="icon" variant="inset">

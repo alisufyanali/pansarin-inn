@@ -1,134 +1,142 @@
-import { can } from '@/lib/can';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link, router } from '@inertiajs/react';
-import { Eye, Edit2, Trash2, PlusCircle } from 'lucide-react';
+import { Head, Link } from '@inertiajs/react';
+import { PlusCircle, Filter } from 'lucide-react';
+import { useEffect } from 'react';
+import DataTableWrapper from '@/components/DataTableWrapper';
+import { CommonColumns, CodeBadge } from '@/components/TableColumns';
+import StatCard from '@/components/StatCard';
+import toast from "react-hot-toast";
 
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Categories', href: '/admin/categories' },
+  { title: 'Categories', href: '/admin/categories' },
 ];
 
 interface Category {
-    id: number;
-    name: string;
-    slug: string;
-    status: boolean;
-    parent?: { id: number; name: string } | null;
+  id: number;
+  name: string;
+  slug: string;
+  status: boolean;
+  parent?: { id: number; name: string } | null;
+  created_at: string;
+  updated_at: string;
 }
 
-export default function Index({ categories }: { categories: Category[] }) {
-    // Permission checks
-    const canCreate = can('create.categories');
-    const canEdit = can('edit.categories');
-    // const canDelete = can('delete.categories');
-    const canDelete = true;
+interface Props {
+  categories?: {
+    data: Category[];
+    total: number;
+  };
+  flash?: {
+    success?: string;
+    error?: string;
+  };
+}
 
-    function handleDelete(id: number): void {
-        if (!canDelete) return;
-        if (confirm('Kya aap sure hain ke is category ko delete karna hai?')) {
-            router.delete(`/admin/categories/${id}`);
-        }
-    }
+const DEFAULT_CATEGORIES = {
+  data: [],
+  total: 0,
+};
 
-    return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Categories" />
-            <div className="p-3">
-                <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Categories</h2>
-                    {canCreate && (
-                        <Link
-                            href="/admin/categories/create"
-                            className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white"
-                        >
-                            <PlusCircle />
-                            <span className="hidden sm:inline">Create</span>
-                        </Link>
-                    )}
-                </div>
+export default function Index({ categories = DEFAULT_CATEGORIES, flash }: Props) {
+  const canCreate = true;
+  const canEdit = true;
+  const canDelete = true;
 
-                <div className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-lg overflow-x-auto">
-                    <table className="w-full text-left text-gray-700 dark:text-gray-300 text-sm">
-                        <thead>
-                            <tr className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
-                                <th className="py-3 px-4">ID</th>
-                                <th className="py-3 px-4">Category Name</th>
-                                <th className="py-3 px-4">Slug</th>
-                                <th className="py-3 px-4">Parent</th>
-                                <th className="py-3 px-4">Status</th>
-                                <th className="py-3 px-4">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-                            {categories.length === 0 ? (
-                                <tr>
-                                    <td colSpan={6} className="py-6 px-4 text-center text-gray-500 dark:text-gray-400">
-                                        "There are no categories."
-                                    </td>
-                                </tr>
-                            ) : (
-                                categories.map(category => (
-                                    <tr key={category.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition">
-                                        <td className="py-3 px-4">{category.id}</td>
-                                        <td className="py-3 px-4 font-medium">{category.name}</td>
-                                        <td className="py-3 px-4">{category.slug}</td>
-                                        <td className="py-3 px-4">{category.parent?.name || '-'}</td>
-                                        <td className="py-3 px-4">
-                                            <span className={`px-2 py-1 rounded text-xs font-medium ${
-                                                category.status 
-                                                    ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
-                                                    : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
-                                            }`}>
-                                                {category.status ? 'Active' : 'Inactive'}
-                                            </span>
-                                        </td>
-                                        <td className="py-3 px-4 flex gap-2">
-                                            <Link
-                                                href={`/admin/categories/${category.id}`}
-                                                className="inline-flex items-center justify-center rounded-md bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-white w-9 h-9"
-                                                title="View"
-                                            >
-                                                <Eye size={16} />
-                                            </Link>
+  const safeCategories = categories || DEFAULT_CATEGORIES;
 
-                                            {canEdit ? (
-                                                <Link
-                                                    href={`/admin/categories/${category.id}/edit`}
-                                                    className="inline-flex items-center justify-center rounded-md bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-white w-9 h-9"
-                                                    title="Edit"
-                                                >
-                                                    <Edit2 size={16} />
-                                                </Link>
-                                            ) : (
-                                                <span
-                                                    aria-disabled
-                                                    className="inline-flex items-center justify-center rounded-md bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600 opacity-60 w-9 h-9"
-                                                    title="Edit (disabled)"
-                                                >
-                                                    <Edit2 size={16} />
-                                                </span>
-                                            )}
+  // Define columns using helper
+  const columns = [
+    CommonColumns.id(),
+    CommonColumns.name('Category Name'),
+    CommonColumns.slug(),
+    {
+      name: 'Parent',
+      selector: (row: Category) => row.parent?.name || '-',
+      sortable: true,
+      cell: (row: Category) => (
+        <span className="text-gray-600 dark:text-gray-400">
+          {row.parent?.name || '-'}
+        </span>
+      ),
+    },
+    CommonColumns.status(),
+    CommonColumns.createdAt(true),
+    CommonColumns.actions({
+      baseUrl: '/admin/categories',
+      canEdit,
+      canDelete,
+    }),
+  ];
 
-                                            <button
-                                                onClick={() => handleDelete(category.id)}
-                                                className={`inline-flex items-center justify-center rounded-md w-9 h-9 ${
-                                                    canDelete 
-                                                        ? 'bg-red-600 hover:bg-red-700 text-white'
-                                                        : 'bg-red-600/40 text-white/60 opacity-60 cursor-not-allowed'
-                                                }`}
-                                                title={canDelete ? 'Delete' : 'Delete (disabled)'}
-                                                disabled={!canDelete}
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </AppLayout>
-    );
+  const csvHeaders = [
+    { label: 'ID', key: 'id' },
+    { label: 'Category Name', key: 'name' },
+    { label: 'Slug', key: 'slug' },
+    { label: 'Parent Category', key: 'parent.name' },
+    { label: 'Status', key: 'status' },
+    { label: 'Created At', key: 'created_at' },
+    { label: 'Updated At', key: 'updated_at' },
+  ];
+
+  // Calculate stats
+  const stats = {
+    total: safeCategories.total || 0,
+    active: safeCategories.data?.filter(c => c?.status).length || 0,
+    withParent: safeCategories.data?.filter(c => c?.parent).length || 0,
+    topLevel: safeCategories.data?.filter(c => !c?.parent).length || 0,
+  };
+
+  useEffect(() => {
+    if (flash?.success) toast.success(flash.success);
+    if (flash?.error) toast.error(flash.error);
+  }, [flash]);
+
+  return (
+    <AppLayout breadcrumbs={breadcrumbs}>
+      <Head title="Categories" />
+
+      <div className="flex flex-col gap-8">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              Categories
+            </h1>
+            <p className="mt-2 text-gray-600 dark:text-gray-400">
+              Manage and organize your product categories efficiently
+            </p>
+          </div>
+
+          {canCreate && (
+            <Link
+              href="/admin/categories/create"
+              className="inline-flex items-center gap-3 px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 dark:from-blue-500 dark:to-indigo-500 dark:hover:from-blue-600 dark:hover:to-indigo-600 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <PlusCircle className="w-5 h-5" />
+              <span>Add New Category</span>
+            </Link>
+          )}
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard title="Total Categories" value={stats.total} color="blue" icon={Filter} />
+          <StatCard title="Active Categories" value={stats.active} color="emerald" icon={Filter} />
+          <StatCard title="With Parent" value={stats.withParent} color="purple" icon={Filter} />
+          <StatCard title="Top Level" value={stats.topLevel} color="amber" icon={Filter} />
+        </div>
+
+        {/* Data Table */}
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
+          <DataTableWrapper
+            fetchUrl="/admin/categories-data"
+            columns={columns}
+            csvHeaders={csvHeaders}
+            searchableKeys={['name', 'slug', 'parent.name']}
+          />
+        </div>
+      </div>
+    </AppLayout>
+  );
 }

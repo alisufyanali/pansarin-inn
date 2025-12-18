@@ -1,318 +1,270 @@
-import { can } from '@/lib/can';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link, router } from '@inertiajs/react';
-import { Eye, Edit2, Trash2, PlusCircle,  ToggleRight, ToggleLeft } from 'lucide-react';
+import { Head, Link } from '@inertiajs/react';
+import { PlusCircle, Filter, Package } from 'lucide-react';
+import { useEffect } from 'react';
+import DataTableWrapper from '@/components/DataTableWrapper';
+import { CommonColumns, CodeBadge, StatusBadge } from '@/components/TableColumns';
+import toast from "react-hot-toast";
 
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Products', href: '/admin/products' },
+  { title: 'Products', href: '/admin/products' },
 ];
 
 interface Product {
-    id: number;
-    name: string;
-    sku: string;
-    price: number;
-    sale_price: number | null;
-    status: boolean;
-    featured: boolean;
-    thumbnail?: string;
-    stock_qty?: number;
-    category?: { id: number; name: string };
-    subCategory?: { id: number; name: string };
+  id: number;
+  name: string;
+  sku: string;
+  price: number;
+  sale_price: number | null;
+  status: boolean;
+  featured: boolean;
+  category?: { id: number; name: string };
+  vendor?: { id: number; shop_name: string };
+  created_at: string;
 }
 
-export default function Index({ products }: { products: Product[] }) {
-    // Permission checks
-    const canCreate = can('create.products');
-    const canEdit = can('edit.products');
-    const canDelete = can('delete.products');
+interface Props {
+  products?: {
+    data: Product[];
+    total: number;
+  };
+  flash?: {
+    success?: string;
+    error?: string;
+  };
+}
 
-    function handleDelete(id: number): void {
-        if (!canDelete) return;
-        if (confirm('Kya aap sure hain ke is product ko delete karna hai?')) {
-            router.delete(`/admin/products/${id}`);
-        }
-    }
+const DEFAULT_PRODUCTS = {
+  data: [],
+  total: 0,
+};
 
-    function togglePublish(product: Product): void {
-        if (!canEdit) return;
-        router.patch(`/admin/products/${product.id}`, {
-            status: !product.status,
-        }, {
-            preserveScroll: true,
-        });
-    }
+export default function Index({ products = DEFAULT_PRODUCTS, flash }: Props) {
+  const canCreate = true; // can('create.products');
+  const canEdit = true; // can('edit.products');
+  const canDelete = true; // can('delete.products');
 
-    function toggleFeatured(product: Product): void {
-        if (!canEdit) return;
-        router.patch(`/admin/products/${product.id}`, {
-            featured: !product.featured,
-        }, {
-            preserveScroll: true,
-        });
-    }
+  const safeProducts = products || DEFAULT_PRODUCTS;
 
-    return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Products" />
-            <div className="p-3">
-                <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Products</h2>
-                    {canCreate && (
-                        <Link
-                            href="/admin/products/create"
-                            className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white"
-                        >
-                            <PlusCircle size={18} />
-                            <span className="hidden sm:inline">Create Product</span>
-                        </Link>
-                    )}
-                </div>
+  // Define columns
+  const columns = [
+    CommonColumns.id(),
+    CommonColumns.name('Product Name'),
+    {
+      name: 'SKU',
+      selector: (row: Product) => row.sku || '-',
+      sortable: true,
+      cell: (row: Product) => (
+        row.sku ? <CodeBadge text={row.sku} /> : <span className="text-gray-400">-</span>
+      ),
+    },
+    {
+      name: 'Category',
+      selector: (row: Product) => row.category?.name || '-',
+      sortable: true,
+      cell: (row: Product) => (
+        <span className="text-gray-600 dark:text-gray-400">
+          {row.category?.name || '-'}
+        </span>
+      ),
+    },
+    {
+      name: 'Price',
+      selector: (row: Product) => row.price,
+      sortable: true,
+      cell: (row: Product) => (
+        <div className="flex flex-col">
+          <span className="font-semibold text-gray-900 dark:text-gray-100">
+            Rs. {parseFloat(row.price as any).toFixed(2)}
+          </span>
+          {row.sale_price && (
+            <span className="text-xs text-green-600 dark:text-green-400">
+              Sale: Rs. {parseFloat(row.sale_price as any).toFixed(2)}
+            </span>
+          )}
+        </div>
+      ),
+    },
+    CommonColumns.status(),
+    {
+      name: 'Featured',
+      selector: (row: Product) => row.featured ? 'Yes' : 'No',
+      sortable: true,
+      cell: (row: Product) => (
+        <span className={`px-2 py-1 text-xs rounded-full font-medium ${
+          row.featured 
+            ? 'bg-yellow-500/10 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-400'
+            : 'bg-gray-500/10 dark:bg-gray-500/20 text-gray-700 dark:text-gray-400'
+        }`}>
+          {row.featured ? 'Yes' : 'No'}
+        </span>
+      ),
+      width: '100px',
+      center: true,
+    },
+    CommonColumns.createdAt(true),
+    CommonColumns.actions({
+      baseUrl: '/admin/products',
+      canEdit,
+      canDelete,
+    }),
+  ];
 
-                <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg overflow-x-auto">
-                    <table className="w-full text-left text-gray-700 dark:text-gray-300 text-xs md:text-sm">
-                        <thead>
-                            <tr className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700">
-                                <th className="py-3 px-3 w-16">Image</th>
-                                <th className="py-3 px-3 min-w-48">Title</th>
-                                <th className="py-3 px-3">Quantity</th>
-                                <th className="py-3 px-3 min-w-32">Category</th>
-                                <th className="py-3 px-3 min-w-32">Sub Category</th>
-                                <th className="py-3 px-3 text-center">Today's Deal</th>
-                                <th className="py-3 px-3 text-center">Publish</th>
-                                <th className="py-3 px-3 text-center">Featured</th>
-                                <th className="py-3 px-3">Options</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-                            {products.length === 0 ? (
-                                <tr>
-                                    <td colSpan={9} className="py-8 px-4 text-center text-gray-500 dark:text-gray-400">
-                                        "There are no products."
-                                    </td>
-                                </tr>
-                            ) : (
-                                products.map(product => (
-                                    <tr key={product.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition">
-                                        {/* Image */}
-                                        <td className="py-3 px-3">
-                                            <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-md flex items-center justify-center overflow-hidden">
-                                                {product.thumbnail ? (
-                                                    <img 
-                                                        src={product.thumbnail} 
-                                                        alt={product.name}
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                ) : (
-                                                    <span className="text-gray-400 dark:text-gray-500 text-2xl">📦</span>
-                                                )}
-                                            </div>
-                                        </td>
+  const csvHeaders = [
+    { label: 'ID', key: 'id' },
+    { label: 'Product Name', key: 'name' },
+    { label: 'SKU', key: 'sku' },
+    { label: 'Category', key: 'category.name' },
+    { label: 'Vendor', key: 'vendor.shop_name' },
+    { label: 'Price', key: 'price' },
+    { label: 'Sale Price', key: 'sale_price' },
+    { label: 'Status', key: 'status' },
+    { label: 'Featured', key: 'featured' },
+    { label: 'Created At', key: 'created_at' },
+  ];
 
-                                        {/* Title */}
-                                        <td className="py-3 px-3">
-                                            <div className="font-medium text-gray-900 dark:text-white truncate">
-                                                {product.name}
-                                            </div>
-                                            <div className="text-xs text-gray-500 dark:text-gray-400">
-                                                {product.sku}
-                                            </div>
-                                        </td>
+  // Calculate stats
+  const stats = {
+    total: safeProducts.total || 0,
+    active: safeProducts.data?.filter(p => p?.status).length || 0,
+    featured: safeProducts.data?.filter(p => p?.featured).length || 0,
+    onSale: safeProducts.data?.filter(p => p?.sale_price).length || 0,
+  };
 
-                                        {/* Current Quantity */}
-                                        <td className="py-3 px-3 text-center">
-                                            <span className="inline-flex items-center justify-center min-w-12 px-2 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 font-medium">
-                                                {product.stock_qty || 0}
-                                            </span>
-                                        </td>
+  useEffect(() => {
+    if (flash?.success) toast.success(flash.success);
+    if (flash?.error) toast.error(flash.error);
+  }, [flash]);
 
-                                        {/* Category */}
-                                        <td className="py-3 px-3">
-                                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200">
-                                                {product.category?.name || '-'}
-                                            </span>
-                                        </td>
+  // Additional filters for products
+  const additionalFilters = [
+    {
+      name: 'status',
+      label: 'Status',
+      type: 'select' as const,
+      options: [
+        { value: 'active', label: 'Active' },
+        { value: 'inactive', label: 'Inactive' },
+      ],
+    },
+    {
+      name: 'featured',
+      label: 'Featured',
+      type: 'select' as const,
+      options: [
+        { value: 'yes', label: 'Yes' },
+        { value: 'no', label: 'No' },
+      ],
+    },
+  ];
 
-                                        {/* Sub Category */}
-                                        <td className="py-3 px-3">
-                                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-200">
-                                                {product.subCategory?.name || '-'}
-                                            </span>
-                                        </td>
+  return (
+    <AppLayout breadcrumbs={breadcrumbs}>
+      <Head title="Products" />
 
-                                        {/* Today's Deal - Toggle */}
-                                        <td className="py-3 px-3 text-center">
-                                            <button
-                                                onClick={() => {}}
-                                                className="inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition"
-                                                title="Today's Deal"
-                                            >
-                                                <div className="relative">
-                                                    <input 
-                                                        type="checkbox"
-                                                        defaultChecked={false}
-                                                        className="sr-only peer"
-                                                    />
-                                                    <div className="w-8 h-5 bg-red-400 peer-checked:bg-red-600 rounded-full transition-colors"></div>
-                                                    <div className="absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform peer-checked:translate-x-3"></div>
-                                                </div>
-                                            </button>
-                                        </td>
+      <div className="flex flex-col gap-8">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              Products
+            </h1>
+            <p className="mt-2 text-gray-600 dark:text-gray-400">
+              Manage your product inventory and pricing
+            </p>
+          </div>
 
-                                        {/* Publish - Toggle */}
-                                        <td className="py-3 px-3 text-center">
-                                            <button
-                                                onClick={() => togglePublish(product)}
-                                                disabled={!canEdit}
-                                                className={`inline-flex items-center justify-center w-8 h-8 rounded-md transition ${
-                                                    canEdit 
-                                                        ? 'hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer'
-                                                        : 'opacity-50 cursor-not-allowed'
-                                                }`}
-                                                title="Publish"
-                                            >
-                                                <div className="relative">
-                                                    <input 
-                                                        type="checkbox"
-                                                        checked={product.status}
-                                                        readOnly
-                                                        className="sr-only peer"
-                                                    />
-                                                    <div className={`w-8 h-5 rounded-full transition-colors ${
-                                                        product.status
-                                                            ? 'bg-green-500'
-                                                            : 'bg-gray-400'
-                                                    }`}></div>
-                                                    <div className={`absolute top-0.5 bg-white w-4 h-4 rounded-full transition-transform ${
-                                                        product.status
-                                                            ? 'left-3.5'
-                                                            : 'left-0.5'
-                                                    }`}></div>
-                                                </div>
-                                            </button>
-                                        </td>
+          {canCreate && (
+            <Link
+              href="/admin/products/create"
+              className="inline-flex items-center gap-3 px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 dark:from-blue-500 dark:to-indigo-500 dark:hover:from-blue-600 dark:hover:to-indigo-600 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <PlusCircle className="w-5 h-5" />
+              <span>Add New Product</span>
+            </Link>
+          )}
+        </div>
 
-                                        {/* Featured - Toggle */}
-                                        <td className="py-3 px-3 text-center">
-                                            <button
-                                                onClick={() => toggleFeatured(product)}
-                                                disabled={!canEdit}
-                                                className={`inline-flex items-center justify-center w-8 h-8 rounded-md transition ${
-                                                    canEdit 
-                                                        ? 'hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer'
-                                                        : 'opacity-50 cursor-not-allowed'
-                                                }`}
-                                                title="Featured"
-                                            >
-                                                <div className="relative">
-                                                    <input 
-                                                        type="checkbox"
-                                                        checked={product.featured}
-                                                        readOnly
-                                                        className="sr-only peer"
-                                                    />
-                                                    <div className={`w-8 h-5 rounded-full transition-colors ${
-                                                        product.featured
-                                                            ? 'bg-green-500'
-                                                            : 'bg-gray-400'
-                                                    }`}></div>
-                                                    <div className={`absolute top-0.5 bg-white w-4 h-4 rounded-full transition-transform ${
-                                                        product.featured
-                                                            ? 'left-3.5'
-                                                            : 'left-0.5'
-                                                    }`}></div>
-                                                </div>
-                                            </button>
-                                        </td>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard title="Total Products" value={stats.total} color="blue" icon={Package} />
+          <StatCard title="Active Products" value={stats.active} color="emerald" icon={Package} />
+          <StatCard title="Featured" value={stats.featured} color="amber" icon={Package} />
+          <StatCard title="On Sale" value={stats.onSale} color="purple" icon={Package} />
+        </div>
 
-                                        {/* Options - Action Buttons */}
-                                        <td className="py-3 px-3">
-                                            <div className="flex flex-wrap gap-1">
-                                                {/* View */}
-                                                <Link
-                                                    href={`/admin/products/${product.id}`}
-                                                    className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white transition"
-                                                    title="View"
-                                                >
-                                                    <Eye size={14} />
-                                                    <span className="hidden sm:inline">View</span>
-                                                </Link>
+        {/* Data Table */}
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
+          <DataTableWrapper
+            fetchUrl="/admin/products-data"
+            columns={columns}
+            csvHeaders={csvHeaders}
+            searchableKeys={['name', 'sku', 'category.name', 'vendor.shop_name']}
+            additionalFilters={additionalFilters}
+          />
+        </div>
+      </div>
+    </AppLayout>
+  );
+}
 
-                                                {/* Discount Button */}
-                                                <button
-                                                    className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-purple-600 hover:bg-purple-700 text-white transition"
-                                                    title="Discount"
-                                                    onClick={() => {}}
-                                                >
-                                                    <span>%</span>
-                                                    <span className="hidden sm:inline">Discount</span>
-                                                </button>
+// Reusable Stat Card Component
+function StatCard({ 
+  title, 
+  value, 
+  color,
+  icon: Icon 
+}: { 
+  title: string; 
+  value: number; 
+  color: 'blue' | 'emerald' | 'purple' | 'amber';
+  icon: any;
+}) {
+  const colorClasses = {
+    blue: {
+      bg: 'from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20',
+      border: 'border-blue-200 dark:border-blue-700',
+      text: 'text-blue-700 dark:text-blue-300',
+      value: 'text-blue-900 dark:text-blue-100',
+      icon: 'bg-blue-100 dark:bg-blue-800 text-blue-600 dark:text-blue-300',
+    },
+    emerald: {
+      bg: 'from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20',
+      border: 'border-emerald-200 dark:border-emerald-700',
+      text: 'text-emerald-700 dark:text-emerald-300',
+      value: 'text-emerald-900 dark:text-emerald-100',
+      icon: 'bg-emerald-100 dark:bg-emerald-800 text-emerald-600 dark:text-emerald-300',
+    },
+    purple: {
+      bg: 'from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20',
+      border: 'border-purple-200 dark:border-purple-700',
+      text: 'text-purple-700 dark:text-purple-300',
+      value: 'text-purple-900 dark:text-purple-100',
+      icon: 'bg-purple-100 dark:bg-purple-800 text-purple-600 dark:text-purple-300',
+    },
+    amber: {
+      bg: 'from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20',
+      border: 'border-amber-200 dark:border-amber-700',
+      text: 'text-amber-700 dark:text-amber-300',
+      value: 'text-amber-900 dark:text-amber-100',
+      icon: 'bg-amber-100 dark:bg-amber-800 text-amber-600 dark:text-amber-300',
+    },
+  };
 
-                                                {/* Stock Button */}
-                                                <button
-                                                    className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-green-600 hover:bg-green-700 text-white transition"
-                                                    title="Stock"
-                                                    onClick={() => {}}
-                                                >
-                                                    <span>📦</span>
-                                                    <span className="hidden sm:inline">Stock</span>
-                                                </button>
+  const classes = colorClasses[color];
 
-                                                {/* Destroy Button */}
-                                                <button
-                                                    className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-gray-700 hover:bg-gray-800 text-white transition"
-                                                    title="Destroy"
-                                                    onClick={() => {}}
-                                                >
-                                                    <span>🗑️</span>
-                                                    <span className="hidden sm:inline">Destroy</span>
-                                                </button>
-
-                                                {/* Edit */}
-                                                {canEdit ? (
-                                                    <Link
-                                                        href={`/admin/products/${product.id}/edit`}
-                                                        className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-green-600 hover:bg-green-700 text-white transition"
-                                                        title="Edit"
-                                                    >
-                                                        <Edit2 size={14} />
-                                                        <span className="hidden sm:inline">Edit</span>
-                                                    </Link>
-                                                ) : (
-                                                    <span
-                                                        aria-disabled
-                                                        className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-gray-600 text-gray-400 opacity-50 cursor-not-allowed"
-                                                        title="Edit (disabled)"
-                                                    >
-                                                        <Edit2 size={14} />
-                                                        <span className="hidden sm:inline">Edit</span>
-                                                    </span>
-                                                )}
-
-                                                {/* Delete */}
-                                                <button
-                                                    onClick={() => handleDelete(product.id)}
-                                                    disabled={!canDelete}
-                                                    className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition ${
-                                                        canDelete 
-                                                            ? 'bg-red-600 hover:bg-red-700 text-white'
-                                                            : 'bg-red-600/40 text-white/60 opacity-50 cursor-not-allowed'
-                                                    }`}
-                                                    title={canDelete ? 'Delete' : 'Delete (disabled)'}
-                                                >
-                                                    <Trash2 size={14} />
-                                                    <span className="hidden sm:inline">Delete</span>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </AppLayout>
-    );
+  return (
+    <div className={`bg-gradient-to-br ${classes.bg} border ${classes.border} rounded-2xl p-6`}>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className={`text-sm font-medium ${classes.text}`}>{title}</p>
+          <p className={`mt-2 text-3xl font-bold ${classes.value}`}>{value}</p>
+        </div>
+        <div className={`p-3 ${classes.icon} rounded-lg`}>
+          <Icon className="w-6 h-6" />
+        </div>
+      </div>
+    </div>
+  );
 }

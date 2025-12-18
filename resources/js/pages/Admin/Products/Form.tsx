@@ -128,14 +128,9 @@ export default function ProductForm({ product, categories, attributes = [], isEd
         });
 
         if (isEdit && product?.id) {
-            formData.append('_method', 'PUT');
-            router.post(`/admin/products/${product.id}`, formData, {
-                forceFormData: true,
-            });
+            put(`/admin/products/${product.id}`);
         } else {
-            router.post('/admin/products', formData, {
-                forceFormData: true,
-            });
+            post('/admin/products');
         }
     }
     return (
@@ -143,7 +138,8 @@ export default function ProductForm({ product, categories, attributes = [], isEd
             <div className="flex items-center gap-2 mb-4">
                 <Link
                     href="/admin/products"
-                    className="px-4 py-2 rounded-md bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-white transition-colors"
+                    className="inline-flex items-center justify-center rounded-md bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-white w-10 h-10"
+                    title="Back"
                 >
                     ← Back
                 </Link>
