@@ -15,7 +15,6 @@ class ProductAttributeController extends Controller
     public function __construct()
     {
         // Manual permission checks instead of authorizeResource
-        // یہ approach زیادہ control دیتا ہے
     }
 
     /**
@@ -27,6 +26,52 @@ class ProductAttributeController extends Controller
         
         return Inertia::render('Admin/Attributes/Index', [
             'attributes' => $attributes,
+        ]);
+        
+    }
+
+    
+    /**
+     * Get paginated data for DataTable (AJAX endpoint)
+     */
+    public function getData(Request $request)
+    {
+        $query = Attribute::with('values');
+        // Search
+        if ($request->has('search') && $request->search) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('slug', 'like', "%{$search}%")
+                  ->orWhereHas('values', function($q) use ($search) {
+                      $q->where('value', 'like', "%{$search}%");
+                  });
+            });
+        
+
+        }
+        
+        // Sorting
+        $sortBy = $request->get('sortBy', 'id');
+        $sortOrder = $request->get('sortOrder', 'desc');
+        
+        if ($sortBy === 'values_count') {
+            $query->withCount('values')
+                  ->orderBy('values_count', $sortOrder);
+        } else {
+            $query->orderBy($sortBy, $sortOrder);
+        }
+        
+        // Pagination
+        $perPage = $request->get('perPage', 10);
+        $attributes = $query->paginate($perPage);
+        
+        return response()->json([
+            'data' => $attributes->items(),
+            'total' => $attributes->total(),
+            'per_page' => $attributes->perPage(),
+            'current_page' => $attributes->currentPage(),
+            'last_page' => $attributes->lastPage(),
         ]);
     }
 

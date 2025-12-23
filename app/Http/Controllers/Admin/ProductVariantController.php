@@ -116,21 +116,66 @@ class ProductVariantController extends Controller
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'product_id' => 'required|exists:products,id',
-            'sku' => 'required|string|unique:product_variants,sku',
-            'price' => 'required|numeric|min:0',
-            'stock' => 'required|integer|min:0',
-            'is_default' => 'boolean',
-            'status' => 'boolean',
-            'attributes' => 'nullable|array',
-        ]);
+{
+    $validated = $request->validate([
+        'product_id' => 'required|exists:products,id',
+        'sku' => 'required|string|unique:product_variants,sku',
+        'price' => 'required|numeric|min:0',
+        'stock' => 'required|integer|min:0',
+        'is_default' => 'boolean',
+        'status' => 'boolean',
+        'attributes' => 'nullable|string', // Changed to string since we're sending JSON
+    ]);
 
-        ProductVariant::create($validated);
-
-        return to_route('product-variants.index')->with('success', 'Variant successfully created!');
+    // Ensure attributes is stored as JSON string
+    if (isset($validated['attributes']) && is_array($validated['attributes'])) {
+        $validated['attributes'] = json_encode($validated['attributes']);
     }
+
+    ProductVariant::create($validated);
+
+    return to_route('product-variants.index')->with('success', 'Variant successfully created!');
+}
+
+public function update(Request $request, string $id)
+{
+    $variant = ProductVariant::findOrFail($id);
+
+    $validated = $request->validate([
+        'product_id' => 'required|exists:products,id',
+        'sku' => 'required|string|unique:product_variants,sku,' . $id,
+        'price' => 'required|numeric|min:0',
+        'stock' => 'required|integer|min:0',
+        'is_default' => 'boolean',
+        'status' => 'boolean',
+        'attributes' => 'nullable|string', // Changed to string
+    ]);
+
+    // Ensure attributes is stored as JSON string
+    if (isset($validated['attributes']) && is_array($validated['attributes'])) {
+        $validated['attributes'] = json_encode($validated['attributes']);
+    }
+
+    $variant->update($validated);
+
+    return to_route('product-variants.index')->with('success', 'Variant successfully updated!');
+}
+
+public function edit(string $id)
+{
+    $variant = ProductVariant::findOrFail($id);
+    
+    // Parse attributes if they're stored as JSON string
+    if ($variant->attributes && is_string($variant->attributes)) {
+        $variant->attributes = json_decode($variant->attributes, true);
+    }
+
+    return Inertia::render('Admin/Variants/Edit', [
+        'variant' => $variant,
+        'products' => Product::all(['id', 'name', 'price']),
+        'attributes' => Attribute::with('values')->get(),
+    ]);
+}
 
     /**
      * Display the specified resource.
@@ -147,38 +192,7 @@ class ProductVariantController extends Controller
     /**
      * Show the form for editing the existing resource.
      */
-    public function edit(string $id)
-    {
-        $variant = ProductVariant::findOrFail($id);
-
-        return Inertia::render('Admin/Variants/Edit', [
-            'variant' => $variant,
-            'products' => Product::all(['id', 'name', 'price']),
-            'attributes' => Attribute::with('values')->get(),
-        ]);
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        $variant = ProductVariant::findOrFail($id);
-
-        $validated = $request->validate([
-            'product_id' => 'required|exists:products,id',
-            'sku' => 'required|string|unique:product_variants,sku,' . $id,
-            'price' => 'required|numeric|min:0',
-            'stock' => 'required|integer|min:0',
-            'is_default' => 'boolean',
-            'status' => 'boolean',
-            'attributes' => 'nullable|array',
-        ]);
-
-        $variant->update($validated);
-
-        return to_route('product-variants.index')->with('success', 'Variant successfully updated!');
-    }
+   
 
     /**
      * Remove the specified resource from storage.

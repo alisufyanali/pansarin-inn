@@ -23,10 +23,10 @@ return new class extends Migration
                 ->constrained('categories')
                 ->cascadeOnDelete();
 
-            $table->foreignId('sub_category_id')
-                ->nullable()
-                ->constrained('sub_categories')
-                ->nullOnDelete();
+            // $table->foreignId('sub_category_id')
+            //     ->nullable()
+            //     ->constrained('sub_categories')
+            //     ->nullOnDelete();
 
             $table->string('name');
             $table->string('urdu_name')->nullable();
@@ -68,7 +68,7 @@ return new class extends Migration
 
             $table->timestamps();
             $table->softDeletes();
-        });
+        });   
     }
 
     /**

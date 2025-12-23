@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Inertia\Inertia;
 use Spatie\Permission\Models\Role;
+use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
@@ -16,16 +17,75 @@ class UserController extends Controller
         $this->middleware('permission:edit.users')->only(['edit', 'update']);
         $this->middleware('permission:delete.users')->only(['destroy']);
     }
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        // eager-load roles so the frontend can display user roles
-        return Inertia::render('Users/Index',[
-            'users' => User::with('roles')->get(),
-        ]);
+        // Calculate stats from database
+        $totalUsers = User::count();
         
+        // Check if roles exist before counting
+        $admins = Role::where('name', 'admin')->exists() 
+            ? User::role('admin')->count() 
+            : 0;
+        
+        $vendors = Role::where('name', 'vendor')->exists() 
+            ? User::role('vendor')->count() 
+            : 0;
+        
+        $customers = Role::where('name', 'customer')->exists() 
+            ? User::role('customer')->count() 
+            : 0;
+        
+        return Inertia::render('Users/Index', [
+            'users' => User::with('roles')->get(),
+            'stats' => [
+                'total' => $totalUsers,
+                'admins' => $admins,
+                'vendors' => $vendors,
+                'customers' => $customers,
+            ],
+        ]);
+    }
+
+    /**
+     * Get paginated data for DataTable (AJAX endpoint)
+     */
+    public function getData(Request $request)
+    {
+        $query = User::with('roles')->latest();
+        
+        // Search
+        if ($request->has('search') && $request->search) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhereHas('roles', function($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+        
+        // Sorting
+        $sortBy = $request->get('sortBy', 'id');
+        $sortOrder = $request->get('sortOrder', 'desc');
+        
+        $query->orderBy($sortBy, $sortOrder);
+        
+        // Pagination
+        $perPage = $request->get('perPage', 10);
+        $users = $query->paginate($perPage);
+        
+        return response()->json([
+            'data' => $users->items(),
+            'total' => $users->total(),
+            'per_page' => $users->perPage(),
+            'current_page' => $users->currentPage(),
+            'last_page' => $users->lastPage(),
+        ]);
     }
 
     /**
@@ -47,7 +107,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
-            'role' => 'nullable|string',
+            'role' => 'nullable|string|exists:roles,name',
         ]);
 
         $user = User::create([
@@ -61,7 +121,7 @@ class UserController extends Controller
             $user->syncRoles([$request->role]);
         }
 
-        return to_route('users.index');
+        return to_route('users.index')->with('success', 'User successfully created!');
     }
 
     /**
@@ -69,12 +129,13 @@ class UserController extends Controller
      */
     public function show(string $id)
     {
-        $user = User::findOrFail($id);
+        $user = User::with('roles')->findOrFail($id);
 
         return Inertia::render('Users/Show', [
-        'user' => $user
-    ]);
+            'user' => $user
+        ]);
     }
+
     /**
      * Show the form for editing the specified resource.
      */
@@ -98,7 +159,7 @@ class UserController extends Controller
             'email' => 'required|string|email|max:255|unique:users,email,'.$id,
             'password' => 'nullable|string|min:8',
             'password_confirmation' => 'nullable|string|min:8',
-            'role' => 'nullable|string',
+            'role' => 'nullable|string|exists:roles,name',
         ]);
 
         $user = User::findOrFail($id);
@@ -117,7 +178,7 @@ class UserController extends Controller
             $user->syncRoles([]);
         }
 
-        return to_route('users.index');
+        return to_route('users.index')->with('success', 'User successfully updated!');
     }
 
     /**
@@ -126,6 +187,6 @@ class UserController extends Controller
     public function destroy(string $id)
     {
         User::destroy($id);
-        return to_route('users.index');
+        return to_route('users.index')->with('success', 'User successfully deleted!');
     }
 }

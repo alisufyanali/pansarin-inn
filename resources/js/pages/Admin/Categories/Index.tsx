@@ -27,6 +27,12 @@ interface Props {
     data: Category[];
     total: number;
   };
+  stats?: {
+    total: number;
+    active: number;
+    withParent: number;
+    topLevel: number;
+  };
   flash?: {
     success?: string;
     error?: string;
@@ -38,7 +44,7 @@ const DEFAULT_CATEGORIES = {
   total: 0,
 };
 
-export default function Index({ categories = DEFAULT_CATEGORIES, flash }: Props) {
+export default function Index({ categories = DEFAULT_CATEGORIES, stats: propsStats, flash }: Props) {
   const canCreate = true;
   const canEdit = true;
   const canDelete = true;
@@ -79,8 +85,8 @@ export default function Index({ categories = DEFAULT_CATEGORIES, flash }: Props)
     { label: 'Updated At', key: 'updated_at' },
   ];
 
-  // Calculate stats
-  const stats = {
+  // Use stats from props if available, otherwise calculate from data
+  const stats = propsStats || {
     total: safeCategories.total || 0,
     active: safeCategories.data?.filter(c => c?.status).length || 0,
     withParent: safeCategories.data?.filter(c => c?.parent).length || 0,

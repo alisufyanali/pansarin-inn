@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductVariantController;
+use App\Http\Controllers\Admin\ProductAttributeController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\CustomerController;
 
@@ -18,9 +19,11 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
 
     // User Management resources Controllers
     Route::resource('users', UserController::class);
+    Route::get('users-data', [UserController::class, 'getData'])->name('users.data');
 
     // Role Management resources Controllers
     Route::resource('roles', RoleController::class);
+    Route::get('roles-data', [RoleController::class, 'getData'])->name('roles.data');
 
     // Category Management resource Controllers
     Route::resource('categories', CategoryController::class);
@@ -34,7 +37,9 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
     Route::resource('product-variants', ProductVariantController::class);
     Route::get('product-variants-data', [ProductVariantController::class, 'getData'])->name('product-variants.data');
 
+    // Attributes Management resource Controllers
     Route::resource('attributes', ProductAttributeController::class);
+    Route::get('attributes-data', [ProductAttributeController::class, 'getData'])->name('attributes.data');
 
     Route::resource('orders', OrderController::class);
 

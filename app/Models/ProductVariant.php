@@ -19,11 +19,11 @@ class ProductVariant extends Model
         'status'
     ];
 
-    protected $casts = [
-        'attributes' => 'array',
-        'is_default' => 'boolean',
-        'status' => 'boolean'
-    ];
+   protected $casts = [
+    'attributes' => 'array', // This will automatically convert JSON to array
+    'is_default' => 'boolean',
+    'status' => 'boolean',
+];
 
     // Relationships
     public function product()

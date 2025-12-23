@@ -53,12 +53,70 @@ class RoleController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index() {
+    public function index()
+    {
+        // Calculate stats from database
+        $totalRoles = Role::count();
+        $withPermissions = Role::has('permissions')->count();
+        $totalPermissions = Permission::count();
+        
+        // Get roles with permission counts
+        $rolesWithCounts = Role::withCount('permissions')->get();
+        $avgPermissions = $totalRoles > 0 
+            ? round($rolesWithCounts->sum('permissions_count') / $totalRoles) 
+            : 0;
 
         return Inertia::render('Admin/Roles/Index', [
-            'roles' => Role::with('permissions')->get()
+            'roles' => Role::with('permissions')->get(),
+            'stats' => [
+                'total' => $totalRoles,
+                'withPermissions' => $withPermissions,
+                'totalPermissions' => $totalPermissions,
+                'avgPermissions' => $avgPermissions,
+            ],
         ]);
+    }
 
+    /**
+     * Get paginated data for DataTable (AJAX endpoint)
+     */
+    public function getData(Request $request)
+    {
+        $query = Role::with('permissions')->latest();
+        
+        // Search
+        if ($request->has('search') && $request->search) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhereHas('permissions', function($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+        
+        // Sorting
+        $sortBy = $request->get('sortBy', 'id');
+        $sortOrder = $request->get('sortOrder', 'desc');
+        
+        if ($sortBy === 'permissions_count') {
+            $query->withCount('permissions')
+                  ->orderBy('permissions_count', $sortOrder);
+        } else {
+            $query->orderBy($sortBy, $sortOrder);
+        }
+        
+        // Pagination
+        $perPage = $request->get('perPage', 10);
+        $roles = $query->paginate($perPage);
+        
+        return response()->json([
+            'data' => $roles->items(),
+            'total' => $roles->total(),
+            'per_page' => $roles->perPage(),
+            'current_page' => $roles->currentPage(),
+            'last_page' => $roles->lastPage(),
+        ]);
     }
 
     /**
@@ -76,18 +134,19 @@ class RoleController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request) {
+    public function store(Request $request)
+    {
         $request->validate([
             'name' => 'required|unique:roles,name',
             'permission' => 'required|array|min:1'
         ]);
+        
         $role = Role::create(['name' => $request->name]);
         $role->syncPermissions($request->permission);
-        return to_route('roles.index')->with([
-            'message' => 'Role created successfully.',
-            'alert-type' => 'success',
-        ]);
+        
+        return to_route('roles.index')->with('success', 'Role created successfully.');
     }
+
     /**
      * Display the specified resource.
      */
@@ -120,30 +179,27 @@ class RoleController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        // dd($request->all());
         $request->validate([
             'name' => 'required|unique:roles,name,'.$id,
             'permission' => 'required|array|min:1'
         ]);
+        
         $role = Role::findOrFail($id);
         $role->name = $request->name;
         $role->save();
         $role->syncPermissions($request->permission);
-        return to_route('roles.index')->with([
-            'message' => 'Role updated successfully.',
-            'alert-type' => 'success',
-        ]);
-    } 
+        
+        return to_route('roles.index')->with('success', 'Role updated successfully.');
+    }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy($id) {
+    public function destroy($id)
+    {
         $role = Role::findOrFail($id);
         $role->delete();
-        return to_route('roles.index')->with([
-            'message' => 'Role deleted successfully.',
-            'alert-type' => 'success',
-        ]);
+        
+        return to_route('roles.index')->with('success', 'Role deleted successfully.');
     }
 }

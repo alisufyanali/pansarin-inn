@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from '@inertiajs/react';
 import { ArrowLeft, Check } from 'lucide-react';
-import { Link, router } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 
 type Product = { id: number; name: string; price: number };
 type AttributeValue = { id: number; value: string; slug: string };
@@ -15,29 +15,50 @@ interface VariantFormProps {
 }
 
 export default function VariantForm({ variant, products, attributes = [], isEdit = false }: VariantFormProps) {
-    interface FormData {
-        product_id: string | number;
-        sku: string;
-        price: string | number;
-        stock: string | number;
-        is_default: boolean;
-        status: boolean;
-        size: string;
-        type: string;
-    }
+    // Parse attributes from variant if it exists
+    const parseVariantAttributes = () => {
+        if (!variant?.attributes) return {};
+        
+        if (typeof variant.attributes === 'string') {
+            try {
+                return JSON.parse(variant.attributes);
+            } catch (e) {
+                console.error('Failed to parse attributes:', e);
+                return {};
+            }
+        }
+        
+        if (typeof variant.attributes === 'object') {
+            return variant.attributes;
+        }
+        
+        return {};
+    };
 
-    const { data, setData, errors, post, put, processing } = useForm<FormData>({
-        product_id: variant?.product_id ?? '',
-        sku: variant?.sku ?? '',
-        price: variant?.price ?? '',
-        stock: variant?.stock ?? '',
-        is_default: variant?.is_default ?? false,
-        status: variant?.status ?? true,
-        size: variant?.attributes?.size ?? '',
-        type: variant?.attributes?.type ?? '',
-    });
+    const variantAttrs = parseVariantAttributes();
 
-    // SKU auto-generation: allow manual override
+    // Create dynamic form data based on available attributes
+    const createInitialFormData = () => {
+        const formData: any = {
+            product_id: variant?.product_id ?? '',
+            sku: variant?.sku ?? '',
+            price: variant?.price ?? '',
+            stock: variant?.stock ?? '',
+            is_default: variant?.is_default ?? false,
+            status: variant?.status ?? true,
+        };
+
+        // Add all attributes dynamically
+        attributes.forEach(attr => {
+            formData[attr.slug] = variantAttrs[attr.slug] || '';
+        });
+
+        return formData;
+    };
+
+    const { data, setData, errors, post, put, processing } = useForm(createInitialFormData());
+
+    // SKU auto-generation
     const [skuManual, setSkuManual] = useState(false);
 
     useEffect(() => {
@@ -45,52 +66,80 @@ export default function VariantForm({ variant, products, attributes = [], isEdit
     }, []);
 
     useEffect(() => {
-        if (skuManual) return;
+        if (skuManual || !data.product_id) return;
+        
         const prod = products.find(p => String(p.id) === String(data.product_id));
-        if (!prod || !data.size || !data.type) return;
+        if (!prod) return;
+
+        // Check if at least one attribute is selected
+        const hasSelectedAttribute = attributes.some(attr => data[attr.slug]);
+        if (!hasSelectedAttribute) return;
+
         const slugify = (s: any) => String(s || '')
             .replace(/\s+/g, '')
             .toUpperCase()
             .replace(/[^A-Z0-9]/g, '')
             .slice(0, 6);
-        const sku = `${prod.id}-${slugify(prod.name)}-${slugify(data.size)}-${slugify(data.type)}-${String(Date.now()).slice(-4)}`;
+
+        // Build SKU from selected attributes
+        const attrParts = attributes
+            .filter(attr => data[attr.slug])
+            .map(attr => slugify(data[attr.slug]))
+            .join('-');
+
+        const sku = `${prod.id}-${slugify(prod.name)}-${attrParts}-${String(Date.now()).slice(-4)}`;
+        
         if (!isEdit || !data.sku) {
             setData('sku', sku);
         }
-    }, [data.product_id, data.size, data.type, skuManual]);
+    }, [data.product_id, ...attributes.map(attr => data[attr.slug]), skuManual]);
 
-    // Auto-calculate price based on type (product price + 100 for Powder)
+    // Auto-calculate price based on type attribute (if exists)
     useEffect(() => {
+        const typeAttr = attributes.find(attr => attr.slug === 'type');
+        if (!typeAttr || !data.type) return;
+
         const prod = products.find(p => String(p.id) === String(data.product_id));
-        if (data.type === 'Powder' && prod) {
+        if (!prod) return;
+
+        if (data.type === 'Powder') {
             const calculatedPrice = Number(prod.price) + 100;
             setData('price', String(calculatedPrice));
-        } else if (data.type === 'Whole') {
-            setData('price', '');
+        } else if (data.type === 'Whole' && !isEdit) {
+            setData('price', String(prod.price));
         }
     }, [data.type, data.product_id, products]);
 
     function submit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+        e.preventDefault();
 
-    const submitData = {
-        product_id: data.product_id,
-        sku: data.sku,
-        price: data.price,
-        stock: data.stock,
-        is_default: data.is_default,
-        status: data.status,
-        attributes: {
-            size: data.size,
-            type: data.type,
+        // Build attributes object from all attribute fields
+        const attributesData: any = {};
+        attributes.forEach(attr => {
+            if (data[attr.slug]) {
+                attributesData[attr.slug] = data[attr.slug];
+            }
+        });
+
+        const submitData = {
+            product_id: data.product_id,
+            sku: data.sku,
+            price: data.price,
+            stock: data.stock,
+            is_default: data.is_default,
+            status: data.status,
+            attributes: JSON.stringify(attributesData)
+        };
+
+        if (isEdit && variant?.id) {
+            put(`/admin/product-variants/${variant.id}`, submitData);
+        } else {
+            post('/admin/product-variants', submitData);
         }
-    };
+    }
 
-
-}
-
-    const sizeAttribute = attributes.find(attr => attr.slug === 'size');
-    const typeAttribute = attributes.find(attr => attr.slug === 'type');
+    // Check if type attribute exists for price calculation badge
+    const hasTypeAttribute = attributes.some(attr => attr.slug === 'type');
 
     return (
         <div className="p-3">
@@ -128,70 +177,53 @@ export default function VariantForm({ variant, products, attributes = [], isEdit
                             {errors.product_id && <p className="text-red-500 text-xs mt-1">{errors.product_id}</p>}
                         </div>
 
-                        {/* 3 Column Section: Size | Type | Price */}
-                        <div className="grid grid-cols-3 gap-4">
-                            {/* Col 1: Size/Volume */}
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                    Size/Volume *
-                                </label>
-                                <select
-                                    value={data.size}
-                                    onChange={(e) => setData('size', e.target.value)}
-                                    className="w-full px-4 py-2 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
-                                >
-                                    <option value="">Select size</option>
-                                    {sizeAttribute?.values.map((val) => (
-                                        <option key={val.id} value={val.value}>
-                                            {val.value}
-                                        </option>
-                                    ))}
-                                </select>
-                                {errors.size && <p className="text-red-500 text-xs mt-1">{errors.size}</p>}
+                        {/* Dynamic Attributes Grid */}
+                        {attributes.length > 0 && (
+                            <div className={`grid gap-4 ${attributes.length === 1 ? 'grid-cols-1' : attributes.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                                {attributes.map((attr) => (
+                                    <div key={attr.id}>
+                                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 capitalize">
+                                            {attr.name} *
+                                        </label>
+                                        <select
+                                            value={data[attr.slug] || ''}
+                                            onChange={(e) => setData(attr.slug as any, e.target.value)}
+                                            className="w-full px-4 py-2 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
+                                        >
+                                            <option value="">Select {attr.name.toLowerCase()}</option>
+                                            {attr.values.map((val) => (
+                                                <option key={val.id} value={val.value}>
+                                                    {val.value}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {errors[attr.slug] && <p className="text-red-500 text-xs mt-1">{errors[attr.slug]}</p>}
+                                    </div>
+                                ))}
                             </div>
+                        )}
 
-                            {/* Col 2: Type (Powder/Whole) */}
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                    Type *
-                                </label>
-                                <select
-                                    value={data.type}
-                                    onChange={(e) => setData('type', e.target.value)}
-                                    className="w-full px-4 py-2 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
-                                >
-                                    <option value="">Select type</option>
-                                    {typeAttribute?.values.map((val) => (
-                                        <option key={val.id} value={val.value}>
-                                            {val.value}
-                                        </option>
-                                    ))}
-                                </select>
-                                {errors.type && <p className="text-red-500 text-xs mt-1">{errors.type}</p>}
+                        {/* Price */}
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                Price (Rs) *
+                            </label>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    placeholder="0"
+                                    value={data.price}
+                                    onChange={(e) => setData('price', e.target.value)}
+                                    className="flex-1 px-4 py-2 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
+                                />
+                                {hasTypeAttribute && data.type === 'Powder' && (
+                                    <span className="text-xs font-semibold text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded whitespace-nowrap">
+                                        +100
+                                    </span>
+                                )}
                             </div>
-
-                            {/* Col 3: Total Price */}
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                    Price (Rs) *
-                                </label>
-                                <div className="flex items-center gap-2">
-                                    <input
-                                        type="number"
-                                        step="0.01"
-                                        placeholder="0"
-                                        value={data.price}
-                                        onChange={(e) => setData('price', e.target.value)}
-                                        className="flex-1 px-4 py-2 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
-                                    />
-                                    {data.type === 'Powder' && (
-                                        <span className="text-xs font-semibold text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded">
-                                            Auto: {data.price}
-                                        </span>
-                                    )}
-                                </div>
-                                {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price}</p>}
-                            </div>
+                            {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price}</p>}
                         </div>
 
                         {/* SKU & Stock */}

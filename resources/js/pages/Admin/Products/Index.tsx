@@ -25,9 +25,11 @@ interface Product {
 }
 
 interface Props {
-  products?: {
-    data: Product[];
+  stats?: {
     total: number;
+    active: number;
+    featured: number;
+    onSale: number;
   };
   flash?: {
     success?: string;
@@ -35,17 +37,18 @@ interface Props {
   };
 }
 
-const DEFAULT_PRODUCTS = {
-  data: [],
-  total: 0,
-};
-
-export default function Index({ products = DEFAULT_PRODUCTS, flash }: Props) {
+export default function Index({ stats, flash }: Props) {
   const canCreate = true; // can('create.products');
   const canEdit = true; // can('edit.products');
   const canDelete = true; // can('delete.products');
 
-  const safeProducts = products || DEFAULT_PRODUCTS;
+  // Use stats from props with defaults
+  const productStats = stats || {
+    total: 0,
+    active: 0,
+    featured: 0,
+    onSale: 0,
+  };
 
   // Define columns
   const columns = [
@@ -124,14 +127,6 @@ export default function Index({ products = DEFAULT_PRODUCTS, flash }: Props) {
     { label: 'Created At', key: 'created_at' },
   ];
 
-  // Calculate stats
-  const stats = {
-    total: safeProducts.total || 0,
-    active: safeProducts.data?.filter(p => p?.status).length || 0,
-    featured: safeProducts.data?.filter(p => p?.featured).length || 0,
-    onSale: safeProducts.data?.filter(p => p?.sale_price).length || 0,
-  };
-
   useEffect(() => {
     if (flash?.success) toast.success(flash.success);
     if (flash?.error) toast.error(flash.error);
@@ -188,10 +183,10 @@ export default function Index({ products = DEFAULT_PRODUCTS, flash }: Props) {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard title="Total Products" value={stats.total} color="blue" icon={Package} />
-          <StatCard title="Active Products" value={stats.active} color="emerald" icon={Package} />
-          <StatCard title="Featured" value={stats.featured} color="amber" icon={Package} />
-          <StatCard title="On Sale" value={stats.onSale} color="purple" icon={Package} />
+          <StatCard title="Total Products" value={productStats.total} color="blue" icon={Package} />
+          <StatCard title="Active Products" value={productStats.active} color="emerald" icon={Package} />
+          <StatCard title="Featured" value={productStats.featured} color="amber" icon={Package} />
+          <StatCard title="On Sale" value={productStats.onSale} color="purple" icon={Package} />
         </div>
 
         {/* Data Table */}

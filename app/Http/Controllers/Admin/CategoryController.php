@@ -22,15 +22,26 @@ class CategoryController extends Controller
      */
     public function index(Request $request)
     {
+        // Calculate stats from database
+        $totalCategories = Category::count();
+        $activeCategories = Category::where('status', true)->count();
+        $withParent = Category::whereNotNull('parent_id')->count();
+        $topLevel = Category::whereNull('parent_id')->count();
+        
         return Inertia::render('Admin/Categories/Index', [
             'userRole' => $request->user()->role ?? 'admin',
+            'stats' => [
+                'total' => $totalCategories,
+                'active' => $activeCategories,
+                'withParent' => $withParent,
+                'topLevel' => $topLevel,
+            ],
         ]);
     }
 
     /**
      * Get DataTable data - API endpoint for DataTableWrapper
      */
-  
     public function getData(Request $request)
     {
         $query = Category::with('parent')->latest();
@@ -162,24 +173,24 @@ class CategoryController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-   public function destroy(string $id)
-{
-    try {
-        $category = Category::findOrFail($id);
-        
-        // Option 1: Delete with children
-        $category->delete(); // This should cascade if foreign key is set
-        
-        // Option 2: Or manually delete children first
-        // $category->children()->delete();
-        // $category->delete();
-
-        return redirect()->route('categories.index')
-            ->with('success', 'Category successfully deleted!');
+    public function destroy(string $id)
+    {
+        try {
+            $category = Category::findOrFail($id);
             
-    } catch (\Exception $e) {
-        return redirect()->route('categories.index')
-            ->with('error', 'Failed to delete category: ' . $e->getMessage());
+            // Option 1: Delete with children
+            $category->delete(); // This should cascade if foreign key is set
+            
+            // Option 2: Or manually delete children first
+            // $category->children()->delete();
+            // $category->delete();
+
+            return redirect()->route('categories.index')
+                ->with('success', 'Category successfully deleted!');
+                
+        } catch (\Exception $e) {
+            return redirect()->route('categories.index')
+                ->with('error', 'Failed to delete category: ' . $e->getMessage());
+        }
     }
-}
 }
