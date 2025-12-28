@@ -8,10 +8,17 @@ type Category = { id: number; name: string };
 type Vendor = { id: number; shop_name: string };
 
 interface Product {
+    thumbnailUrl: string | null;
     id: number;
     name: string;
+    urdu_name?: string;
+    scientific_name?: string;
+    alternative_name?: string;
+    other_name?: string;
     sku: string;
-    description: string;
+    description?: string;
+    short_description?: string;
+    long_description?: string;
     price: number;
     sale_price: number | null;
     thumbnail: string | null;
@@ -60,6 +67,29 @@ export default function Show({ product }: { product: Product }) {
                             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{product.name}</h1>
                             
                             <div className="space-y-4 mt-4">
+                                {/* Urdu Name */}
+                                <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-800">
+                                    <span className="text-gray-600 dark:text-gray-400">Urdu Name:</span>
+                                    <span className="font-medium text-gray-900 dark:text-white">{product.urdu_name || '-'}</span>
+                                </div>
+
+                                {/* Scientific Name */}
+                                <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-800">
+                                    <span className="text-gray-600 dark:text-gray-400">Scientific Name:</span>
+                                    <span className="font-medium text-gray-900 dark:text-white">{product.scientific_name || '-'}</span>
+                                </div>
+
+                                {/* Alternative Name */}
+                                <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-800">
+                                    <span className="text-gray-600 dark:text-gray-400">Alternative Name:</span>
+                                    <span className="font-medium text-gray-900 dark:text-white">{product.alternative_name || '-'}</span>
+                                </div>
+
+                                {/* Other Name */}
+                                <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-800">
+                                    <span className="text-gray-600 dark:text-gray-400">Other Name:</span>
+                                    <span className="font-medium text-gray-900 dark:text-white">{product.other_name || '-'}</span>
+                                </div>
                                 {/* SKU */}
                                 <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-800">
                                     <span className="text-gray-600 dark:text-gray-400">SKU:</span>
@@ -116,7 +146,23 @@ export default function Show({ product }: { product: Product }) {
                                     )}
                                 </div>
 
-                                {/* Description */}
+                                {/* Short Description */}
+                                {product.short_description && (
+                                    <div className="mt-6">
+                                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Short Description</h3>
+                                        <p className="text-gray-600 dark:text-gray-400 whitespace-pre-wrap">{product.short_description}</p>
+                                    </div>
+                                )}
+
+                                {/* Long Description */}
+                                {product.long_description && (
+                                    <div className="mt-6">
+                                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Long Description</h3>
+                                        <p className="text-gray-600 dark:text-gray-400 whitespace-pre-wrap">{product.long_description}</p>
+                                    </div>
+                                )}
+
+                                {/* Description (legacy) */}
                                 {product.description && (
                                     <div className="mt-6">
                                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Description</h3>
@@ -128,19 +174,17 @@ export default function Show({ product }: { product: Product }) {
                     </div>
 
                     {/* Thumbnail */}
-                    {product.thumbnail && (
-                        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 shadow-lg">
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Product Image</h3>
-                            <img 
-                                src={product.thumbnail} 
-                                alt={product.name}
-                                className="w-full h-auto rounded-lg object-cover"
-                                onError={(e) => {
-                                    (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300?text=No+Image';
-                                }}
-                            />
-                        </div>
-                    )}
+                    <div className="bg-white dark:bg-gray-900 rounded-xl p-6 shadow-lg">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Product Image</h3>
+                        <img
+                            src={product.thumbnailUrl || product.thumbnail || 'https://via.placeholder.com/300?text=No+Image'}
+                            alt={product.name}
+                            className="w-full h-auto rounded-lg object-cover"
+                            onError={(e) => {
+                                (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300?text=No+Image';
+                            }}
+                        />
+                    </div>
                 </div>
             </div>
         </AppLayout>

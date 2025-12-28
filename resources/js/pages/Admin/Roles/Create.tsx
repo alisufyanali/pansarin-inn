@@ -44,7 +44,7 @@ export default function RoleCreate({ permissions }: Props) {
 
     function submit(e: React.FormEvent) {
         e.preventDefault();
-        post('/roles');
+        post('/admin/roles');
     }
 
     function handleCheckboxChange(permission: Permission, checked: boolean) {

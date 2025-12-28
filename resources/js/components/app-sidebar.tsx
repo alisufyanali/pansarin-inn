@@ -100,6 +100,25 @@ export function AppSidebar() {
       },
     ];
 
+    // Blog section
+    mainNavItems.push({
+      title: 'Blog',
+      href: '#',
+      icon: BookOpen,
+      children: [
+        {
+          title: 'Blog List',
+          href: '/admin/blogs',
+          icon: BookOpen,
+        },
+        {
+          title: 'Blog Categories',
+          href: '/admin/blogcategories',
+          icon: Folder,
+        },
+      ],
+    });
+
     // Products اور اس کے submenu
     if (hasAnyProductPerm || hasAnyCategoryPerm || hasAnyVariantPerm || hasAnyAttributePerm) {
       const productSubmenu: NavItem[] = [];

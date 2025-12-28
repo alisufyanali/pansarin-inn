@@ -213,9 +213,12 @@ class ProductController extends Controller
     public function show(string $id)
     {
         $product = Product::with(['category', 'vendor', 'variants'])->findOrFail($id);
+        $productArr = $product->toArray();
+        $productArr['thumbnailUrl'] = $product->thumbnail_url;
+        $productArr['galleryUrls'] = $product->gallery_urls;
 
         return Inertia::render('Admin/Products/Show', [
-            'product' => $product
+            'product' => $productArr
         ]);
     }
 
