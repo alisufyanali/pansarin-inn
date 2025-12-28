@@ -9,6 +9,9 @@ use App\Http\Controllers\Admin\ProductVariantController;
 use App\Http\Controllers\Admin\ProductAttributeController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\CustomerController;
+use App\Http\Controllers\Admin\BlogController;
+use App\Http\Controllers\Admin\BlogCategoryController;
+use Illuminate\Support\Facades\Route;
 
 use Inertia\Inertia; 
 
@@ -47,10 +50,14 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
     Route::resource('customers', CustomerController::class);
     Route::get('customers-data', [CustomerController::class, 'getData'])->name('customers.data');
     
+    // Blog Categories Routes
+    Route::get('blogcategories-data', [BlogCategoryController::class, 'getData'])->name('blogcategories.data');
+    Route::resource('blogcategories', BlogCategoryController::class);
     
-});
-
-Route::middleware('auth')->prefix('admin')->group(function () {
+    // Blog Routes
+    Route::get('blogs-data', [BlogController::class, 'getData'])->name('blogs.data');
+    Route::resource('blogs', BlogController::class);
+    
     // Notification routes
     Route::get('/notifications', [NotificationController::class, 'index'])
         ->name('notifications.index');

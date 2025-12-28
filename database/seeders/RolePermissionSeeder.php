@@ -41,6 +41,16 @@ class RolePermissionSeeder extends Seeder
             "create.attributes",
             "edit.attributes",
             "delete.attributes",
+            // BlogCategory permissions - CHANGED TO MATCH CONTROLLER
+            "view.blog-categories",
+            "create.blog-categories",
+            "edit.blog-categories",
+            "delete.blog-categories",
+            // Blog permissions
+            "view.blogs",
+            "create.blogs",
+            "edit.blogs",
+            "delete.blogs",
         ];
 
         foreach ($permissions as $permission) {

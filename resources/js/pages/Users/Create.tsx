@@ -28,7 +28,7 @@ export default function UserCreate({ roles }: { roles: Role[] }) {
 
     function submit(e: { preventDefault: () => void; }){
         e.preventDefault();
-        post('/users');
+        post('/admin/users');
     }
 
     // single role dropdown; no checkbox handler needed
