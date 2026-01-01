@@ -1,5 +1,16 @@
 // components/sidebar-sections/products-section.tsx
-import { Package, Tag, Layers, Palette, Percent, Star, BadgePercent } from 'lucide-react';
+import { 
+  Package, 
+  Tag, 
+  Layers, 
+  Palette, 
+  Percent, 
+  Star, 
+  Warehouse,
+  Heart,
+  Box,
+  BarChart
+} from 'lucide-react';
 import { type NavItem } from '@/types';
 
 interface ProductsSectionProps {
@@ -57,7 +68,7 @@ export function ProductsSection({
         productSubmenu.push({
             title: 'Products Deals',
             href: '/admin/productsDeals',
-            icon: Percent,  // یا BadgePercent
+            icon: Percent,
         });
     }
 
@@ -69,8 +80,24 @@ export function ProductsSection({
         });
     }
 
+    if (hasAnyProductPerm) {
+        productSubmenu.push({
+            title: 'Inventory',
+            href: '/admin/inventory',
+            icon: Warehouse, // یا Box
+        });
+    }
+
+    if (hasAnyProductPerm) {
+        productSubmenu.push({
+            title: 'Wishlist',
+            href: '/admin/wishlist',
+            icon: Heart,
+        });
+    }
+
     return {
-        title: 'Products Manage',
+        title: 'Products Management',
         href: '#',
         icon: Package,
         children: productSubmenu,

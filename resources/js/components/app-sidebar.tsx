@@ -77,8 +77,8 @@ export function AppSidebar() {
   const userManagementSection = UserManagementSection({
     hasAnyUserPerm: permissions.hasAnyUserPerm,
     hasAnyRolePerm: permissions.hasAnyRolePerm,
-    hasAnyPermissionPerm: permissions.hasAnyPermissionPerm,
-    hasAnyVendorPerm: permissions.hasAnyVendorPerm,
+    hasAnyPermissionPerm: permissions.hasAnyPermissionPerm|| true,
+    hasAnyVendorPerm: permissions.hasAnyVendorPerm|| true,
   });
   if (userManagementSection) {
     mainNavItems.push(userManagementSection);
