@@ -26,11 +26,7 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
     const toggleExpanded = (title: string) => {
         setExpandedItems(prev => {
             const newSet = new Set(prev);
-            if (newSet.has(title)) {
-                newSet.delete(title);
-            } else {
-                newSet.add(title);
-            }
+            newSet.has(title) ? newSet.delete(title) : newSet.add(title);
             return newSet;
         });
     };
@@ -38,10 +34,12 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
     return (
         <SidebarGroup className="px-2 py-0">
             <SidebarGroupLabel>Platform</SidebarGroupLabel>
+
             <SidebarMenu>
                 {items.map((item) => {
+                    const children = item.children ?? [];
+                    const hasChildren = children.length > 0;
                     const isExpanded = expandedItems.has(item.title);
-                    const hasChildren = item.children && item.children.length > 0;
 
                     return (
                         <SidebarMenuItem key={item.title}>
@@ -53,23 +51,28 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
                                     >
                                         {item.icon && <item.icon />}
                                         <span>{item.title}</span>
-                                        <SidebarMenuAction 
+
+                                        <SidebarMenuAction
                                             onClick={() => toggleExpanded(item.title)}
                                             className="ml-auto"
                                         >
-                                            <ChevronRight className={`transform transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                                            <ChevronRight
+                                                className={`transition-transform ${
+                                                    isExpanded ? 'rotate-90' : ''
+                                                }`}
+                                            />
                                         </SidebarMenuAction>
                                     </SidebarMenuButton>
+
                                     {isExpanded && (
                                         <SidebarMenuSub>
-                                            {item.children.map(child => (
+                                            {children.map((child) => (
                                                 <SidebarMenuSubItem key={child.title}>
                                                     <SidebarMenuSubButton
                                                         asChild
                                                         isActive={
-                                                            child.href
-                                                                ? page.url.startsWith(resolveUrl(child.href))
-                                                                : false
+                                                            !!child.href &&
+                                                            page.url.startsWith(resolveUrl(child.href))
                                                         }
                                                     >
                                                         <Link href={child.href} prefetch>
@@ -86,9 +89,8 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
                                 <SidebarMenuButton
                                     asChild
                                     isActive={
-                                        item.href
-                                            ? page.url.startsWith(resolveUrl(item.href))
-                                            : false
+                                        !!item.href &&
+                                        page.url.startsWith(resolveUrl(item.href))
                                     }
                                     tooltip={{ children: item.title }}
                                 >
