@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\ProductVariantController;
 use App\Http\Controllers\Admin\ProductAttributeController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\CustomerController;
+use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\BlogController;
 use App\Http\Controllers\Admin\BlogCategoryController;
 use Illuminate\Support\Facades\Route;
@@ -45,10 +46,19 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
     Route::get('attributes-data', [ProductAttributeController::class, 'getData'])->name('attributes.data');
 
     Route::resource('orders', OrderController::class);
+    Route::get('orders-data', [OrderController::class, 'getData'])->name('orders.data');
+    Route::post('orders/{id}/update-status', [OrderController::class, 'updateStatus'])->name('orders.update-status');
+    Route::post('orders/{id}/update-payment', [OrderController::class, 'updatePaymentStatus'])->name('orders.update-payment');
 
     // Customers Routes
     Route::resource('customers', CustomerController::class);
     Route::get('customers-data', [CustomerController::class, 'getData'])->name('customers.data');
+    
+     // Coupons
+    Route::resource('coupons', CouponController::class);
+    Route::get('coupons-data', [CouponController::class, 'getData'])->name('coupons.data');
+    Route::post('coupons/{id}/toggle-status', [CouponController::class, 'toggleStatus'])->name('coupons.toggle-status');
+
     
     // Blog Categories Routes
     Route::get('blogcategories-data', [BlogCategoryController::class, 'getData'])->name('blogcategories.data');

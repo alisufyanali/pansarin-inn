@@ -1,26 +1,103 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Order extends Model
 {
-    use HasFactory, SoftDeletes;
+    use SoftDeletes;
 
     protected $fillable = [
-        'user_id','order_number','subtotal','shipping','tax','total',
-        'status','shipping_address','billing_address','payment_method','payment_status'
+        'customer_id',
+        'order_number',
+        'subtotal',
+        'product_discount',
+        'invoice_discount',
+        'shipping_charges',
+        'tax',
+        'grand_total',
+        'status',
+        'order_note',
+        'shipping_address',
+        'billing_address',
+        'shipping_method',
+        'payment_method',
+        'payment_status',
+        'payment_date'
     ];
 
-    public function user()
+    protected $casts = [
+        'subtotal' => 'decimal:2',
+        'product_discount' => 'decimal:2',
+        'invoice_discount' => 'decimal:2',
+        'shipping_charges' => 'decimal:2',
+        'tax' => 'decimal:2',
+        'grand_total' => 'decimal:2',
+        'payment_date' => 'date',
+    ];
+
+    // Relationships
+    public function customer()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Customer::class);
     }
 
     public function items()
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    // Generate unique order number
+    public static function generateOrderNumber()
+    {
+        $prefix = 'ORD-';
+        $date = date('Ymd');
+        $random = strtoupper(substr(uniqid(), -4));
+        
+        return $prefix . $date . '-' . $random;
+    }
+
+    // Calculate totals
+    public function calculateTotals()
+    {
+        $this->subtotal = $this->items->sum('subtotal');
+        $this->product_discount = $this->items->sum('discount');
+        
+        // Grand Total = Subtotal - Product Discount - Invoice Discount + Shipping + Tax
+        $this->grand_total = $this->subtotal 
+                           - $this->product_discount 
+                           - $this->invoice_discount 
+                           + $this->shipping_charges 
+                           + $this->tax;
+        
+        $this->save();
+    }
+
+    // Status badge color
+    public function getStatusColorAttribute()
+    {
+        return match($this->status) {
+            'pending' => 'yellow',
+            'processing' => 'blue',
+            'shipped' => 'purple',
+            'delivered' => 'green',
+            'cancelled' => 'red',
+            'refunded' => 'gray',
+            default => 'gray'
+        };
+    }
+
+    // Payment status badge color
+    public function getPaymentStatusColorAttribute()
+    {
+        return match($this->payment_status) {
+            'paid' => 'green',
+            'unpaid' => 'red',
+            'partially_paid' => 'yellow',
+            'refunded' => 'gray',
+            default => 'gray'
+        };
     }
 }

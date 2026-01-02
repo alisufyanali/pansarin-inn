@@ -8,6 +8,7 @@ use Illuminate\Routing\Router;
 // Spatie middlewares (alias registration)
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
+use Inertia\Inertia;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -28,5 +29,12 @@ class AppServiceProvider extends ServiceProvider
         $router = $this->app->make(Router::class);
         $router->aliasMiddleware('permission', PermissionMiddleware::class);
         $router->aliasMiddleware('role', RoleMiddleware::class);
+        Inertia::share([
+        'flash' => fn () => [
+            'success' => session('success'),
+            'error'   => session('error'),
+        ],
+    ]);
+
     }
 }
