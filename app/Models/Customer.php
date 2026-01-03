@@ -7,11 +7,24 @@ use Illuminate\Database\Eloquent\Model;
 class Customer extends Model
 {
     protected $fillable = [
-        'user_id','address','city','country'
+        'first_name',
+        'last_name',
+        'phone',
+        'email',
+        'address',
+        'city_id',
+        'country'
     ];
 
-    public function user()
+    protected $appends = ['full_name'];
+
+    public function city()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(City::class);
+    }
+
+    public function getFullNameAttribute()
+    {
+        return trim($this->first_name . ' ' . $this->last_name);
     }
 }

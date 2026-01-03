@@ -13,13 +13,17 @@ return new class extends Migration
     {
         Schema::create('customers', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('user_id');
+            $table->string('first_name');
+            $table->string('last_name')->nullable();
+            $table->string('phone')->unique();
+            $table->string('email')->unique()->nullable();
             $table->string('address')->nullable();
-            $table->string('city')->nullable();
+            $table->unsignedBigInteger('city_id')->nullable();
             $table->string('country')->nullable();
             $table->timestamps();
+            $table->softDeletes(); // Adds the deleted_at column
 
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('city_id')->references('id')->on('cities')->onDelete('set null');
         });
     }
 

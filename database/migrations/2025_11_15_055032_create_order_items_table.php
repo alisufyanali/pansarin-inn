@@ -10,19 +10,28 @@ return new class extends Migration
      * Run the migrations.
      */
     public function up()
-{
-    Schema::create('order_items', function (Blueprint $table) {
-        $table->id();
-        $table->foreignId('order_id')->constrained('orders')->onDelete('cascade');
-        $table->foreignId('product_variant_id')->constrained('product_variants')->onDelete('cascade');
-        $table->unsignedInteger('quantity')->default(1);
-        $table->decimal('price', 12, 2)->default(0);
-        $table->decimal('subtotal', 12, 2)->default(0);
-        $table->json('meta')->nullable(); // store option labels, snapshot of product name/sku etc.
-        $table->timestamps();
-        $table->index(['order_id','product_variant_id']);
-    });
-}
+    {
+        Schema::create('order_items', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('order_id')->constrained('orders')->onDelete('cascade');
+            $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
+            $table->foreignId('product_variant_id')->nullable()->constrained('product_variants')->onDelete('cascade');
+            
+            $table->unsignedInteger('quantity')->default(1);
+            $table->decimal('price', 12, 2)->default(0); // Unit price
+            $table->decimal('discount', 12, 2)->default(0); // Discount on this item
+            $table->decimal('subtotal', 12, 2)->default(0); // (price * quantity) - discount
+            
+            // Store product snapshot at time of order
+            $table->json('meta')->nullable(); // {product_name, sku, variant_name, options, etc}
+            
+            $table->timestamps();
+            $table->softDeletes();
+            
+            // Indexes
+            $table->index(['order_id', 'product_id']);
+        });
+    }
 
     /**
      * Reverse the migrations.

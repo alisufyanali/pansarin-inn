@@ -1,7 +1,7 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { PlusCircle, Users, MapPin } from 'lucide-react';
+import { PlusCircle, Users, MapPin, Phone, Mail } from 'lucide-react';
 import { useEffect } from 'react';
 import DataTableWrapper from '@/components/DataTableWrapper';
 import { CommonColumns } from '@/components/TableColumns';
@@ -14,59 +14,78 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 interface Customer {
   id: number;
-  user_id: number;
+  first_name: string;
+  last_name: string | null;
+  phone: string;
+  email: string | null;
   address: string | null;
-  city: string | null;
+  city_id: number | null;
   country: string | null;
-  user?: {
+  city?: {
     id: number;
     name: string;
-    email: string;
   };
   created_at: string;
 }
 
+interface Stats {
+  total: number;
+  withEmail: number;
+  cities: number;
+  countries: number;
+}
+
 interface Props {
-  customers?: {
-    data: Customer[];
-    total: number;
-  };
+  stats: Stats;
   flash?: {
     success?: string;
     error?: string;
   };
 }
 
-const DEFAULT_CUSTOMERS = {
-  data: [],
-  total: 0,
-};
-
-export default function Index({ customers = DEFAULT_CUSTOMERS, flash }: Props) {
+export default function Index({ stats, flash }: Props) {
   const canCreate = true;
   const canEdit = true;
   const canDelete = true;
-
-  const safeCustomers = customers || DEFAULT_CUSTOMERS;
 
   // Define columns
   const columns = [
     CommonColumns.id(),
     {
       name: 'Customer Name',
-      selector: (row: Customer) => row.user?.name || '-',
+      selector: (row: Customer) => `${row.first_name} ${row.last_name || ''}`.trim(),
       sortable: true,
       cell: (row: Customer) => (
         <div className="flex flex-col">
           <span className="font-semibold text-gray-900 dark:text-gray-100">
-            {row.user?.name || '-'}
+            {`${row.first_name} ${row.last_name || ''}`.trim()}
           </span>
-          <span className="text-xs text-gray-500 dark:text-gray-400">
-            {row.user?.email || '-'}
-          </span>
+          <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+            <Phone className="w-3 h-3" />
+            <span>{row.phone}</span>
+          </div>
         </div>
       ),
       grow: 2,
+    },
+    {
+      name: 'Email',
+      selector: (row: Customer) => row.email || '-',
+      sortable: true,
+      cell: (row: Customer) => (
+        <div className="flex items-center gap-1">
+          {row.email ? (
+            <>
+              <Mail className="w-3 h-3 text-gray-400" />
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                {row.email}
+              </span>
+            </>
+          ) : (
+            <span className="text-sm text-gray-400">-</span>
+          )}
+        </div>
+      ),
     },
     {
       name: 'Address',
@@ -80,13 +99,13 @@ export default function Index({ customers = DEFAULT_CUSTOMERS, flash }: Props) {
     },
     {
       name: 'City',
-      selector: (row: Customer) => row.city || '-',
+      selector: (row: Customer) => row.city?.name || '-',
       sortable: true,
       cell: (row: Customer) => (
         <div className="flex items-center gap-1">
           <MapPin className="w-3 h-3 text-gray-400" />
           <span className="text-sm text-gray-600 dark:text-gray-400">
-            {row.city || '-'}
+            {row.city?.name || '-'}
           </span>
         </div>
       ),
@@ -111,21 +130,15 @@ export default function Index({ customers = DEFAULT_CUSTOMERS, flash }: Props) {
 
   const csvHeaders = [
     { label: 'ID', key: 'id' },
-    { label: 'Customer Name', key: 'user.name' },
-    { label: 'Email', key: 'user.email' },
+    { label: 'First Name', key: 'first_name' },
+    { label: 'Last Name', key: 'last_name' },
+    { label: 'Phone', key: 'phone' },
+    { label: 'Email', key: 'email' },
     { label: 'Address', key: 'address' },
-    { label: 'City', key: 'city' },
+    { label: 'City', key: 'city.name' },
     { label: 'Country', key: 'country' },
     { label: 'Created At', key: 'created_at' },
   ];
-
-  // Calculate stats
-  const stats = {
-    total: safeCustomers.total || 0,
-    withAddress: safeCustomers.data?.filter(c => c?.address).length || 0,
-    cities: new Set(safeCustomers.data?.map(c => c?.city).filter(Boolean)).size,
-    countries: new Set(safeCustomers.data?.map(c => c?.country).filter(Boolean)).size,
-  };
 
   useEffect(() => {
     if (flash?.success) toast.success(flash.success);
@@ -162,7 +175,7 @@ export default function Index({ customers = DEFAULT_CUSTOMERS, flash }: Props) {
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard title="Total Customers" value={stats.total} color="blue" icon={Users} />
-          <StatCard title="With Address" value={stats.withAddress} color="emerald" icon={MapPin} />
+          <StatCard title="With Email" value={stats.withEmail} color="emerald" icon={Mail} />
           <StatCard title="Cities" value={stats.cities} color="purple" icon={MapPin} />
           <StatCard title="Countries" value={stats.countries} color="amber" icon={MapPin} />
         </div>
@@ -173,7 +186,7 @@ export default function Index({ customers = DEFAULT_CUSTOMERS, flash }: Props) {
             fetchUrl="/admin/customers-data"
             columns={columns}
             csvHeaders={csvHeaders}
-            searchableKeys={['user.name', 'user.email', 'address', 'city', 'country']}
+            searchableKeys={['first_name', 'last_name', 'phone', 'email', 'address', 'city.name', 'country']}
           />
         </div>
       </div>
