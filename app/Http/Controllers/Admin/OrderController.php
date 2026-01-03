@@ -101,9 +101,16 @@ class OrderController extends Controller
      */
     public function create()
     {
+        // $products=  Product::with(['variants:id,product_id,name,price,stock'])
+        //         ->where('status', 'active')
+        //         ->orderBy('name')
+        //         ->get(['id', 'name', 'sku', 'price', 'stock']);
+            $products=  Product::get();
+
+                // dd($products);
         return Inertia::render('Admin/Orders/Create', [
-            'customers' => Customer::orderBy('first_name')->get(['id', 'first_name', 'last_name', 'phone']),
-            'products' => Product::with(['variants'])->where('status', 'active')->orderBy('name')->get(['id', 'name', 'sku', 'price', 'stock']),
+            'customers' => Customer::orderBy('first_name')->get(['id', 'first_name', 'last_name', 'phone', 'email']),
+            'products' => $products
         ]);
     }
 
@@ -207,8 +214,11 @@ class OrderController extends Controller
 
         return Inertia::render('Admin/Orders/Edit', [
             'order' => $order,
-            'customers' => Customer::orderBy('first_name')->get(['id', 'first_name', 'last_name', 'phone']),
-            'products' => Product::with(['variants'])->where('status', 'active')->orderBy('name')->get(['id', 'name', 'sku', 'price', 'stock']),
+            'customers' => Customer::orderBy('first_name')->get(['id', 'first_name', 'last_name', 'phone', 'email']),
+            'products' => Product::with(['variants:id,product_id,name,price,stock'])
+                ->where('status', 'active')
+                ->orderBy('name')
+                ->get(['id', 'name', 'sku', 'price', 'stock']),
         ]);
     }
 

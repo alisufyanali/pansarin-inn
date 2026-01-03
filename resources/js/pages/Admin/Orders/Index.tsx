@@ -219,8 +219,8 @@ export default function Index({ stats, flash }: Props) {
           <StatCard title="Processing" value={stats.processing} color="purple" icon={TrendingUp} />
           <StatCard title="Delivered" value={stats.delivered} color="emerald" icon={CheckCircle} />
           <StatCard 
-            title="Total Revenue" 
-            value={`PKR ${stats.totalRevenue.toFixed(0)}`} 
+            title="Revenue" 
+            value={`${stats.totalRevenue.toFixed(0)}`} 
             color="amber" 
             icon={DollarSign} 
           />
