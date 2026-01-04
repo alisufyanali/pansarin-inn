@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\BlogController;
 use App\Http\Controllers\Admin\BlogCategoryController;
+use App\Http\Controllers\Admin\FrontendContentController;
 use Illuminate\Support\Facades\Route;
 
 use Inertia\Inertia; 
@@ -69,4 +70,9 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
         ->name('notifications.readAll');
     Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])
         ->name('notifications.destroy');
+
+    // Frontend Content Management
+     Route::resource('frontend', FrontendContentController::class);
+     Route::get('/frontend-data', [FrontendContentController::class, 'getData'])
+        ->name('frontend.data');
 });

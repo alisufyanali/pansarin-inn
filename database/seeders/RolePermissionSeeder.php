@@ -51,6 +51,12 @@ class RolePermissionSeeder extends Seeder
             "create.blogs",
             "edit.blogs",
             "delete.blogs",
+
+            // Frontend section permissions
+            "view.frontend",
+            "create.frontend",
+            "edit.frontend",
+            "delete.frontend",
         ];
 
         foreach ($permissions as $permission) {

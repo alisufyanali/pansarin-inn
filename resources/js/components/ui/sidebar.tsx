@@ -549,7 +549,7 @@ function SidebarMenuAction({
   asChild?: boolean
   showOnHover?: boolean
 }) {
-  const Comp = asChild ? Slot : "button"
+  const Comp = asChild ? Slot : "span"  // ✅ CHANGED: "button" to "span"
 
   return (
     <Comp
@@ -565,8 +565,17 @@ function SidebarMenuAction({
         "group-data-[collapsible=icon]:hidden",
         showOnHover &&
           "peer-data-[active=true]/menu-button:text-sidebar-accent-foreground group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 md:opacity-0",
+        "cursor-pointer",  // ✅ ADDED: Makes it look clickable
         className
       )}
+      role="button"  // ✅ ADDED: For accessibility
+      tabIndex={0}  // ✅ ADDED: Makes it keyboard focusable
+      onKeyDown={(e: any) => {  // ✅ ADDED: Keyboard support
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          props.onClick?.(e)
+        }
+      }}
       {...props}
     />
   )

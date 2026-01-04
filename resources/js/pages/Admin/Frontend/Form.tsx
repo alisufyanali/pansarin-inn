@@ -55,7 +55,6 @@ export default function Form({ initialData, isEdit = false }: FrontendFormProps)
 
     function submit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
-        
         if (isEdit && initialData?.id) {
             post(`/admin/frontend/${initialData.id}`, {
                 forceFormData: true,
