@@ -24,6 +24,7 @@ import {
     ShieldCheck,
     Sprout,
     UsersRound,
+    MessageCircleCode,
 } from 'lucide-react';
 
 import AppLogo from './app-logo';
@@ -133,6 +134,11 @@ export function AppSidebar() {
                 title: 'Blog Categories',
                 href: '/admin/blogcategories',
                 icon: Folder,
+            },
+            {
+                title: 'Blog Comments',
+                href: '/admin/blogsComments',
+                icon: MessageCircleCode,
             },
         ],
     });

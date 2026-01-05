@@ -52,6 +52,12 @@ class RolePermissionSeeder extends Seeder
             "edit.blogs",
             "delete.blogs",
 
+            // BlogComments permissions
+            "view.blogcomments",
+            "create.blogcomments",
+            "edit.blogcomments",
+            "delete.blogcomments",
+
             // Frontend section permissions
             "view.frontend",
             "create.frontend",

@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\BlogController;
 use App\Http\Controllers\Admin\BlogCategoryController;
 use App\Http\Controllers\Admin\FrontendContentController;
+use App\Http\Controllers\Admin\BlogsCommentsController;
 use Illuminate\Support\Facades\Route;
 
 use Inertia\Inertia; 
@@ -58,6 +59,9 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
     // Blog Routes
     Route::get('blogs-data', [BlogController::class, 'getData'])->name('blogs.data');
     Route::resource('blogs', BlogController::class);
+
+    Route::resource('blogsComments', BlogsCommentsController::class);
+Route::get('blogsComments-data', [BlogsCommentsController::class, 'getData'])->name('blogsComments.data');
     
     // Notification routes
     Route::get('/notifications', [NotificationController::class, 'index'])
