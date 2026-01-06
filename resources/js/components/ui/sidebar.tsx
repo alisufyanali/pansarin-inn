@@ -497,7 +497,7 @@ function SidebarMenuButton({
   size = "default",
   tooltip,
   className,
-  children,
+  // children,
   ...props
 }: React.ComponentProps<"button"> & {
   asChild?: boolean

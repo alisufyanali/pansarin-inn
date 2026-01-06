@@ -11,26 +11,38 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Users Table
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            
+            // Yahan se ->after() hata diye hain, columns isi jagah create honge
+            $table->text('two_factor_secret')->nullable();
+            $table->text('two_factor_recovery_codes')->nullable();
+            $table->timestamp('two_factor_confirmed_at')->nullable();
+
             $table->string('phone')->nullable();
-            $table->enum('role', ['admin', 'customer', 'vendor'])->nullable();
+            
+            // Role with 'customer' as default
+            $table->enum('role', ['admin', 'customer', 'vendor', 'affiliate'])->default('customer');
+            
             $table->boolean('status')->default(1);
             $table->rememberToken();
             $table->timestamps();
             $table->softDeletes();
         });
 
+        // Password Reset Tokens Table
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();
             $table->string('token');
             $table->timestamp('created_at')->nullable();
         });
 
+        // Sessions Table
         Schema::create('sessions', function (Blueprint $table) {
             $table->string('id')->primary();
             $table->foreignId('user_id')->nullable()->index();

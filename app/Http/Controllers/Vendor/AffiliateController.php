@@ -3,63 +3,56 @@
 namespace App\Http\Controllers\Vendor;
 
 use App\Http\Controllers\Controller;
+use App\Models\Affiliate;
+use App\Models\Referral;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class AffiliateController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    // Dashboard Stats
     public function index()
     {
-        //
+        $affiliate = auth()->user()->affiliate;
+        
+        if (!$affiliate) {
+            return response()->json(['is_affiliate' => false]);
+        }
+
+        return response()->json([
+            'is_affiliate' => true,
+            'stats' => [
+                'balance' => $affiliate->balance,
+                'total_referrals' => $affiliate->referrals()->count(),
+                'pending_commissions' => $affiliate->referrals()->where('status', 'pending')->sum('commission_amount'),
+                'affiliate_code' => $affiliate->affiliate_code,
+            ]
+        ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
+    // Affiliate Registration
     public function store(Request $request)
     {
-        //
+        $user = auth()->user();
+        
+        if ($user->affiliate) {
+            return response()->json(['message' => 'Aap pehle se affiliate hain.'], 400);
+        }
+
+        $affiliate = Affiliate::create([
+            'user_id' => $user->id,
+            'affiliate_code' => Str::upper(Str::random(8)),
+            'commission_rate' => 5.00, // Default 5%
+            'status' => 1,
+            'parent_id' => $request->cookie('affiliate_referral_id') // Downline logic
+        ]);
+
+        return response()->json(['message' => 'Affiliate account ban gaya!', 'data' => $affiliate]);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function referrals()
     {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        $referrals = auth()->user()->affiliate->referrals()->with('order')->latest()->get();
+        return response()->json($referrals);
     }
 }

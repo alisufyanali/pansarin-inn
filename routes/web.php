@@ -25,4 +25,5 @@ Route::get('/clear-cache', function () {
 });
 
 require __DIR__.'/admin.php';
+require __DIR__.'/affiliate.php';
 require __DIR__.'/settings.php';

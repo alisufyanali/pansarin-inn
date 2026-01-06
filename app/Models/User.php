@@ -71,4 +71,9 @@ class User extends Authenticatable
         return $this->hasOne(Customer::class);
     }
 
+    public function affiliate()
+    {
+        return $this->hasOne(Affiliate::class);
+    }
+
 }

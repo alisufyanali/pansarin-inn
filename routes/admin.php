@@ -32,7 +32,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
     // Category Management resource Controllers
     Route::resource('categories', CategoryController::class);
     Route::get('categories-data', [CategoryController::class, 'getData'])->name('categories-data');
-    Route::delete('/categories/{id}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+    // Route::delete('/categories/{id}', [CategoryController::class, 'destroy'])->name('categories.destroy');
 
     // Product Management resource Controllers
     Route::resource('products', ProductController::class);
