@@ -45,7 +45,6 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
     // Attributes Management resource Controllers
     Route::resource('attributes', ProductAttributeController::class);
     Route::get('attributes-data', [ProductAttributeController::class, 'getData'])->name('attributes.data');
-
     Route::resource('orders', OrderController::class);
 
     // Customers Routes
@@ -60,8 +59,9 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
     Route::get('blogs-data', [BlogController::class, 'getData'])->name('blogs.data');
     Route::resource('blogs', BlogController::class);
 
+    //Blogs Comments Routes
     Route::resource('blogsComments', BlogsCommentsController::class);
-Route::get('blogsComments-data', [BlogsCommentsController::class, 'getData'])->name('blogsComments.data');
+    Route::get('blogsComments-data', [BlogsCommentsController::class, 'getData'])->name('blogsComments.data');
     
     // Notification routes
     Route::get('/notifications', [NotificationController::class, 'index'])

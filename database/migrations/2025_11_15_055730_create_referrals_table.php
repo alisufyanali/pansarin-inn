@@ -12,15 +12,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('referrals', function (Blueprint $table) {
-    $table->id();
-    $table->unsignedBigInteger('affiliate_id');
-    $table->unsignedBigInteger('order_id')->nullable();
-    $table->unsignedBigInteger('user_id')->nullable();
-    $table->decimal('commission', 10, 2)->default(0);
-    $table->timestamps();
-
-    $table->foreign('affiliate_id')->references('id')->on('affiliates')->onDelete('cascade');
-});
+            $table->id();
+            $table->foreignId('affiliate_id')->constrained()->onDelete('cascade');
+            $table->foreignId('order_id')->constrained()->onDelete('cascade');
+            $table->foreignId('user_id')->nullable()->constrained()->onDelete('set null'); // Khareedar
+            $table->decimal('order_amount', 10, 2); 
+            $table->decimal('commission_amount', 10, 2);
+            // Status: pending (order placed), approved (order delivered), rejected (order cancelled)
+            $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
+            $table->timestamps();
+        });
     }
 
     /**
