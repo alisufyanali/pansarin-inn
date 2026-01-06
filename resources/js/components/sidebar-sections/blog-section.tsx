@@ -20,7 +20,7 @@ export function BlogSection(): NavItem {
             },
             {
                 title: 'Blog Comments',
-                href: '/admin/blogcomments',
+                href: '/admin/blogscomments',
                 icon: MessageSquare,
             },
             {

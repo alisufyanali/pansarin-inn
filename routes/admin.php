@@ -69,9 +69,14 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
     Route::get('blogs-data', [BlogController::class, 'getData'])->name('blogs.data');
     Route::resource('blogs', BlogController::class);
 
+    // Route::get('blogsComments', function(){
+    //     echo 1; 
+    // });
+
+
     //Blogs Comments Routes
-    Route::resource('blogsComments', BlogsCommentsController::class);
-    Route::get('blogsComments-data', [BlogsCommentsController::class, 'getData'])->name('blogsComments.data');
+    Route::resource('blogscomments', BlogsCommentsController::class);
+    Route::get('blogscomments-data', [BlogsCommentsController::class, 'getData'])->name('blogscomments.data');
     
     // Notification routes
     Route::get('/notifications', [NotificationController::class, 'index'])
