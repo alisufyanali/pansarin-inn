@@ -25,19 +25,19 @@ class ProductController extends Controller
      * Display a listing of the resource.
      */
    public function index(Request $request)
-{
-    $stats = [
-        'total' => Product::count(),
-        'active' => Product::where('status', true)->count(),
-        'featured' => Product::where('featured', true)->count(),
-        'onSale' => Product::whereNotNull('sale_price')->where('sale_price', '>', 0)->count(),
-    ];
+    {
+        $stats = [
+            'total' => Product::count(),
+            'active' => Product::where('status', true)->count(),
+            'featured' => Product::where('featured', true)->count(),
+            'onSale' => Product::whereNotNull('sale_price')->where('sale_price', '>', 0)->count(),
+        ];
 
-    return Inertia::render('Admin/Products/Index', [
-        'userRole' => $request->user()->role ?? 'admin',
-        'stats' => $stats, // Add stats here
-    ]);
-}
+        return Inertia::render('Admin/Products/Index', [
+            'userRole' => $request->user()->role ?? 'admin',
+            'stats' => $stats, // Add stats here
+        ]);
+    }
 
     /**
      * Get DataTable data - API endpoint for DataTableWrapper
@@ -130,82 +130,82 @@ class ProductController extends Controller
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
-{
-    try {
-        // Fix: tags ko array me convert karo agar string hai
-        if ($request->has('tags') && is_string($request->tags)) {
-            $request->merge([
-                'tags' => collect(explode(',', $request->tags))
-                    ->map(fn($tag) => trim($tag))
-                    ->filter()
-                    ->values()
-                    ->toArray()
-            ]);
-        }
-
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'category_id' => 'required|exists:categories,id',
-            
-            'short_description' => 'nullable|string',
-            'long_description' => 'nullable|string',
-            'urdu_name' => 'nullable|string',
-            'scientific_name' => 'nullable|string',
-            'alternative_name' => 'nullable|string',
-            'other_name' => 'nullable|string',
-            'slug' => 'nullable|string|unique:products,slug',
-            'unit' => 'nullable|string',
-            'price' => 'required|numeric|min:0',
-            'sale_price' => 'nullable|numeric|min:0',
-            'sku' => 'nullable|string|unique:products,sku',
-            'barcode' => 'nullable|string',
-            'stock_qty' => 'nullable|integer|min:0',
-            'stock_alert' => 'nullable|integer|min:0',
-            'status' => 'sometimes|boolean',
-            'featured' => 'sometimes|boolean',
-            'meta_title' => 'nullable|string|max:60',
-            'meta_description' => 'nullable|string|max:160',
-            'meta_keywords' => 'nullable|string',
-            'tags' => 'nullable|array',
-            'tags.*' => 'nullable|string',
-            'schema_markup' => 'nullable|string',
-            'social_description' => 'nullable|string|max:300',
-            'thumbnail' => 'nullable|image|max:2048',
-            'social_image' => 'nullable|image|max:2048',
-            'gallery' => 'nullable',
-        ]);
-
-        // ...existing code...
-        if (empty($validated['slug'])) {
-            $validated['slug'] = str()->slug($validated['name']);
-        }
-        if (empty($validated['sku'])) {
-            $lastProduct = Product::latest('id')->first();
-            $nextNumber = ($lastProduct?->id ?? 0) + 1;
-            $validated['sku'] = 'PROD-' . str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
-        }
-        if ($request->hasFile('thumbnail')) {
-            $validated['thumbnail'] = $request->file('thumbnail')->store('products', 'public');
-        }
-        if ($request->hasFile('social_image')) {
-            $validated['social_image'] = $request->file('social_image')->store('products', 'public');
-        }
-        if ($request->hasFile('gallery')) {
-            $images = [];
-            foreach ($request->file('gallery') as $img) {
-                $images[] = $img->store('products/gallery', 'public');
+    {
+        try {
+            // Fix: tags ko array me convert karo agar string hai
+            if ($request->has('tags') && is_string($request->tags)) {
+                $request->merge([
+                    'tags' => collect(explode(',', $request->tags))
+                        ->map(fn($tag) => trim($tag))
+                        ->filter()
+                        ->values()
+                        ->toArray()
+                ]);
             }
-            $validated['gallery'] = $images;
+
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'category_id' => 'required|exists:categories,id',
+                
+                'short_description' => 'nullable|string',
+                'long_description' => 'nullable|string',
+                'urdu_name' => 'nullable|string',
+                'scientific_name' => 'nullable|string',
+                'alternative_name' => 'nullable|string',
+                'other_name' => 'nullable|string',
+                'slug' => 'nullable|string|unique:products,slug',
+                'unit' => 'nullable|string',
+                'price' => 'required|numeric|min:0',
+                'sale_price' => 'nullable|numeric|min:0',
+                'sku' => 'nullable|string|unique:products,sku',
+                'barcode' => 'nullable|string',
+                'stock_qty' => 'nullable|integer|min:0',
+                'stock_alert' => 'nullable|integer|min:0',
+                'status' => 'sometimes|boolean',
+                'featured' => 'sometimes|boolean',
+                'meta_title' => 'nullable|string|max:60',
+                'meta_description' => 'nullable|string|max:160',
+                'meta_keywords' => 'nullable|string',
+                'tags' => 'nullable|array',
+                'tags.*' => 'nullable|string',
+                'schema_markup' => 'nullable|string',
+                'social_description' => 'nullable|string|max:300',
+                'thumbnail' => 'nullable|image|max:2048',
+                'social_image' => 'nullable|image|max:2048',
+                'gallery' => 'nullable',
+            ]);
+
+            // ...existing code...
+            if (empty($validated['slug'])) {
+                $validated['slug'] = str()->slug($validated['name']);
+            }
+            if (empty($validated['sku'])) {
+                $lastProduct = Product::latest('id')->first();
+                $nextNumber = ($lastProduct?->id ?? 0) + 1;
+                $validated['sku'] = 'PROD-' . str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
+            }
+            if ($request->hasFile('thumbnail')) {
+                $validated['thumbnail'] = $request->file('thumbnail')->store('products', 'public');
+            }
+            if ($request->hasFile('social_image')) {
+                $validated['social_image'] = $request->file('social_image')->store('products', 'public');
+            }
+            if ($request->hasFile('gallery')) {
+                $images = [];
+                foreach ($request->file('gallery') as $img) {
+                    $images[] = $img->store('products/gallery', 'public');
+                }
+                $validated['gallery'] = $images;
+            }
+
+            Product::create($validated);
+
+            return to_route('products.index')->with('success', 'Product successfully created!');
+        } catch (\Exception $e) {
+            \Log::error('Product creation error: ' . $e->getMessage());
+            throw $e;
         }
-
-        Product::create($validated);
-
-        return to_route('products.index')->with('success', 'Product successfully created!');
-    } catch (\Exception $e) {
-        \Log::error('Product creation error: ' . $e->getMessage());
-        throw $e;
     }
-}
 
     /**
      * Display the specified resource.
@@ -317,6 +317,37 @@ class ProductController extends Controller
         
         return to_route('products.index')->with('success', 'Product successfully deleted!');
     }
+
+
+
+    // ProductController.php mein add karen
+
+    /**
+     * Search products (for live search in orders)
+     */
+    public function search(Request $request)
+    {
+        $search = $request->get('q', '');
+        
+        $products = Product::query()
+            ->with(['variants:id,product_id,name,price,stock'])
+            ->where('status', 'active')
+            ->where(function($query) use ($search) {
+                $query->where('name', 'like', "%{$search}%")
+                    ->orWhere('sku', 'like', "%{$search}%");
+            })
+            ->limit(20)
+            ->get(['id', 'name', 'sku', 'price', 'stock']);
+
+        $products = Product::
+            with(['variants:id,product_id,name,price,stock'])
+            ->limit(20)
+            ->get(['id', 'name', 'sku', 'price', 'stock']);
+
+
+        return response()->json($products);
+    }
+
 }
 
 

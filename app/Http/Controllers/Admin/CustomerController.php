@@ -191,4 +191,25 @@ class CustomerController extends Controller
                 ->with('error', 'Failed to delete customer: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Search customers (for live search in orders)
+     */
+    public function search(Request $request)
+    {
+        $search = $request->get('q', '');
+        
+        $customers = Customer::query()
+            ->where(function($query) use ($search) {
+                $query->where('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            })
+            ->limit(20)
+            ->get(['id', 'first_name', 'last_name', 'phone', 'email']);
+
+        return response()->json($customers);
+    }
+         
 }

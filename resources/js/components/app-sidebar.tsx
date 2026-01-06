@@ -12,7 +12,7 @@ import {
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { can } from '@/lib/can';
-import { dashboard } from '@/routes';
+// import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
 import { LayoutGrid } from 'lucide-react';
@@ -32,7 +32,7 @@ export function AppSidebar() {
   const mainNavItems: NavItem[] = [
     {
       title: 'Dashboard',
-      href: dashboard(),
+      href: "dashboard()",
       icon: LayoutGrid,
     },
   ];
@@ -94,7 +94,8 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <Link href={dashboard()} prefetch>
+              {/* <Link href={dashboard()} prefetch> */}
+              <Link href={"dashboard"} prefetch>
                 <AppLogo />
               </Link>
             </SidebarMenuButton>

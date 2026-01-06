@@ -101,16 +101,12 @@ class OrderController extends Controller
      */
     public function create()
     {
-        // $products=  Product::with(['variants:id,product_id,name,price,stock'])
-        //         ->where('status', 'active')
-        //         ->orderBy('name')
-        //         ->get(['id', 'name', 'sku', 'price', 'stock']);
-            $products=  Product::get();
-
-                // dd($products);
         return Inertia::render('Admin/Orders/Create', [
             'customers' => Customer::orderBy('first_name')->get(['id', 'first_name', 'last_name', 'phone', 'email']),
-            'products' => $products
+            'products' => Product::with(['variants:id,product_id,name,price,stock'])
+                ->where('status', 'active')
+                ->orderBy('name')
+                ->get(['id', 'name', 'sku', 'price', 'stock']),
         ]);
     }
 
@@ -184,8 +180,11 @@ class OrderController extends Controller
             // Calculate totals
             $order->calculateTotals();
 
+            // Dispatch email job
+            SendOrderConfirmationEmail::dispatch($order);
+
             DB::commit();
-            return to_route('orders.index')->with('success', 'Order successfully created!');
+            return to_route('orders.index')->with('success', 'Order successfully created! Confirmation email will be sent shortly.');
 
         } catch (\Exception $e) {
             DB::rollBack();
