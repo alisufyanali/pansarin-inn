@@ -8,13 +8,13 @@ const breadcrumbs: BreadcrumbItem[] = [
   { title: 'Create', href: '/admin/customers/create' },
 ];
 
-type User = { id: number; name: string; email: string };
+type City = { id: number; name: string };
 
-export default function Create({ users }: { users: User[] }) {
+export default function Create({ cities }: { cities: City[] }) {
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="Create Customer" />
-      <CustomerForm users={users} isEdit={false} />
+      <CustomerForm cities={cities} isEdit={false} />
     </AppLayout>
   );
 }

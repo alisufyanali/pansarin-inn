@@ -3,26 +3,32 @@ import { useForm } from '@inertiajs/react';
 import { ArrowLeft, Check } from 'lucide-react';
 import { Link } from '@inertiajs/react';
 
-type User = { id: number; name: string; email: string };
+type City = { id: number; name: string };
 
 export type CustomerFormData = {
-  user_id: string | number;
+  first_name: string;
+  last_name: string;
+  phone: string;
+  email: string;
   address: string;
-  city: string;
+  city_id: string | number;
   country: string;
 };
 
 interface CustomerFormProps {
   customer?: CustomerFormData & { id?: number };
-  users?: User[];
+  cities?: City[];
   isEdit?: boolean;
 }
 
-export default function CustomerForm({ customer, users = [], isEdit = false }: CustomerFormProps) {
+export default function CustomerForm({ customer, cities = [], isEdit = false }: CustomerFormProps) {
   const { data, setData, errors, post, put, processing } = useForm<CustomerFormData>({
-    user_id: customer?.user_id || '',
+    first_name: customer?.first_name || '',
+    last_name: customer?.last_name || '',
+    phone: customer?.phone || '',
+    email: customer?.email || '',
     address: customer?.address || '',
-    city: customer?.city || '',
+    city_id: customer?.city_id || '',
     country: customer?.country || '',
   });
 
@@ -58,33 +64,67 @@ export default function CustomerForm({ customer, users = [], isEdit = false }: C
           </p>
 
           <form onSubmit={submit} className="space-y-4 font-sans text-sm">
-            {/* User Selection (Only for create) */}
-            {!isEdit && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Select User *
-                </label>
-                <select
-                  value={data.user_id}
-                  onChange={(e) => setData('user_id', e.target.value)}
-                  className="w-full mt-1 px-3 py-2 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none"
-                  required
-                >
-                  <option value="">Select a user</option>
-                  {users.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.name} ({user.email})
-                    </option>
-                  ))}
-                </select>
-                {errors.user_id && <div className="text-red-500 text-sm mt-1">{errors.user_id}</div>}
-                {users.length === 0 && (
-                  <p className="text-sm text-yellow-600 dark:text-yellow-400 mt-1">
-                    No users available. All existing users already have customer profiles.
-                  </p>
-                )}
-              </div>
-            )}
+            {/* First Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                First Name *
+              </label>
+              <input
+                type="text"
+                placeholder="Enter first name"
+                className="w-full mt-1 px-3 py-2 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none"
+                value={data.first_name}
+                onChange={e => setData('first_name', e.target.value)}
+                required
+              />
+              {errors.first_name && <div className="text-red-500 text-sm mt-1">{errors.first_name}</div>}
+            </div>
+
+            {/* Last Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Last Name
+              </label>
+              <input
+                type="text"
+                placeholder="Enter last name"
+                className="w-full mt-1 px-3 py-2 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none"
+                value={data.last_name}
+                onChange={e => setData('last_name', e.target.value)}
+              />
+              {errors.last_name && <div className="text-red-500 text-sm mt-1">{errors.last_name}</div>}
+            </div>
+
+            {/* Phone */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Phone Number *
+              </label>
+              <input
+                type="tel"
+                placeholder="Enter phone number"
+                className="w-full mt-1 px-3 py-2 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none"
+                value={data.phone}
+                onChange={e => setData('phone', e.target.value)}
+                required
+              />
+              {errors.phone && <div className="text-red-500 text-sm mt-1">{errors.phone}</div>}
+            </div>
+
+            {/* Email */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Email
+              </label>
+              <input
+                type="email"
+                placeholder="Enter email address"
+                className="w-full mt-1 px-3 py-2 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none"
+                value={data.email}
+                onChange={e => setData('email', e.target.value)}
+              />
+              {errors.email && <div className="text-red-500 text-sm mt-1">{errors.email}</div>}
+            </div>
 
             {/* Address */}
             <div>
@@ -106,14 +146,19 @@ export default function CustomerForm({ customer, users = [], isEdit = false }: C
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 City
               </label>
-              <input
-                type="text"
-                placeholder="Enter city"
-                className="w-full mt-1 px-3 py-2 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none"
-                value={data.city}
-                onChange={e => setData('city', e.target.value)}
-              />
-              {errors.city && <div className="text-red-500 text-sm mt-1">{errors.city}</div>}
+              <select
+                value={data.city_id}
+                onChange={(e) => setData('city_id', e.target.value)}
+                className="w-full mt-1 px-3 py-2 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none"
+              >
+                <option value="">Select a city</option>
+                {cities.map((city) => (
+                  <option key={city.id} value={city.id}>
+                    {city.name}
+                  </option>
+                ))}
+              </select>
+              {errors.city_id && <div className="text-red-500 text-sm mt-1">{errors.city_id}</div>}
             </div>
 
             {/* Country */}

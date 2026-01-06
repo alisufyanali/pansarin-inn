@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Customer;
-use App\Models\User;
+use App\Models\City;
 use Yajra\DataTables\Facades\DataTables;
 
 class CustomerController extends Controller
@@ -23,29 +23,41 @@ class CustomerController extends Controller
      */
     public function index(Request $request)
     {
+        // Calculate stats
+        $stats = [
+            'total' => Customer::count(),
+            'withEmail' => Customer::whereNotNull('email')->count(),
+            'cities' => Customer::distinct('city_id')->whereNotNull('city_id')->count(),
+            'countries' => Customer::distinct('country')->whereNotNull('country')->count(),
+        ];
+
         return Inertia::render('Admin/Customers/Index', [
             'userRole' => $request->user()->role ?? 'admin',
+            'stats' => $stats,
         ]);
     }
+
 
     /**
      * Get DataTable data
      */
     public function getData(Request $request)
     {
-        $query = Customer::with('user')->latest();
+        $query = Customer::with('city')->latest();
         
         // Search handling
         if ($request->has('search') && $request->search !== '') {
             if (is_string($request->search)) {
                 $search = $request->search;
                 $query->where(function($q) use ($search) {
-                    $q->where('address', 'like', "%{$search}%")
-                      ->orWhere('city', 'like', "%{$search}%")
+                    $q->where('first_name', 'like', "%{$search}%")
+                      ->orWhere('last_name', 'like', "%{$search}%")
+                      ->orWhere('phone', 'like', "%{$search}%")
+                      ->orWhere('email', 'like', "%{$search}%")
+                      ->orWhere('address', 'like', "%{$search}%")
                       ->orWhere('country', 'like', "%{$search}%")
-                      ->orWhereHas('user', function($q) use ($search) {
-                          $q->where('name', 'like', "%{$search}%")
-                            ->orWhere('email', 'like', "%{$search}%");
+                      ->orWhereHas('city', function($q) use ($search) {
+                          $q->where('name', 'like', "%{$search}%");
                       });
                 });
             }
@@ -53,12 +65,14 @@ class CustomerController extends Controller
                 $search = $request->search['value'];
                 if (!empty($search)) {
                     $query->where(function($q) use ($search) {
-                        $q->where('address', 'like', "%{$search}%")
-                          ->orWhere('city', 'like', "%{$search}%")
+                        $q->where('first_name', 'like', "%{$search}%")
+                          ->orWhere('last_name', 'like', "%{$search}%")
+                          ->orWhere('phone', 'like', "%{$search}%")
+                          ->orWhere('email', 'like', "%{$search}%")
+                          ->orWhere('address', 'like', "%{$search}%")
                           ->orWhere('country', 'like', "%{$search}%")
-                          ->orWhereHas('user', function($q) use ($search) {
-                              $q->where('name', 'like', "%{$search}%")
-                                ->orWhere('email', 'like', "%{$search}%");
+                          ->orWhereHas('city', function($q) use ($search) {
+                              $q->where('name', 'like', "%{$search}%");
                           });
                     });
                 }
@@ -66,8 +80,8 @@ class CustomerController extends Controller
         }
         
         // Filters
-        if ($request->has('city') && $request->city !== '') {
-            $query->where('city', $request->city);
+        if ($request->has('city_id') && $request->city_id !== '') {
+            $query->where('city_id', $request->city_id);
         }
         
         if ($request->has('country') && $request->country !== '') {
@@ -75,11 +89,11 @@ class CustomerController extends Controller
         }
 
         return DataTables::of($query)
-            ->addColumn('user_name', function($customer) {
-                return $customer->user ? $customer->user->name : null;
+            ->addColumn('city_name', function($customer) {
+                return $customer->city ? $customer->city->name : null;
             })
-            ->addColumn('user_email', function($customer) {
-                return $customer->user ? $customer->user->email : null;
+            ->addColumn('full_name', function($customer) {
+                return $customer->full_name;
             })
             ->make(true);
     }
@@ -90,7 +104,7 @@ class CustomerController extends Controller
     public function create()
     {
         return Inertia::render('Admin/Customers/Create', [
-            'users' => User::whereDoesntHave('customer')->get(['id', 'name', 'email']),
+            'cities' => City::orderBy('name')->get(['id', 'name']),
         ]);
     }
 
@@ -100,9 +114,12 @@ class CustomerController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'user_id' => 'required|exists:users,id|unique:customers,user_id',
+            'first_name' => 'required|string|max:100',
+            'last_name' => 'nullable|string|max:100',
+            'phone' => 'required|string|max:20|unique:customers,phone',
+            'email' => 'nullable|email|max:255|unique:customers,email',
             'address' => 'nullable|string|max:255',
-            'city' => 'nullable|string|max:100',
+            'city_id' => 'nullable|exists:cities,id',
             'country' => 'nullable|string|max:100',
         ]);
 
@@ -116,7 +133,7 @@ class CustomerController extends Controller
      */
     public function show(string $id)
     {
-        $customer = Customer::with(['user', 'orders'])->findOrFail($id);
+        $customer = Customer::with(['city'])->findOrFail($id);
 
         return Inertia::render('Admin/Customers/Show', [
             'customer' => $customer
@@ -128,10 +145,11 @@ class CustomerController extends Controller
      */
     public function edit(string $id)
     {
-        $customer = Customer::with('user')->findOrFail($id);
+        $customer = Customer::with('city')->findOrFail($id);
 
         return Inertia::render('Admin/Customers/Edit', [
             'customer' => $customer,
+            'cities' => City::orderBy('name')->get(['id', 'name']),
         ]);
     }
 
@@ -143,8 +161,12 @@ class CustomerController extends Controller
         $customer = Customer::findOrFail($id);
 
         $validated = $request->validate([
+            'first_name' => 'required|string|max:100',
+            'last_name' => 'nullable|string|max:100',
+            'phone' => 'required|string|max:20|unique:customers,phone,' . $id,
+            'email' => 'nullable|email|max:255|unique:customers,email,' . $id,
             'address' => 'nullable|string|max:255',
-            'city' => 'nullable|string|max:100',
+            'city_id' => 'nullable|exists:cities,id',
             'country' => 'nullable|string|max:100',
         ]);
 

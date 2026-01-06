@@ -8,11 +8,21 @@ const breadcrumbs: BreadcrumbItem[] = [
   { title: 'Edit', href: '#' },
 ];
 
-export default function Edit({ customer }: { customer: CustomerFormData & { id: number } }) {
+type City = { id: number; name: string };
+
+interface EditProps {
+  customer: CustomerFormData & { 
+    id: number;
+    city?: City;
+  };
+  cities: City[];
+}
+
+export default function Edit({ customer, cities }: EditProps) {
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
-      <Head title={`Edit Customer`} />
-      <CustomerForm customer={customer} isEdit={true} />
+      <Head title={`Edit Customer: ${customer.first_name} ${customer.last_name || ''}`} />
+      <CustomerForm customer={customer} cities={cities} isEdit={true} />
     </AppLayout>
   );
 }
