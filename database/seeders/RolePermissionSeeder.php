@@ -41,7 +41,7 @@ class RolePermissionSeeder extends Seeder
             "create.attributes",
             "edit.attributes",
             "delete.attributes",
-            // BlogCategory permissions - CHANGED TO MATCH CONTROLLER
+            // BlogCategory permissions
             "view.blog-categories",
             "create.blog-categories",
             "edit.blog-categories",
@@ -51,13 +51,16 @@ class RolePermissionSeeder extends Seeder
             "create.blogs",
             "edit.blogs",
             "delete.blogs",
-
             // BlogComments permissions
             "view.blogcomments",
             "create.blogcomments",
             "edit.blogcomments",
             "delete.blogcomments",
-
+            // BlogTag permissions
+            "view.blogtags",
+            "create.blogtags",
+            "edit.blogtags",
+            "delete.blogtags",
             // Frontend section permissions
             "view.frontend",
             "create.frontend",

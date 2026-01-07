@@ -25,7 +25,7 @@ export function BlogSection(): NavItem {
             },
             {
                 title: 'Blog Tags',
-                href: '/admin/blogtags',
+                href: '/admin/blogstags',
                 icon: Tag,
             },
         ],

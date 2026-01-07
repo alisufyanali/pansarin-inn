@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\BlogController;
 use App\Http\Controllers\Admin\BlogCategoryController;
 use App\Http\Controllers\Admin\FrontendContentController;
 use App\Http\Controllers\Admin\BlogsCommentsController;
+use App\Http\Controllers\Admin\BlogTagsController;
 use Illuminate\Support\Facades\Route;
 
 use Inertia\Inertia; 
@@ -69,15 +70,15 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
     Route::get('blogs-data', [BlogController::class, 'getData'])->name('blogs.data');
     Route::resource('blogs', BlogController::class);
 
-    // Route::get('blogsComments', function(){
-    //     echo 1; 
-    // });
-
-
     //Blogs Comments Routes
     Route::resource('blogscomments', BlogsCommentsController::class);
     Route::get('blogscomments-data', [BlogsCommentsController::class, 'getData'])->name('blogscomments.data');
-    
+
+    // Blog Tags Routes
+    Route::resource('blogstags', BlogTagsController::class);
+    Route::get('blogstags-data', [BlogTagsController::class, 'getData'])->name('blogstags.data');
+    Route::get('blogstags-active', [BlogTagsController::class, 'getActiveTags'])->name('blogstags.active');
+
     // Notification routes
     Route::get('/notifications', [NotificationController::class, 'index'])
         ->name('notifications.index');

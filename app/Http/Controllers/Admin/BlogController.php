@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Blog;
 use App\Models\BlogCategory;
+use App\Models\BlogTag;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Yajra\DataTables\Facades\DataTables;
@@ -36,7 +37,7 @@ class BlogController extends Controller
 
     public function getData(Request $request)
     {
-        $query = Blog::with('category')->latest();
+        $query = Blog::with(['category', 'tags'])->latest();
         
         if ($request->has('search') && $request->search !== '') {
             if (is_string($request->search)) {
@@ -46,6 +47,9 @@ class BlogController extends Controller
                       ->orWhere('slug', 'like', "%{$search}%")
                       ->orWhere('content', 'like', "%{$search}%")
                       ->orWhereHas('category', function($q) use ($search) {
+                          $q->where('name', 'like', "%{$search}%");
+                      })
+                      ->orWhereHas('tags', function($q) use ($search) {
                           $q->where('name', 'like', "%{$search}%");
                       });
                 });
@@ -58,6 +62,9 @@ class BlogController extends Controller
                           ->orWhere('slug', 'like', "%{$search}%")
                           ->orWhere('content', 'like', "%{$search}%")
                           ->orWhereHas('category', function($q) use ($search) {
+                              $q->where('name', 'like', "%{$search}%");
+                          })
+                          ->orWhereHas('tags', function($q) use ($search) {
                               $q->where('name', 'like', "%{$search}%");
                           });
                     });
@@ -77,22 +84,42 @@ class BlogController extends Controller
             ->addColumn('category_name', function($blog) {
                 return $blog->category ? $blog->category->name : null;
             })
+            ->addColumn('tags_list', function($blog) {
+                return $blog->tags->pluck('name')->toArray();
+            })
             ->addColumn('status_text', function($blog) {
                 return ucfirst($blog->status ?? 'draft');
             })
             ->make(true);
     }
 
-    public function create()
-    {
-        return Inertia::render('Admin/Blogs/Create', [
-            'categories' => BlogCategory::all(['id', 'name'])
-        ]);
+public function create()
+{
+    // Get categories
+    $categories = BlogCategory::all(['id', 'name']);
+    
+    // Get active tags
+    $tags = BlogTag::where('is_active', 1) // Try with 1 instead of true
+                   ->orderBy('name')
+                   ->get(['id', 'name', 'slug', 'color']);
+    
+    // Debug
+    \Log::info('Creating blog - Categories: ' . $categories->count());
+    \Log::info('Creating blog - Active Tags: ' . $tags->count());
+    
+    if ($tags->isEmpty()) {
+        \Log::warning('No active tags found!');
     }
+    
+    return Inertia::render('Admin/Blogs/Create', [
+        'categories' => $categories,
+        'tags' => $tags->toArray() // Force to array
+    ]);
+}
+
 
     public function store(Request $request)
     {
-        // dd($request->all());
         try {
             $validated = $request->validate([
                 'blog_category_id' => 'nullable|exists:blog_categories,id',
@@ -108,6 +135,8 @@ class BlogController extends Controller
                 'schema_markup' => 'nullable|string',
                 'social_image' => 'nullable|image|max:2048',
                 'social_description' => 'nullable|string|max:300',
+                'tags' => 'nullable|array',
+                'tags.*' => 'exists:blog_tags,id',
             ]);
 
             if (empty($validated['slug'])) {
@@ -126,7 +155,16 @@ class BlogController extends Controller
                 $validated['social_image'] = $request->file('social_image')->store('blogs', 'public');
             }
 
-            Blog::create($validated);
+            // Extract tags before creating blog
+            $tags = $validated['tags'] ?? [];
+            unset($validated['tags']);
+
+            $blog = Blog::create($validated);
+
+            // Attach tags to blog
+            if (!empty($tags)) {
+                $blog->tags()->attach($tags);
+            }
 
             return to_route('blogs.index')->with('success', 'Blog post successfully created!');
         } catch (\Exception $e) {
@@ -138,17 +176,18 @@ class BlogController extends Controller
     public function show(Blog $blog)
     {
         return Inertia::render('Admin/Blogs/Show', [
-            'blog' => $blog->load('category')
+            'blog' => $blog->load(['category', 'tags'])
         ]);
     }
 
     public function edit(Blog $blog)
-    {
-        return Inertia::render('Admin/Blogs/Edit', [
-            'blog' => $blog,
-            'categories' => BlogCategory::all(['id', 'name'])
-        ]);
-    }
+{
+    return Inertia::render('Admin/Blogs/Edit', [
+        'blog' => $blog->load('tags'),
+        'categories' => BlogCategory::all(['id', 'name']),
+        'tags' => BlogTag::where('is_active', true)->get(['id', 'name', 'slug', 'color']) // FIXED
+    ]);
+}
 
     public function update(Request $request, Blog $blog)
     {
@@ -167,6 +206,8 @@ class BlogController extends Controller
                 'schema_markup' => 'nullable|string',
                 'social_image' => 'nullable|image|max:2048',
                 'social_description' => 'nullable|string|max:300',
+                'tags' => 'nullable|array',
+                'tags.*' => 'exists:blog_tags,id',
             ]);
 
             if ($validated['title'] !== $blog->title && empty($validated['slug'])) {
@@ -187,7 +228,14 @@ class BlogController extends Controller
                 $validated['social_image'] = $request->file('social_image')->store('blogs', 'public');
             }
 
+            // Extract tags before updating blog
+            $tags = $validated['tags'] ?? [];
+            unset($validated['tags']);
+
             $blog->update($validated);
+
+            // Sync tags
+            $blog->tags()->sync($tags);
 
             return to_route('blogs.index')->with('success', 'Blog post successfully updated!');
         } catch (\Exception $e) {
@@ -206,6 +254,7 @@ class BlogController extends Controller
                 \Storage::disk('public')->delete($blog->social_image);
             }
 
+            // Tags will be automatically detached due to cascade
             $blog->delete();
             
             return to_route('blogs.index')->with('success', 'Blog post successfully deleted!');

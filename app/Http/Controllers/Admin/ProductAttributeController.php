@@ -14,7 +14,11 @@ class ProductAttributeController extends Controller
 {
     public function __construct()
     {
-        // Manual permission checks instead of authorizeResource
+        // Permission middleware for each method
+        $this->middleware('permission:view.attributes')->only(['index', 'getData', 'show']);
+        $this->middleware('permission:create.attributes')->only(['create', 'store']);
+        $this->middleware('permission:edit.attributes')->only(['edit', 'update']);
+        $this->middleware('permission:delete.attributes')->only(['destroy']);
     }
 
     /**
@@ -27,16 +31,15 @@ class ProductAttributeController extends Controller
         return Inertia::render('Admin/Attributes/Index', [
             'attributes' => $attributes,
         ]);
-        
     }
 
-    
     /**
      * Get paginated data for DataTable (AJAX endpoint)
      */
     public function getData(Request $request)
     {
         $query = Attribute::with('values');
+        
         // Search
         if ($request->has('search') && $request->search) {
             $search = $request->search;
@@ -47,8 +50,6 @@ class ProductAttributeController extends Controller
                       $q->where('value', 'like', "%{$search}%");
                   });
             });
-        
-
         }
         
         // Sorting
@@ -94,22 +95,29 @@ class ProductAttributeController extends Controller
             'values.*' => 'required|string|max:255',
         ]);
 
-        $attribute = Attribute::create([
-            'name' => $validated['name'],
-            'slug' => Str::slug($validated['name']),
-        ]);
-
-        // Create attribute values - har value ke liye new entry banao
-        foreach ($validated['values'] as $value) {
-            AttributeValue::create([
-                'attribute_id' => $attribute->id,
-                'value' => $value,
-                'slug' => Str::slug($value),
+        try {
+            $attribute = Attribute::create([
+                'name' => $validated['name'],
+                'slug' => Str::slug($validated['name']),
             ]);
-        }
 
-        return redirect()->route('attributes.index')
-            ->with('message', 'Attribute created successfully');
+            // Create attribute values
+            foreach ($validated['values'] as $value) {
+                AttributeValue::create([
+                    'attribute_id' => $attribute->id,
+                    'value' => $value,
+                    'slug' => Str::slug($value),
+                ]);
+            }
+
+            return redirect()->route('attributes.index')
+                ->with('success', 'Attribute created successfully');
+        } catch (\Exception $e) {
+            Log::error('Attribute creation failed: ' . $e->getMessage());
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Failed to create attribute. Please try again.');
+        }
     }
 
     /**
@@ -117,7 +125,11 @@ class ProductAttributeController extends Controller
      */
     public function show(Attribute $attribute)
     {
-        return redirect()->route('attributes.edit', $attribute);
+        $attribute->load('values');
+        
+        return Inertia::render('Admin/Attributes/Show', [
+            'attribute' => $attribute,
+        ]);
     }
 
     /**
@@ -141,24 +153,31 @@ class ProductAttributeController extends Controller
             'values.*' => 'required|string|max:255',
         ]);
 
-        $attribute->update([
-            'name' => $validated['name'],
-            'slug' => Str::slug($validated['name']),
-        ]);
-
-        // Delete existing values اور نئے values create کرو
-        $attribute->values()->delete();
-
-        foreach ($validated['values'] as $value) {
-            AttributeValue::create([
-                'attribute_id' => $attribute->id,
-                'value' => $value,
-                'slug' => Str::slug($value),
+        try {
+            $attribute->update([
+                'name' => $validated['name'],
+                'slug' => Str::slug($validated['name']),
             ]);
-        }
 
-        return redirect()->route('attributes.index')
-            ->with('message', 'Attribute updated successfully');
+            // Delete existing values and create new ones
+            $attribute->values()->delete();
+
+            foreach ($validated['values'] as $value) {
+                AttributeValue::create([
+                    'attribute_id' => $attribute->id,
+                    'value' => $value,
+                    'slug' => Str::slug($value),
+                ]);
+            }
+
+            return redirect()->route('attributes.index')
+                ->with('success', 'Attribute updated successfully');
+        } catch (\Exception $e) {
+            Log::error('Attribute update failed: ' . $e->getMessage());
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Failed to update attribute. Please try again.');
+        }
     }
 
     /**
@@ -166,10 +185,16 @@ class ProductAttributeController extends Controller
      */
     public function destroy(Attribute $attribute)
     {
-        $attribute->values()->delete();
-        $attribute->delete();
+        try {
+            $attribute->values()->delete();
+            $attribute->delete();
 
-        return redirect()->route('attributes.index')
-            ->with('message', 'Attribute deleted successfully');
+            return redirect()->route('attributes.index')
+                ->with('success', 'Attribute deleted successfully');
+        } catch (\Exception $e) {
+            Log::error('Attribute deletion failed: ' . $e->getMessage());
+            return redirect()->back()
+                ->with('error', 'Failed to delete attribute. Please try again.');
+        }
     }
 }

@@ -39,12 +39,12 @@ export default function AttributeForm({ attribute, isEdit = false }: AttributeFo
         e.preventDefault();
         
         if (!data.name.trim()) {
-            alert('Name likho');
+            alert('Write Attribute Name');
             return;
         }
         
         if (values.every(v => !v.trim())) {
-            alert('Kum az kum ek value add karo');
+            alert('Add at least one attribute value');
             return;
         }
 
