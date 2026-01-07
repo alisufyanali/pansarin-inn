@@ -74,6 +74,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
     Route::resource('blogscomments', BlogsCommentsController::class);
     Route::get('blogscomments-data', [BlogsCommentsController::class, 'getData'])->name('blogscomments.data');
 
+
     // Blog Tags Routes
     Route::resource('blogstags', BlogTagsController::class);
     Route::get('blogstags-data', [BlogTagsController::class, 'getData'])->name('blogstags.data');

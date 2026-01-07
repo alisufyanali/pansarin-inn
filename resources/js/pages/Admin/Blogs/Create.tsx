@@ -8,17 +8,25 @@ const breadcrumbs: BreadcrumbItem[] = [
   { title: 'Create', href: '#' },
 ];
 
+interface BlogTag {
+    id: number;
+    name: string;
+    slug: string;
+    color: string;
+}
+
 type BlogCategory = { id: number; name: string };
 
 interface Props {
-  categories: BlogCategory[];
+    categories: BlogCategory[];
+    tags: BlogTag[];
 }
 
-export default function Create({ categories }: Props) {
-  return (
-    <AppLayout breadcrumbs={breadcrumbs}>
-      <Head title="Create Blog Post" />
-      <BlogForm categories={categories} isEdit={false} />
-    </AppLayout>
-  );
+export default function Create({ categories, tags }: Props) {
+    return (
+        <AppLayout breadcrumbs={breadcrumbs}>
+            <Head title="Create Blog Post" />
+            <BlogForm categories={categories} tags={tags} isEdit={false} />
+        </AppLayout>
+    );
 }

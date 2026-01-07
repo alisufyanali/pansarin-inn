@@ -36,87 +36,98 @@ class BlogController extends Controller
     }
 
     public function getData(Request $request)
-    {
-        $query = Blog::with(['category', 'tags'])->latest();
+{
+    try {
+        // Base query
+        $query = Blog::query()
+            ->with(['category:id,name', 'tags:id,name,color'])
+            ->select('id', 'blog_category_id', 'title', 'slug', 'excerpt', 'status', 'thumbnail', 'created_at', 'updated_at');
         
-        if ($request->has('search') && $request->search !== '') {
-            if (is_string($request->search)) {
-                $search = $request->search;
-                $query->where(function($q) use ($search) {
-                    $q->where('title', 'like', "%{$search}%")
-                      ->orWhere('slug', 'like', "%{$search}%")
-                      ->orWhere('content', 'like', "%{$search}%")
-                      ->orWhereHas('category', function($q) use ($search) {
-                          $q->where('name', 'like', "%{$search}%");
-                      })
-                      ->orWhereHas('tags', function($q) use ($search) {
-                          $q->where('name', 'like', "%{$search}%");
-                      });
-                });
-            }
-            elseif (is_array($request->search) && isset($request->search['value'])) {
-                $search = $request->search['value'];
-                if (!empty($search)) {
-                    $query->where(function($q) use ($search) {
-                        $q->where('title', 'like', "%{$search}%")
-                          ->orWhere('slug', 'like', "%{$search}%")
-                          ->orWhere('content', 'like', "%{$search}%")
-                          ->orWhereHas('category', function($q) use ($search) {
-                              $q->where('name', 'like', "%{$search}%");
-                          })
-                          ->orWhereHas('tags', function($q) use ($search) {
-                              $q->where('name', 'like', "%{$search}%");
-                          });
-                    });
-                }
-            }
+        // Search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('slug', 'like', "%{$search}%")
+                  ->orWhere('content', 'like', "%{$search}%")
+                  ->orWhereHas('category', function($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%");
+                  });
+            });
         }
         
-        if ($request->has('status') && $request->status !== '') {
+        // Filters
+        if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
         
-        if ($request->has('blog_category_id') && $request->blog_category_id !== '') {
+        if ($request->filled('blog_category_id')) {
             $query->where('blog_category_id', $request->blog_category_id);
         }
 
-        return DataTables::of($query)
-            ->addColumn('category_name', function($blog) {
-                return $blog->category ? $blog->category->name : null;
-            })
-            ->addColumn('tags_list', function($blog) {
-                return $blog->tags->pluck('name')->toArray();
-            })
-            ->addColumn('status_text', function($blog) {
-                return ucfirst($blog->status ?? 'draft');
-            })
-            ->make(true);
+        // Sorting
+        $sortBy = $request->get('sortBy', 'created_at');
+        $sortOrder = $request->get('sortOrder', 'desc');
+        $query->orderBy($sortBy, $sortOrder);
+
+        // Pagination
+        $perPage = $request->get('perPage', 10);
+        $page = $request->get('page', 1);
+        
+        $blogs = $query->paginate($perPage, ['*'], 'page', $page);
+
+        // Transform data
+        $transformedData = $blogs->map(function($blog) {
+            return [
+                'id' => $blog->id,
+                'blog_category_id' => $blog->blog_category_id,
+                'title' => $blog->title,
+                'slug' => $blog->slug,
+                'excerpt' => $blog->excerpt,
+                'status' => $blog->status,
+                'thumbnail' => $blog->thumbnail,
+                'created_at' => $blog->created_at,
+                'updated_at' => $blog->updated_at,
+                'category' => $blog->category,
+                'tags' => $blog->tags,
+                'category_name' => $blog->category?->name,
+                'tags_list' => $blog->tags->pluck('name')->toArray(),
+            ];
+        });
+
+        return response()->json([
+            'data' => $transformedData,
+            'total' => $blogs->total(),
+            'per_page' => $blogs->perPage(),
+            'current_page' => $blogs->currentPage(),
+            'last_page' => $blogs->lastPage(),
+        ]);
+
+    } catch (\Exception $e) {
+        \Log::error('Blogs getData error: ' . $e->getMessage());
+        
+        return response()->json([
+            'error' => 'Failed to load data',
+            'message' => $e->getMessage(),
+            'data' => [],
+            'total' => 0,
+        ], 500);
     }
+}
 
 public function create()
 {
-    // Get categories
-    $categories = BlogCategory::all(['id', 'name']);
+    $categories = BlogCategory::orderBy('name')->get(['id', 'name']);
     
-    // Get active tags
-    $tags = BlogTag::where('is_active', 1) // Try with 1 instead of true
+    $tags = BlogTag::where('is_active', true)
                    ->orderBy('name')
                    ->get(['id', 'name', 'slug', 'color']);
     
-    // Debug
-    \Log::info('Creating blog - Categories: ' . $categories->count());
-    \Log::info('Creating blog - Active Tags: ' . $tags->count());
-    
-    if ($tags->isEmpty()) {
-        \Log::warning('No active tags found!');
-    }
-    
     return Inertia::render('Admin/Blogs/Create', [
         'categories' => $categories,
-        'tags' => $tags->toArray() // Force to array
+        'tags' => $tags
     ]);
 }
-
 
     public function store(Request $request)
     {
@@ -180,12 +191,14 @@ public function create()
         ]);
     }
 
-    public function edit(Blog $blog)
+public function edit(Blog $blog)
 {
+    $blog->load('tags:id,name,slug,color', 'category:id,name');
+    
     return Inertia::render('Admin/Blogs/Edit', [
-        'blog' => $blog->load('tags'),
-        'categories' => BlogCategory::all(['id', 'name']),
-        'tags' => BlogTag::where('is_active', true)->get(['id', 'name', 'slug', 'color']) // FIXED
+        'blog' => $blog,
+        'categories' => BlogCategory::orderBy('name')->get(['id', 'name']),
+        'tags' => BlogTag::where('is_active', true)->orderBy('name')->get(['id', 'name', 'slug', 'color'])
     ]);
 }
 

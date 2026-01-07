@@ -144,38 +144,35 @@ class BlogsCommentsController extends Controller
     }
 
     public function store(Request $request)
-    {
-        try {
-            $validated = $request->validate([
-                'blog_id' => 'nullable|exists:blogs,id',
-                'comments' => 'required|string|min:3|max:1000',
-                'review' => 'nullable|string|max:2000',
-                'rating' => 'nullable|integer|min:1|max:5',
-                'status' => 'nullable|in:pending,approved,rejected',
-            ]);
+{
+    try {
+        $validated = $request->validate([
+            'blog_id' => 'nullable|exists:blogs,id',
+            'comments' => 'required|string|min:3|max:1000',
+            'review' => 'nullable|string|max:2000',
+            'rating' => 'nullable|integer|min:1|max:5',
+            'status' => 'nullable|in:pending,approved,rejected',
+        ]);
 
-            $validated['user_id'] = auth()->id();
-            
-            if (empty($validated['status'])) {
-                $validated['status'] = 'pending';
-            }
-
-            BlogComments::create($validated);
-
-            return to_route('blogsComments.index')
-                ->with('success', 'Comment successfully created!');
-
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return back()
-                ->withErrors($e->errors())
-                ->withInput();
-        } catch (\Exception $e) {
-            Log::error('Blog comment creation error: ' . $e->getMessage());
-            return back()
-                ->withInput()
-                ->with('error', 'Failed to create comment: ' . $e->getMessage());
+        $validated['user_id'] = auth()->id();
+        
+        if (empty($validated['status'])) {
+            $validated['status'] = 'pending';
         }
+
+        BlogComments::create($validated);
+
+        return to_route('blogscomments.index') // FIXED - lowercase
+            ->with('success', 'Comment successfully created!');
+
+    } catch (\Exception $e) {
+        Log::error('Blog comment creation error: ' . $e->getMessage());
+        return back()
+            ->withInput()
+            ->with('error', 'Failed to create comment: ' . $e->getMessage());
     }
+}
+    
 
     public function show(BlogComments $blogsComment)
     {
@@ -208,44 +205,40 @@ class BlogsCommentsController extends Controller
     }
 
     public function update(Request $request, BlogComments $blogsComment)
-    {
-        try {
-            $validated = $request->validate([
-                'blog_id' => 'nullable|exists:blogs,id',
-                'comments' => 'required|string|min:3|max:1000',
-                'review' => 'nullable|string|max:2000',
-                'rating' => 'nullable|integer|min:1|max:5',
-                'status' => 'nullable|in:pending,approved,rejected',
-            ]);
+{
+    try {
+        $validated = $request->validate([
+            'blog_id' => 'nullable|exists:blogs,id',
+            'comments' => 'required|string|min:3|max:1000',
+            'review' => 'nullable|string|max:2000',
+            'rating' => 'nullable|integer|min:1|max:5',
+            'status' => 'nullable|in:pending,approved,rejected',
+        ]);
 
-            $blogsComment->update($validated);
+        $blogsComment->update($validated);
 
-            return to_route('blogsComments.index')
-                ->with('success', 'Comment successfully updated!');
+        return to_route('blogscomments.index') // FIXED - lowercase
+            ->with('success', 'Comment successfully updated!');
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return back()
-                ->withErrors($e->errors())
-                ->withInput();
-        } catch (\Exception $e) {
-            Log::error('Blog comment update error: ' . $e->getMessage());
-            return back()
-                ->withInput()
-                ->with('error', 'Failed to update comment: ' . $e->getMessage());
-        }
+    } catch (\Exception $e) {
+        Log::error('Blog comment update error: ' . $e->getMessage());
+        return back()
+            ->withInput()
+            ->with('error', 'Failed to update comment: ' . $e->getMessage());
     }
+}
 
     public function destroy(BlogComments $blogsComment)
-    {
-        try {
-            $blogsComment->delete();
-            
-            return to_route('blogsComments.index')
-                ->with('success', 'Comment successfully deleted!');
+{
+    try {
+        $blogsComment->delete();
+        
+        return to_route('blogscomments.index') // FIXED - lowercase
+            ->with('success', 'Comment successfully deleted!');
 
-        } catch (\Exception $e) {
-            Log::error('Blog comment deletion error: ' . $e->getMessage());
-            return back()->with('error', 'Failed to delete comment.');
-        }
+    } catch (\Exception $e) {
+        Log::error('Blog comment deletion error: ' . $e->getMessage());
+        return back()->with('error', 'Failed to delete comment.');
     }
+}
 }
