@@ -7,20 +7,20 @@ use App\Models\Affiliate;
 use App\Models\Referral;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Inertia\Inertia;
+use Illuminate\Support\Facades\Cookie;
 
 class AffiliateController extends Controller
 {
-    // Dashboard Stats
     public function index()
     {
         $affiliate = auth()->user()->affiliate;
         
         if (!$affiliate) {
-            return response()->json(['is_affiliate' => false]);
+            return Inertia::render('Vendor/Affiliate/Register'); // Agar affiliate nahi hai toh registration page
         }
 
-        return response()->json([
-            'is_affiliate' => true,
+        return Inertia::render('Vendor/Affiliate/Dashboard', [
             'stats' => [
                 'balance' => $affiliate->balance,
                 'total_referrals' => $affiliate->referrals()->count(),
@@ -30,29 +30,38 @@ class AffiliateController extends Controller
         ]);
     }
 
-    // Affiliate Registration
     public function store(Request $request)
     {
         $user = auth()->user();
-        
         if ($user->affiliate) {
-            return response()->json(['message' => 'Aap pehle se affiliate hain.'], 400);
+            return back()->with('error', 'Aap pehle se affiliate hain.');
+        }
+
+        // Downline Logic: Cookie se code uthayen aur parent dhonden
+        $parentAffiliateId = null;
+        $cookieCode = Cookie::get('affiliate_referral');
+        if ($cookieCode) {
+            $parent = Affiliate::where('affiliate_code', $cookieCode)->first();
+            $parentAffiliateId = $parent ? $parent->id : null;
         }
 
         $affiliate = Affiliate::create([
             'user_id' => $user->id,
             'affiliate_code' => Str::upper(Str::random(8)),
-            'commission_rate' => 5.00, // Default 5%
+            'commission_rate' => 5.00,
             'status' => 1,
-            'parent_id' => $request->cookie('affiliate_referral_id') // Downline logic
+            'parent_id' => $parentAffiliateId
         ]);
 
-        return response()->json(['message' => 'Affiliate account ban gaya!', 'data' => $affiliate]);
+        return redirect()->route('vendor.affiliate.index')->with('success', 'Affiliate account ban gaya!');
     }
 
     public function referrals()
     {
         $referrals = auth()->user()->affiliate->referrals()->with('order')->latest()->get();
-        return response()->json($referrals);
+        
+        return Inertia::render('Vendor/Affiliate/Referrals', [
+            'referrals' => $referrals
+        ]);
     }
 }

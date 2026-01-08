@@ -9,8 +9,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Affiliate extends Model
 {
     protected $fillable = [
-        'user_id', 'affiliate_code', 'commission_rate', 
-        'balance', 'payment_method', 'payment_details', 'status', 'parent_id'
+    'user_id', 'affiliate_code', 'commission_rate', 'balance', 
+    'payment_method', 'payment_account_title', 'payment_iban_details', 
+    'payment_account_no_details', 'status', 'parent_id'
     ];
 
     public function user(): BelongsTo {

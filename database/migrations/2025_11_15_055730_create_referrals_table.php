@@ -15,11 +15,16 @@ return new class extends Migration
             $table->id();
             $table->foreignId('affiliate_id')->constrained()->onDelete('cascade');
             $table->foreignId('order_id')->constrained()->onDelete('cascade');
-            $table->foreignId('user_id')->nullable()->constrained()->onDelete('set null'); // Khareedar
+            $table->foreignId('user_id')->nullable()->constrained()->onDelete('set null');
+            
             $table->decimal('order_amount', 10, 2); 
             $table->decimal('commission_amount', 10, 2);
-            // Status: pending (order placed), approved (order delivered), rejected (order cancelled)
+            $table->string('referral_type')->default('direct');
+
             $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
+            $table->unique('order_id');
+            $table->index(['status', 'affiliate_id']);
+
             $table->timestamps();
         });
     }
