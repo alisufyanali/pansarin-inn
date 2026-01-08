@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\BlogCategoryController;
 use App\Http\Controllers\Admin\FrontendContentController;
 use App\Http\Controllers\Admin\BlogsCommentsController;
 use App\Http\Controllers\Admin\BlogTagsController;
+use App\Http\Controllers\Admin\AffiliateController as AdminAffiliateController;
 use Illuminate\Support\Facades\Route;
 
 use Inertia\Inertia; 

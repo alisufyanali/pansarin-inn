@@ -18,6 +18,7 @@ class BlogController extends Controller
         $this->middleware('permission:create.blogs')->only(['create', 'store']);
         $this->middleware('permission:edit.blogs')->only(['edit', 'update']);
         $this->middleware('permission:delete.blogs')->only(['destroy']);
+        $this->middleware('permission:view.blogs')->only(['index', 'getData', 'show']);
     }
 
     public function index(Request $request)

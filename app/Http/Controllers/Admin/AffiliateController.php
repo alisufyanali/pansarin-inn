@@ -12,6 +12,19 @@ use Inertia\Inertia;
 
 class AffiliateController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('permission:view.affiliates')->only('index', 'logs', 'payoutRequests', 'settings');
+        $this->middleware('permission:manage.affiliates')->only('updateStatus', 'approvePayout', 'updateSettings');
+        $this->middleware('permission:view.affiliate.settings')->only('settings', 'updateSettings');
+        $this->middleware('permission:view.payout.requests')->only('payoutRequests');
+        $this->middleware('permission:approve.payout.requests')->only('approvePayout');
+        $this->middleware('permission:update.affiliate.settings')->only('updateSettings');
+        $this->middleware('permission:block.affiliates')->only('updateStatus');
+    }
+
+    
     // 1. Saare Affiliates ki list dikhane ke liye
     public function index()
     {

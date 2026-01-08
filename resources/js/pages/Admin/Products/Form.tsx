@@ -399,149 +399,205 @@ export default function ProductForm({
 
                     {/* CARD 2: Pricing & Status */}
                     <div className="rounded-lg border border-gray-200 bg-white p-6 shadow dark:border-gray-800 dark:bg-gray-900">
-                        <h3 className="mb-4 border-b border-gray-200 pb-2 text-lg font-semibold text-gray-900 dark:border-gray-800 dark:text-white">
-                            Pricing & Status
-                        </h3>
-                        <div className="space-y-4">
-                            {/* Price */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Price (Rs) *
-                                </label>
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    placeholder="0.00"
-                                    value={data.price}
-                                    onChange={(e) =>
-                                        setData('price', e.target.value)
-                                    }
-                                    className="mt-1 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
-                                />
-                                {errors.price && (
-                                    <div className="mt-1 text-sm text-red-500">
-                                        {errors.price}
-                                    </div>
-                                )}
-                            </div>
+    <h3 className="mb-4 border-b border-gray-200 pb-2 text-lg font-semibold text-gray-900 dark:border-gray-800 dark:text-white">
+        Pricing & Status
+    </h3>
+    <div className="space-y-4">
+        {/* Price */}
+        <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Price (Rs) *
+            </label>
+            <input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                value={data.price}
+                onChange={(e) => {
+                    const newPrice = e.target.value;
+                    setData('price', newPrice);
+                    
+                    // ✅ Auto-validate sale price when price changes
+                    if (data.sale_price && parseFloat(data.sale_price as string) >= parseFloat(newPrice)) {
+                        // Clear sale price if it's >= regular price
+                        setData('sale_price', '');
+                    }
+                }}
+                className="mt-1 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
+                required
+            />
+            {errors.price && (
+                <div className="mt-1 text-sm text-red-500">
+                    {errors.price}
+                </div>
+            )}
+        </div>
 
-                            {/* Sale Price */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Sale Price (Rs)
-                                </label>
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    placeholder="0.00"
-                                    value={data.sale_price}
-                                    onChange={(e) =>
-                                        setData('sale_price', e.target.value)
-                                    }
-                                    className="mt-1 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
-                                />
-                            </div>
+        {/* Sale Price with Validation */}
+        <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Sale Price (Rs)
+                {data.price && (
+                    <span className="ml-2 text-xs text-gray-500">
+                        (Must be less than Rs. {parseFloat(data.price as string).toFixed(2)})
+                    </span>
+                )}
+            </label>
+            <input
+                type="number"
+                step="0.01"
+                min="0"
+                max={data.price ? parseFloat(data.price as string) - 0.01 : undefined}
+                placeholder="0.00"
+                value={data.sale_price}
+                onChange={(e) => {
+                    const salePrice = e.target.value;
+                    const regularPrice = parseFloat(data.price as string);
+                    
+                    // ✅ Frontend validation
+                    if (salePrice && regularPrice && parseFloat(salePrice) >= regularPrice) {
+                        // Show warning but allow typing
+                        setData('sale_price', salePrice);
+                    } else {
+                        setData('sale_price', salePrice);
+                    }
+                }}
+                onBlur={(e) => {
+                    // ✅ Final validation on blur
+                    const salePrice = parseFloat(e.target.value);
+                    const regularPrice = parseFloat(data.price as string);
+                    
+                    if (salePrice && regularPrice && salePrice >= regularPrice) {
+                        alert(`Sale price (Rs. ${salePrice.toFixed(2)}) must be less than regular price (Rs. ${regularPrice.toFixed(2)})`);
+                        setData('sale_price', '');
+                    }
+                }}
+                className={`mt-1 w-full rounded-md border px-3 py-2 outline-none focus:ring-2 ${
+                    data.sale_price && data.price && parseFloat(data.sale_price as string) >= parseFloat(data.price as string)
+                        ? 'border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-900/20 focus:ring-red-500'
+                        : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 focus:ring-blue-500'
+                } text-gray-900 placeholder-gray-500 dark:text-gray-100 dark:placeholder-gray-400`}
+            />
+            
+            {/* ✅ Show discount preview */}
+            {data.price && data.sale_price && parseFloat(data.sale_price as string) < parseFloat(data.price as string) && (
+                <div className="mt-2 flex items-center gap-2 text-sm">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        Save {Math.round(((parseFloat(data.price as string) - parseFloat(data.sale_price as string)) / parseFloat(data.price as string)) * 100)}%
+                    </span>
+                    <span className="text-gray-600 dark:text-gray-400">
+                        (Rs. {(parseFloat(data.price as string) - parseFloat(data.sale_price as string)).toFixed(2)} off)
+                    </span>
+                </div>
+            )}
+            
+            {/* ✅ Show error if sale price >= regular price */}
+            {data.price && data.sale_price && parseFloat(data.sale_price as string) >= parseFloat(data.price as string) && (
+                <div className="mt-2 flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                    Sale price must be less than regular price
+                </div>
+            )}
+            
+            {errors.sale_price && (
+                <div className="mt-1 text-sm text-red-500">
+                    {errors.sale_price}
+                </div>
+            )}
+        </div>
 
-                            {/* SKU & Barcode */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                        SKU
-                                    </label>
-                                    <input
-                                        type="text"
-                                        placeholder="Auto-generated"
-                                        value={data.sku}
-                                        onChange={(e) =>
-                                            setData('sku', e.target.value)
-                                        }
-                                        className="mt-1 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                        Barcode
-                                    </label>
-                                    <input
-                                        type="text"
-                                        placeholder="Product barcode"
-                                        value={data.barcode}
-                                        onChange={(e) =>
-                                            setData('barcode', e.target.value)
-                                        }
-                                        className="mt-1 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
-                                    />
-                                </div>
-                            </div>
+        {/* Rest of the pricing fields... */}
+        {/* SKU & Barcode */}
+        <div className="grid grid-cols-2 gap-4">
+            <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    SKU
+                </label>
+                <input
+                    type="text"
+                    placeholder="Auto-generated"
+                    value={data.sku}
+                    onChange={(e) => setData('sku', e.target.value)}
+                    className="mt-1 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
+                />
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Barcode
+                </label>
+                <input
+                    type="text"
+                    placeholder="Product barcode"
+                    value={data.barcode}
+                    onChange={(e) => setData('barcode', e.target.value)}
+                    className="mt-1 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
+                />
+            </div>
+        </div>
 
-                            {/* Stock Quantity & Alert */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                        Stock Quantity
-                                    </label>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        placeholder="0"
-                                        value={data.stock_qty}
-                                        onChange={(e) =>
-                                            setData('stock_qty', e.target.value)
-                                        }
-                                        className="mt-1 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                        Stock Alert
-                                    </label>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        placeholder="5"
-                                        value={data.stock_alert}
-                                        onChange={(e) =>
-                                            setData(
-                                                'stock_alert',
-                                                e.target.value,
-                                            )
-                                        }
-                                        className="mt-1 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
-                                    />
-                                </div>
-                            </div>
+        {/* Stock Quantity & Alert */}
+        <div className="grid grid-cols-2 gap-4">
+            <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Stock Quantity
+                </label>
+                <input
+                    type="number"
+                    min="0"
+                    placeholder="0"
+                    value={data.stock_qty}
+                    onChange={(e) => setData('stock_qty', e.target.value)}
+                    className="mt-1 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
+                />
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Stock Alert
+                </label>
+                <input
+                    type="number"
+                    min="0"
+                    placeholder="5"
+                    value={data.stock_alert}
+                    onChange={(e) => setData('stock_alert', e.target.value)}
+                    className="mt-1 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
+                />
+            </div>
+        </div>
 
-                            {/* Status */}
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="checkbox"
-                                    checked={data.status}
-                                    onChange={(e) =>
-                                        setData('status', e.target.checked)
-                                    }
-                                    className="h-4 w-4 rounded border-gray-200 text-blue-600 focus:ring-2 dark:border-gray-700"
-                                />
-                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Status (Active)
-                                </label>
-                            </div>
+        {/* Status */}
+        <div className="flex items-center gap-2">
+            <input
+                type="checkbox"
+                checked={data.status}
+                onChange={(e) => setData('status', e.target.checked)}
+                className="h-4 w-4 rounded border-gray-200 text-blue-600 focus:ring-2 dark:border-gray-700"
+            />
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Status (Active)
+            </label>
+        </div>
 
-                            {/* Featured */}
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="checkbox"
-                                    checked={data.featured}
-                                    onChange={(e) =>
-                                        setData('featured', e.target.checked)
-                                    }
-                                    className="h-4 w-4 rounded border-gray-200 text-blue-600 focus:ring-2 dark:border-gray-700"
-                                />
-                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Featured Product
-                                </label>
-                            </div>
-                        </div>
-                    </div>
+        {/* Featured */}
+        <div className="flex items-center gap-2">
+            <input
+                type="checkbox"
+                checked={data.featured}
+                onChange={(e) => setData('featured', e.target.checked)}
+                className="h-4 w-4 rounded border-gray-200 text-blue-600 focus:ring-2 dark:border-gray-700"
+            />
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Featured Product
+            </label>
+        </div>
+    </div>
+</div>
 
                     {/* CARD 3: SEO & Meta */}
                     <div className="rounded-lg border border-gray-200 bg-white p-6 shadow dark:border-gray-800 dark:bg-gray-900">

@@ -82,10 +82,10 @@ export default function Index({ stats, flash }: Props) {
             Rs. {parseFloat(row.price as any).toFixed(2)}
           </span>
           {row.sale_price && (
-            <span className="text-xs text-green-600 dark:text-green-400">
-              Sale: Rs. {parseFloat(row.sale_price as any).toFixed(2)}
-            </span>
-          )}
+    <span className="text-xs text-green-600">
+        Sale: Rs. {parseFloat(row.sale_price as any).toFixed(2)}
+    </span>
+)}
         </div>
       ),
     },

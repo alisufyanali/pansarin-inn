@@ -17,10 +17,11 @@ class AffiliateController extends Controller
         $affiliate = auth()->user()->affiliate;
         
         if (!$affiliate) {
-            return Inertia::render('Vendor/Affiliate/Register'); // Agar affiliate nahi hai toh registration page
+            // Registration.tsx file ka sahi path
+            return Inertia::render('Affiliate/Registration'); 
         }
 
-        return Inertia::render('Vendor/Affiliate/Dashboard', [
+        return Inertia::render('Affiliate/Dashboard', [ // Dashboard.tsx
             'stats' => [
                 'balance' => $affiliate->balance,
                 'total_referrals' => $affiliate->referrals()->count(),
@@ -34,10 +35,9 @@ class AffiliateController extends Controller
     {
         $user = auth()->user();
         if ($user->affiliate) {
-            return back()->with('error', 'Aap pehle se affiliate hain.');
+            return redirect()->route('affiliate.dashboard')->with('error', 'Aap pehle se affiliate hain.');
         }
 
-        // Downline Logic: Cookie se code uthayen aur parent dhonden
         $parentAffiliateId = null;
         $cookieCode = Cookie::get('affiliate_referral');
         if ($cookieCode) {
@@ -45,7 +45,7 @@ class AffiliateController extends Controller
             $parentAffiliateId = $parent ? $parent->id : null;
         }
 
-        $affiliate = Affiliate::create([
+        Affiliate::create([
             'user_id' => $user->id,
             'affiliate_code' => Str::upper(Str::random(8)),
             'commission_rate' => 5.00,
@@ -53,15 +53,23 @@ class AffiliateController extends Controller
             'parent_id' => $parentAffiliateId
         ]);
 
-        return redirect()->route('vendor.affiliate.index')->with('success', 'Affiliate account ban gaya!');
+        return redirect()->route('affiliate.dashboard')->with('success', 'Affiliate account ban gaya!');
     }
 
     public function referrals()
-    {
-        $referrals = auth()->user()->affiliate->referrals()->with('order')->latest()->get();
-        
-        return Inertia::render('Vendor/Affiliate/Referrals', [
-            'referrals' => $referrals
-        ]);
+{
+    $affiliate = auth()->user()->affiliate;
+
+    // Safety Check: Agar user affiliate nahi hai toh referrals page nahi dikha sakte
+    if (!$affiliate) {
+        return redirect()->route('affiliate.register.view')
+            ->with('error', 'Please register as an affiliate first.');
     }
+
+    $referrals = $affiliate->referrals()->with('order')->latest()->get();
+    
+    return Inertia::render('Affiliate/Referrals', [
+        'referrals' => $referrals
+    ]);
+}
 }

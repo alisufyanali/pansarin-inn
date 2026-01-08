@@ -16,9 +16,10 @@ class OrderController extends Controller
 {
     public function __construct()
     {
-        // $this->middleware('permission:create.orders')->only(['create', 'store']);
-        // $this->middleware('permission:edit.orders')->only(['edit', 'update']);
-        // $this->middleware('permission:delete.orders')->only(['destroy']);
+        $this->middleware('permission:create.orders')->only(['create', 'store']);
+        $this->middleware('permission:edit.orders')->only(['edit', 'update']);
+        $this->middleware('permission:delete.orders')->only(['destroy']);
+        $this->middleware('permission:view.orders')->only(['index', 'show', 'getData']);
     }
 
     /**

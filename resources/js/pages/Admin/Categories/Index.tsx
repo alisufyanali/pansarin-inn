@@ -1,7 +1,7 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { PlusCircle, Filter } from 'lucide-react';
+import { PlusCircle, FolderTree, CheckCircle, Layers, Image as ImageIcon } from 'lucide-react';
 import { useEffect } from 'react';
 import DataTableWrapper from '@/components/DataTableWrapper';
 import { CommonColumns, CodeBadge } from '@/components/TableColumns';
@@ -16,17 +16,15 @@ interface Category {
   id: number;
   name: string;
   slug: string;
+  image?: string;
   status: boolean;
+  parent_id?: number;
   parent?: { id: number; name: string } | null;
   created_at: string;
   updated_at: string;
 }
 
 interface Props {
-  categories?: {
-    data: Category[];
-    total: number;
-  };
   stats?: {
     total: number;
     active: number;
@@ -39,37 +37,117 @@ interface Props {
   };
 }
 
-const DEFAULT_CATEGORIES = {
-  data: [],
-  total: 0,
-};
-
-export default function Index({ categories = DEFAULT_CATEGORIES, stats: propsStats, flash }: Props) {
+export default function Index({ stats: propsStats, flash }: Props) {
   const canCreate = true;
   const canEdit = true;
   const canDelete = true;
+  const canView = true;
 
-  const safeCategories = categories || DEFAULT_CATEGORIES;
+  // Use stats from props with defaults
+  const stats = propsStats || {
+    total: 0,
+    active: 0,
+    withParent: 0,
+    topLevel: 0,
+  };
 
-  // Define columns using helper
+  // Define columns
   const columns = [
     CommonColumns.id(),
-    CommonColumns.name('Category Name'),
-    CommonColumns.slug(),
     {
-      name: 'Parent',
-      selector: (row: Category) => row.parent?.name || '-',
-      sortable: true,
+      name: 'Image',
+      selector: (row: Category) => row.image || '',
+      sortable: false,
+      width: '80px',
       cell: (row: Category) => (
-        <span className="text-gray-600 dark:text-gray-400">
-          {row.parent?.name || '-'}
-        </span>
+        row.image ? (
+          <img 
+            src={`/storage/${row.image}`} 
+            alt={row.name}
+            className="w-12 h-12 rounded-lg object-cover border border-gray-200 dark:border-gray-700"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"%3E%3Crect fill="%23f3f4f6" width="48" height="48"/%3E%3Ctext x="24" y="24" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="20" fill="%239ca3af"%3E?%3C/text%3E%3C/svg%3E';
+            }}
+          />
+        ) : (
+          <div className="w-12 h-12 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center border border-gray-200 dark:border-gray-700">
+            <ImageIcon className="w-5 h-5 text-gray-400" />
+          </div>
+        )
       ),
     },
-    CommonColumns.status(),
+    {
+      name: 'Category Name',
+      selector: (row: Category) => row.name,
+      sortable: true,
+      sortField: 'name',
+      cell: (row: Category) => (
+        <div className="flex flex-col">
+          <span className="font-semibold text-gray-900 dark:text-white">
+            {row.name}
+          </span>
+          <span className="text-xs text-gray-500 dark:text-gray-400">
+            ID: {row.id}
+          </span>
+        </div>
+      ),
+      width: '200px',
+    },
+    {
+      name: 'Slug',
+      selector: (row: Category) => row.slug || '-',
+      sortable: true,
+      sortField: 'slug',
+      cell: (row: Category) => (
+        row.slug ? <CodeBadge text={row.slug} /> : <span className="text-gray-400">-</span>
+      ),
+    },
+    {
+      name: 'Parent Category',
+      selector: (row: Category) => row.parent?.name || '-',
+      sortable: true,
+      sortField: 'parent_id',
+      cell: (row: Category) => (
+        row.parent ? (
+          <div className="flex items-center gap-2">
+            <FolderTree className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <span className="text-gray-700 dark:text-gray-300">
+              {row.parent.name}
+            </span>
+          </div>
+        ) : (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
+            <Layers className="w-3 h-3" />
+            Root Category
+          </span>
+        )
+      ),
+      width: '180px',
+    },
+    {
+      name: 'Status',
+      selector: (row: Category) => row.status ? 'Active' : 'Inactive',
+      sortable: true,
+      sortField: 'status',
+      cell: (row: Category) => (
+        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
+          row.status
+            ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+            : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+        }`}>
+          <span className={`w-1.5 h-1.5 rounded-full ${
+            row.status ? 'bg-green-600 dark:bg-green-400' : 'bg-gray-400'
+          }`}></span>
+          {row.status ? 'Active' : 'Inactive'}
+        </span>
+      ),
+      width: '120px',
+      center: true,
+    },
     CommonColumns.createdAt(true),
     CommonColumns.actions({
       baseUrl: '/admin/categories',
+      canView,
       canEdit,
       canDelete,
     }),
@@ -81,22 +159,28 @@ export default function Index({ categories = DEFAULT_CATEGORIES, stats: propsSta
     { label: 'Slug', key: 'slug' },
     { label: 'Parent Category', key: 'parent.name' },
     { label: 'Status', key: 'status' },
+    { label: 'Image', key: 'image' },
     { label: 'Created At', key: 'created_at' },
     { label: 'Updated At', key: 'updated_at' },
   ];
-
-  // Use stats from props if available, otherwise calculate from data
-  const stats = propsStats || {
-    total: safeCategories.total || 0,
-    active: safeCategories.data?.filter(c => c?.status).length || 0,
-    withParent: safeCategories.data?.filter(c => c?.parent).length || 0,
-    topLevel: safeCategories.data?.filter(c => !c?.parent).length || 0,
-  };
 
   useEffect(() => {
     if (flash?.success) toast.success(flash.success);
     if (flash?.error) toast.error(flash.error);
   }, [flash]);
+
+  // Additional filters
+  const additionalFilters = [
+    {
+      name: 'status',
+      label: 'Status',
+      type: 'select' as const,
+      options: [
+        { value: 'active', label: 'Active' },
+        { value: 'inactive', label: 'Inactive' },
+      ],
+    },
+  ];
 
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
@@ -107,7 +191,7 @@ export default function Index({ categories = DEFAULT_CATEGORIES, stats: propsSta
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Categories
+              Product Categories
             </h1>
             <p className="mt-2 text-gray-600 dark:text-gray-400">
               Manage and organize your product categories efficiently
@@ -120,17 +204,37 @@ export default function Index({ categories = DEFAULT_CATEGORIES, stats: propsSta
               className="inline-flex items-center gap-3 px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 dark:from-blue-500 dark:to-indigo-500 dark:hover:from-blue-600 dark:hover:to-indigo-600 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
             >
               <PlusCircle className="w-5 h-5" />
-              <span>Add New Category</span>
+              <span>Add Category</span>
             </Link>
           )}
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard title="Total Categories" value={stats.total} color="blue" icon={Filter} />
-          <StatCard title="Active Categories" value={stats.active} color="emerald" icon={Filter} />
-          <StatCard title="With Parent" value={stats.withParent} color="purple" icon={Filter} />
-          <StatCard title="Top Level" value={stats.topLevel} color="amber" icon={Filter} />
+          <StatCard 
+            title="Total Categories" 
+            value={stats.total} 
+            color="blue" 
+            icon={FolderTree} 
+          />
+          <StatCard 
+            title="Active" 
+            value={stats.active} 
+            color="emerald" 
+            icon={CheckCircle} 
+          />
+          <StatCard 
+            title="With Parent" 
+            value={stats.withParent} 
+            color="purple" 
+            icon={Layers} 
+          />
+          <StatCard 
+            title="Root Level" 
+            value={stats.topLevel} 
+            color="amber" 
+            icon={FolderTree} 
+          />
         </div>
 
         {/* Data Table */}
@@ -140,6 +244,8 @@ export default function Index({ categories = DEFAULT_CATEGORIES, stats: propsSta
             columns={columns}
             csvHeaders={csvHeaders}
             searchableKeys={['name', 'slug', 'parent.name']}
+            additionalFilters={additionalFilters}
+            defaultPerPage={10}
           />
         </div>
       </div>

@@ -14,9 +14,10 @@ class CouponController extends Controller
 {
     public function __construct()
     {
-        // $this->middleware('permission:create.coupons')->only(['create', 'store']);
-        // $this->middleware('permission:edit.coupons')->only(['edit', 'update']);
-        // $this->middleware('permission:delete.coupons')->only(['destroy']);
+        $this->middleware('permission:create.coupons')->only(['create', 'store']);
+        $this->middleware('permission:edit.coupons')->only(['edit', 'update']);
+        $this->middleware('permission:delete.coupons')->only(['destroy']);
+        $this->middleware('permission:view.coupons')->only(['index', 'show', 'getData']);
     }
 
     /**
@@ -30,6 +31,7 @@ class CouponController extends Controller
             'active' => Coupon::where('is_active', true)->count(),
             'percentage' => Coupon::where('discount_type', 'percentage')->count(),
             'fixed' => Coupon::where('discount_type', 'fixed')->count(),
+
         ];
 
         return Inertia::render('Admin/Coupons/Index', [
