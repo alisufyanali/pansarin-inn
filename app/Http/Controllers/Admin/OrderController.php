@@ -11,6 +11,7 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\DB;
+use App\Jobs\SendOrderConfirmationEmail;
 
 class OrderController extends Controller
 {
@@ -115,6 +116,9 @@ class OrderController extends Controller
      */
     public function store(Request $request)
     {
+        $order = Order::find(1);
+        SendOrderConfirmationEmail::dispatch($order);
+        return 1;
         $validated = $request->validate([
             'customer_id' => 'required|exists:customers,id',
             'items' => 'required|array|min:1',
@@ -184,7 +188,7 @@ class OrderController extends Controller
             SendOrderConfirmationEmail::dispatch($order);
 
             DB::commit();
-            return to_route('orders.index')->with('success', 'Order successfully created! Confirmation email will be sent shortly.');
+            return to_route('admin.orders.index')->with('success', 'Order successfully created! Confirmation email will be sent shortly.');
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -296,7 +300,7 @@ class OrderController extends Controller
             $order->calculateTotals();
 
             DB::commit();
-            return to_route('orders.index')->with('success', 'Order successfully updated!');
+            return to_route('admin.orders.index')->with('success', 'Order successfully updated!');
 
         } catch (\Exception $e) {
             DB::rollBack();

@@ -18,11 +18,13 @@ class OrderItem extends Model
     ];
 
     protected $casts = [
-        'price' => 'decimal:2',
-        'discount' => 'decimal:2',
-        'subtotal' => 'decimal:2',
-        'meta' => 'array',
+        'quantity' => 'int',
+        'price'    => 'float',
+        'discount' => 'float',
+        'subtotal' => 'float',
+        'meta'     => 'array',
     ];
+
 
     // Relationships
     public function order()

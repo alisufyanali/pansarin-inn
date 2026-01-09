@@ -125,7 +125,7 @@ class CustomerController extends Controller
 
         Customer::create($validated);
 
-        return to_route('customers.index')->with('success', 'Customer successfully created!');
+        return to_route('admin.customers.index')->with('success', 'Customer successfully created!');
     }
 
     /**
@@ -172,7 +172,7 @@ class CustomerController extends Controller
 
         $customer->update($validated);
 
-        return to_route('customers.index')->with('success', 'Customer successfully updated!');
+        return to_route('admin.customers.index')->with('success', 'Customer successfully updated!');
     }
 
     /**
