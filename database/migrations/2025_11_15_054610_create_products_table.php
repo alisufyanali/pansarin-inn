@@ -23,10 +23,9 @@ return new class extends Migration
                 ->constrained('categories')
                 ->cascadeOnDelete();
 
-            // $table->foreignId('sub_category_id')
-            //     ->nullable()
-            //     ->constrained('sub_categories')
-            //     ->nullOnDelete();
+            $table->decimal('quantity', 10, 2)->nullable()->after('unit');
+            $table->decimal('purchase_price_per_unit', 10, 2)->nullable()->after('quantity');
+            $table->decimal('sale_price_per_unit', 10, 2)->nullable()->after('purchase_price_per_unit');
 
             $table->string('name');
             $table->string('urdu_name')->nullable();

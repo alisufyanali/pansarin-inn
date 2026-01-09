@@ -196,6 +196,18 @@ class RolePermissionSeeder extends Seeder
             "edit.customers",
             "delete.customers",
 
+            // inventory permissions
+            "view.inventory",
+            "create.inventory",
+            "edit.inventory",
+            "delete.inventory",
+
+            // analytics permissions
+            "view.analytics",
+            "create.analytics",
+            "edit.analytics",
+            "delete.analytics",
+
             
         ];
 

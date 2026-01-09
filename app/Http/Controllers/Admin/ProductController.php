@@ -27,7 +27,6 @@ class ProductController extends Controller
             'total' => Product::count(),
             'active' => Product::where('status', true)->count(),
             'featured' => Product::where('featured', true)->count(),
-            // Fixed: Only count products where sale_price is less than price
             'onSale' => Product::whereNotNull('sale_price')
                 ->whereColumn('sale_price', '<', 'price')
                 ->where('sale_price', '>', 0)
@@ -44,9 +43,8 @@ class ProductController extends Controller
         try {
             $query = Product::query()
                 ->with('category:id,name')
-                ->select('id', 'name', 'sku', 'price', 'sale_price', 'status', 'featured', 'category_id', 'created_at', 'updated_at');
+                ->select('id', 'name', 'sku', 'price', 'sale_price', 'purchase_price_per_unit', 'sale_price_per_unit', 'quantity', 'unit', 'status', 'featured', 'category_id', 'created_at', 'updated_at');
             
-            // Search
             if ($request->filled('search')) {
                 $search = $request->search;
                 $query->where(function($q) use ($search) {
@@ -58,28 +56,23 @@ class ProductController extends Controller
                 });
             }
             
-            // Status filter
             if ($request->filled('status')) {
                 $query->where('status', $request->status === 'active');
             }
             
-            // Featured filter
             if ($request->filled('featured')) {
                 $query->where('featured', $request->featured === 'yes');
             }
 
-            // Sorting
             $sortBy = $request->get('sortBy', 'created_at');
             $sortOrder = $request->get('sortOrder', 'desc');
             $query->orderBy($sortBy, $sortOrder);
 
-            // Pagination
             $perPage = $request->get('perPage', 10);
             $page = $request->get('page', 1);
             
             $products = $query->paginate($perPage, ['*'], 'page', $page);
 
-            // Transform data
             $transformedData = $products->map(function($product) {
                 return [
                     'id' => $product->id,
@@ -87,6 +80,10 @@ class ProductController extends Controller
                     'sku' => $product->sku,
                     'price' => $product->price,
                     'sale_price' => $product->sale_price,
+                    'purchase_price_per_unit' => $product->purchase_price_per_unit,
+                    'sale_price_per_unit' => $product->sale_price_per_unit,
+                    'quantity' => $product->quantity,
+                    'unit' => $product->unit,
                     'status' => $product->status,
                     'featured' => $product->featured,
                     'category_id' => $product->category_id,
@@ -148,19 +145,10 @@ class ProductController extends Controller
                 'alternative_name' => 'nullable|string',
                 'other_name' => 'nullable|string',
                 'slug' => 'nullable|string|unique:products,slug',
-                'unit' => 'nullable|string',
-                'price' => 'required|numeric|min:0',
-                // ✅ FIXED: Sale price must be less than regular price
-                'sale_price' => [
-                    'nullable',
-                    'numeric',
-                    'min:0',
-                    function ($attribute, $value, $fail) use ($request) {
-                        if ($value !== null && $value >= $request->price) {
-                            $fail('Sale price must be less than regular price.');
-                        }
-                    },
-                ],
+                'unit' => 'required|string', // ml, kg, grams, etc
+                'quantity' => 'required|numeric|min:0', // 100 ml, 1 kg, etc
+                'purchase_price_per_unit' => 'required|numeric|min:0', // Price per 1 unit
+                'sale_price_per_unit' => 'required|numeric|min:0', // Sale price per 1 unit
                 'sku' => 'nullable|string|unique:products,sku',
                 'barcode' => 'nullable|string',
                 'stock_qty' => 'nullable|integer|min:0',
@@ -179,6 +167,24 @@ class ProductController extends Controller
                 'gallery' => 'nullable',
                 'gallery.*' => 'nullable|image|max:2048',
             ]);
+
+            // Calculate total purchase price and sale price
+            $quantity = $validated['quantity'];
+            $purchasePricePerUnit = $validated['purchase_price_per_unit'];
+            $salePricePerUnit = $validated['sale_price_per_unit'];
+
+            // Total Purchase Price = Quantity × Purchase Price Per Unit
+            $validated['price'] = $quantity * $purchasePricePerUnit;
+
+            // Total Sale Price = Quantity × Sale Price Per Unit
+            $validated['sale_price'] = $quantity * $salePricePerUnit;
+
+            // Validation: Sale price per unit should be greater than purchase price per unit
+            if ($salePricePerUnit <= $purchasePricePerUnit) {
+                return back()
+                    ->withInput()
+                    ->withErrors(['sale_price_per_unit' => 'Sale price per unit must be greater than purchase price per unit.']);
+            }
 
             // Generate slug
             if (empty($validated['slug'])) {
@@ -273,19 +279,10 @@ class ProductController extends Controller
                 'alternative_name' => 'nullable|string',
                 'other_name' => 'nullable|string',
                 'slug' => 'nullable|string|unique:products,slug,' . $id,
-                'unit' => 'nullable|string',
-                'price' => 'required|numeric|min:0',
-                // ✅ FIXED: Sale price must be less than regular price
-                'sale_price' => [
-                    'nullable',
-                    'numeric',
-                    'min:0',
-                    function ($attribute, $value, $fail) use ($request) {
-                        if ($value !== null && $value >= $request->price) {
-                            $fail('Sale price must be less than regular price.');
-                        }
-                    },
-                ],
+                'unit' => 'required|string',
+                'quantity' => 'required|numeric|min:0',
+                'purchase_price_per_unit' => 'required|numeric|min:0',
+                'sale_price_per_unit' => 'required|numeric|min:0',
                 'sku' => 'nullable|string|unique:products,sku,' . $id,
                 'barcode' => 'nullable|string',
                 'stock_qty' => 'nullable|integer|min:0',
@@ -304,6 +301,21 @@ class ProductController extends Controller
                 'gallery' => 'nullable',
                 'gallery.*' => 'nullable|image|max:2048',
             ]);
+
+            // Calculate total purchase price and sale price
+            $quantity = $validated['quantity'];
+            $purchasePricePerUnit = $validated['purchase_price_per_unit'];
+            $salePricePerUnit = $validated['sale_price_per_unit'];
+
+            $validated['price'] = $quantity * $purchasePricePerUnit;
+            $validated['sale_price'] = $quantity * $salePricePerUnit;
+
+            // Validation
+            if ($salePricePerUnit <= $purchasePricePerUnit) {
+                return back()
+                    ->withInput()
+                    ->withErrors(['sale_price_per_unit' => 'Sale price per unit must be greater than purchase price per unit.']);
+            }
 
             // Update slug if name changed
             if ($validated['name'] !== $product->name && empty($validated['slug'])) {
@@ -328,7 +340,6 @@ class ProductController extends Controller
 
             // Handle gallery upload
             if ($request->hasFile('gallery')) {
-                // Delete old gallery images
                 if ($product->gallery && is_array($product->gallery)) {
                     foreach ($product->gallery as $oldImage) {
                         Storage::disk('public')->delete($oldImage);
@@ -363,7 +374,6 @@ class ProductController extends Controller
         try {
             $product = Product::findOrFail($id);
             
-            // Delete images
             if ($product->thumbnail) {
                 Storage::disk('public')->delete($product->thumbnail);
             }

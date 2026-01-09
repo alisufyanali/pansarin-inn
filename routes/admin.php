@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\FrontendContentController;
 use App\Http\Controllers\Admin\BlogsCommentsController;
 use App\Http\Controllers\Admin\BlogTagsController;
 use App\Http\Controllers\Admin\AffiliateController as AdminAffiliateController;
+use App\Http\Controllers\Admin\InventoryController;
 use Illuminate\Support\Facades\Route;
 
 use Inertia\Inertia; 
@@ -80,6 +81,11 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
     Route::resource('blogstags', BlogTagsController::class);
     Route::get('blogstags-data', [BlogTagsController::class, 'getData'])->name('blogstags.data');
     Route::get('blogstags-active', [BlogTagsController::class, 'getActiveTags'])->name('blogstags.active');
+
+    // Inventory Management
+    Route::resource('inventory', InventoryController::class);
+    Route::get('inventory-data', [InventoryController::class, 'getData'])->name('inventory.data');
+    Route::get('low-stock-products', [InventoryController::class, 'getLowStockProducts'])->name('inventory.low-stock');
 
     // Notification routes
     Route::get('/notifications', [NotificationController::class, 'index'])
