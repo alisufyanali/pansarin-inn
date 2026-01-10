@@ -1,7 +1,14 @@
+import { Link, useForm } from '@inertiajs/react';
+import {
+    ArrowLeft,
+    BookOpen,
+    Check,
+    FileText,
+    MessageSquare,
+    Save,
+    Star,
+} from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
-import { useForm } from '@inertiajs/react';
-import { ArrowLeft, Check, MessageSquare, Save, Star, FileText, BookOpen } from 'lucide-react';
-import { Link } from '@inertiajs/react';
 
 export type BlogCommentFormData = {
     blog_id?: number | null;
@@ -18,44 +25,55 @@ interface BlogCommentFormProps {
     selectedBlogId?: number | null;
 }
 
-export default function Form({ initialData, isEdit = false, blogs = [], selectedBlogId = null }: BlogCommentFormProps) {
+export default function Form({
+    initialData,
+    isEdit = false,
+    blogs = [],
+    selectedBlogId = null,
+}: BlogCommentFormProps) {
     const commentsRef = useRef<HTMLTextAreaElement>(null);
     const reviewRef = useRef<HTMLTextAreaElement>(null);
     const [hoveredStar, setHoveredStar] = useState<number | null>(null);
-    
+
     // Get blog_id from URL if provided
     const urlParams = new URLSearchParams(window.location.search);
     const blogIdFromUrl = urlParams.get('blog_id');
-    
-    const { data, setData, errors, post, put, processing } = useForm<BlogCommentFormData>({
-        blog_id: initialData?.blog_id || selectedBlogId || (blogIdFromUrl ? Number(blogIdFromUrl) : null),
-        comments: initialData?.comments || '',
-        review: initialData?.review || '',
-        rating: initialData?.rating || null,
-        status: initialData?.status || 'pending',
-    });
+
+    const { data, setData, errors, post, put, processing } =
+        useForm<BlogCommentFormData>({
+            blog_id:
+                initialData?.blog_id ||
+                selectedBlogId ||
+                (blogIdFromUrl ? Number(blogIdFromUrl) : null),
+            comments: initialData?.comments || '',
+            review: initialData?.review || '',
+            rating: initialData?.rating || null,
+            status: initialData?.status || 'pending',
+        });
 
     useEffect(() => {
         if (commentsRef.current) {
             commentsRef.current.style.height = 'auto';
-            commentsRef.current.style.height = commentsRef.current.scrollHeight + 'px';
+            commentsRef.current.style.height =
+                commentsRef.current.scrollHeight + 'px';
         }
     }, [data.comments]);
 
     useEffect(() => {
         if (reviewRef.current) {
             reviewRef.current.style.height = 'auto';
-            reviewRef.current.style.height = reviewRef.current.scrollHeight + 'px';
+            reviewRef.current.style.height =
+                reviewRef.current.scrollHeight + 'px';
         }
     }, [data.review]);
 
     function submit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
-        
+
         if (isEdit && initialData?.id) {
-            put(`/admin/blogsComments/${initialData.id}`);
+            put(`/admin/blogscomments/${initialData.id}`); // FIXED
         } else {
-            post('/admin/blogsComments');
+            post('/admin/blogscomments'); // FIXED
         }
     }
 
@@ -87,66 +105,90 @@ export default function Form({ initialData, isEdit = false, blogs = [], selected
     const displayRating = hoveredStar || data.rating || 0;
 
     // Get selected blog details
-    const selectedBlog = blogs.find(blog => blog.id === data.blog_id);
+    const selectedBlog = blogs.find((blog) => blog.id === data.blog_id);
 
     return (
         <div className="p-3">
-            <div className="flex items-center gap-2 mb-4">
+            <div className="mb-4 flex items-center gap-2">
                 <Link
-                    href="/admin/blogsComments"
-                    className="inline-flex items-center justify-center rounded-md bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-white w-10 h-10 transition-colors"
+                    href="/admin/blogscomments"
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-md bg-gray-100 text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
                 >
-                    <ArrowLeft className="w-5 h-5" />
+                    <ArrowLeft className="h-5 w-5" />
                 </Link>
             </div>
 
             <div className="py-6">
-                <div className="max-w-5xl mx-auto">
-                    <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2 text-center">
-                        {isEdit ? 'Edit Blog Comment & Review' : 'Create New Comment & Review'}
+                <div className="mx-auto max-w-5xl">
+                    <h2 className="mb-2 text-center text-2xl font-semibold text-gray-900 dark:text-white">
+                        {isEdit
+                            ? 'Edit Blog Comment & Review'
+                            : 'Create New Comment & Review'}
                     </h2>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 text-center">
-                        {isEdit ? 'Update the comment, review, and rating below.' : 'Add a new comment, review, and rating to a blog post.'}
+                    <p className="mb-6 text-center text-sm text-gray-600 dark:text-gray-400">
+                        {isEdit
+                            ? 'Update the comment, review, and rating below.'
+                            : 'Add a new comment, review, and rating to a blog post.'}
                     </p>
 
                     <form onSubmit={submit} className="space-y-6">
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                             {/* Main Content - 2 columns */}
-                            <div className="lg:col-span-2 space-y-6">
+                            <div className="space-y-6 lg:col-span-2">
                                 {/* Blog Selection Card */}
                                 {blogs.length > 0 && (
-                                    <div className="bg-white dark:bg-gray-900 rounded-xl p-6 shadow-lg space-y-4 border-2 border-blue-200 dark:border-blue-800">
-                                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2 mb-4">
-                                            <BookOpen className="w-5 h-5 text-blue-600" />
+                                    <div className="space-y-4 rounded-xl border-2 border-blue-200 bg-white p-6 shadow-lg dark:border-blue-800 dark:bg-gray-900">
+                                        <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
+                                            <BookOpen className="h-5 w-5 text-blue-600" />
                                             Select Blog Post
                                         </h3>
 
                                         <div>
-                                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                                Choose which blog to comment on *
+                                            <label className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                                Choose which blog to comment on
+                                                *
                                             </label>
                                             <select
                                                 value={data.blog_id || ''}
-                                                onChange={e => setData('blog_id', e.target.value ? Number(e.target.value) : null)}
-                                                className="w-full px-4 py-3 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-2 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                                                onChange={(e) =>
+                                                    setData(
+                                                        'blog_id',
+                                                        e.target.value
+                                                            ? Number(
+                                                                  e.target
+                                                                      .value,
+                                                              )
+                                                            : null,
+                                                    )
+                                                }
+                                                className="w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-3 text-gray-900 transition-all outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                                             >
-                                                <option value="">-- Select a blog post --</option>
-                                                {blogs.map(blog => (
-                                                    <option key={blog.id} value={blog.id}>
+                                                <option value="">
+                                                    -- Select a blog post --
+                                                </option>
+                                                {blogs.map((blog) => (
+                                                    <option
+                                                        key={blog.id}
+                                                        value={blog.id}
+                                                    >
                                                         {blog.title}
                                                     </option>
                                                 ))}
                                             </select>
                                             {errors.blog_id && (
-                                                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                                                    <span>⚠️</span> {errors.blog_id}
+                                                <p className="mt-1 flex items-center gap-1 text-xs text-red-500">
+                                                    <span>⚠️</span>{' '}
+                                                    {errors.blog_id}
                                                 </p>
                                             )}
-                                            
+
                                             {selectedBlog && (
-                                                <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                                                <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
                                                     <p className="text-sm text-blue-800 dark:text-blue-300">
-                                                        📝 Commenting on: <span className="font-semibold">{selectedBlog.title}</span>
+                                                        📝 Commenting on:{' '}
+                                                        <span className="font-semibold">
+                                                            {selectedBlog.title}
+                                                        </span>
                                                     </p>
                                                 </div>
                                             )}
@@ -155,67 +197,83 @@ export default function Form({ initialData, isEdit = false, blogs = [], selected
                                 )}
 
                                 {/* Comment Details */}
-                                <div className="bg-white dark:bg-gray-900 rounded-xl p-6 shadow-lg space-y-4">
-                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2 mb-4">
-                                        <MessageSquare className="w-5 h-5" />
+                                <div className="space-y-4 rounded-xl bg-white p-6 shadow-lg dark:bg-gray-900">
+                                    <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
+                                        <MessageSquare className="h-5 w-5" />
                                         Comment Details
                                     </h3>
 
                                     {/* Comments Textarea */}
                                     <div>
-                                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                        <label className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
                                             Comment *
                                         </label>
                                         <textarea
                                             ref={commentsRef}
                                             value={data.comments}
-                                            onChange={e => setData('comments', e.target.value)}
+                                            onChange={(e) =>
+                                                setData(
+                                                    'comments',
+                                                    e.target.value,
+                                                )
+                                            }
                                             placeholder="Enter your comment here..."
-                                            className="w-full px-4 py-3 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none resize-none min-h-[100px]"
+                                            className="min-h-[100px] w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                                             rows={4}
                                         />
-                                        <div className="flex justify-between items-center mt-1">
+                                        <div className="mt-1 flex items-center justify-between">
                                             <div>
                                                 {errors.comments && (
-                                                    <p className="text-red-500 text-xs">{errors.comments}</p>
+                                                    <p className="text-xs text-red-500">
+                                                        {errors.comments}
+                                                    </p>
                                                 )}
                                             </div>
                                             <p className="text-xs text-gray-500">
-                                                {data.comments.length} / 1000 characters
+                                                {data.comments.length} / 1000
+                                                characters
                                             </p>
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Review Details */}
-                                <div className="bg-white dark:bg-gray-900 rounded-xl p-6 shadow-lg space-y-4">
-                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2 mb-4">
-                                        <FileText className="w-5 h-5" />
+                                <div className="space-y-4 rounded-xl bg-white p-6 shadow-lg dark:bg-gray-900">
+                                    <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
+                                        <FileText className="h-5 w-5" />
                                         Review Details
                                     </h3>
 
                                     {/* Review Textarea */}
                                     <div>
-                                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                        <label className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
                                             Detailed Review
                                         </label>
                                         <textarea
                                             ref={reviewRef}
                                             value={data.review || ''}
-                                            onChange={e => setData('review', e.target.value)}
+                                            onChange={(e) =>
+                                                setData(
+                                                    'review',
+                                                    e.target.value,
+                                                )
+                                            }
                                             placeholder="Write a detailed review (optional)..."
-                                            className="w-full px-4 py-3 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none resize-none min-h-[120px]"
+                                            className="min-h-[120px] w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                                             rows={5}
                                         />
-                                        <div className="flex justify-between items-center mt-1">
+                                        <div className="mt-1 flex items-center justify-between">
                                             <div>
                                                 {errors.review && (
-                                                    <p className="text-red-500 text-xs">{errors.review}</p>
+                                                    <p className="text-xs text-red-500">
+                                                        {errors.review}
+                                                    </p>
                                                 )}
                                             </div>
                                             {data.review && (
                                                 <p className="text-xs text-gray-500">
-                                                    {data.review.length} / 2000 characters
+                                                    {data.review.length} / 2000
+                                                    characters
                                                 </p>
                                             )}
                                         </div>
@@ -223,7 +281,7 @@ export default function Form({ initialData, isEdit = false, blogs = [], selected
 
                                     {/* Rating */}
                                     <div>
-                                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                        <label className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
                                             Rating
                                         </label>
                                         <div className="flex items-center gap-2">
@@ -231,14 +289,21 @@ export default function Form({ initialData, isEdit = false, blogs = [], selected
                                                 <button
                                                     key={star}
                                                     type="button"
-                                                    onClick={() => handleStarClick(star)}
-                                                    onMouseEnter={() => handleStarHover(star)}
-                                                    onMouseLeave={handleStarLeave}
-                                                    className="focus:outline-none transition-transform hover:scale-110"
+                                                    onClick={() =>
+                                                        handleStarClick(star)
+                                                    }
+                                                    onMouseEnter={() =>
+                                                        handleStarHover(star)
+                                                    }
+                                                    onMouseLeave={
+                                                        handleStarLeave
+                                                    }
+                                                    className="transition-transform hover:scale-110 focus:outline-none"
                                                 >
                                                     <Star
-                                                        className={`w-8 h-8 transition-colors ${
-                                                            star <= displayRating
+                                                        className={`h-8 w-8 transition-colors ${
+                                                            star <=
+                                                            displayRating
                                                                 ? 'fill-yellow-400 text-yellow-400'
                                                                 : 'text-gray-300 dark:text-gray-600'
                                                         }`}
@@ -252,56 +317,83 @@ export default function Form({ initialData, isEdit = false, blogs = [], selected
                                             )}
                                         </div>
                                         {errors.rating && (
-                                            <p className="text-red-500 text-xs mt-1">{errors.rating}</p>
+                                            <p className="mt-1 text-xs text-red-500">
+                                                {errors.rating}
+                                            </p>
                                         )}
                                     </div>
                                 </div>
                             </div>
 
                             {/* Sidebar - 1 column */}
-                            <div className="lg:col-span-1 space-y-6">
+                            <div className="space-y-6 lg:col-span-1">
                                 {/* Status Section */}
-                                <div className="bg-white dark:bg-gray-900 rounded-xl p-6 shadow-lg space-y-4">
-                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2 mb-4">
-                                        <Check className="w-5 h-5" />
+                                <div className="space-y-4 rounded-xl bg-white p-6 shadow-lg dark:bg-gray-900">
+                                    <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
+                                        <Check className="h-5 w-5" />
                                         Status
                                     </h3>
 
                                     <div>
-                                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                        <label className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
                                             Approval Status
                                         </label>
                                         <select
                                             value={data.status}
-                                            onChange={e => setData('status', e.target.value as 'pending' | 'approved' | 'rejected')}
-                                            className="w-full px-4 py-2 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
+                                            onChange={(e) =>
+                                                setData(
+                                                    'status',
+                                                    e.target.value as
+                                                        | 'pending'
+                                                        | 'approved'
+                                                        | 'rejected',
+                                                )
+                                            }
+                                            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                                         >
-                                            <option value="pending">Pending</option>
-                                            <option value="approved">Approved</option>
-                                            <option value="rejected">Rejected</option>
+                                            <option value="pending">
+                                                Pending
+                                            </option>
+                                            <option value="approved">
+                                                Approved
+                                            </option>
+                                            <option value="rejected">
+                                                Rejected
+                                            </option>
                                         </select>
                                         {errors.status && (
-                                            <p className="text-red-500 text-xs mt-1">{errors.status}</p>
+                                            <p className="mt-1 text-xs text-red-500">
+                                                {errors.status}
+                                            </p>
                                         )}
                                     </div>
 
                                     {/* Status Badge */}
                                     <div className="mt-4">
-                                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(data.status)}`}>
-                                            {data.status.charAt(0).toUpperCase() + data.status.slice(1)}
+                                        <span
+                                            className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(data.status)}`}
+                                        >
+                                            {data.status
+                                                .charAt(0)
+                                                .toUpperCase() +
+                                                data.status.slice(1)}
                                         </span>
                                     </div>
                                 </div>
 
                                 {/* Action Buttons */}
-                                <div className="bg-white dark:bg-gray-900 rounded-xl p-6 shadow-lg">
+                                <div className="rounded-xl bg-white p-6 shadow-lg dark:bg-gray-900">
                                     <button
                                         type="submit"
                                         disabled={processing}
-                                        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
+                                        className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-blue-700 disabled:bg-blue-400"
                                     >
-                                        <Save className="w-5 h-5" />
-                                        {processing ? 'Saving...' : (isEdit ? 'Update Comment' : 'Post')}
+                                        <Save className="h-5 w-5" />
+                                        {processing
+                                            ? 'Saving...'
+                                            : isEdit
+                                              ? 'Update Comment'
+                                              : 'Post'}
                                     </button>
                                 </div>
                             </div>

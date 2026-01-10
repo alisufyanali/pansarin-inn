@@ -11,7 +11,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { can } from '@/lib/can';
 // import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
@@ -25,6 +24,7 @@ import { MessagingSection } from '@/components/sidebar-sections/messaging-sectio
 import { UserManagementSection } from '@/components/sidebar-sections/user-management-section';
 import { SettingsSections } from '@/components/sidebar-sections/settings-sections';
 import AppLogo from './app-logo';
+import { AffiliateSection } from './sidebar-sections/affiliate-section';
 
 export function AppSidebar() {
   const permissions = usePermissionChecks();
@@ -83,6 +83,12 @@ export function AppSidebar() {
   });
   if (userManagementSection) {
     mainNavItems.push(userManagementSection);
+  }
+
+  // Add Affiliate Section
+  const affiliateSection = AffiliateSection();
+  if (affiliateSection) {
+    mainNavItems.push(affiliateSection);
   }
 
   // Get Footer Items (Settings)

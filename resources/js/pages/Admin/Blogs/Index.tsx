@@ -1,7 +1,7 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { PlusCircle, FileText, Eye, Edit } from 'lucide-react';
+import { PlusCircle, FileText, Eye, Edit, Tag } from 'lucide-react';
 import { useEffect } from 'react';
 import DataTableWrapper from '@/components/DataTableWrapper';
 import { CommonColumns, CodeBadge } from '@/components/TableColumns';
@@ -18,6 +18,7 @@ interface Blog {
   excerpt?: string;
   status: 'draft' | 'published';
   category?: { id: number; name: string } | null;
+   tags?: Array<{ id: number; name: string; color: string }>;
   thumbnail?: string;
   created_at: string;
 }
@@ -107,6 +108,37 @@ export default function Index({ stats, flash }: Props) {
       ),
     },
     {
+      name: 'Tags',
+      selector: (row: Blog) => row.tags?.length || 0,
+      sortable: false,
+      cell: (row: Blog) => (
+        <div className="flex flex-wrap gap-1">
+          {row.tags && row.tags.length > 0 ? (
+            <>
+              {row.tags.slice(0, 2).map((tag) => (
+                <span
+                  key={tag.id}
+                  className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium text-white"
+                  style={{ backgroundColor: tag.color }}
+                >
+                  {tag.name}
+                </span>
+              ))}
+              {row.tags.length > 2 && (
+                <span className="inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-xs font-medium text-gray-600 dark:text-gray-400">
+                  +{row.tags.length - 2}
+                </span>
+              )}
+            </>
+          ) : (
+            <span className="text-xs text-gray-400 italic">No tags</span>
+          )}
+        </div>
+      ),
+      width: '200px',
+    },
+    
+    {
       name: 'Status',
       selector: (row: Blog) => row.status,
       sortable: true,
@@ -130,11 +162,13 @@ export default function Index({ stats, flash }: Props) {
     }),
   ];
 
+
   const csvHeaders = [
     { label: 'ID', key: 'id' },
     { label: 'Title', key: 'title' },
     { label: 'Slug', key: 'slug' },
     { label: 'Category', key: 'category.name' },
+    { label: 'Tags', key: 'tags_list' },
     { label: 'Status', key: 'status' },
     { label: 'Created At', key: 'created_at' },
   ];

@@ -17,9 +17,10 @@ class OrderController extends Controller
 {
     public function __construct()
     {
-        // $this->middleware('permission:create.orders')->only(['create', 'store']);
-        // $this->middleware('permission:edit.orders')->only(['edit', 'update']);
-        // $this->middleware('permission:delete.orders')->only(['destroy']);
+        $this->middleware('permission:create.orders')->only(['create', 'store']);
+        $this->middleware('permission:edit.orders')->only(['edit', 'update']);
+        $this->middleware('permission:delete.orders')->only(['destroy']);
+        $this->middleware('permission:view.orders')->only(['index', 'show', 'getData']);
     }
 
     /**
@@ -114,7 +115,7 @@ class OrderController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request, AffiliateService $affiliateService)
     {
         $order = Order::find(1);
         SendOrderConfirmationEmail::dispatch($order);
@@ -228,7 +229,7 @@ class OrderController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, string $id, AffiliateService $affiliateService)
     {
         $order = Order::findOrFail($id);
 
@@ -299,6 +300,8 @@ class OrderController extends Controller
             // Recalculate totals
             $order->calculateTotals();
 
+            $affiliateService->updateReferral($order);
+
             DB::commit();
             return to_route('admin.orders.index')->with('success', 'Order successfully updated!');
 
@@ -328,7 +331,7 @@ class OrderController extends Controller
     /**
      * Update order status
      */
-    public function updateStatus(Request $request, string $id)
+    public function updateStatus(Request $request, string $id, AffiliateService $affiliateService)
     {
         $order = Order::findOrFail($id);
         
@@ -337,6 +340,12 @@ class OrderController extends Controller
         ]);
 
         $order->update(['status' => $validated['status']]);
+
+        // Safety Fix: Fresh data reload karein taake service ko sahi status mile
+        $order = $order->fresh(); 
+
+        // Ye check karega ke agar delivered hai to balance barhaye, cancelled hai to reject kare
+        $affiliateService->finalizeCommission($order);
 
         return back()->with('success', 'Order status updated successfully!');
     }

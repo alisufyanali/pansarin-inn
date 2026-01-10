@@ -19,12 +19,14 @@ use App\Http\Controllers\Admin\{
     BlogsCommentsController,
     NotificationController,
     FrontendContentController,
-    NewsletterController
+    NewsletterController,
+    BlogTagsController,
+    InventoryController
 };
 
 Route::middleware(['auth', 'verified'])
     ->prefix('admin')
-    ->name('admin.')
+    // ->name('admin.')
     ->group(function () {
 
     /*
@@ -134,16 +136,23 @@ Route::middleware(['auth', 'verified'])
     Route::get('blogs-data', [BlogController::class, 'getData'])
         ->name('blogs.data');
 
+    //Blogs Comments Routes
     Route::resource('blogscomments', BlogsCommentsController::class);
-    Route::get('blogscomments-data', [BlogsCommentsController::class, 'getData'])
-        ->name('blogscomments.data');
+    Route::get('blogscomments-data', [BlogsCommentsController::class, 'getData'])->name('blogscomments.data');
 
-    /*
-    |--------------------------------------------------------------------------
-    | Notifications
-    |--------------------------------------------------------------------------
-    */
-    Route::get('notifications', [NotificationController::class, 'index'])
+
+    // Blog Tags Routes
+    Route::resource('blogstags', BlogTagsController::class);
+    Route::get('blogstags-data', [BlogTagsController::class, 'getData'])->name('blogstags.data');
+    Route::get('blogstags-active', [BlogTagsController::class, 'getActiveTags'])->name('blogstags.active');
+
+    // Inventory Management
+    Route::resource('inventory', InventoryController::class);
+    Route::get('inventory-data', [InventoryController::class, 'getData'])->name('inventory.data');
+    Route::get('low-stock-products', [InventoryController::class, 'getLowStockProducts'])->name('inventory.low-stock');
+
+    // Notification routes
+    Route::get('/notifications', [NotificationController::class, 'index'])
         ->name('notifications.index');
 
     Route::get('notifications/unread', [NotificationController::class, 'unread'])

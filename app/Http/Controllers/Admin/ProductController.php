@@ -8,131 +8,123 @@ use Inertia\Inertia;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Attribute;
-use App\Models\Vendor;
-use Yajra\DataTables\Facades\DataTables;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
     public function __construct()
     {
-        // Backend mein permissions check karein
+        $this->middleware('permission:view.products')->only(['index', 'getData', 'show']);
         $this->middleware('permission:create.products')->only(['create', 'store']);
         $this->middleware('permission:edit.products')->only(['edit', 'update']);
         $this->middleware('permission:delete.products')->only(['destroy']);
     }
 
-    /**
-     * Display a listing of the resource.
-     */
-   public function index(Request $request)
+    public function index(Request $request)
     {
         $stats = [
             'total' => Product::count(),
             'active' => Product::where('status', true)->count(),
             'featured' => Product::where('featured', true)->count(),
-            'onSale' => Product::whereNotNull('sale_price')->where('sale_price', '>', 0)->count(),
+            'onSale' => Product::whereNotNull('sale_price')
+                ->whereColumn('sale_price', '<', 'price')
+                ->where('sale_price', '>', 0)
+                ->count(),
         ];
 
         return Inertia::render('Admin/Products/Index', [
-            'userRole' => $request->user()->role ?? 'admin',
-            'stats' => $stats, // Add stats here
+            'stats' => $stats,
         ]);
     }
 
-    /**
-     * Get DataTable data - API endpoint for DataTableWrapper
-     */
     public function getData(Request $request)
     {
-        $query = Product::with(['category', 'vendor'])->latest();
-        
-        // Search handling
-        if ($request->has('search') && $request->search !== '') {
-            if (is_string($request->search)) {
+        try {
+            $query = Product::query()
+                ->with('category:id,name')
+                ->select('id', 'name', 'sku', 'price', 'sale_price', 'purchase_price_per_unit', 'sale_price_per_unit', 'quantity', 'unit', 'status', 'featured', 'category_id', 'created_at', 'updated_at');
+            
+            if ($request->filled('search')) {
                 $search = $request->search;
                 $query->where(function($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
                       ->orWhere('sku', 'like', "%{$search}%")
-                      ->orWhere('price', 'like', "%{$search}%")
                       ->orWhereHas('category', function($q) use ($search) {
                           $q->where('name', 'like', "%{$search}%");
-                      })
-                      ->orWhereHas('vendor', function($q) use ($search) {
-                          $q->where('shop_name', 'like', "%{$search}%");
                       });
                 });
             }
-            elseif (is_array($request->search) && isset($request->search['value'])) {
-                $search = $request->search['value'];
-                if (!empty($search)) {
-                    $query->where(function($q) use ($search) {
-                        $q->where('name', 'like', "%{$search}%")
-                          ->orWhere('sku', 'like', "%{$search}%")
-                          ->orWhere('price', 'like', "%{$search}%")
-                          ->orWhereHas('category', function($q) use ($search) {
-                              $q->where('name', 'like', "%{$search}%");
-                          })
-                          ->orWhereHas('vendor', function($q) use ($search) {
-                              $q->where('shop_name', 'like', "%{$search}%");
-                          });
-                    });
-                }
+            
+            if ($request->filled('status')) {
+                $query->where('status', $request->status === 'active');
             }
-        }
-        
-        // Additional filters
-        if ($request->has('status') && $request->status !== '') {
-            $query->where('status', $request->status === 'active');
-        }
-        
-        if ($request->has('category_id') && $request->category_id !== '') {
-            $query->where('category_id', $request->category_id);
-        }
+            
+            if ($request->filled('featured')) {
+                $query->where('featured', $request->featured === 'yes');
+            }
 
-        if ($request->has('vendor_id') && $request->vendor_id !== '') {
-            $query->where('vendor_id', $request->vendor_id);
-        }
+            $sortBy = $request->get('sortBy', 'created_at');
+            $sortOrder = $request->get('sortOrder', 'desc');
+            $query->orderBy($sortBy, $sortOrder);
 
-        if ($request->has('featured') && $request->featured !== '') {
-            $query->where('featured', $request->featured === 'yes');
-        }
+            $perPage = $request->get('perPage', 10);
+            $page = $request->get('page', 1);
+            
+            $products = $query->paginate($perPage, ['*'], 'page', $page);
 
-        return DataTables::of($query)
-            ->addColumn('category_name', function($product) {
-                return $product->category ? $product->category->name : null;
-            })
-            ->addColumn('vendor_name', function($product) {
-                return $product->vendor ? $product->vendor->shop_name : null;
-            })
-            ->addColumn('status_text', function($product) {
-                return $product->status ? 'Active' : 'Inactive';
-            })
-            ->addColumn('featured_text', function($product) {
-                return $product->featured ? 'Yes' : 'No';
-            })
-            ->make(true);
+            $transformedData = $products->map(function($product) {
+                return [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'sku' => $product->sku,
+                    'price' => $product->price,
+                    'sale_price' => $product->sale_price,
+                    'purchase_price_per_unit' => $product->purchase_price_per_unit,
+                    'sale_price_per_unit' => $product->sale_price_per_unit,
+                    'quantity' => $product->quantity,
+                    'unit' => $product->unit,
+                    'status' => $product->status,
+                    'featured' => $product->featured,
+                    'category_id' => $product->category_id,
+                    'category' => $product->category,
+                    'created_at' => $product->created_at,
+                    'updated_at' => $product->updated_at,
+                ];
+            });
+
+            return response()->json([
+                'data' => $transformedData,
+                'total' => $products->total(),
+                'per_page' => $products->perPage(),
+                'current_page' => $products->currentPage(),
+                'last_page' => $products->lastPage(),
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Products getData error: ' . $e->getMessage());
+            
+            return response()->json([
+                'error' => 'Failed to load data',
+                'message' => $e->getMessage(),
+                'data' => [],
+                'total' => 0,
+            ], 500);
+        }
     }
 
-
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         return Inertia::render('Admin/Products/Create', [
-            'categories' => Category::all(['id', 'name']),
-            'vendors' => Vendor::all(['id', 'shop_name']),
+            'categories' => Category::orderBy('name')->get(['id', 'name']),
             'attributes' => Attribute::with('values')->get(),
         ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         try {
-            // Fix: tags ko array me convert karo agar string hai
+            // Convert tags to array if string
             if ($request->has('tags') && is_string($request->tags)) {
                 $request->merge([
                     'tags' => collect(explode(',', $request->tags))
@@ -146,7 +138,6 @@ class ProductController extends Controller
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
                 'category_id' => 'required|exists:categories,id',
-                
                 'short_description' => 'nullable|string',
                 'long_description' => 'nullable|string',
                 'urdu_name' => 'nullable|string',
@@ -154,9 +145,10 @@ class ProductController extends Controller
                 'alternative_name' => 'nullable|string',
                 'other_name' => 'nullable|string',
                 'slug' => 'nullable|string|unique:products,slug',
-                'unit' => 'nullable|string',
-                'price' => 'required|numeric|min:0',
-                'sale_price' => 'nullable|numeric|min:0',
+                'unit' => 'required|string', // ml, kg, grams, etc
+                'quantity' => 'required|numeric|min:0', // 100 ml, 1 kg, etc
+                'purchase_price_per_unit' => 'required|numeric|min:0', // Price per 1 unit
+                'sale_price_per_unit' => 'required|numeric|min:0', // Sale price per 1 unit
                 'sku' => 'nullable|string|unique:products,sku',
                 'barcode' => 'nullable|string',
                 'stock_qty' => 'nullable|integer|min:0',
@@ -173,23 +165,50 @@ class ProductController extends Controller
                 'thumbnail' => 'nullable|image|max:2048',
                 'social_image' => 'nullable|image|max:2048',
                 'gallery' => 'nullable',
+                'gallery.*' => 'nullable|image|max:2048',
             ]);
 
-            // ...existing code...
+            // Calculate total purchase price and sale price
+            $quantity = $validated['quantity'];
+            $purchasePricePerUnit = $validated['purchase_price_per_unit'];
+            $salePricePerUnit = $validated['sale_price_per_unit'];
+
+            // Total Purchase Price = Quantity × Purchase Price Per Unit
+            $validated['price'] = $quantity * $purchasePricePerUnit;
+
+            // Total Sale Price = Quantity × Sale Price Per Unit
+            $validated['sale_price'] = $quantity * $salePricePerUnit;
+
+            // Validation: Sale price per unit should be greater than purchase price per unit
+            if ($salePricePerUnit <= $purchasePricePerUnit) {
+                return back()
+                    ->withInput()
+                    ->withErrors(['sale_price_per_unit' => 'Sale price per unit must be greater than purchase price per unit.']);
+            }
+
+            // Generate slug
             if (empty($validated['slug'])) {
                 $validated['slug'] = str()->slug($validated['name']);
             }
+
+            // Generate SKU
             if (empty($validated['sku'])) {
                 $lastProduct = Product::latest('id')->first();
                 $nextNumber = ($lastProduct?->id ?? 0) + 1;
                 $validated['sku'] = 'PROD-' . str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
             }
+
+            // Handle thumbnail upload
             if ($request->hasFile('thumbnail')) {
                 $validated['thumbnail'] = $request->file('thumbnail')->store('products', 'public');
             }
+
+            // Handle social image upload
             if ($request->hasFile('social_image')) {
                 $validated['social_image'] = $request->file('social_image')->store('products', 'public');
             }
+
+            // Handle gallery upload
             if ($request->hasFile('gallery')) {
                 $images = [];
                 foreach ($request->file('gallery') as $img) {
@@ -201,54 +220,58 @@ class ProductController extends Controller
             Product::create($validated);
 
             return to_route('products.index')->with('success', 'Product successfully created!');
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()
+                ->withErrors($e->errors())
+                ->withInput();
         } catch (\Exception $e) {
-            \Log::error('Product creation error: ' . $e->getMessage());
-            throw $e;
+            Log::error('Product creation error: ' . $e->getMessage());
+            return back()
+                ->withInput()
+                ->with('error', 'Failed to create product.');
         }
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(string $id)
     {
-        $product = Product::with(['category', 'vendor', 'variants'])->findOrFail($id);
-        $productArr = $product->toArray();
-        $productArr['thumbnailUrl'] = $product->thumbnail_url;
-        $productArr['galleryUrls'] = $product->gallery_urls;
+        $product = Product::findOrFail($id);
 
         return Inertia::render('Admin/Products/Show', [
-            'product' => $productArr
+            'product' => $product
         ]);
     }
 
-    /**
-     * Show the form for editing the existing resource.
-     */
     public function edit(string $id)
     {
         $product = Product::findOrFail($id);
 
         return Inertia::render('Admin/Products/Edit', [
             'product' => $product,
-            'categories' => Category::all(['id', 'name']),
-            'vendors' => Vendor::all(['id', 'shop_name']),
+            'categories' => Category::orderBy('name')->get(['id', 'name']),
             'attributes' => Attribute::with('values')->get(),
         ]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, string $id)
     {
         try {
             $product = Product::findOrFail($id);
 
+            // Convert tags to array if string
+            if ($request->has('tags') && is_string($request->tags)) {
+                $request->merge([
+                    'tags' => collect(explode(',', $request->tags))
+                        ->map(fn($tag) => trim($tag))
+                        ->filter()
+                        ->values()
+                        ->toArray()
+                ]);
+            }
+
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
                 'category_id' => 'required|exists:categories,id',
-                'sub_category_id' => 'nullable|exists:sub_categories,id',
                 'short_description' => 'nullable|string',
                 'long_description' => 'nullable|string',
                 'urdu_name' => 'nullable|string',
@@ -256,9 +279,10 @@ class ProductController extends Controller
                 'alternative_name' => 'nullable|string',
                 'other_name' => 'nullable|string',
                 'slug' => 'nullable|string|unique:products,slug,' . $id,
-                'unit' => 'nullable|string',
-                'price' => 'required|numeric|min:0',
-                'sale_price' => 'nullable|numeric|min:0',
+                'unit' => 'required|string',
+                'quantity' => 'required|numeric|min:0',
+                'purchase_price_per_unit' => 'required|numeric|min:0',
+                'sale_price_per_unit' => 'required|numeric|min:0',
                 'sku' => 'nullable|string|unique:products,sku,' . $id,
                 'barcode' => 'nullable|string',
                 'stock_qty' => 'nullable|integer|min:0',
@@ -275,23 +299,53 @@ class ProductController extends Controller
                 'thumbnail' => 'nullable|image|max:2048',
                 'social_image' => 'nullable|image|max:2048',
                 'gallery' => 'nullable',
+                'gallery.*' => 'nullable|image|max:2048',
             ]);
 
+            // Calculate total purchase price and sale price
+            $quantity = $validated['quantity'];
+            $purchasePricePerUnit = $validated['purchase_price_per_unit'];
+            $salePricePerUnit = $validated['sale_price_per_unit'];
+
+            $validated['price'] = $quantity * $purchasePricePerUnit;
+            $validated['sale_price'] = $quantity * $salePricePerUnit;
+
+            // Validation
+            if ($salePricePerUnit <= $purchasePricePerUnit) {
+                return back()
+                    ->withInput()
+                    ->withErrors(['sale_price_per_unit' => 'Sale price per unit must be greater than purchase price per unit.']);
+            }
+
             // Update slug if name changed
-            if ($validated['name'] !== $product->name) {
+            if ($validated['name'] !== $product->name && empty($validated['slug'])) {
                 $validated['slug'] = str()->slug($validated['name']);
             }
 
-            // Handle file uploads
+            // Handle thumbnail upload
             if ($request->hasFile('thumbnail')) {
+                if ($product->thumbnail) {
+                    Storage::disk('public')->delete($product->thumbnail);
+                }
                 $validated['thumbnail'] = $request->file('thumbnail')->store('products', 'public');
             }
 
+            // Handle social image upload
             if ($request->hasFile('social_image')) {
+                if ($product->social_image) {
+                    Storage::disk('public')->delete($product->social_image);
+                }
                 $validated['social_image'] = $request->file('social_image')->store('products', 'public');
             }
 
+            // Handle gallery upload
             if ($request->hasFile('gallery')) {
+                if ($product->gallery && is_array($product->gallery)) {
+                    foreach ($product->gallery as $oldImage) {
+                        Storage::disk('public')->delete($oldImage);
+                    }
+                }
+                
                 $images = [];
                 foreach ($request->file('gallery') as $img) {
                     $images[] = $img->store('products/gallery', 'public');
@@ -302,54 +356,45 @@ class ProductController extends Controller
             $product->update($validated);
 
             return to_route('products.index')->with('success', 'Product successfully updated!');
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()
+                ->withErrors($e->errors())
+                ->withInput();
         } catch (\Exception $e) {
-            \Log::error('Product update error: ' . $e->getMessage());
-            throw $e;
+            Log::error('Product update error: ' . $e->getMessage());
+            return back()
+                ->withInput()
+                ->with('error', 'Failed to update product.');
         }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(string $id)
     {
-        Product::destroy($id);
-        
-        return to_route('products.index')->with('success', 'Product successfully deleted!');
+        try {
+            $product = Product::findOrFail($id);
+            
+            if ($product->thumbnail) {
+                Storage::disk('public')->delete($product->thumbnail);
+            }
+            
+            if ($product->social_image) {
+                Storage::disk('public')->delete($product->social_image);
+            }
+            
+            if ($product->gallery && is_array($product->gallery)) {
+                foreach ($product->gallery as $image) {
+                    Storage::disk('public')->delete($image);
+                }
+            }
+            
+            $product->delete();
+            
+            return to_route('products.index')->with('success', 'Product successfully deleted!');
+
+        } catch (\Exception $e) {
+            Log::error('Product deletion error: ' . $e->getMessage());
+            return back()->with('error', 'Failed to delete product.');
+        }
     }
-
-
-
-    // ProductController.php mein add karen
-
-    /**
-     * Search products (for live search in orders)
-     */
-    public function search(Request $request)
-    {
-        $search = $request->get('q', '');
-        
-        $products = Product::query()
-            ->with(['variants:id,product_id,name,price,stock'])
-            ->where('status', 'active')
-            ->where(function($query) use ($search) {
-                $query->where('name', 'like', "%{$search}%")
-                    ->orWhere('sku', 'like', "%{$search}%");
-            })
-            ->limit(20)
-            ->get(['id', 'name', 'sku', 'price', 'stock']);
-
-        $products = Product::
-            with(['variants:id,product_id,name,price,stock'])
-            ->limit(20)
-            ->get(['id', 'name', 'sku', 'price', 'stock']);
-
-
-        return response()->json($products);
-    }
-
 }
-
-
-
-

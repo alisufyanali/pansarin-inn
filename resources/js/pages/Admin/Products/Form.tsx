@@ -1,5 +1,5 @@
 import { Link, router, useForm } from '@inertiajs/react';
-import React from 'react';
+import React, { useEffect } from 'react';
 
 type Category = { id: number; name: string };
 type Attribute = { id: number; name: string; slug: string; values: any[] };
@@ -16,6 +16,9 @@ export type ProductFormData = {
     other_name: string;
     slug: string;
     unit: string;
+    quantity: string | number;
+    purchase_price_per_unit: string | number;
+    sale_price_per_unit: string | number;
     price: string | number;
     sale_price: string | number;
     sku: string;
@@ -65,6 +68,9 @@ export default function ProductForm({
             other_name: product?.other_name || '',
             slug: product?.slug || '',
             unit: product?.unit || '',
+            quantity: product?.quantity || '',
+            purchase_price_per_unit: product?.purchase_price_per_unit || '',
+            sale_price_per_unit: product?.sale_price_per_unit || '',
             price: product?.price || '',
             sale_price: product?.sale_price || '',
             sku: product?.sku || '',
@@ -88,6 +94,21 @@ export default function ProductForm({
             gallery: product?.gallery || [],
         });
 
+    // Auto-calculate prices when quantity or per-unit prices change
+    useEffect(() => {
+        const qty = parseFloat(data.quantity as string) || 0;
+        const purchasePricePerUnit = parseFloat(data.purchase_price_per_unit as string) || 0;
+        const salePricePerUnit = parseFloat(data.sale_price_per_unit as string) || 0;
+
+        if (qty > 0 && purchasePricePerUnit > 0) {
+            setData('price', (qty * purchasePricePerUnit).toFixed(2));
+        }
+
+        if (qty > 0 && salePricePerUnit > 0) {
+            setData('sale_price', (qty * salePricePerUnit).toFixed(2));
+        }
+    }, [data.quantity, data.purchase_price_per_unit, data.sale_price_per_unit]);
+
     const generateSlug = (name: string) => {
         return name
             .toLowerCase()
@@ -107,12 +128,32 @@ export default function ProductForm({
             alert('Category is required!');
             return;
         }
-        if (!data.price) {
-            alert('Price is required!');
+        if (!data.unit) {
+            alert('Unit is required!');
+            return;
+        }
+        if (!data.quantity || parseFloat(data.quantity as string) <= 0) {
+            alert('Quantity must be greater than 0!');
+            return;
+        }
+        if (!data.purchase_price_per_unit || parseFloat(data.purchase_price_per_unit as string) <= 0) {
+            alert('Purchase Price Per Unit is required!');
+            return;
+        }
+        if (!data.sale_price_per_unit || parseFloat(data.sale_price_per_unit as string) <= 0) {
+            alert('Sale Price Per Unit is required!');
             return;
         }
 
-        // Convert tags string to JSON array for backend
+        // Validation: Sale price per unit must be greater than purchase price per unit
+        const purchasePricePerUnit = parseFloat(data.purchase_price_per_unit as string);
+        const salePricePerUnit = parseFloat(data.sale_price_per_unit as string);
+        
+        if (salePricePerUnit <= purchasePricePerUnit) {
+            alert('Sale price per unit must be greater than purchase price per unit!');
+            return;
+        }
+
         const submitData = {
             ...data,
             tags: data.tags
@@ -138,6 +179,24 @@ export default function ProductForm({
             });
         }
     }
+
+    // Calculate profit and margin
+    const calculateProfit = () => {
+        const purchasePrice = parseFloat(data.purchase_price_per_unit as string) || 0;
+        const salePrice = parseFloat(data.sale_price_per_unit as string) || 0;
+        const qty = parseFloat(data.quantity as string) || 0;
+
+        if (purchasePrice > 0 && salePrice > 0 && qty > 0) {
+            const profitPerUnit = salePrice - purchasePrice;
+            const totalProfit = profitPerUnit * qty;
+            const profitMargin = ((profitPerUnit / purchasePrice) * 100).toFixed(2);
+
+            return { profitPerUnit, totalProfit, profitMargin };
+        }
+        return null;
+    };
+
+    const profitData = calculateProfit();
 
     return (
         <div className="p-3">
@@ -209,27 +268,6 @@ export default function ProductForm({
                                     </div>
                                 )}
                             </div>
-
-                            {/* Sub Category */}
-                            {/* <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Sub Category
-                                </label>
-                                <select
-                                    value={data.sub_category_id}
-                                    onChange={(e) =>
-                                        setData(
-                                            'sub_category_id',
-                                            e.target.value,
-                                        )
-                                    }
-                                    className="mt-1 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
-                                >
-                                    <option value="">
-                                        Select sub category
-                                    </option>
-                                </select>
-                            </div> */}
 
                             {/* Short Description */}
                             <div>
@@ -368,11 +406,19 @@ export default function ProductForm({
                                     </button>
                                 </div>
                             </div>
+                        </div>
+                    </div>
 
-                            {/* Unit */}
+                    {/* CARD 2: Unit-Based Pricing */}
+                    <div className="rounded-lg border border-gray-200 bg-white p-6 shadow dark:border-gray-800 dark:bg-gray-900">
+                        <h3 className="mb-4 border-b border-gray-200 pb-2 text-lg font-semibold text-gray-900 dark:border-gray-800 dark:text-white">
+                            Unit-Based Pricing
+                        </h3>
+                        <div className="space-y-4">
+                            {/* Unit Selection */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Unit
+                                    Unit *
                                 </label>
                                 <select
                                     value={data.unit}
@@ -380,6 +426,7 @@ export default function ProductForm({
                                         setData('unit', e.target.value)
                                     }
                                     className="mt-1 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                                    required
                                 >
                                     <option value="">Select unit</option>
                                     {attributes
@@ -393,54 +440,141 @@ export default function ProductForm({
                                             </option>
                                         ))}
                                 </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* CARD 2: Pricing & Status */}
-                    <div className="rounded-lg border border-gray-200 bg-white p-6 shadow dark:border-gray-800 dark:bg-gray-900">
-                        <h3 className="mb-4 border-b border-gray-200 pb-2 text-lg font-semibold text-gray-900 dark:border-gray-800 dark:text-white">
-                            Pricing & Status
-                        </h3>
-                        <div className="space-y-4">
-                            {/* Price */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Price (Rs) *
-                                </label>
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    placeholder="0.00"
-                                    value={data.price}
-                                    onChange={(e) =>
-                                        setData('price', e.target.value)
-                                    }
-                                    className="mt-1 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
-                                />
-                                {errors.price && (
+                                {errors.unit && (
                                     <div className="mt-1 text-sm text-red-500">
-                                        {errors.price}
+                                        {errors.unit}
                                     </div>
                                 )}
                             </div>
 
-                            {/* Sale Price */}
+                            {/* Quantity */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Sale Price (Rs)
+                                    Quantity * {data.unit && `(in ${data.unit})`}
                                 </label>
                                 <input
                                     type="number"
                                     step="0.01"
-                                    placeholder="0.00"
-                                    value={data.sale_price}
+                                    min="0"
+                                    placeholder="e.g., 100"
+                                    value={data.quantity}
                                     onChange={(e) =>
-                                        setData('sale_price', e.target.value)
+                                        setData('quantity', e.target.value)
                                     }
                                     className="mt-1 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
+                                    required
                                 />
+                                {errors.quantity && (
+                                    <div className="mt-1 text-sm text-red-500">
+                                        {errors.quantity}
+                                    </div>
+                                )}
                             </div>
+
+                            {/* Purchase Price Per Unit */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Purchase Price Per {data.unit || 'Unit'} (Rs) *
+                                </label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    placeholder="e.g., 1.00"
+                                    value={data.purchase_price_per_unit}
+                                    onChange={(e) =>
+                                        setData('purchase_price_per_unit', e.target.value)
+                                    }
+                                    className="mt-1 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
+                                    required
+                                />
+                                {errors.purchase_price_per_unit && (
+                                    <div className="mt-1 text-sm text-red-500">
+                                        {errors.purchase_price_per_unit}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Sale Price Per Unit */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Sale Price Per {data.unit || 'Unit'} (Rs) *
+                                </label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    placeholder="e.g., 5.00"
+                                    value={data.sale_price_per_unit}
+                                    onChange={(e) =>
+                                        setData('sale_price_per_unit', e.target.value)
+                                    }
+                                    className="mt-1 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
+                                    required
+                                />
+                                {errors.sale_price_per_unit && (
+                                    <div className="mt-1 text-sm text-red-500">
+                                        {errors.sale_price_per_unit}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Auto-Calculated Total Prices */}
+                            {data.quantity && data.purchase_price_per_unit && data.sale_price_per_unit && (
+                                <div className="mt-4 rounded-lg bg-blue-50 p-4 dark:bg-blue-900/20">
+                                    <h4 className="mb-3 font-semibold text-gray-900 dark:text-white">
+                                        💡 Auto-Calculated Prices
+                                    </h4>
+                                    <div className="space-y-2 text-sm">
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600 dark:text-gray-400">
+                                                Total Purchase Price:
+                                            </span>
+                                            <span className="font-bold text-gray-900 dark:text-white">
+                                                Rs. {parseFloat(data.price as string).toFixed(2)}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600 dark:text-gray-400">
+                                                Total Sale Price:
+                                            </span>
+                                            <span className="font-bold text-green-600 dark:text-green-400">
+                                                Rs. {parseFloat(data.sale_price as string).toFixed(2)}
+                                            </span>
+                                        </div>
+                                        
+                                        {profitData && (
+                                            <>
+                                                <hr className="my-2 border-gray-300 dark:border-gray-700" />
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-600 dark:text-gray-400">
+                                                        Profit Per {data.unit}:
+                                                    </span>
+                                                    <span className="font-bold text-purple-600 dark:text-purple-400">
+                                                        Rs. {profitData.profitPerUnit.toFixed(2)}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-600 dark:text-gray-400">
+                                                        Total Profit:
+                                                    </span>
+                                                    <span className="font-bold text-purple-600 dark:text-purple-400">
+                                                        Rs. {profitData.totalProfit.toFixed(2)}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-600 dark:text-gray-400">
+                                                        Profit Margin:
+                                                    </span>
+                                                    <span className="font-bold text-purple-600 dark:text-purple-400">
+                                                        {profitData.profitMargin}%
+                                                    </span>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* SKU & Barcode */}
                             <div className="grid grid-cols-2 gap-4">
@@ -452,9 +586,7 @@ export default function ProductForm({
                                         type="text"
                                         placeholder="Auto-generated"
                                         value={data.sku}
-                                        onChange={(e) =>
-                                            setData('sku', e.target.value)
-                                        }
+                                        onChange={(e) => setData('sku', e.target.value)}
                                         className="mt-1 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
                                     />
                                 </div>
@@ -466,9 +598,7 @@ export default function ProductForm({
                                         type="text"
                                         placeholder="Product barcode"
                                         value={data.barcode}
-                                        onChange={(e) =>
-                                            setData('barcode', e.target.value)
-                                        }
+                                        onChange={(e) => setData('barcode', e.target.value)}
                                         className="mt-1 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
                                     />
                                 </div>
@@ -485,9 +615,7 @@ export default function ProductForm({
                                         min="0"
                                         placeholder="0"
                                         value={data.stock_qty}
-                                        onChange={(e) =>
-                                            setData('stock_qty', e.target.value)
-                                        }
+                                        onChange={(e) => setData('stock_qty', e.target.value)}
                                         className="mt-1 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
                                     />
                                 </div>
@@ -500,12 +628,7 @@ export default function ProductForm({
                                         min="0"
                                         placeholder="5"
                                         value={data.stock_alert}
-                                        onChange={(e) =>
-                                            setData(
-                                                'stock_alert',
-                                                e.target.value,
-                                            )
-                                        }
+                                        onChange={(e) => setData('stock_alert', e.target.value)}
                                         className="mt-1 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
                                     />
                                 </div>
@@ -516,9 +639,7 @@ export default function ProductForm({
                                 <input
                                     type="checkbox"
                                     checked={data.status}
-                                    onChange={(e) =>
-                                        setData('status', e.target.checked)
-                                    }
+                                    onChange={(e) => setData('status', e.target.checked)}
                                     className="h-4 w-4 rounded border-gray-200 text-blue-600 focus:ring-2 dark:border-gray-700"
                                 />
                                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -531,9 +652,7 @@ export default function ProductForm({
                                 <input
                                     type="checkbox"
                                     checked={data.featured}
-                                    onChange={(e) =>
-                                        setData('featured', e.target.checked)
-                                    }
+                                    onChange={(e) => setData('featured', e.target.checked)}
                                     className="h-4 w-4 rounded border-gray-200 text-blue-600 focus:ring-2 dark:border-gray-700"
                                 />
                                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -549,7 +668,6 @@ export default function ProductForm({
                             SEO & Meta Information
                         </h3>
                         <div className="space-y-4">
-                            {/* Meta Title */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                     Meta Title
@@ -569,7 +687,6 @@ export default function ProductForm({
                                 </div>
                             </div>
 
-                            {/* Meta Description */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                     Meta Description
@@ -592,7 +709,6 @@ export default function ProductForm({
                                 </div>
                             </div>
 
-                            {/* Meta Keywords */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                     Meta Keywords
@@ -608,7 +724,6 @@ export default function ProductForm({
                                 />
                             </div>
 
-                            {/* Tags */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                     Tags
@@ -624,7 +739,6 @@ export default function ProductForm({
                                 />
                             </div>
 
-                            {/* Schema Markup */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                     Schema Markup (JSON-LD)
@@ -640,7 +754,6 @@ export default function ProductForm({
                                 />
                             </div>
 
-                            {/* Social Description */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                     Social Description
@@ -671,7 +784,6 @@ export default function ProductForm({
                             Images
                         </h3>
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                            {/* Thumbnail Image */}
                             <div>
                                 <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                                     Thumbnail Image
@@ -702,7 +814,6 @@ export default function ProductForm({
                                     )}
                             </div>
 
-                            {/* Social Media Image */}
                             <div>
                                 <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                                     Social Media Image
@@ -734,7 +845,6 @@ export default function ProductForm({
                                     )}
                             </div>
 
-                            {/* Gallery Images */}
                             <div className="md:col-span-2">
                                 <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                                     Gallery Images

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-// ✅ Setup Axios
+// Setup Axios
 window.axios = axios;
 window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
@@ -10,6 +10,6 @@ declare global {
     }
 }
 
-console.log('✅ Axios initialized');
+console.log(' Axios initialized');
 
-// ℹ️ Pusher/Echo removed - enable in .env if needed for real-time features
+// ℹ Pusher/Echo removed - enable in .env if needed for real-time features

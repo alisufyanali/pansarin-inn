@@ -21,31 +21,43 @@ class RolePermissionSeeder extends Seeder
             "create.users",
             "edit.users",
             "delete.users",
+
+            // Role permissions
             "view.roles",
             "create.roles",
             "edit.roles",
             "delete.roles",
+
+            // Product permissions
             "view.products",
             "create.products",
             "edit.products",
             "delete.products",
+
+            // Category permissions
             "view.categories",
             "create.categories",
             "edit.categories",
             "delete.categories",
+
+            // Variant permissions
             "view.variants",
             "create.variants",
             "edit.variants",
             "delete.variants",
+
+            // Attribute permissions
             "view.attributes",
             "create.attributes",
             "edit.attributes",
             "delete.attributes",
-            // BlogCategory permissions - CHANGED TO MATCH CONTROLLER
+
+            // BlogCategory permissions
             "view.blog-categories",
             "create.blog-categories",
             "edit.blog-categories",
             "delete.blog-categories",
+
             // Blog permissions
             "view.blogs",
             "create.blogs",
@@ -58,11 +70,145 @@ class RolePermissionSeeder extends Seeder
             "edit.blogcomments",
             "delete.blogcomments",
 
+            // BlogTag permissions
+            "view.blogtags",
+            "create.blogtags",
+            "edit.blogtags",
+            "delete.blogtags",
+
             // Frontend section permissions
             "view.frontend",
             "create.frontend",
             "edit.frontend",
             "delete.frontend",
+
+            // Order permissions
+            "view.orders",
+            "create.orders",
+            "edit.orders",
+            "delete.orders",
+
+            // Coupon permissions
+            "view.coupons",
+            "create.coupons",
+            "edit.coupons", 
+            "delete.coupons",
+
+            // Shipping permissions
+            "view.shippings",
+            "create.shippings",
+            "edit.shippings",
+            "delete.shippings",
+
+            // Setting permissions
+            "view.settings",
+            "edit.settings",
+            "create.settings",
+            "delete.settings",
+
+            // Report permissions
+            "view.reports",
+            "create.reports",
+            "edit.reports",
+            "delete.reports",
+
+            // Review permissions
+            "view.reviews",
+            "delete.reviews",
+            "edit.reviews",
+            "create.reviews",
+
+            // FAQ permissions
+            "view.faqs",
+            "create.faqs",
+            "edit.faqs",
+            "delete.faqs",
+
+            // Subscriber permissions
+            "view.subscribers",
+            "delete.subscribers",
+            "create.subscribers",
+            "edit.subscribers",
+
+            // Contact permissions
+            "view.contacts",
+            "delete.contacts",
+            "create.contacts",
+            "edit.contacts",
+
+            // Message permissions
+            "view.messages",
+            "delete.messages",
+            "create.messages",
+            "edit.messages",
+
+            // Order permissions
+            "view.orders",
+            "create.orders",
+            "edit.orders",
+            "delete.orders",
+
+            // Wishlist permissions
+            "view.wishlists",
+            "create.wishlists",
+            "edit.wishlists",
+            "delete.wishlists",
+
+            // Cart permissions
+            "view.carts",
+            "create.carts",
+            "edit.carts",
+            "delete.carts",
+
+            // Payment permissions
+            "view.payments",
+            "create.payments",
+            "edit.payments",
+            "delete.payments",
+
+            // Refund permissions
+            "view.refunds",
+            "create.refunds",
+            "edit.refunds",
+            "delete.refunds",
+
+            // Affiliate permissions
+            "view.affiliates",
+            "create.affiliates",
+            "edit.affiliates",
+            "delete.affiliates",
+            "view.payout.requests",
+            "approve.payout.requests",
+            "view.affiliate.settings",
+            "update.affiliate.settings",
+            "manage.affiliates",
+            "block.affiliates",
+
+            // Notification permissions
+            "view.notifications",
+            "create.notifications",
+            "edit.notifications",
+            "delete.notifications",
+
+            // customer permissions
+            "view.customers",
+            "create.customers",
+            "edit.customers",
+            "delete.customers",
+
+            // inventory permissions
+            "view.inventory",
+            "create.inventory",
+            "edit.inventory",
+            "delete.inventory",
+
+            // analytics permissions
+            "view.analytics",
+            "create.analytics",
+            "edit.analytics",
+            "delete.analytics",
+
+            
         ];
 
         foreach ($permissions as $permission) {
