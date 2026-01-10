@@ -137,7 +137,7 @@ class CouponController extends Controller
 
         Coupon::create($validated);
 
-        return to_route('coupons.index')->with('success', 'Coupon successfully created!');
+        return to_route('admin.coupons.index')->with('success', 'Coupon successfully created!');
     }
 
     /**
@@ -200,7 +200,7 @@ class CouponController extends Controller
 
         $coupon->update($validated);
 
-        return to_route('coupons.index')->with('success', 'Coupon successfully updated!');
+        return to_route('admin.coupons.index')->with('success', 'Coupon successfully updated!');
     }
 
     /**

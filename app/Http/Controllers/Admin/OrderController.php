@@ -11,6 +11,7 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\DB;
+use App\Jobs\SendOrderConfirmationEmail;
 
 class OrderController extends Controller
 {
@@ -102,16 +103,12 @@ class OrderController extends Controller
      */
     public function create()
     {
-        // $products=  Product::with(['variants:id,product_id,name,price,stock'])
-        //         ->where('status', 'active')
-        //         ->orderBy('name')
-        //         ->get(['id', 'name', 'sku', 'price', 'stock']);
-            $products=  Product::get();
-
-                // dd($products);
         return Inertia::render('Admin/Orders/Create', [
             'customers' => Customer::orderBy('first_name')->get(['id', 'first_name', 'last_name', 'phone', 'email']),
-            'products' => $products
+            'products' => Product::with(['variants:id,product_id,name,price,stock'])
+                ->where('status', 'active')
+                ->orderBy('name')
+                ->get(['id', 'name', 'sku', 'price', 'stock']),
         ]);
     }
 
@@ -120,6 +117,9 @@ class OrderController extends Controller
      */
     public function store(Request $request, AffiliateService $affiliateService)
     {
+        $order = Order::find(1);
+        SendOrderConfirmationEmail::dispatch($order);
+        return 1;
         $validated = $request->validate([
             'customer_id' => 'required|exists:customers,id',
             'items' => 'required|array|min:1',
@@ -188,8 +188,11 @@ class OrderController extends Controller
             // Affiliate Commission Calculate
             $affiliateService->recordReferral($order);
 
+            // Dispatch email job
+            SendOrderConfirmationEmail::dispatch($order);
+
             DB::commit();
-            return to_route('orders.index')->with('success', 'Order successfully created!');
+            return to_route('admin.orders.index')->with('success', 'Order successfully created! Confirmation email will be sent shortly.');
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -303,7 +306,7 @@ class OrderController extends Controller
             $affiliateService->updateReferral($order);
 
             DB::commit();
-            return to_route('orders.index')->with('success', 'Order successfully updated!');
+            return to_route('admin.orders.index')->with('success', 'Order successfully updated!');
 
         } catch (\Exception $e) {
             DB::rollBack();

@@ -28,14 +28,14 @@ class Order extends Model
         'payment_date'
     ];
 
-    protected $casts = [
-        'subtotal' => 'decimal:2',
-        'product_discount' => 'decimal:2',
-        'invoice_discount' => 'decimal:2',
-        'shipping_charges' => 'decimal:2',
-        'tax' => 'decimal:2',
-        'grand_total' => 'decimal:2',
-        'payment_date' => 'date',
+     protected $casts = [
+        'subtotal'          => 'float',
+        'product_discount'  => 'float',
+        'invoice_discount'  => 'float',
+        'shipping_charges'  => 'float',
+        'tax'               => 'float',
+        'grand_total'       => 'float',
+        'payment_date'      => 'date',
     ];
 
     // Relationships

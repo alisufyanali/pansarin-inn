@@ -11,7 +11,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { dashboard } from '@/routes';
+import { can } from '@/lib/can';
+// import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
 import { LayoutGrid } from 'lucide-react';
@@ -23,8 +24,8 @@ import { ShopSection } from '@/components/sidebar-sections/shop-section';
 import { MessagingSection } from '@/components/sidebar-sections/messaging-section';
 import { UserManagementSection } from '@/components/sidebar-sections/user-management-section';
 import { SettingsSections } from '@/components/sidebar-sections/settings-sections';
+import { AffiliateSection } from '@/components/sidebar-sections/affiliate-section';
 import AppLogo from './app-logo';
-import { AffiliateSection } from './sidebar-sections/affiliate-section';
 
 export function AppSidebar() {
   const permissions = usePermissionChecks();
@@ -32,7 +33,7 @@ export function AppSidebar() {
   const mainNavItems: NavItem[] = [
     {
       title: 'Dashboard',
-      href: dashboard(),
+      href: "/admin/dashboard",
       icon: LayoutGrid,
     },
   ];
@@ -100,7 +101,8 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <Link href={dashboard()} prefetch>
+              {/* <Link href={dashboard()} prefetch> */}
+              <Link href={"dashboard"} prefetch>
                 <AppLogo />
               </Link>
             </SidebarMenuButton>
