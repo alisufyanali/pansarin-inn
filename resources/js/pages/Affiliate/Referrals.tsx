@@ -35,7 +35,7 @@ export default function Referrals({ referrals }: Props) {
             <div className="p-6 max-w-7xl mx-auto">
                 <div className="mb-6">
                     <h1 className="text-2xl font-bold text-gray-900">Your Referral Sales</h1>
-                    <p className="text-sm text-gray-500">Un orders ki list jin par aapne commission earn kiya hai.</p>
+                    <p className="text-sm text-gray-500">The orders list where you earns commission.</p>
                 </div>
 
                 <Card className="shadow-sm border-gray-200 overflow-hidden">
@@ -92,7 +92,7 @@ export default function Referrals({ referrals }: Props) {
                                     ) : (
                                         <tr>
                                             <td colSpan={5} className="p-12 text-center text-gray-400">
-                                                Abhi tak koi referral sale record nahi hui.
+                                                No referral sale recorded.
                                             </td>
                                         </tr>
                                     )}

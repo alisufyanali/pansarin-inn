@@ -117,9 +117,10 @@ class OrderController extends Controller
      */
     public function store(Request $request, AffiliateService $affiliateService)
     {
-        $order = Order::find(1);
-        SendOrderConfirmationEmail::dispatch($order);
-        return 1;
+        // $order = Order::find(1);
+        // SendOrderConfirmationEmail::dispatch($order);
+        // return 1;
+
         $validated = $request->validate([
             'customer_id' => 'required|exists:customers,id',
             'items' => 'required|array|min:1',
@@ -187,6 +188,9 @@ class OrderController extends Controller
 
             // Affiliate Commission Calculate
             $affiliateService->recordReferral($order);
+            if ($order->status === 'delivered') {
+                $affiliateService->finalizeCommission($order);
+            }
 
             // Dispatch email job
             SendOrderConfirmationEmail::dispatch($order);

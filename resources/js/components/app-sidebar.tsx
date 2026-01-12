@@ -87,10 +87,13 @@ export function AppSidebar() {
   }
 
   // Add Affiliate Section
-  const affiliateSection = AffiliateSection();
-  if (affiliateSection) {
-    mainNavItems.push(affiliateSection);
-  }
+  const affiliateSection = AffiliateSection({ 
+    isAdmin: permissions.hasAnyUserPerm
+  });
+  // const affiliateSection = AffiliateSection();
+    if (affiliateSection) {
+      mainNavItems.push(affiliateSection);
+    }
 
   // Get Footer Items (Settings)
   const footerNavItems = SettingsSections();

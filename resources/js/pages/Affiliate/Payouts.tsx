@@ -40,17 +40,17 @@ export default function Payouts({ balance }: Props) {
         
         // Amount validation (Client-side)
         if (Number(data.amount) > balance) {
-            toast.error("Aapka balance withdraw amount se kam hai.");
+            toast.error("Your balance is not reach to minimum limit to withdraw amount.");
             return;
         }
 
         post(route('affiliate.payout.store'), {
             onSuccess: () => {
-                toast.success("Payout request successfully submit ho gayi hai!");
+                toast.success("Payout request successfully submit!");
                 reset(); // Form clear karne ke liye
             },
             onError: () => {
-                toast.error("Form check karein, kuch errors hain.");
+                toast.error("check Form, something error happens.");
             }
         });
     };
@@ -63,7 +63,7 @@ export default function Payouts({ balance }: Props) {
                 <Card className="shadow-lg border-gray-200">
                     <CardHeader className="bg-gray-50/50 border-b">
                         <CardTitle className="text-2xl font-bold text-gray-800">Request Payout</CardTitle>
-                        <p className="text-sm text-gray-500">Apni mehnat ki kamayi withdraw karein.</p>
+                        <p className="text-sm text-gray-500">withdraw your earnings.</p>
                     </CardHeader>
                     
                     <CardContent className="pt-6">
@@ -119,7 +119,7 @@ export default function Payouts({ balance }: Props) {
                                     required
                                 />
                                 {errors.payment_details && <p className="text-red-500 text-xs font-medium">{errors.payment_details}</p>}
-                                <p className="text-xs text-gray-400">Account holder ka naam aur number lazmi likhein.</p>
+                                <p className="text-xs text-gray-400">Enter account holder's name and number.</p>
                             </div>
 
                             {/* Submit Button */}

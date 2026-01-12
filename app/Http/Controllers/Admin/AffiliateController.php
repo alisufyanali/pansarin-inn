@@ -64,19 +64,34 @@ class AffiliateController extends Controller
     public function approvePayout($id)
     {
         $payout = PayoutRequest::findOrFail($id);
-        $affiliate = $payout->affiliate;
 
         if ($payout->status == 'pending') {
-            // Amount pehle hi referral approved hone par balance mein add ho chuki hoti hai
-            // Payout approve hone par sirf status complete hoga. 
-            // Note: Balance tab deduct hota hai jab request submit ho ya approve ho (Aapke purane logic ke mutabiq)
-            $affiliate->decrement('balance', $payout->amount);
+            // Sirf status complete karein, kyunke balance pehle hi kat chuka hai
             $payout->update(['status' => 'completed']);
             
-            return back()->with('success', 'Payout marked as paid successfully!');
+            return back()->with('success', 'Payout marked as paid!');
         }
 
-        return back()->with('error', 'Invalid payout request.');
+        return back()->with('error', 'Request pehle hi process ho chuki hai.');
+    }
+
+    // Ek naya function Reject ke liye bhi hona chahiye
+    public function rejectPayout($id)
+    {
+        $payout = PayoutRequest::findOrFail($id);
+
+        if ($payout->status == 'pending') {
+            $affiliate = $payout->affiliate;
+            
+            // Paise wapas affiliate ke balance mein daal dein
+            $affiliate->increment('balance', $payout->amount);
+            
+            $payout->update(['status' => 'rejected']);
+            
+            return back()->with('success', 'Payout rejected and balance refunded.');
+        }
+
+        return back()->with('error', 'Invalid action.');
     }
 
     // 5. Affiliate ka status toggle (Active/Block)
@@ -90,30 +105,28 @@ class AffiliateController extends Controller
         return back()->with('success', 'Affiliate status updated!');
     }
 
-
-
-public function settings()
-{
-    // Settings ko key-value pair mein convert kar ke bhejein
-    $settings = AffiliateSetting::pluck('value', 'key')->all();
-    
-    return Inertia::render('Admin/Affiliate/SystemSettings', [
-        'settings' => $settings
-    ]);
-}
-
-public function updateSettings(Request $request)
-{
-    $validated = $request->validate([
-        'default_commission' => 'required|numeric|min:0',
-        'min_payout' => 'required|numeric|min:0',
-        'cookie_duration' => 'required|integer|min:1',
-    ]);
-
-    foreach ($validated as $key => $value) {
-        AffiliateSetting::updateOrCreate(['key' => $key], ['value' => $value]);
+    public function settings()
+    {
+        // Settings ko key-value pair mein convert kar ke bhejein
+        $settings = AffiliateSetting::pluck('value', 'key')->all();
+        
+        return Inertia::render('Admin/Affiliate/SystemSettings', [
+            'settings' => $settings
+        ]);
     }
 
-    return back()->with('success', 'Settings updated successfully!');
-}
+    public function updateSettings(Request $request)
+    {
+        $validated = $request->validate([
+            'default_commission' => 'required|numeric|min:0',
+            'min_payout' => 'required|numeric|min:0',
+            'cookie_duration' => 'required|integer|min:1',
+        ]);
+
+        foreach ($validated as $key => $value) {
+            AffiliateSetting::updateOrCreate(['key' => $key], ['value' => $value]);
+        }
+
+        return back()->with('success', 'Settings updated successfully!');
+    }
 }

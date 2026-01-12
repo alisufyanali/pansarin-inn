@@ -40,95 +40,139 @@ export default function SystemSettings({ settings }: SettingsProps) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Affiliate Settings" />
 
-            <div className="p-6 max-w-3xl">
-                <div className="mb-6">
-                    <h1 className="text-2xl font-bold text-gray-900">Affiliate System Settings</h1>
-                    <p className="text-sm text-gray-500 mt-1">Manage global commission rates and payout rules.</p>
-                </div>
+            <div className="flex flex-col gap-8 max-w-3xl">
 
-                <form onSubmit={submit} className="bg-white border border-gray-200 shadow-sm rounded-xl p-8 space-y-6">
-                    {/* Default Commission */}
-                    <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-1">
-                            Default Commission (%)
-                        </label>
-                        <div className="relative">
-                            <input 
-                                type="number" 
-                                className={`block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${
-                                    errors.default_commission ? 'border-red-500' : ''
-                                }`}
-                                value={data.default_commission}
-                                onChange={e => setData('default_commission', e.target.value)}
-                                placeholder="5"
-                            />
-                        </div>
-                        {errors.default_commission && (
-                            <p className="text-red-500 text-xs mt-1 font-medium">{errors.default_commission}</p>
-                        )}
-                        <p className="text-xs text-gray-400 mt-1">New affiliates ko automatically yeh percentage milegi.</p>
-                    </div>
+  {/* Page Header */}
+  <div>
+    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+      Affiliate System Settings
+    </h1>
+    <p className="mt-2 text-gray-600 dark:text-gray-400">
+      Manage global commission rates and payout rules
+    </p>
+  </div>
 
-                    {/* Minimum Payout */}
-                    <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-1">
-                            Minimum Payout Limit (Rs.)
-                        </label>
-                        <input 
-                            type="number" 
-                            className={`block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${
-                                errors.min_payout ? 'border-red-500' : ''
-                            }`}
-                            value={data.min_payout}
-                            onChange={e => setData('min_payout', e.target.value)}
-                            placeholder="1000"
-                        />
-                        {errors.min_payout && (
-                            <p className="text-red-500 text-xs mt-1 font-medium">{errors.min_payout}</p>
-                        )}
-                        <p className="text-xs text-gray-400 mt-1">Kam az kam itne paise hone par affiliate payout request kar sakega.</p>
-                    </div>
+  {/* Settings Card */}
+  <form
+    onSubmit={submit}
+    className="bg-white dark:bg-gray-900
+      border border-gray-200 dark:border-gray-800
+      rounded-2xl shadow-sm p-8 space-y-6"
+  >
+    {/* Default Commission */}
+    <div>
+      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">
+        Default Commission (%)
+      </label>
 
-                    {/* Cookie Duration */}
-                    <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-1">
-                            Cookie Duration (Days)
-                        </label>
-                        <input 
-                            type="number" 
-                            className={`block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${
-                                errors.cookie_duration ? 'border-red-500' : ''
-                            }`}
-                            value={data.cookie_duration}
-                            onChange={e => setData('cookie_duration', e.target.value)}
-                            placeholder="30"
-                        />
-                        {errors.cookie_duration && (
-                            <p className="text-red-500 text-xs mt-1 font-medium">{errors.cookie_duration}</p>
-                        )}
-                        <p className="text-xs text-gray-400 mt-1">Kitne din tak customer ko affiliate link ke sath track karna hai.</p>
-                    </div>
+      <input
+        type="number"
+        value={data.default_commission}
+        onChange={e => setData('default_commission', e.target.value)}
+        className={`block w-full rounded-lg border
+          bg-white dark:bg-gray-800
+          text-gray-900 dark:text-white
+          shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm
+          ${errors.default_commission
+            ? 'border-red-500'
+            : 'border-gray-300 dark:border-gray-700'
+          }`}
+        placeholder="5"
+      />
 
-                    {/* Action Button */}
-                    <div className="pt-4 border-t border-gray-100 flex items-center justify-end">
-                        <button 
-                            disabled={processing}
-                            type="submit"
-                            className="bg-indigo-600 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
-                        >
-                            {processing ? (
-                                <span className="flex items-center">
-                                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    Saving...
-                                </span>
-                            ) : 'Save Settings'}
-                        </button>
-                    </div>
-                </form>
-            </div>
+      {errors.default_commission && (
+        <p className="text-red-500 text-xs mt-1 font-medium">
+          {errors.default_commission}
+        </p>
+      )}
+
+      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+        This percentage will be automatically assigned to new affiliates.
+      </p>
+    </div>
+
+    {/* Minimum Payout */}
+    <div>
+      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">
+        Minimum Payout Limit (Rs.)
+      </label>
+
+      <input
+        type="number"
+        value={data.min_payout}
+        onChange={e => setData('min_payout', e.target.value)}
+        className={`block w-full rounded-lg border
+          bg-white dark:bg-gray-800
+          text-gray-900 dark:text-white
+          shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm
+          ${errors.min_payout
+            ? 'border-red-500'
+            : 'border-gray-300 dark:border-gray-700'
+          }`}
+        placeholder="1000"
+      />
+
+      {errors.min_payout && (
+        <p className="text-red-500 text-xs mt-1 font-medium">
+          {errors.min_payout}
+        </p>
+      )}
+
+      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+        Affiliates can request a payout only after reaching this minimum amount.
+      </p>
+    </div>
+
+    {/* Cookie Duration */}
+    <div>
+      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">
+        Cookie Duration (Days)
+      </label>
+
+      <input
+        type="number"
+        value={data.cookie_duration}
+        onChange={e => setData('cookie_duration', e.target.value)}
+        className={`block w-full rounded-lg border
+          bg-white dark:bg-gray-800
+          text-gray-900 dark:text-white
+          shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm
+          ${errors.cookie_duration
+            ? 'border-red-500'
+            : 'border-gray-300 dark:border-gray-700'
+          }`}
+        placeholder="30"
+      />
+
+      {errors.cookie_duration && (
+        <p className="text-red-500 text-xs mt-1 font-medium">
+          {errors.cookie_duration}
+        </p>
+      )}
+
+      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+        Number of days a customer will be tracked after clicking an affiliate link.
+      </p>
+    </div>
+
+    {/* Action Bar */}
+    <div className="pt-6 border-t border-gray-200 dark:border-gray-800 flex justify-end">
+      <button
+        type="submit"
+        disabled={processing}
+        className="inline-flex items-center px-6 py-2.5
+          bg-gradient-to-r from-indigo-600 to-purple-600
+          hover:from-indigo-700 hover:to-purple-700
+          text-white rounded-xl font-semibold
+          shadow-sm hover:shadow-md transition-all
+          disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {processing ? 'Saving…' : 'Save Settings'}
+      </button>
+    </div>
+  </form>
+</div>
+
         </AppLayout>
     );
 }
