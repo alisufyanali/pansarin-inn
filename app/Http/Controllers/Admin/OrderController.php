@@ -186,12 +186,6 @@ class OrderController extends Controller
             // Calculate totals
             $order->calculateTotals();
 
-            // Affiliate Commission Calculate
-            $affiliateService->recordReferral($order);
-            if ($order->status === 'delivered') {
-                $affiliateService->finalizeCommission($order);
-            }
-
             // Dispatch email job
             SendOrderConfirmationEmail::dispatch($order);
 

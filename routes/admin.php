@@ -1,47 +1,32 @@
 <?php
 
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\Admin\RoleController;
-use App\Http\Controllers\Admin\CategoryController;
-use App\Http\Controllers\Admin\NotificationController;
-use App\Http\Controllers\Admin\ProductController;
-use App\Http\Controllers\Admin\ProductVariantController;
-use App\Http\Controllers\Admin\ProductAttributeController;
-use App\Http\Controllers\Admin\OrderController;
-use App\Http\Controllers\Admin\CustomerController;
-use App\Http\Controllers\Admin\CouponController;
-use App\Http\Controllers\Admin\BlogController;
-use App\Http\Controllers\Admin\BlogCategoryController;
-use App\Http\Controllers\Admin\FrontendContentController;
-use App\Http\Controllers\Admin\BlogsCommentsController;
-use App\Http\Controllers\Admin\BlogTagsController;
-use App\Http\Controllers\Admin\AffiliateController as AdminAffiliateController;
-use App\Http\Controllers\Admin\InventoryController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 // Controllers
-// use App\Http\Controllers\UserController;
-// use App\Http\Controllers\Admin\{
-//     RoleController,
-//     CategoryController,
-//     ProductController,
-//     ProductVariantController,
-//     ProductAttributeController,
-//     OrderController,
-//     CustomerController,
-//     CouponController,
-//     BlogController,
-//     BlogCategoryController,
-//     BlogsCommentsController,
-//     NotificationController,
-//     FrontendContentController,
-//     NewsletterController
-// };
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\Admin\{
+    RoleController,
+    CategoryController,
+    ProductController,
+    ProductVariantController,
+    ProductAttributeController,
+    OrderController,
+    CustomerController,
+    CouponController,
+    BlogController,
+    BlogCategoryController,
+    BlogsCommentsController,
+    NotificationController,
+    FrontendContentController,
+    NewsletterController,
+    BlogTagsController,
+    InventoryController
+};
 
 Route::middleware(['auth', 'verified'])
     ->prefix('admin')
-    ->name('admin.')
+    // ->name('admin.')
     ->group(function () {
 
     /*
@@ -82,10 +67,14 @@ Route::middleware(['auth', 'verified'])
     |--------------------------------------------------------------------------
     */
     Route::resource('categories', CategoryController::class);
-    Route::get('categories-data', [CategoryController::class, 'getData'])->name('categories-data');
-    // Route::delete('/categories/{id}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+    Route::get('categories-data', [CategoryController::class, 'getData'])
+        ->name('categories.data');
 
-    // Product Management resource Controllers
+    /*
+    |--------------------------------------------------------------------------
+    | Products
+    |--------------------------------------------------------------------------
+    */
     Route::resource('products', ProductController::class);
     Route::get('products-data', [ProductController::class, 'getData'])
         ->name('products.data');
@@ -144,6 +133,8 @@ Route::middleware(['auth', 'verified'])
         ->name('blogcategories.data');
 
     Route::resource('blogs', BlogController::class);
+    Route::get('blogs-data', [BlogController::class, 'getData'])
+        ->name('blogs.data');
 
     //Blogs Comments Routes
     Route::resource('blogscomments', BlogsCommentsController::class);
