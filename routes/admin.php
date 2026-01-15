@@ -21,7 +21,9 @@ use App\Http\Controllers\Admin\{
     FrontendContentController,
     NewsletterController,
     BlogTagsController,
-    InventoryController
+    InventoryController,
+    ProductsReviewsController,
+    ProductsDealController,
 };
 
 Route::middleware(['auth', 'verified'])
@@ -177,9 +179,30 @@ Route::middleware(['auth', 'verified'])
         ->name('frontend.data');
 
 
-
     Route::resource('newsletters', NewsletterController::class);
     Route::get('newsletters-data', [NewsletterController::class, 'getData'])->name('newsletters.data');
 
+    Route::resource('reviews', ProductsReviewsController::class);
+    Route::get('reviews-data', [ProductsReviewsController::class, 'getData'])->name('reviews.data');
 
+    Route::prefix('deals')->name('deals.')->group(function () {
+    // Data API Route (must be before resource)
+    Route::get('data', [ProductsDealController::class, 'getData'])->name('data');
+    
+    // Additional Actions
+    Route::post('{deal}/toggle-status', [ProductsDealController::class, 'toggleStatus'])->name('toggle-status');
+    Route::post('{deal}/duplicate', [ProductsDealController::class, 'duplicate'])->name('duplicate');
 });
+
+// Resource Routes (handles all CRUD)
+Route::resource('deals', ProductsDealController::class)->names([
+    'index' => 'deals.index',
+    'create' => 'deals.create',
+    'store' => 'deals.store',
+    'show' => 'deals.show',
+    'edit' => 'deals.edit',
+    'update' => 'deals.update',
+    'destroy' => 'deals.destroy',
+]);
+});
+

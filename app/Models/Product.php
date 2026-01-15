@@ -151,4 +151,53 @@ class Product extends Model
     {
         return $query->where('stock_qty', 0);
     }
+
+    // Add to Product model
+
+public function deals()
+{
+    return $this->belongsToMany(Deal::class, 'deal_product')
+        ->withPivot(['custom_discount', 'stock_limit', 'sold_count', 'display_order'])
+        ->withTimestamps();
+}
+
+public function activeDeals()
+{
+    return $this->deals()
+        ->where('is_active', true)
+        ->where(function($q) {
+            $q->whereNull('starts_at')->orWhere('starts_at', '<=', now());
+        })
+        ->where(function($q) {
+            $q->whereNull('ends_at')->orWhere('ends_at', '>=', now());
+        });
+}
+
+public function getBestDealAttribute()
+{
+    return $this->activeDeals()->first();
+}
+
+public function getDiscountedPriceAttribute()
+{
+    $deal = $this->best_deal;
+    
+    if (!$deal) return $this->price;
+    
+    $discount = $deal->pivot->custom_discount ?? $deal->discount_value;
+    
+    if ($deal->deal_type === 'percentage') {
+        return $this->price - (($this->price * $discount) / 100);
+    } elseif ($deal->deal_type === 'fixed') {
+        return max(0, $this->price - $discount);
+    }
+    
+    return $this->price;
+}
+
+public function getSavingsAttribute()
+{
+    return $this->price - $this->discounted_price;
+}
+
 }
