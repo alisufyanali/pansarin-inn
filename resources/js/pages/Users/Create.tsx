@@ -118,7 +118,7 @@ export default function UserCreate({ roles }: { roles: Role[] }) {
                                 >
                                     <option value="">Select a role</option>
                                     {roles.map((role) => (
-                                        <option key={role.id} value={role.name} className="capitalize">{role.name}</option>
+                                        <option key={role.id} value={role.name.toLowerCase()} className="capitalize">{role.name}</option>
                                     ))}
                                 </select>
                                 {errors.role && <div className="text-red-500 text-sm mt-1">{errors.role}</div>}

@@ -24,8 +24,9 @@ return new class extends Migration
                 ->cascadeOnDelete();
 
             $table->decimal('quantity', 10, 2)->nullable()->after('unit');
-            $table->decimal('purchase_price_per_unit', 10, 2)->nullable()->after('quantity');
-            $table->decimal('sale_price_per_unit', 10, 2)->nullable()->after('purchase_price_per_unit');
+            $table->decimal('purchase_price_per_unit', 10, 2)->nullable();
+            $table->decimal('sale_price_per_unit', 10, 2)->nullable();
+            $table->decimal('affiliate_commission', 10, 2)->default(5.00);
 
             $table->string('name');
             $table->string('urdu_name')->nullable();
