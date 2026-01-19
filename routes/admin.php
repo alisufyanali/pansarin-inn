@@ -23,6 +23,8 @@ use App\Http\Controllers\Admin\{
     BlogTagsController,
     AffiliateController as AdminAffiliateController,
     InventoryController,
+    WhatsAppController,
+
 };
 
 Route::middleware(['auth', 'verified'])
@@ -175,6 +177,19 @@ Route::middleware(['auth', 'verified'])
 
     Route::resource('newsletters', NewsletterController::class);
     Route::get('newsletters-data', [NewsletterController::class, 'getData'])->name('newsletters.data');
+
+
+
+
+    
+    // WhatsApp Chat Routes
+    Route::prefix('whatsapp')->name('whatsapp.')->group(function () {
+        Route::get('/chat', [WhatsAppController::class, 'index'])->name('chat');
+        Route::get('/phone-numbers', [WhatsAppController::class, 'getPhoneNumbers'])->name('phone-numbers');
+        Route::get('/messages/{phone}', [WhatsAppController::class, 'getMessages'])->name('messages');
+        Route::post('/send', [WhatsAppController::class, 'sendMessage'])->name('send');
+    });
+    
 
 
 });
