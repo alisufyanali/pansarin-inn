@@ -64,7 +64,7 @@ export default function Dashboard({ stats, is_affiliate }: Props) {
                     </div>
                     <h2 className="text-2xl font-bold text-gray-900">Affiliate Program</h2>
                     <p className="text-gray-500 max-w-sm">
-                        Aap abhi affiliate program ka hissa nahi hain. Please register hone ke liye admin se rabta karein.
+                        You are not a part of affiliate Program. Please contact with to register.
                     </p>
                 </div>
             </AppLayout>
@@ -80,7 +80,7 @@ export default function Dashboard({ stats, is_affiliate }: Props) {
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight text-gray-900">Affiliate Dashboard</h1>
-                        <p className="text-gray-500">Apni earnings aur referrals ko track karein.</p>
+                        <p className="text-gray-500">Track your earnings and referrals.</p>
                     </div>
                     <div className="flex items-center gap-2 bg-indigo-50 text-indigo-700 px-4 py-2 rounded-lg border border-indigo-100 font-mono shadow-sm">
                         <span className="text-xs uppercase font-bold text-indigo-400">Your Code:</span>
@@ -124,7 +124,7 @@ export default function Dashboard({ stats, is_affiliate }: Props) {
                         <CardTitle className="flex items-center gap-2 text-xl font-bold">
                             <Link className="w-5 h-5 text-indigo-600" /> Referral Link Generator
                         </CardTitle>
-                        <p className="text-sm text-gray-500">Kisi bhi product ka link yahan paste karein apna referral code add karne ke liye.</p>
+                        <p className="text-sm text-gray-500">Enter product url for generating referral code</p>
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div className="flex flex-col md:flex-row gap-3">
@@ -161,7 +161,7 @@ export default function Dashboard({ stats, is_affiliate }: Props) {
                                 </div>
                                 <div className="mt-3 flex items-center gap-2 text-green-600 text-xs font-medium">
                                     <CheckCircle2 className="w-4 h-4" /> 
-                                    Is link ko share karein, har sale par aapko commission milega.
+                                    Share this link, get commission on every sales.
                                 </div>
                             </div>
                         )}

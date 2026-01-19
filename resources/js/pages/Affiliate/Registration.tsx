@@ -32,10 +32,10 @@ const Registration: React.FC = () => {
 
         post(route('vendor.affiliate.store'), {
             onSuccess: () => {
-                toast.success('Congratulations! Aap affiliate program mein shamil ho chuke hain.');
+                toast.success('Congratulations! you are now a part of affiliate program.');
             },
             onError: () => {
-                toast.error('Registration mein kuch masla pesh aaya hai.');
+                toast.error('There is something issue while registring.');
             }
         });
     };
@@ -54,7 +54,7 @@ const Registration: React.FC = () => {
                             Join Our Affiliate Family
                         </CardTitle>
                         <CardDescription className="text-gray-500">
-                            Har successful referral par commission kamayein aur apne network ko barhayein.
+                            Get commission on every sales your referrals get.
                         </CardDescription>
                     </CardHeader>
                     
@@ -64,11 +64,11 @@ const Registration: React.FC = () => {
                             <div className="space-y-3">
                                 <div className="flex items-center gap-3 text-sm text-gray-600">
                                     <Zap className="w-4 h-4 text-yellow-500 shrink-0" />
-                                    <span>Instant unique referral link generate hoga.</span>
+                                    <span>Instant unique referral link generate.</span>
                                 </div>
                                 <div className="flex items-center gap-3 text-sm text-gray-600">
                                     <ShieldCheck className="w-4 h-4 text-green-500 shrink-0" />
-                                    <span>Transparent tracking aur automatic payouts.</span>
+                                    <span>Transparent tracking and automatic payouts.</span>
                                 </div>
                             </div>
 
@@ -90,7 +90,7 @@ const Registration: React.FC = () => {
                                         I agree to the Affiliate Terms
                                     </Label>
                                     <p className="text-xs text-gray-500 leading-normal">
-                                        Commission order delivery ke baad aapke balance mein add kiya jayega.
+                                        Commission order added to your balance after delivery.
                                     </p>
                                 </div>
                             </div>

@@ -35,7 +35,7 @@ class AffiliateController extends Controller
     {
         $user = auth()->user();
         if ($user->affiliate) {
-            return redirect()->route('affiliate.dashboard')->with('error', 'Aap pehle se affiliate hain.');
+            return redirect()->route('affiliate.dashboard')->with('error', 'You are already an affiliate.');
         }
 
         $parentAffiliateId = null;
@@ -53,7 +53,9 @@ class AffiliateController extends Controller
             'parent_id' => $parentAffiliateId
         ]);
 
-        return redirect()->route('affiliate.dashboard')->with('success', 'Affiliate account ban gaya!');
+        $user->update(['role' => 'affiliate']);
+
+        return redirect()->route('affiliate.dashboard')->with('success', 'Affiliate account created');
     }
 
     public function referrals()

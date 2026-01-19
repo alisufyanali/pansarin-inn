@@ -21,7 +21,8 @@ use App\Http\Controllers\Admin\{
     FrontendContentController,
     NewsletterController,
     BlogTagsController,
-    InventoryController
+    AffiliateController as AdminAffiliateController,
+    InventoryController,
 };
 
 Route::middleware(['auth', 'verified'])
@@ -67,14 +68,10 @@ Route::middleware(['auth', 'verified'])
     |--------------------------------------------------------------------------
     */
     Route::resource('categories', CategoryController::class);
-    Route::get('categories-data', [CategoryController::class, 'getData'])
-        ->name('categories.data');
+    Route::get('categories-data', [CategoryController::class, 'getData'])->name('categories-data');
+    // Route::delete('/categories/{id}', [CategoryController::class, 'destroy'])->name('categories.destroy');
 
-    /*
-    |--------------------------------------------------------------------------
-    | Products
-    |--------------------------------------------------------------------------
-    */
+    // Product Management resource Controllers
     Route::resource('products', ProductController::class);
     Route::get('products-data', [ProductController::class, 'getData'])
         ->name('products.data');
@@ -133,8 +130,6 @@ Route::middleware(['auth', 'verified'])
         ->name('blogcategories.data');
 
     Route::resource('blogs', BlogController::class);
-    Route::get('blogs-data', [BlogController::class, 'getData'])
-        ->name('blogs.data');
 
     //Blogs Comments Routes
     Route::resource('blogscomments', BlogsCommentsController::class);

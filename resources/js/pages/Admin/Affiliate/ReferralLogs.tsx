@@ -38,16 +38,16 @@ export default function ReferralLogs({ logs }: Props) {
             <div className="p-6">
                 <h1 className="text-2xl font-bold mb-6 text-gray-800">Global Referral Logs</h1>
 
-                <div className="bg-white shadow-sm rounded-xl overflow-hidden border border-gray-200">
+                <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse min-w-[800px]">
-                            <thead className="bg-gray-50 border-b border-gray-200">
+                        <table className="w-full border-collapse text-left">
+                            <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
                                 <tr>
-                                    <th className="p-4 font-semibold text-gray-700">Order #</th>
-                                    <th className="p-4 font-semibold text-gray-700">Affiliate</th>
-                                    <th className="p-4 font-semibold text-gray-700">Sale Amount</th>
-                                    <th className="p-4 font-semibold text-gray-700">Commission</th>
-                                    <th className="p-4 font-semibold text-gray-700">Status</th>
+                                    <th className="p-4 font-semibold text-gray-700 dark:text-gray-200">Order #</th>
+                                    <th className="p-4 font-semibold text-gray-700 dark:text-gray-200">Affiliate</th>
+                                    <th className="p-4 font-semibold text-gray-700 dark:text-gray-200">Sale Amount</th>
+                                    <th className="p-4 font-semibold text-gray-700 dark:text-gray-200">Commission</th>
+                                    <th className="p-4 font-semibold text-gray-700 dark:text-gray-200">Status</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
@@ -81,7 +81,7 @@ export default function ReferralLogs({ logs }: Props) {
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan={5} className="p-12 text-center text-gray-400">
+                                        <td colSpan={5} className="p-12 text-center text-gray-500">
                                             No referral logs recorded yet.
                                         </td>
                                     </tr>

@@ -32,25 +32,25 @@ class PayoutController extends Controller
 
     public function store(Request $request)
     {
+        // Aapki purani validation (Min 1000)
         $request->validate(['amount' => 'required|numeric|min:1000']);
         
         $affiliate = auth()->user()->affiliate;
 
-        // Yahan bhi check lagana zaroori hai
-        if (!$affiliate) {
-            return back()->with('error', 'Aap affiliate nahi hain.');
+        if (!$affiliate || $affiliate->balance < $request->amount) {
+            return back()->with('error', 'Not enough balance.');
         }
 
-        if ($affiliate->balance < $request->amount) {
-            return back()->with('error', 'Balance kam hai.');
-        }
+        // 1. Pehle balance deduct karein
+        $affiliate->decrement('balance', $request->amount);
 
+        // 2. Phir request create karein
         PayoutRequest::create([
             'affiliate_id' => $affiliate->id,
             'amount' => $request->amount,
             'status' => 'pending'
         ]);
 
-        return back()->with('success', 'Withdraw request bhej di gayi hai.');
+        return back()->with('success', 'Withdraw request send successfully');
     }
 }
