@@ -24,6 +24,9 @@ use App\Http\Controllers\Admin\{
     AffiliateController as AdminAffiliateController,
     InventoryController,
     WhatsAppController,
+    SaleController,
+    ContactController
+
 
 };
 
@@ -191,5 +194,43 @@ Route::middleware(['auth', 'verified'])
     });
     
 
+    // Sales CRUD
+    Route::resource('sales', SaleController::class);
+    
+    // Sales DataTable endpoint
+    Route::get('sales-data', [SaleController::class, 'getData'])->name('sales.data');
+    
+    // Update delivery status
+    Route::patch('sales/{sale}/delivery-status', [SaleController::class, 'updateDeliveryStatus'])
+        ->name('sales.update-delivery-status');
+    
+    // Update payment status
+    Route::patch('sales/{sale}/payment-status', [SaleController::class, 'updatePaymentStatus'])
+        ->name('sales.update-payment-status');
+
+
+            
+    // Contact Routes
+        
+        // Contacts CRUD
+        Route::resource('contacts', ContactController::class)->except(['create', 'store']);
+        
+        // Contacts DataTable endpoint
+        Route::get('contacts-data', [ContactController::class, 'getData'])->name('contacts.data');
+        
+        // Update status
+        Route::patch('contacts/{contact}/status', [ContactController::class, 'updateStatus'])
+            ->name('contacts.update-status');
+        
+        // Reply to contact
+        Route::post('contacts/{contact}/reply', [ContactController::class, 'reply'])
+            ->name('contacts.reply');
+        
+        // Bulk actions
+        Route::post('contacts/bulk-delete', [ContactController::class, 'bulkDelete'])
+            ->name('contacts.bulk-delete');
+        
+        Route::post('contacts/bulk-update-status', [ContactController::class, 'bulkUpdateStatus'])
+            ->name('contacts.bulk-update-status');
 
 });

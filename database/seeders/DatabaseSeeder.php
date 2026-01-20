@@ -16,7 +16,11 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RolePermissionSeeder::class,
             AttributeSeeder::class,
+            CitySeeder::class,
             OrderSeeder::class,
+            SaleSeeder::class,
+            WhatsAppMediaSeeder::class,
+            WhatsAppSeeder::class
 
         ]);
     }

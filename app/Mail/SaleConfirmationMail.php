@@ -2,25 +2,25 @@
 
 namespace App\Mail;
 
-use App\Models\Order;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use App\Models\Sale;
 
-class OrderConfirmation extends Mailable
+class SaleConfirmationMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $order;
+    public $sale;
 
     /**
      * Create a new message instance.
      */
-    public function __construct(Order $order)
+    public function __construct(Sale $sale)
     {
-        $this->order = $order;
+        $this->sale = $sale;
     }
 
     /**
@@ -29,7 +29,7 @@ class OrderConfirmation extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Order Confirmation - ' . $this->order->order_number,
+            subject: 'Sale Confirmation - ' . $this->sale->sale_code,
         );
     }
 
@@ -39,12 +39,7 @@ class OrderConfirmation extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.order.confirmation',
-            with: [
-                'order' => $this->order,
-                'customer' => $this->order->customer,
-                'items' => $this->order->items,
-            ],
+            view: 'emails.sale.confirmation',
         );
     }
 
