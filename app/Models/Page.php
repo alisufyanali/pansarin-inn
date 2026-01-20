@@ -10,6 +10,7 @@ class Page extends Model
         'title', 
         'slug', 
         'content', 
+        'status',
         'meta_title', 
         'meta_description'
     ];

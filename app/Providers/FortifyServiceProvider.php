@@ -40,7 +40,7 @@ class FortifyServiceProvider extends ServiceProvider
                 {
                     $request->session()->flash('success', 'Welcome back! You are logged in.');
 
-                    return redirect()->intended(route('dashboard'));
+                    return redirect()->intended(route('admin/dashboard'));
                 }
             };
         });

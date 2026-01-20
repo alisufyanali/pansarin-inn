@@ -6,18 +6,31 @@ use App\Http\Controllers\Controller;
 use App\Models\Page;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Inertia\Inertia;
 
 class PageController extends Controller
 {
+    public function getPagesData(Request $request)
+{
+    $query = Page::query();
+
+    if ($request->search) {
+        $query->where('title', 'like', "%{$request->search}%");
+    }
+
+    return response()->json($query->latest()->paginate($request->perPage ?? 10));
+}
 
     public function index()
     {
-        return response()->json(Page::latest()->get());
+        return Inertia::render('Admin/Frontend/Pages/Index', [
+            'pages' => Page::latest()->get()
+        ]);
     }
 
     public function create()
     {
-        //
+        return Inertia::render('Admin/Frontend/Pages/Create');
     }
 
     public function store(Request $request)
@@ -27,25 +40,23 @@ class PageController extends Controller
             'content' => 'required',
         ]);
 
-        $page = Page::create([
+        Page::create([
             'title' => $validated['title'],
             'slug' => Str::slug($request->title),
             'content' => $validated['content'],
+            'status' => $request->status ?? 'active',
             'meta_title' => $request->meta_title,
             'meta_description' => $request->meta_description,
         ]);
 
-        return response()->json(['success' => true, 'data' => $page]);
+        return redirect()->route('admin.pages.index')->with('success', 'Page created successfully!');
     }
 
-    public function show($id)
+    public function edit($id)
     {
-        return response()->json(Page::findOrFail($id));
-    }
-
-    public function edit(string $id)
-    {
-        //
+        return Inertia::render('Admin/Frontend/Pages/Edit', [
+            'page' => Page::findOrFail($id)
+        ]);
     }
 
     public function update(Request $request, $id)
@@ -56,17 +67,17 @@ class PageController extends Controller
             'title' => $request->title,
             'slug' => Str::slug($request->title),
             'content' => $request->content,
+            'status' => $request->status,
             'meta_title' => $request->meta_title,
             'meta_description' => $request->meta_description,
         ]);
 
-        return response()->json(['success' => true, 'message' => 'Page updated!']);
+        return redirect()->route('admin.pages.index')->with('success', 'Page updated successfully!');
     }
 
     public function destroy($id)
     {
         Page::destroy($id);
-        return response()->json(['success' => true, 'message' => 'Page deleted!']);
+        return redirect()->back()->with('success', 'Page deleted successfully!');
     }
-
 }

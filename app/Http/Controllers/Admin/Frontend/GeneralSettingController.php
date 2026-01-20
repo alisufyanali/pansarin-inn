@@ -5,51 +5,77 @@ namespace App\Http\Controllers\Admin\Frontend;
 use App\Http\Controllers\Controller;
 use App\Models\GeneralSetting;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class GeneralSettingController extends Controller
 {
-    
-    public function index()
-    {
-        return response()->json(GeneralSetting::all()->pluck('value', 'type'));
-    }
 
-    public function create()
+    private function updateSettings(array $data)
     {
-        //
-    }
-
-    public function store(Request $request) 
-    {
-        foreach ($request->all() as $type => $value) {
+        foreach ($data as $type => $value) {
             GeneralSetting::updateOrCreate(
                 ['type' => $type],
                 ['value' => $value]
             );
         }
-        return response()->json(['success' => true, 'message' => 'General Settings updated!']);
     }
 
-   
-    public function show(string $id)
+    public function index()
     {
-        //
+        $settings = GeneralSetting::pluck('value', 'type')->all();
+        
+        return Inertia::render('Admin/Frontend/settings/general/index', [
+            'settings' => $settings
+        ]);
     }
 
-    public function edit(string $id)
-    {
-        //
+    public function updateSystem(Request $request) {
+        $this->updateSettings($request->except('_token', 'section'));
+        return back()->with('success', 'System basics updated successfully!');
     }
 
-   
-    public function update(Request $request, string $id)
-    {
-        //
+    public function updateContact(Request $request) {
+        $this->updateSettings($request->except('_token', 'section'));
+        return back()->with('success', 'Contact and footer settings updated!');
     }
 
-    
-    public function destroy(string $id)
-    {
-        //
+    public function updateSeo(Request $request) {
+        $this->updateSettings($request->except('_token', 'section'));
+        return back()->with('success', 'SEO and Meta tags updated!');
+    }
+
+    public function updateAuth(Request $request) {
+        $this->updateSettings($request->except('_token', 'section'));
+        return back()->with('success', 'Social login settings updated!');
+    }
+
+    public function updateEcommerce(Request $request) {
+        $this->updateSettings($request->except('_token', 'section'));
+        return back()->with('success', 'Ecommerce core settings updated!');
+    }
+
+    public function updateEmail(Request $request) {
+        $this->updateSettings($request->except('_token', 'section'));
+        return back()->with('success', 'SMTP / Email configuration updated!');
+    }
+
+    public function updateSecurity(Request $request) {
+        $this->updateSettings($request->except('_token', 'section'));
+        return back()->with('success', 'Security and Captcha settings updated!');
+    }
+
+    public function updateIntegrations(Request $request) {
+        $this->updateSettings($request->except('_token', 'section'));
+        return back()->with('success', 'External integrations updated!');
+    }
+
+    public function updateLegal(Request $request) {
+        $this->updateSettings($request->except('_token', 'section'));
+        return back()->with('success', 'Legal pages content updated!');
+    }
+
+    public function updateAdvanced(Request $request) {
+        $this->updateSettings($request->except('_token', 'section'));
+        return back()->with('success', 'Advanced system settings updated!');
     }
 }
