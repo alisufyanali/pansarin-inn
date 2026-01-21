@@ -22,7 +22,7 @@ export function MessagingSection({
     if (hasAnyContactMsg) {
         messagingSubmenu.push({
             title: 'Contact Messages',
-            href: '/admin/ContactMessages',
+            href: '/admin/contacts',
             icon: MessageSquare, // Contact messages ke liye
         });
     }
@@ -30,7 +30,7 @@ export function MessagingSection({
     if (hasAnyNewsletter) {
         messagingSubmenu.push({
             title: 'Newsletter',
-            href: '/admin/Newsletter',
+            href: '/admin/newsletters',
             icon: Mail, // Newsletter ke liye
         });
     }

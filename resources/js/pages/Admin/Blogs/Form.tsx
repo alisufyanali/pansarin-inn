@@ -1,15 +1,6 @@
 import { Link, useForm } from '@inertiajs/react';
-import {
-    ArrowLeft,
-    Check,
-    FileText,
-    Globe,
-    Save,
-    Search,
-    Tag as TagIcon,
-    X,
-} from 'lucide-react';
-import React, { useEffect, useRef, useState } from 'react';
+import { ArrowLeft, Save, Image as ImageIcon, Tag as TagIcon, Globe, Search } from 'lucide-react';
+import React, { useState } from 'react';
 
 export type BlogFormData = {
     blog_category_id?: number | null;
@@ -31,9 +22,7 @@ export type BlogFormData = {
 interface BlogTag {
     id: number;
     name: string;
-    slug: string;
     color: string;
-    tags: BlogTag[];
 }
 
 interface BlogCategory {
@@ -59,15 +48,11 @@ export default function BlogForm({
     categories = [],
     tags = [],
 }: BlogFormProps) {
-    const contentRef = useRef<HTMLTextAreaElement>(null);
-    const excerptRef = useRef<HTMLTextAreaElement>(null);
     const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(
         initialData?.thumbnail ? `/storage/${initialData.thumbnail}` : null,
     );
     const [socialImagePreview, setSocialImagePreview] = useState<string | null>(
-        initialData?.social_image
-            ? `/storage/${initialData.social_image}`
-            : null,
+        initialData?.social_image ? `/storage/${initialData.social_image}` : null,
     );
 
     const [selectedTags, setSelectedTags] = useState<number[]>(
@@ -91,22 +76,6 @@ export default function BlogForm({
         tags: initialData?.tags?.map((t: BlogTag) => t.id) || [],
     });
 
-    useEffect(() => {
-        if (contentRef.current) {
-            contentRef.current.style.height = 'auto';
-            contentRef.current.style.height =
-                contentRef.current.scrollHeight + 'px';
-        }
-    }, [data.content]);
-
-    useEffect(() => {
-        if (excerptRef.current) {
-            excerptRef.current.style.height = 'auto';
-            excerptRef.current.style.height =
-                excerptRef.current.scrollHeight + 'px';
-        }
-    }, [data.excerpt]);
-
     const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
@@ -119,9 +88,7 @@ export default function BlogForm({
         }
     };
 
-    const handleSocialImageChange = (
-        e: React.ChangeEvent<HTMLInputElement>,
-    ) => {
+    const handleSocialImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
             setData('social_image', file);
@@ -142,589 +109,319 @@ export default function BlogForm({
         setData('tags', newSelectedTags);
     };
 
-    const removeTag = (tagId: number) => {
-        const newSelectedTags = selectedTags.filter((id) => id !== tagId);
-        setSelectedTags(newSelectedTags);
-        setData('tags', newSelectedTags);
-    };
-
-    const getTagById = (tagId: number) => {
-        return tags.find((t) => t.id === tagId);
-    };
-
-    function submit(e: React.FormEvent<HTMLFormElement>) {
+    const submit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
         if (isEdit && initialData?.id) {
             post(`/admin/blogs/${initialData.id}`, {
                 forceFormData: true,
-                // @ts-ignore
-                method: 'put',
+                method: 'put' as any,
             });
         } else {
             post('/admin/blogs', {
                 forceFormData: true,
             });
         }
-    }
+    };
 
     return (
-        <div className="p-3">
-            <div className="mb-4 flex items-center gap-2">
-                <Link
-                    href="/admin/blogs"
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-md bg-gray-100 text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
-                >
-                    <ArrowLeft className="h-5 w-5" />
-                </Link>
+        <div className="p-4 max-w-6xl mx-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                    <Link
+                        href="/admin/blogs"
+                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                    >
+                        <ArrowLeft className="w-4 h-4" />
+                        Back
+                    </Link>
+                    <h1 className="text-2xl font-bold">
+                        {isEdit ? 'Edit Blog Post' : 'New Blog Post'}
+                    </h1>
+                </div>
             </div>
 
-            <div className="py-6">
-                <div className="mx-auto max-w-5xl">
-                    <h2 className="mb-2 text-center text-2xl font-semibold text-gray-900 dark:text-white">
-                        {isEdit ? 'Edit Blog Post' : 'Create New Blog Post'}
-                    </h2>
-                    <p className="mb-6 text-center text-sm text-gray-600 dark:text-gray-400">
-                        {isEdit
-                            ? 'Update your blog post content.'
-                            : 'Create engaging content for your audience.'}
-                    </p>
-
-                    <form onSubmit={submit} className="space-y-6">
-                        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                            {/* Main Content - 2 columns */}
-                            <div className="space-y-6 lg:col-span-2">
-                                {/* Basic Information */}
-                                <div className="space-y-4 rounded-xl bg-white p-6 shadow-lg dark:bg-gray-900">
-                                    <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
-                                        <FileText className="h-5 w-5" />
-                                        Content Details
-                                    </h3>
-
-                                    {/* Title */}
-                                    <div>
-                                        <label className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                            Title *
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={data.title}
-                                            onChange={(e) =>
-                                                setData('title', e.target.value)
-                                            }
-                                            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-lg text-gray-900 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                                            placeholder="Enter blog post title..."
-                                            required
-                                        />
-                                        {errors.title && (
-                                            <p className="mt-1 text-xs text-red-500">
-                                                {errors.title}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    {/* Slug */}
-                                    <div>
-                                        <label className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                            Slug (Optional)
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={data.slug}
-                                            onChange={(e) =>
-                                                setData('slug', e.target.value)
-                                            }
-                                            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                                            placeholder="Auto-generated from title"
-                                        />
-                                        {errors.slug && (
-                                            <p className="mt-1 text-xs text-red-500">
-                                                {errors.slug}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    {/* Content */}
-                                    <div>
-                                        <label className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                            Content
-                                        </label>
-                                        <textarea
-                                            ref={contentRef}
-                                            value={data.content}
-                                            onChange={(e) =>
-                                                setData(
-                                                    'content',
-                                                    e.target.value,
-                                                )
-                                            }
-                                            rows={12}
-                                            className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                                            placeholder="Write your blog content here..."
-                                        />
-                                        {errors.content && (
-                                            <p className="mt-1 text-xs text-red-500">
-                                                {errors.content}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    {/* Excerpt */}
-                                    <div>
-                                        <label className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                            Excerpt
-                                            <span className="ml-2 text-xs text-gray-500">
-                                                (Max 500 characters)
-                                            </span>
-                                        </label>
-                                        <textarea
-                                            ref={excerptRef}
-                                            value={data.excerpt}
-                                            onChange={(e) =>
-                                                setData(
-                                                    'excerpt',
-                                                    e.target.value,
-                                                )
-                                            }
-                                            maxLength={500}
-                                            rows={3}
-                                            className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                                            placeholder="Brief summary of your blog post..."
-                                        />
-                                        <p className="mt-1 text-xs text-gray-500">
-                                            {data.excerpt?.length || 0}/500
-                                        </p>
-                                        {errors.excerpt && (
-                                            <p className="mt-1 text-xs text-red-500">
-                                                {errors.excerpt}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Tags Section */}
-                                <div className="space-y-4 rounded-xl bg-white p-6 shadow-lg dark:bg-gray-900">
-                                    <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
-                                        <TagIcon className="h-5 w-5" />
-                                        Tags
-                                    </h3>
-
-                                    {/* Selected Tags */}
-                                    {selectedTags.length > 0 && (
-                                        <div className="mb-4">
-                                            <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                                                Selected Tags (
-                                                {selectedTags.length})
-                                            </p>
-                                            <div className="flex flex-wrap gap-2">
-                                                {selectedTags.map((tagId) => {
-                                                    const tag =
-                                                        getTagById(tagId);
-                                                    if (!tag) return null;
-                                                    return (
-                                                        <span
-                                                            key={tag.id}
-                                                            className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium text-white"
-                                                            style={{
-                                                                backgroundColor:
-                                                                    tag.color,
-                                                            }}
-                                                        >
-                                                            {tag.name}
-                                                            <button
-                                                                type="button"
-                                                                onClick={() =>
-                                                                    removeTag(
-                                                                        tag.id,
-                                                                    )
-                                                                }
-                                                                className="rounded-full p-0.5 transition hover:bg-white/20"
-                                                            >
-                                                                <X className="h-3 w-3" />
-                                                            </button>
-                                                        </span>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Available Tags */}
-                                    <div>
-                                        <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                                            Available Tags
-                                        </p>
-                                        {tags.length > 0 ? (
-                                            <div className="flex flex-wrap gap-2">
-                                                {tags.map((tag) => (
-                                                    <button
-                                                        key={tag.id}
-                                                        type="button"
-                                                        onClick={() =>
-                                                            toggleTag(tag.id)
-                                                        }
-                                                        className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium transition-all ${
-                                                            selectedTags.includes(
-                                                                tag.id,
-                                                            )
-                                                                ? 'cursor-not-allowed opacity-50'
-                                                                : 'hover:scale-105'
-                                                        }`}
-                                                        style={{
-                                                            backgroundColor:
-                                                                selectedTags.includes(
-                                                                    tag.id,
-                                                                )
-                                                                    ? '#E5E7EB'
-                                                                    : tag.color,
-                                                            color: selectedTags.includes(
-                                                                tag.id,
-                                                            )
-                                                                ? '#6B7280'
-                                                                : '#FFFFFF',
-                                                        }}
-                                                        disabled={selectedTags.includes(
-                                                            tag.id,
-                                                        )}
-                                                    >
-                                                        {selectedTags.includes(
-                                                            tag.id,
-                                                        ) && (
-                                                            <Check className="h-3 w-3" />
-                                                        )}
-                                                        {tag.name}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <div className="rounded-lg border border-gray-200 bg-gray-50 py-8 text-center dark:border-gray-700 dark:bg-gray-800">
-                                                <TagIcon className="mx-auto mb-3 h-12 w-12 text-gray-400" />
-                                                <p className="mb-3 text-gray-600 dark:text-gray-400">
-                                                    No tags available yet.
-                                                </p>
-                                                <Link
-    href="/admin/blogstags/create" // FIXED - lowercase 's' before 'tags'
-    className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
->
-    <TagIcon className="h-4 w-4" />
-    Create First Tag
-</Link>
-                                            </div>
-                                        )}
-                                    </div>
-                                    {errors.tags && (
-                                        <p className="mt-1 text-xs text-red-500">
-                                            {errors.tags}
-                                        </p>
+            <form onSubmit={submit} className="space-y-6">
+                {/* Main Content Area */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Left Column - Main Content */}
+                    <div className="lg:col-span-2 space-y-6">
+                        {/* Basic Info Card */}
+                        <div className="bg-white rounded-lg border p-4">
+                            <h3 className="font-semibold text-lg mb-4">Content</h3>
+                            
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">Title *</label>
+                                    <input
+                                        type="text"
+                                        value={data.title}
+                                        onChange={(e) => setData('title', e.target.value)}
+                                        className="w-full px-3 py-2 border rounded-lg"
+                                        placeholder="Blog post title"
+                                        required
+                                    />
+                                    {errors.title && (
+                                        <p className="text-red-500 text-sm mt-1">{errors.title}</p>
                                     )}
                                 </div>
 
-                                {/* SEO Section */}
-                                <div className="space-y-4 rounded-xl bg-white p-6 shadow-lg dark:bg-gray-900">
-                                    <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
-                                        <Search className="h-5 w-5" />
-                                        SEO Settings
-                                    </h3>
-
-                                    <div>
-                                        <label className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                            Meta Title
-                                            <span className="ml-2 text-xs text-gray-500">
-                                                (Max 60 characters)
-                                            </span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={data.meta_title}
-                                            onChange={(e) =>
-                                                setData(
-                                                    'meta_title',
-                                                    e.target.value,
-                                                )
-                                            }
-                                            maxLength={60}
-                                            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                                            placeholder="SEO optimized title"
-                                        />
-                                        <p className="mt-1 text-xs text-gray-500">
-                                            {data.meta_title?.length || 0}/60
-                                        </p>
-                                        {errors.meta_title && (
-                                            <p className="mt-1 text-xs text-red-500">
-                                                {errors.meta_title}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <label className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                            Meta Description
-                                            <span className="ml-2 text-xs text-gray-500">
-                                                (Max 160 characters)
-                                            </span>
-                                        </label>
-                                        <textarea
-                                            value={data.meta_description}
-                                            onChange={(e) =>
-                                                setData(
-                                                    'meta_description',
-                                                    e.target.value,
-                                                )
-                                            }
-                                            maxLength={160}
-                                            rows={3}
-                                            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                                            placeholder="Brief description for search engines"
-                                        />
-                                        <p className="mt-1 text-xs text-gray-500">
-                                            {data.meta_description?.length || 0}
-                                            /160
-                                        </p>
-                                        {errors.meta_description && (
-                                            <p className="mt-1 text-xs text-red-500">
-                                                {errors.meta_description}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <label className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                            Meta Keywords
-                                            <span className="ml-2 text-xs text-gray-500">
-                                                (Comma separated)
-                                            </span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={data.meta_keywords}
-                                            onChange={(e) =>
-                                                setData(
-                                                    'meta_keywords',
-                                                    e.target.value,
-                                                )
-                                            }
-                                            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                                            placeholder="keyword1, keyword2, keyword3"
-                                        />
-                                        {errors.meta_keywords && (
-                                            <p className="mt-1 text-xs text-red-500">
-                                                {errors.meta_keywords}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Sidebar - 1 column */}
-                            <div className="space-y-6">
-                                {/* Publish Settings */}
-                                <div className="space-y-4 rounded-xl bg-white p-6 shadow-lg dark:bg-gray-900">
-                                    <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
-                                        Settings
-                                    </h3>
-
-                                    {/* Category */}
-                                    <div>
-                                        <label className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                            Category
-                                        </label>
-                                        <select
-                                            value={data.blog_category_id || ''}
-                                            onChange={(e) =>
-                                                setData(
-                                                    'blog_category_id',
-                                                    e.target.value
-                                                        ? Number(e.target.value)
-                                                        : null,
-                                                )
-                                            }
-                                            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                                        >
-                                            <option value="">
-                                                Select category...
-                                            </option>
-                                            {categories.map((category) => (
-                                                <option
-                                                    key={category.id}
-                                                    value={category.id}
-                                                >
-                                                    {category.name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        {errors.blog_category_id && (
-                                            <p className="mt-1 text-xs text-red-500">
-                                                {errors.blog_category_id}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    {/* Status */}
-                                    <div>
-                                        <label className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                            Status
-                                        </label>
-                                        <select
-                                            value={data.status}
-                                            onChange={(e) =>
-                                                setData(
-                                                    'status',
-                                                    e.target.value as
-                                                        | 'draft'
-                                                        | 'published',
-                                                )
-                                            }
-                                            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                                        >
-                                            <option value="draft">Draft</option>
-                                            <option value="published">
-                                                Published
-                                            </option>
-                                        </select>
-                                        {errors.status && (
-                                            <p className="mt-1 text-xs text-red-500">
-                                                {errors.status}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    {/* Thumbnail */}
-                                    <div>
-                                        <label className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                            Featured Image
-                                        </label>
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={handleThumbnailChange}
-                                            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 outline-none file:mr-4 file:rounded-full file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-100 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                                        />
-                                        {thumbnailPreview && (
-                                            <div className="mt-3">
-                                                <img
-                                                    src={thumbnailPreview}
-                                                    alt="Thumbnail preview"
-                                                    className="w-full rounded-lg border border-gray-200 dark:border-gray-700"
-                                                />
-                                            </div>
-                                        )}
-                                        <p className="mt-1 text-xs text-gray-500">
-                                            Recommended: 1200x630px (Max 2MB)
-                                        </p>
-                                        {errors.thumbnail && (
-                                            <p className="mt-1 text-xs text-red-500">
-                                                {errors.thumbnail}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    {/* Action Buttons */}
-                                    <div className="space-y-2 pt-4">
-                                        <button
-                                            type="submit"
-                                            disabled={processing}
-                                            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 font-medium text-white transition hover:bg-blue-700 disabled:bg-blue-400"
-                                        >
-                                            {data.status === 'published' ? (
-                                                <>
-                                                    <Check size={16} />
-                                                    {isEdit
-                                                        ? 'Update Post'
-                                                        : 'Publish Post'}
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Save size={16} />
-                                                    {isEdit
-                                                        ? 'Update Draft'
-                                                        : 'Save Draft'}
-                                                </>
-                                            )}
-                                        </button>
-
-                                        <Link
-                                            href="/admin/blogs"
-                                            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-gray-100 px-4 py-2.5 font-medium text-gray-700 transition hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
-                                        >
-                                            <ArrowLeft size={16} />
-                                            Cancel
-                                        </Link>
-                                    </div>
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">Slug</label>
+                                    <input
+                                        type="text"
+                                        value={data.slug}
+                                        onChange={(e) => setData('slug', e.target.value)}
+                                        className="w-full px-3 py-2 border rounded-lg"
+                                        placeholder="auto-generated-slug"
+                                    />
                                 </div>
 
-                                {/* Social Media */}
-                                <div className="space-y-4 rounded-xl bg-white p-6 shadow-lg dark:bg-gray-900">
-                                    <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
-                                        <Globe className="h-5 w-5" />
-                                        Social Media
-                                    </h3>
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">Content</label>
+                                    <textarea
+                                        value={data.content}
+                                        onChange={(e) => setData('content', e.target.value)}
+                                        rows={10}
+                                        className="w-full px-3 py-2 border rounded-lg"
+                                        placeholder="Write your content here..."
+                                    />
+                                </div>
 
-                                    <div>
-                                        <label className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                            Social Image
-                                        </label>
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={handleSocialImageChange}
-                                            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 outline-none file:mr-4 file:rounded-full file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-100 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                                        />
-                                        {socialImagePreview && (
-                                            <div className="mt-3">
-                                                <img
-                                                    src={socialImagePreview}
-                                                    alt="Social image preview"
-                                                    className="w-full rounded-lg border border-gray-200 dark:border-gray-700"
-                                                />
-                                            </div>
-                                        )}
-                                        <p className="mt-1 text-xs text-gray-500">
-                                            1200x630px (Max 2MB)
-                                        </p>
-                                        {errors.social_image && (
-                                            <p className="mt-1 text-xs text-red-500">
-                                                {errors.social_image}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <label className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                            Social Description
-                                            <span className="ml-2 text-xs text-gray-500">
-                                                (Max 300 chars)
-                                            </span>
-                                        </label>
-                                        <textarea
-                                            value={data.social_description}
-                                            onChange={(e) =>
-                                                setData(
-                                                    'social_description',
-                                                    e.target.value,
-                                                )
-                                            }
-                                            maxLength={300}
-                                            rows={3}
-                                            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                                            placeholder="Description for social shares"
-                                        />
-                                        <p className="mt-1 text-xs text-gray-500">
-                                            {data.social_description?.length ||
-                                                0}
-                                            /300
-                                        </p>
-                                        {errors.social_description && (
-                                            <p className="mt-1 text-xs text-red-500">
-                                                {errors.social_description}
-                                            </p>
-                                        )}
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">
+                                        Excerpt <span className="text-gray-500 text-sm">(max 500 chars)</span>
+                                    </label>
+                                    <textarea
+                                        value={data.excerpt}
+                                        onChange={(e) => setData('excerpt', e.target.value)}
+                                        maxLength={500}
+                                        rows={3}
+                                        className="w-full px-3 py-2 border rounded-lg"
+                                        placeholder="Brief summary..."
+                                    />
+                                    <div className="text-xs text-gray-500 mt-1">
+                                        {data.excerpt?.length || 0}/500 characters
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </form>
+
+                        {/* SEO Card */}
+                        <div className="bg-white rounded-lg border p-4">
+                            <div className="flex items-center gap-2 mb-4">
+                                <Search className="w-4 h-4" />
+                                <h3 className="font-semibold text-lg">SEO Settings</h3>
+                            </div>
+                            
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">Meta Title</label>
+                                    <input
+                                        type="text"
+                                        value={data.meta_title}
+                                        onChange={(e) => setData('meta_title', e.target.value)}
+                                        maxLength={60}
+                                        className="w-full px-3 py-2 border rounded-lg"
+                                        placeholder="SEO title"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">Meta Description</label>
+                                    <textarea
+                                        value={data.meta_description}
+                                        onChange={(e) => setData('meta_description', e.target.value)}
+                                        maxLength={160}
+                                        rows={3}
+                                        className="w-full px-3 py-2 border rounded-lg"
+                                        placeholder="SEO description"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">Keywords</label>
+                                    <input
+                                        type="text"
+                                        value={data.meta_keywords}
+                                        onChange={(e) => setData('meta_keywords', e.target.value)}
+                                        className="w-full px-3 py-2 border rounded-lg"
+                                        placeholder="keyword1, keyword2, keyword3"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Right Column - Sidebar */}
+                    <div className="space-y-6">
+                        {/* Settings Card */}
+                        <div className="bg-white rounded-lg border p-4">
+                            <h3 className="font-semibold text-lg mb-4">Settings</h3>
+                            
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">Category</label>
+                                    <select
+                                        value={data.blog_category_id || ''}
+                                        onChange={(e) => setData('blog_category_id', e.target.value ? Number(e.target.value) : null)}
+                                        className="w-full px-3 py-2 border rounded-lg"
+                                    >
+                                        <option value="">Select category</option>
+                                        {categories.map((category) => (
+                                            <option key={category.id} value={category.id}>
+                                                {category.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">Status</label>
+                                    <select
+                                        value={data.status}
+                                        onChange={(e) => setData('status', e.target.value as 'draft' | 'published')}
+                                        className="w-full px-3 py-2 border rounded-lg"
+                                    >
+                                        <option value="draft">Draft</option>
+                                        <option value="published">Published</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">Featured Image</label>
+                                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleThumbnailChange}
+                                            className="hidden"
+                                            id="thumbnail"
+                                        />
+                                        <label htmlFor="thumbnail" className="cursor-pointer">
+                                            {thumbnailPreview ? (
+                                                <img 
+                                                    src={thumbnailPreview} 
+                                                    alt="Thumbnail" 
+                                                    className="w-full h-48 object-cover rounded-lg mb-2"
+                                                />
+                                            ) : (
+                                                <div className="py-8">
+                                                    <ImageIcon className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                                                    <p className="text-sm text-gray-600">Click to upload image</p>
+                                                    <p className="text-xs text-gray-500 mt-1">1200x630px recommended</p>
+                                                </div>
+                                            )}
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Tags Card */}
+                        <div className="bg-white rounded-lg border p-4">
+                            <div className="flex items-center gap-2 mb-4">
+                                <TagIcon className="w-4 h-4" />
+                                <h3 className="font-semibold text-lg">Tags</h3>
+                            </div>
+                            
+                            <div className="flex flex-wrap gap-2">
+                                {tags.map((tag) => (
+                                    <button
+                                        key={tag.id}
+                                        type="button"
+                                        onClick={() => toggleTag(tag.id)}
+                                        className={`px-3 py-1 rounded-full text-sm ${
+                                            selectedTags.includes(tag.id)
+                                                ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                        }`}
+                                    >
+                                        {tag.name}
+                                    </button>
+                                ))}
+                            </div>
+                            
+                            {tags.length === 0 && (
+                                <div className="text-center py-4 text-gray-500">
+                                    No tags available
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Social Media Card */}
+                        <div className="bg-white rounded-lg border p-4">
+                            <div className="flex items-center gap-2 mb-4">
+                                <Globe className="w-4 h-4" />
+                                <h3 className="font-semibold text-lg">Social Media</h3>
+                            </div>
+                            
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">Social Image</label>
+                                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleSocialImageChange}
+                                            className="hidden"
+                                            id="social_image"
+                                        />
+                                        <label htmlFor="social_image" className="cursor-pointer">
+                                            {socialImagePreview ? (
+                                                <img 
+                                                    src={socialImagePreview} 
+                                                    alt="Social" 
+                                                    className="w-full h-32 object-cover rounded-lg mb-2"
+                                                />
+                                            ) : (
+                                                <div className="py-6">
+                                                    <ImageIcon className="w-6 h-6 mx-auto text-gray-400 mb-2" />
+                                                    <p className="text-sm text-gray-600">Upload for social sharing</p>
+                                                </div>
+                                            )}
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">Social Description</label>
+                                    <textarea
+                                        value={data.social_description}
+                                        onChange={(e) => setData('social_description', e.target.value)}
+                                        maxLength={300}
+                                        rows={2}
+                                        className="w-full px-3 py-2 border rounded-lg"
+                                        placeholder="Description for social shares"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="bg-white rounded-lg border p-4">
+                            <div className="space-y-3">
+                                <button
+                                    type="submit"
+                                    disabled={processing}
+                                    className="w-full bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    <Save className="w-4 h-4" />
+                                    {processing ? 'Saving...' : data.status === 'published' ? 'Publish' : 'Save Draft'}
+                                </button>
+                                
+                                <Link
+                                    href="/admin/blogs"
+                                    className="block w-full text-center border py-2.5 rounded-lg hover:bg-gray-50"
+                                >
+                                    Cancel
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            </form>
         </div>
     );
 }

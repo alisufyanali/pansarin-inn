@@ -83,6 +83,54 @@ class ContactController extends Controller
             ->make(true);
     }
 
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        return Inertia::render('Admin/Contacts/Create');
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'email' => 'required|email|max:255',
+                'phone' => 'nullable|string|max:20',
+                'subject' => 'required|string|max:255',
+                'message' => 'required|string',
+                'status' => 'required|in:new,read,replied,resolved,spam',
+                'admin_reply' => 'nullable|string',
+            ]);
+
+            DB::beginTransaction();
+            
+            $contact = Contact::create($validated);
+
+            // If there's an admin reply and status is replied, set replied_by
+            if (!empty($validated['admin_reply']) && $validated['status'] === 'replied') {
+                $contact->update([
+                    'replied_by' => $request->user()->id,
+                    'replied_at' => now(),
+                ]);
+            }
+
+            DB::commit();
+
+            return to_route('admin.contacts.index')->with('success', 'Contact successfully created!');
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Contact creation error: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Failed to create contact.');
+        }
+    }
+
     /**
      * Display the specified resource.
      */

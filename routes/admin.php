@@ -135,6 +135,7 @@ Route::middleware(['auth', 'verified'])
         ->name('blogcategories.data');
 
     Route::resource('blogs', BlogController::class);
+    Route::get('blogs-data', [BlogController::class, 'getData'])->name('blogs.data');
 
     //Blogs Comments Routes
     Route::resource('blogscomments', BlogsCommentsController::class);
@@ -213,7 +214,8 @@ Route::middleware(['auth', 'verified'])
     // Contact Routes
         
         // Contacts CRUD
-        Route::resource('contacts', ContactController::class)->except(['create', 'store']);
+        // Route::resource('contacts', ContactController::class)->except(['create', 'store']);
+        Route::resource('contacts', ContactController::class);
         
         // Contacts DataTable endpoint
         Route::get('contacts-data', [ContactController::class, 'getData'])->name('contacts.data');
