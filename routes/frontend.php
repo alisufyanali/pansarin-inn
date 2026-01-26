@@ -11,14 +11,12 @@ use App\Http\Controllers\Admin\Frontend\PageController;
 // });
 
 // Admin Protected Routes
-Route::middleware(['auth'])->prefix('admin/ui')->name('admin.')->group(function () {
-    Route::prefix('settings/ui')->name('ui-settings.')->group(function () {
+Route::middleware(['auth'])->prefix('admin/settings/ui')->name('admin.')->group(function () {
         Route::get('/', [UiSettingController::class, 'index'])->name('index');
         Route::post('/store', [UiSettingController::class, 'store'])->name('store');
-    });
 });
 
-Route::middleware(['auth'])->prefix('admin/general')->name('admin.general-settings.')->group(function () {
+Route::middleware(['auth'])->prefix('admin/settings/general')->name('admin.general-settings.')->group(function () {
     Route::get('/', [GeneralSettingController::class, 'index'])->name('index');
     Route::post('/update-system', [GeneralSettingController::class, 'updateSystem'])->name('updateSystem');
     Route::post('/update-contact', [GeneralSettingController::class, 'updateContact'])->name('updateContact');
@@ -32,7 +30,7 @@ Route::middleware(['auth'])->prefix('admin/general')->name('admin.general-settin
     Route::post('/update-advanced', [GeneralSettingController::class, 'updateAdvanced'])->name('updateAdvanced');
 });
 
-Route::middleware(['auth'])->prefix('admin/business')->name('admin.business-settings.')->group(function () {
+Route::middleware(['auth'])->prefix('admin/settings/business')->name('admin.business-settings.')->group(function () {
     Route::get('/', [BusinessSettingController::class, 'index'])->name('index');
     Route::post('/payments', [BusinessSettingController::class, 'updatePayments'])->name('updatePayments');
     Route::post('/currency', [BusinessSettingController::class, 'updateCurrency'])->name('updateCurrency');

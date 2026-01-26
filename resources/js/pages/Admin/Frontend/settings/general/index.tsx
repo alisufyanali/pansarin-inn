@@ -1,6 +1,7 @@
 import AppLayout from '@/layouts/app-layout';
 import { Head } from '@inertiajs/react';
 import { useState } from 'react';
+import { route } from 'ziggy-js';
 import { 
     Settings, Phone, Globe, ShieldCheck, ShoppingCart, 
     Mail, Lock, Terminal, FileText, Cpu, HeartPulse 

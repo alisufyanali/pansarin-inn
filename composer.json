@@ -21,7 +21,7 @@
         "maatwebsite/excel": "^1.1",
         "phpoffice/phpspreadsheet": "^5.3",
         "pusher/pusher-php-server": "^7.2",
-        "spatie/laravel-medialibrary": "*",
+        "spatie/laravel-medialibrary": "^11.17",
         "spatie/laravel-permission": "^6.23",
         "tightenco/ziggy": "^2.6",
         "yajra/laravel-datatables-oracle": "^12.6"

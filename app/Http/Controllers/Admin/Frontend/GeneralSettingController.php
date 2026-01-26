@@ -10,15 +10,19 @@ use Inertia\Inertia;
 class GeneralSettingController extends Controller
 {
 
+
     private function updateSettings(array $data)
     {
         foreach ($data as $type => $value) {
+            if ($value === null || $value === '') continue;
+
             GeneralSetting::updateOrCreate(
                 ['type' => $type],
                 ['value' => $value]
             );
         }
     }
+
 
     public function index()
     {
@@ -29,10 +33,18 @@ class GeneralSettingController extends Controller
         ]);
     }
 
-    public function updateSystem(Request $request) {
-        $this->updateSettings($request->except('_token', 'section'));
+    public function updateSystem(Request $request)
+    {
+        $validated = $request->validate([
+            'site_name' => 'required|string|max:255',
+            'timezone'  => 'required|string',
+        ]);
+
+        $this->updateSettings($validated);
+
         return back()->with('success', 'System basics updated successfully!');
     }
+
 
     public function updateContact(Request $request) {
         $this->updateSettings($request->except('_token', 'section'));
