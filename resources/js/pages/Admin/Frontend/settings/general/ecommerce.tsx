@@ -3,7 +3,7 @@ import { Save, ShoppingBag, Users, Wallet, Truck } from 'lucide-react';
 import toast from "react-hot-toast";
 
 export default function EcommerceTab({ settings }: { settings: any }) {
-    const { data, setData, post, processing } = useForm({
+    const { data, setData, post, errors, processing } = useForm({
         vendor_system: settings.vendor_system || 'no',
         wallet_system: settings.wallet_system || 'no',
         guest_checkout: settings.guest_checkout || 'yes',
@@ -12,8 +12,11 @@ export default function EcommerceTab({ settings }: { settings: any }) {
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        post((window as any).route('admin.general-settings.updateEcommerce'), {
-            onSuccess: () => toast.success('Ecommerce settings updated!')
+
+        post('/admin/settings/general/ecommerce', {
+            preserveScroll: true,
+            onSuccess: () => toast.success('Ecommerce settings updated!'),
+            onError: () => toast.error("Something went wrong!"),
         });
     };
 
@@ -48,10 +51,9 @@ export default function EcommerceTab({ settings }: { settings: any }) {
                 <ToggleField label="Allow Guest Checkout" field="guest_checkout" icon={Truck} />
                 <ToggleField label="Digital Products Support" field="digital_product" icon={ShoppingBag} />
             </div>
-
-            <div className="pt-6 flex justify-end">
-                <button disabled={processing} className="bg-indigo-600 hover:bg-indigo-700 text-white px-12 py-4 rounded-2xl font-black text-lg flex items-center gap-3 shadow-lg transition-all active:scale-95">
-                    <Save className="w-6 h-6" /> {processing ? 'SAVING...' : 'UPDATE ECOMMERCE'}
+            <div className="flex justify-end">
+                <button type="submit" disabled={processing} className="flex items-center gap-2 rounded-xl bg-indigo-600 px-8 py-3 font-bold text-white ] transition-all active:scale-95 disabled:bg-gray-400">
+                    <Save className="h-4 w-4" />{' '} {processing ? 'Saving...' : 'UPDATE ECOMMERCE'}
                 </button>
             </div>
         </form>

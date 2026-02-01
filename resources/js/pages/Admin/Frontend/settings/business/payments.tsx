@@ -3,7 +3,7 @@ import { Save, CreditCard, ShieldCheck } from 'lucide-react';
 import toast from "react-hot-toast";
 
 export default function PaymentsTab({ settings }: { settings: any }) {
-    const { data, setData, post, processing } = useForm({
+    const { data, setData, post, errors, processing } = useForm({
         paypal_set: settings.paypal_set?.status || 'no',
         paypal_email: settings.paypal_email?.value || '',
         paypal_type: settings.paypal_type?.value || 'sandbox',
@@ -15,8 +15,11 @@ export default function PaymentsTab({ settings }: { settings: any }) {
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        post((window as any).route('admin.business-settings.updatePayments'), {
-            onSuccess: () => toast.success('Payment settings updated!')
+
+        post('/admin/settings/business/payments', {
+            preserveScroll: true,
+            onSuccess: () => toast.success('Payment settings updated!'),
+            onError: () => toast.error("Something went wrong!"),
         });
     };
 
@@ -53,10 +56,9 @@ export default function PaymentsTab({ settings }: { settings: any }) {
                     <option value="no">Disabled</option>
                 </select>
             </div>
-
-            <div className="pt-4 flex justify-end">
-                <button disabled={processing} className="bg-indigo-600 text-white px-12 py-4 rounded-2xl font-black shadow-lg">
-                    {processing ? 'SAVING...' : 'UPDATE PAYMENTS'}
+            <div className="flex justify-end">
+                <button type="submit" disabled={processing} className="flex items-center gap-2 rounded-xl bg-indigo-600 px-8 py-3 font-bold text-white ] transition-all active:scale-95 disabled:bg-gray-400">
+                    <Save className="h-4 w-4" />{' '} {processing ? 'Saving...' : 'UPDATE PAYMENTS'}
                 </button>
             </div>
         </form>

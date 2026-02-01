@@ -9,64 +9,128 @@ use Inertia\Inertia;
 
 class UiSettingController extends Controller
 {
+    private function updateSettings($request, $keys) {
+        foreach ($keys as $key) {
+            UiSetting::updateOrCreate(
+                ['type' => $key],
+                ['value' => $request->$key]
+            );
+        }
+    }
+
     public function index()
     {
+        // $settings = UiSetting::pluck('value', 'type')->all();
+        
+        // return Inertia::render('Admin/Frontend/settings/ui/index', [
+        //     'settings' => $settings
+        // ]);
+
         return Inertia::render('Admin/Frontend/settings/ui/index', [
             'settings' => UiSetting::pluck('value', 'type')->all()
         ]);
     }
 
-    public function store(Request $request)
-    {
-        dd($request->all());
-        $section = $request->input('section'); // Frontend se 'section' bhejenge
+    public function updateBrandingUI(Request $request){
 
-        return match($section) {
-            'branding'  => $this->updateBranding($request),
-            'header'    => $this->updateHeader($request),
-            'homepage'  => $this->updateHomepage($request),
-            'email'     => $this->updateEmail($request),
-            'marketing' => $this->updateMarketing($request),
-            default     => $this->updateGeneral($request),
-        };
+        $this->updateSettings($request, [
+            'logo',
+            'favicon',
+            'header_color',
+            'footer_color',
+            'font',
+            'home_top_logo',
+            'fav_ext',
+        ]);
+
+        return redirect()->back()->with('success', 'Brand Settings updated!');
     }
 
-    protected function updateBranding(Request $request) 
-    {
-        // Simple fields save karein
-        $this->saveSettings($request->only(['header_color', 'footer_color', 'font']));
+    public function updateHeaderUI(Request $request){
 
-        // Logo upload logic
-        if ($request->hasFile('home_top_logo')) {
-            $setting = UiSetting::firstOrCreate(['type' => 'home_top_logo']);
-            $setting->clearMediaCollection('logo');
-            $media = $setting->addMediaFromRequest('home_top_logo')->toMediaCollection('logo');
-            $setting->update(['value' => $media->id]); // Media ID save kar rahe hain
-        }
+        $this->updateSettings($request, [
+            'header_homepage_status',
+            'header_all_categories_status',
+            'header_featured_products_status',
+            'header_todays_deal_status',
+            'header_blogs_status',
+            'header_contact_status',
+            'header_store_locator_status',
+        ]);
 
-        // Favicon upload logic
-        if ($request->hasFile('fav_ext')) {
-            $setting = UiSetting::firstOrCreate(['type' => 'fav_ext']);
-            $setting->clearMediaCollection('favicon');
-            $media = $setting->addMediaFromRequest('fav_ext')->toMediaCollection('favicon');
-            $setting->update(['value' => $media->id]);
-        }
-
-        return back();
+        return redirect()->back()->with('success', 'Header updated!');
     }
 
-    protected function updateEmail(Request $request) 
-    {
-        // Yahan HTML validation kar sakte hain
-        $this->saveSettings($request->only(['email_theme_style', 'email_theme_style_2']));
-        return back()->with('success', 'Email Templates Saved!');
+    public function updateHomepageUI(Request $request){
+
+        $this->updateSettings($request, [
+            'featured_show',
+            'brand_show',
+            'blog_show',
+            'vandors_show',
+            'marquee_text',
+            'parallax_blog_title',
+            'parallax_vendor_title',
+        ]);
+
+        return redirect()->back()->with('success', 'Homepage updated!');
+    }
+    public function updateCategoriesUI(Request $request){
+
+        $this->updateSettings($request, [
+            'category_slides',
+            'side_bar_pos_category',
+            'category_product_box_style',
+            'home_categories',
+            'top_slide_categories',
+        ]);
+
+        return redirect()->back()->with('success', 'Categories updated!');
     }
 
-    // Common Helper Function
-    private function saveSettings($data) 
-    {
-        foreach ($data as $type => $value) {
-            UiSetting::updateOrCreate(['type' => $type], ['value' => $value]);
-        }
+    public function updateProductsUI(Request $request){
+
+        $this->updateSettings($request, [
+            'no_of_featured_products',
+            'no_of_deal_products',
+            'featured_product_box_style',
+            'special_products_show',
+        ]);
+
+        return redirect()->back()->with('success', 'Products Setting updated!');
     }
+
+    public function updateEmailUI(Request $request){
+
+        $this->updateSettings($request, [
+            'email_theme_style',
+            'email_theme_style_2',
+        ]);
+
+        return redirect()->back()->with('success', 'Email Template updated!');
+    }
+
+    public function updateMarketingUI(Request $request){
+
+        $this->updateSettings($request, [
+            'whatsapp_number',
+            'whatsapp_message',
+            'affiliate_system',
+        ]);
+
+        return redirect()->back()->with('success', 'Marketing updated!');
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
 }

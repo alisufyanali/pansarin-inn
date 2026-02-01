@@ -3,7 +3,7 @@ import { Save, Users, Percent } from 'lucide-react';
 import toast from "react-hot-toast";
 
 export default function VendorTab({ settings }: { settings: any }) {
-    const { data, setData, post, processing } = useForm({
+    const { data, setData, post, errors, processing } = useForm({
         commission_set: settings.commission_set?.status || 'no',
         commission_amount: settings.commission_amount?.value || '0',
         vendor_vp_set: settings.vendor_vp_set?.status || 'no',
@@ -11,8 +11,11 @@ export default function VendorTab({ settings }: { settings: any }) {
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        post((window as any).route('admin.business-settings.updateVendor'), {
-            onSuccess: () => toast.success('Vendor settings updated!')
+
+        post('/admin/settings/business/vendor', {
+            preserveScroll: true,
+            onSuccess: () => toast.success('Vendor settings updated!'),
+            onError: () => toast.error("Something went wrong!"),
         });
     };
 
@@ -33,9 +36,10 @@ export default function VendorTab({ settings }: { settings: any }) {
                     <input type="number" value={data.commission_amount} onChange={e => setData('commission_amount', e.target.value)} className="h-14 w-full rounded-2xl border-gray-200" placeholder="e.g. 10" />
                 </div>
             </div>
-
-            <div className="pt-4 flex justify-end">
-                <button disabled={processing} className="bg-indigo-600 text-white px-12 py-4 rounded-2xl font-black shadow-lg">SAVE VENDOR RULES</button>
+            <div className="flex justify-end">
+                <button type="submit" disabled={processing} className="flex items-center gap-2 rounded-xl bg-indigo-600 px-8 py-3 font-bold text-white ] transition-all active:scale-95 disabled:bg-gray-400">
+                    <Save className="h-4 w-4" />{' '} {processing ? 'Saving...' : 'SAVE VENDOR RULES'}
+                </button>
             </div>
         </form>
     );

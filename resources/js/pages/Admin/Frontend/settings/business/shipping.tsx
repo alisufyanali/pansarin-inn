@@ -3,7 +3,7 @@ import { Save, Truck, Info } from 'lucide-react';
 import toast from "react-hot-toast";
 
 export default function ShippingTab({ settings }: { settings: any }) {
-    const { data, setData, post, processing } = useForm({
+    const { data, setData, post, errors, processing } = useForm({
         shipping_cost: settings.shipping_cost?.value || '0',
         shipping_set: settings.shipping_cost?.status || 'no',
         shipping_cost_type: settings.shipping_cost_type?.value || 'flat',
@@ -12,8 +12,11 @@ export default function ShippingTab({ settings }: { settings: any }) {
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        post((window as any).route('admin.business-settings.updateShipping'), {
-            onSuccess: () => toast.success('Shipping settings updated!')
+
+        post('/admin/settings/business/shipping', {
+            preserveScroll: true,
+            onSuccess: () => toast.success('Shipping settings updated!'),
+            onError: () => toast.error("Something went wrong!"),
         });
     };
 
@@ -39,9 +42,10 @@ export default function ShippingTab({ settings }: { settings: any }) {
                 <label className="text-sm font-bold flex items-center gap-2"><Info className="w-4 h-4" /> Shipment Information (HTML or Text)</label>
                 <textarea value={data.shipment_info} onChange={e => setData('shipment_info', e.target.value)} className="w-full h-32 rounded-2xl border-gray-200 bg-gray-50 p-4" placeholder="Standard delivery takes 3-5 business days." />
             </div>
-
-            <div className="pt-4 flex justify-end">
-                <button disabled={processing} className="bg-indigo-600 text-white px-12 py-4 rounded-2xl font-black shadow-lg flex items-center gap-2"><Save /> {processing ? 'SAVING...' : 'SAVE SHIPPING'}</button>
+            <div className="flex justify-end">
+                <button type="submit" disabled={processing} className="flex items-center gap-2 rounded-xl bg-indigo-600 px-8 py-3 font-bold text-white ] transition-all active:scale-95 disabled:bg-gray-400">
+                    <Save className="h-4 w-4" />{' '} {processing ? 'Saving...' : 'SAVE SHIPPING'}
+                </button>
             </div>
         </form>
     );

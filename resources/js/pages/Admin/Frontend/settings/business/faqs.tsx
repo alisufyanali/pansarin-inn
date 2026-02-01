@@ -8,7 +8,7 @@ export default function FaqsTab({ settings }: { settings: any }) {
         (typeof settings.faqs.value === 'string' ? JSON.parse(settings.faqs.value) : settings.faqs.value) 
         : [{ question: '', answer: '' }];
 
-    const { data, setData, post, processing } = useForm({
+    const { data, setData, post, errors, processing } = useForm({
         faqs: existingFaqs,
     });
 
@@ -29,8 +29,11 @@ export default function FaqsTab({ settings }: { settings: any }) {
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        post((window as any).route('admin.business-settings.updateFaqs'), {
-            onSuccess: () => toast.success('Business FAQs Updated!')
+
+        post('/admin/settings/business/faqs', {
+            preserveScroll: true,
+            onSuccess: () => toast.success('FAQs Updated!'),
+            onError: () => toast.error("Something went wrong!"),
         });
     };
 
@@ -38,7 +41,7 @@ export default function FaqsTab({ settings }: { settings: any }) {
         <form onSubmit={submit} className="space-y-8 animate-in fade-in">
             <div className="flex justify-between items-center border-b pb-3">
                 <h3 className="text-xl font-bold flex items-center gap-2">
-                    <MessageCircle className="text-indigo-600" /> Business FAQs
+                    <MessageCircle className="text-indigo-600" /> FAQs
                 </h3>
                 <button type="button" onClick={addFaq} className="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-indigo-100 transition-all">
                     <Plus className="w-4 h-4" /> Add FAQ
@@ -52,27 +55,21 @@ export default function FaqsTab({ settings }: { settings: any }) {
                             <Trash2 className="w-4 h-4" />
                         </button>
                         <div className="grid grid-cols-1 gap-4">
-                            <input 
-                                type="text" 
-                                placeholder="Question" 
-                                value={faq.question} 
-                                onChange={(e) => handleFieldChange(index, 'question', e.target.value)}
+                            <label className="text-sm font-bold text-gray-500">Question</label>
+                            <input type="text" placeholder="Question" value={faq.question} onChange={(e) => handleFieldChange(index, 'question', e.target.value)}
                                 className="h-12 w-full rounded-xl border-gray-200 focus:ring-2 focus:ring-indigo-500 font-bold" 
                             />
-                            <textarea 
-                                placeholder="Answer" 
-                                value={faq.answer} 
-                                onChange={(e) => handleFieldChange(index, 'answer', e.target.value)}
+                            <label className="text-sm font-bold text-gray-500">Answer</label>
+                            <textarea placeholder="Answer" value={faq.answer} onChange={(e) => handleFieldChange(index, 'answer', e.target.value)}
                                 className="h-24 w-full rounded-xl border-gray-200 p-3 focus:ring-2 focus:ring-indigo-500" 
                             />
                         </div>
                     </div>
                 ))}
             </div>
-
-            <div className="pt-4 flex justify-end">
-                <button disabled={processing} className="bg-indigo-600 text-white px-12 py-4 rounded-2xl font-black shadow-lg">
-                    {processing ? 'SAVING...' : 'UPDATE FAQS'}
+            <div className="flex justify-end">
+                <button type="submit" disabled={processing} className="flex items-center gap-2 rounded-xl bg-indigo-600 px-8 py-3 font-bold text-white ] transition-all active:scale-95 disabled:bg-gray-400">
+                    <Save className="h-4 w-4" />{' '} {processing ? 'Saving...' : 'UPDATE FAQS'}
                 </button>
             </div>
         </form>

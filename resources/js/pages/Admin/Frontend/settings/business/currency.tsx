@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 
 export default function CurrencyTab({ settings }: { settings: any }) {
     // Controller se aane wala data settings.type.value ki surat mein hai
-    const { data, setData, post, processing } = useForm({
+    const { data, setData, post, errors, processing } = useForm({
         currency_code: settings.currency_code?.value || 'PKR',
         currency_symbol: settings.currency_symbol?.value || 'Rs',
         currency_format: settings.currency_format?.value || 'left',
@@ -13,8 +13,11 @@ export default function CurrencyTab({ settings }: { settings: any }) {
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        post((window as any).route('admin.business-settings.updateCurrency'), {
-            onSuccess: () => toast.success('Currency configuration saved!')
+
+        post('/admin/settings/business/currency', {
+            preserveScroll: true,
+            onSuccess: () => toast.success('Currency configuration saved!'),
+            onError: () => toast.error("Something went wrong!"),
         });
     };
 
@@ -94,12 +97,9 @@ export default function CurrencyTab({ settings }: { settings: any }) {
                 </div>
             </div>
 
-            <div className="pt-4 flex justify-end">
-                <button 
-                    disabled={processing} 
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-12 py-4 rounded-2xl font-black text-lg flex items-center gap-3 shadow-[0_10px_20px_rgba(79,70,229,0.3)] transition-all active:scale-95 disabled:bg-gray-400"
-                >
-                    <Save className="w-6 h-6" /> {processing ? 'SAVING...' : 'UPDATE CURRENCY'}
+            <div className="flex justify-end">
+                <button type="submit" disabled={processing} className="flex items-center gap-2 rounded-xl bg-indigo-600 px-8 py-3 font-bold text-white ] transition-all active:scale-95 disabled:bg-gray-400">
+                    <Save className="h-4 w-4" />{' '} {processing ? 'Saving...' : 'UPDATE CURRENCY'}
                 </button>
             </div>
         </form>

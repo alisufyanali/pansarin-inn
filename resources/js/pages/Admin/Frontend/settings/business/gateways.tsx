@@ -3,7 +3,7 @@ import { Save, Share2, ShieldCheck } from 'lucide-react';
 import toast from "react-hot-toast";
 
 export default function GatewaysTab({ settings }: { settings: any }) {
-    const { data, setData, post, processing } = useForm({
+    const { data, setData, post, errors, processing } = useForm({
         ssl_set: settings.ssl_set?.status || 'no',
         ssl_store_id: settings.ssl_store_id?.value || '',
         ssl_store_passwd: settings.ssl_store_passwd?.value || '',
@@ -12,8 +12,11 @@ export default function GatewaysTab({ settings }: { settings: any }) {
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        post((window as any).route('admin.business-settings.updateGateways'), {
-            onSuccess: () => toast.success('External gateways updated!')
+
+        post('/admin/settings/business/gateways', {
+            preserveScroll: true,
+            onSuccess: () => toast.success('External gateways updated!'),
+            onError: () => toast.error("Something went wrong!"),
         });
     };
 
@@ -49,10 +52,9 @@ export default function GatewaysTab({ settings }: { settings: any }) {
                     </div>
                 </div>
             </div>
-
-            <div className="pt-4 flex justify-end">
-                <button disabled={processing} className="bg-indigo-600 text-white px-12 py-4 rounded-2xl font-black shadow-lg">
-                    UPDATE GATEWAYS
+            <div className="flex justify-end">
+                <button type="submit" disabled={processing} className="flex items-center gap-2 rounded-xl bg-indigo-600 px-8 py-3 font-bold text-white ] transition-all active:scale-95 disabled:bg-gray-400">
+                    <Save className="h-4 w-4" />{' '} {processing ? 'Saving...' : 'UPDATE GATEWAYS'}
                 </button>
             </div>
         </form>

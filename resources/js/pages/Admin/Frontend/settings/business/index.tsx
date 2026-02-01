@@ -22,7 +22,7 @@ export default function BusinessSettingsIndex({ settings }: { settings: any }) {
         { id: 'currency', label: 'Currency', icon: Coins, component: CurrencyTab },
         { id: 'shipping', label: 'Shipping', icon: Truck, component: ShippingTab },
         { id: 'vendor', label: 'Vendor & Commission', icon: Users, component: VendorTab },
-        { id: 'faqs', label: 'Business FAQs', icon: MessageCircle, component: FaqsTab },
+        { id: 'faqs', label: 'FAQs', icon: MessageCircle, component: FaqsTab },
         { id: 'gateways', label: 'Other Gateways', icon: Share2, component: GatewaysTab },
         { id: 'advanced', label: 'Advanced Rules', icon: Zap, component: AdvancedTab },
     ];

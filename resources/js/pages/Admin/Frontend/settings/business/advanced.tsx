@@ -3,16 +3,19 @@ import { Save, Zap, AlertTriangle } from 'lucide-react';
 import toast from "react-hot-toast";
 
 export default function AdvancedTab({ settings }: { settings: any }) {
-    const { data, setData, post, processing } = useForm({
-        order_cancellation_set: settings.order_cancellation?.status || 'no',
-        coupon_system_set: settings.coupon_system?.status || 'no',
-        business_debug: settings.business_debug?.status || 'no',
+    const { data, setData, post, errors, processing } = useForm({
+        order_cancellation_set: settings.order_cancellation?.status || 'disabled',
+        coupon_system_set: settings.coupon_system?.status || 'disabled',
+        business_debug: settings.business_debug?.status || 'inactive',
     });
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        post((window as any).route('admin.business-settings.updateAdvanced'), {
-            onSuccess: () => toast.success('Advanced business rules saved!')
+
+        post('/admin/settings/business/advanced', {
+            preserveScroll: true,
+            onSuccess: () => toast.success('Advanced business rules saved!'),
+            onError: () => toast.error("Something went wrong!"),
         });
     };
 
@@ -27,8 +30,8 @@ export default function AdvancedTab({ settings }: { settings: any }) {
                 onChange={e => setData(field, e.target.value)}
                 className="h-11 rounded-xl border-gray-200 font-bold text-sm focus:ring-2 focus:ring-indigo-500"
             >
-                <option value="ok">Enabled</option>
-                <option value="no">Disabled</option>
+                <option value="enabled">Enabled</option>
+                <option value="disabled">Disabled</option>
             </select>
         </div>
     );
@@ -65,15 +68,14 @@ export default function AdvancedTab({ settings }: { settings: any }) {
                         onChange={e => setData('business_debug', e.target.value)}
                         className="h-11 rounded-xl border-red-200 text-red-700 font-bold"
                     >
-                        <option value="ok">Active</option>
-                        <option value="no">Inactive</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
                     </select>
                 </div>
             </div>
-
-            <div className="pt-4 flex justify-end">
-                <button disabled={processing} className="bg-indigo-600 text-white px-12 py-4 rounded-2xl font-black shadow-lg">
-                    APPLY ADVANCED RULES
+            <div className="flex justify-end">
+                <button type="submit" disabled={processing} className="flex items-center gap-2 rounded-xl bg-indigo-600 px-8 py-3 font-bold text-white ] transition-all active:scale-95 disabled:bg-gray-400">
+                    <Save className="h-4 w-4" />{' '} {processing ? 'Saving...' : 'APPLY ADVANCED RULES'}
                 </button>
             </div>
         </form>

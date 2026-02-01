@@ -66,7 +66,7 @@
         "laravel-vite-plugin": "^2.0",
         "lucide-react": "^0.475.0",
         "pusher-js": "^8.4.0",
-        "quill": "^2.0.3",
+        "quill": "^2.0.2",
         "react": "^19.2.0",
         "react-csv": "^2.2.2",
         "react-data-table-component": "^7.7.0",

@@ -16,7 +16,7 @@ export default function UiSettingsIndex({ settings }: { settings: any }) {
 
     const tabs = [
         { id: 'branding', label: 'Branding', icon: Palette, component: BrandingTab },
-        { id: 'header', label: 'Header/Menu', icon: ListChecks, component: HeaderTab },
+        { id: 'header', label: 'Header', icon: ListChecks, component: HeaderTab },
         { id: 'homepage', label: 'Homepage', icon: Home, component: HomepageTab },
         { id: 'categories', label: 'Categories', icon: LayoutGrid, component: CategoriesTab },
         { id: 'products', label: 'Products', icon: ShoppingBag, component: ProductsTab },
