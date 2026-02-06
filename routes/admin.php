@@ -1,5 +1,23 @@
 <?php
 
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\NotificationController;
+use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\ProductVariantController;
+use App\Http\Controllers\Admin\ProductAttributeController;
+use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\CustomerController;
+use App\Http\Controllers\Admin\CouponController;
+use App\Http\Controllers\Admin\BlogController;
+use App\Http\Controllers\Admin\BlogCategoryController;
+use App\Http\Controllers\Admin\FrontendContentController;
+use App\Http\Controllers\Admin\BlogsCommentsController;
+use App\Http\Controllers\Admin\BlogTagsController;
+use App\Http\Controllers\Admin\NewsletterController;
+use App\Http\Controllers\Admin\AffiliateController as AdminAffiliateController;
+use App\Http\Controllers\Admin\InventoryController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 

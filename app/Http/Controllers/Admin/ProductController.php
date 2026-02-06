@@ -21,7 +21,7 @@ class ProductController extends Controller
         $this->middleware('permission:delete.products')->only(['destroy']);
     }
 
-    public function index(Request $request)
+   public function index(Request $request)
     {
         $stats = [
             'total' => Product::count(),
@@ -138,6 +138,8 @@ class ProductController extends Controller
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
                 'category_id' => 'required|exists:categories,id',
+                'affiliate_commission' => 'required|numeric|min:0',
+                
                 'short_description' => 'nullable|string',
                 'long_description' => 'nullable|string',
                 'urdu_name' => 'nullable|string',
@@ -231,11 +233,9 @@ class ProductController extends Controller
                 ->withInput()
                 ->with('error', 'Failed to create product.');
         }
+        return to_route('products.index')->with('success', 'Product successfully created!');
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(string $id)
     {
         $product = Product::findOrFail($id);
@@ -275,6 +275,7 @@ class ProductController extends Controller
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
                 'category_id' => 'required|exists:categories,id',
+                'affiliate_commission' => 'required|numeric|min:0',
                 'short_description' => 'nullable|string',
                 'long_description' => 'nullable|string',
                 'urdu_name' => 'nullable|string',
@@ -378,4 +379,32 @@ class ProductController extends Controller
         
         return to_route('products.index')->with('success', 'Product successfully deleted!');
     }
+
+    public function search(Request $request)
+    {
+        $search = $request->get('q', '');
+        
+        $products = Product::query()
+            ->with(['variants:id,product_id,name,price,stock'])
+            ->where('status', 'active')
+            ->where(function($query) use ($search) {
+                $query->where('name', 'like', "%{$search}%")
+                    ->orWhere('sku', 'like', "%{$search}%");
+            })
+            ->limit(20)
+            ->get(['id', 'name', 'sku', 'price', 'stock']);
+
+        $products = Product::
+            with(['variants:id,product_id,name,price,stock'])
+            ->limit(20)
+            ->get(['id', 'name', 'sku', 'price', 'stock']);
+
+
+        return response()->json($products);
+    }
+
 }
+
+
+
+

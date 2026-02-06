@@ -18,9 +18,6 @@ class UserController extends Controller
         $this->middleware('permission:delete.users')->only(['destroy']);
     }
 
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
         // Calculate stats from database
@@ -39,7 +36,7 @@ class UserController extends Controller
             ? User::role('customer')->count() 
             : 0;
         
-        return Inertia::render('Users/Index', [
+        return Inertia::render('admin/Users/Index', [
             'users' => User::with('roles')->get(),
             'stats' => [
                 'total' => $totalUsers,
@@ -50,9 +47,6 @@ class UserController extends Controller
         ]);
     }
 
-    /**
-     * Get paginated data for DataTable (AJAX endpoint)
-     */
     public function getData(Request $request)
     {
         $query = User::with('roles')->latest();
@@ -88,9 +82,6 @@ class UserController extends Controller
         ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         return Inertia::render('Users/Create', [
@@ -98,22 +89,22 @@ class UserController extends Controller
         ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
-            'role' => 'nullable|string|exists:roles,name',
+            'role' => 'required|string|exists:roles,name',
         ]);
+
+        $roleName = strtolower($request->role);
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => bcrypt($request->password),
+            'role' => $request->role,
         ]);
 
         // assign selected role (role name expected)
@@ -121,12 +112,9 @@ class UserController extends Controller
             $user->syncRoles([$request->role]);
         }
 
-        return to_route('users.index')->with('success', 'User successfully created!');
+        return to_route('admin/users.index')->with('success', 'User successfully created!');
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(string $id)
     {
         $user = User::with('roles')->findOrFail($id);
@@ -136,9 +124,6 @@ class UserController extends Controller
         ]);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(string $id)
     {
         $user = User::with('roles')->findOrFail($id);
@@ -149,9 +134,6 @@ class UserController extends Controller
         ]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, string $id)
     {
         $request->validate([
@@ -159,31 +141,31 @@ class UserController extends Controller
             'email' => 'required|string|email|max:255|unique:users,email,'.$id,
             'password' => 'nullable|string|min:8',
             'password_confirmation' => 'nullable|string|min:8',
-            'role' => 'nullable|string|exists:roles,name',
+            'role' => 'required|string|exists:roles,name',
         ]);
 
         $user = User::findOrFail($id);
         $user->name = $request->name;
         $user->email = $request->email;
+
+        // Role column update karein (Migration wala column)
+        if ($request->filled('role')) {
+            $user->role = $request->role; 
+        }
+
         if ($request->filled('password')) {
             $user->password = bcrypt($request->password);
         }
         $user->save();
 
-        // if role is present in the request, sync it (allow clearing)
+        // Spatie sync
         if ($request->filled('role')) {
             $user->syncRoles([$request->role]);
-        } elseif ($request->has('role')) {
-            // role present but empty -> remove all roles
-            $user->syncRoles([]);
         }
 
-        return to_route('users.index')->with('success', 'User successfully updated!');
+        return to_route('admin/users.index')->with('success', 'User successfully updated!');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(string $id)
     {
         User::destroy($id);
