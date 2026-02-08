@@ -67,7 +67,7 @@ export function ProductsSection({
     if (hasAnyProductPerm) {
         productSubmenu.push({
             title: 'Products Deals',
-            href: '/admin/productsDeals',
+            href: '/admin/deals',
             icon: Percent,
         });
     }
@@ -75,7 +75,7 @@ export function ProductsSection({
     if (hasAnyProductPerm) {
         productSubmenu.push({
             title: 'Reviews',
-            href: '/admin/productsReviews',
+            href: '/admin/reviews',
             icon: Star,
         });
     }

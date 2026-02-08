@@ -178,7 +178,6 @@ Route::middleware(['auth', 'verified'])
         ->name('frontend.data');
 
 
-
     Route::resource('newsletters', NewsletterController::class);
     Route::get('newsletters-data', [NewsletterController::class, 'getData'])->name('newsletters.data');
 

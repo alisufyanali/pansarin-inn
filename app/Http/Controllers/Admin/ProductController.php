@@ -233,7 +233,6 @@ class ProductController extends Controller
                 ->withInput()
                 ->with('error', 'Failed to create product.');
         }
-        return to_route('products.index')->with('success', 'Product successfully created!');
     }
 
     public function show(string $id)
