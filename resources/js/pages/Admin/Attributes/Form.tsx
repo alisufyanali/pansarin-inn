@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useForm } from '@inertiajs/react';
-import { ArrowLeft, Check, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Check, Plus, X } from 'lucide-react';
 import { Link } from '@inertiajs/react';
 
 interface AttributeFormProps {
@@ -64,98 +64,97 @@ export default function AttributeForm({ attribute, isEdit = false }: AttributeFo
     };
 
     return (
-        <div className="p-3">
-            <div className="flex items-center gap-2 mb-4">
+        <div className="p-4 max-w-3xl mx-auto">
+            <div className="flex items-center gap-3 mb-4">
                 <Link
                     href="/admin/attributes"
-                    className="inline-flex items-center justify-center rounded-md bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-white w-10 h-10"
+                    className="inline-flex items-center justify-center rounded-lg bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 w-10 h-10 shadow-sm border border-gray-200 dark:border-gray-700"
                 >
-                    <ArrowLeft />
+                    <ArrowLeft size={18} />
                 </Link>
+                <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+                    {isEdit ? 'Edit Attribute' : 'Create Attribute'}
+                </h1>
             </div>
 
-            <div className="py-6">
-                <div className="max-w-2xl mx-auto bg-white dark:bg-gray-900 rounded-xl p-6 shadow-lg">
-                    <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-6 text-center">
-                        {isEdit ? 'Edit Attribute' : 'Create Attribute'}
-                    </h2>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                <form onSubmit={submit} className="p-5 space-y-5">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                            Attribute Name *
+                        </label>
+                        <input
+                            type="text"
+                            placeholder="e.g., Size, Color, Type"
+                            value={data.name}
+                            onChange={(e) => setData('name', e.target.value)}
+                            className="w-full px-3 py-2 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                        />
+                        {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+                    </div>
 
-                    <form onSubmit={submit} className="space-y-5">
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                Attribute Name *
-                            </label>
-                            <input
-                                type="text"
-                                placeholder="Size, Color, Type"
-                                value={data.name}
-                                onChange={(e) => setData('name', e.target.value)}
-                                className="w-full px-4 py-2 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
-                            />
-                            {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                    <div>
+                        <div className="flex items-center justify-between mb-2">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 Values ({values.length})
                             </label>
-                            <div className="space-y-2 bg-gray-50 dark:bg-gray-800/30 rounded-lg p-4">
-                                {values.map((val, i) => (
-                                    <div key={i} className="flex gap-2 items-center">
-                                        <span className="w-8 h-8 flex items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 text-xs font-bold">
-                                            {i + 1}
-                                        </span>
-                                        <input
-                                            type="text"
-                                            placeholder="Value"
-                                            value={val}
-                                            onChange={(e) => updateValue(i, e.target.value)}
-                                            className="flex-1 px-3 py-2 rounded-md bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                                        />
-                                        {values.length > 1 && (
-                                            <button
-                                                type="button"
-                                                onClick={() => removeValue(i)}
-                                                className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                            {errors.values && <p className="text-red-500 text-xs mt-1">{errors.values}</p>}
-                        </div>
-
-                        <button
-                            type="button"
-                            onClick={addValue}
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg transition"
-                        >
-                            <Plus size={18} />
-                            Add Value
-                        </button>
-
-                        <div className="flex justify-end gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
-                            <Link
-                                href="/admin/attributes"
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg"
-                            >
-                                <ArrowLeft size={16} />
-                                Back
-                            </Link>
-
                             <button
-                                type="submit"
-                                disabled={processing}
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg transition"
+                                type="button"
+                                onClick={addValue}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium"
                             >
-                                <Check size={16} />
-                                {isEdit ? 'Update' : 'Create'}
+                                <Plus size={14} />
+                                Add
                             </button>
                         </div>
-                    </form>
-                </div>
+                        
+                        <div className="space-y-2">
+                            {values.map((val, i) => (
+                                <div key={i} className="flex gap-2 items-center">
+                                    <span className="w-7 h-7 flex items-center justify-center rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-xs font-medium">
+                                        {i + 1}
+                                    </span>
+                                    <input
+                                        type="text"
+                                        placeholder="Enter value"
+                                        value={val}
+                                        onChange={(e) => updateValue(i, e.target.value)}
+                                        className="flex-1 px-3 py-2 rounded-md bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                                    />
+                                    {values.length > 1 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => removeValue(i)}
+                                            className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 rounded-md transition"
+                                        >
+                                            <X size={18} />
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                        {errors.values && <p className="text-red-500 text-xs mt-1">{errors.values}</p>}
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+                        <Link
+                            href="/admin/attributes"
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-medium"
+                        >
+                            <ArrowLeft size={16} />
+                            Back
+                        </Link>
+
+                        <button
+                            type="submit"
+                            disabled={processing}
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium"
+                        >
+                            <Check size={16} />
+                            {isEdit ? 'Update' : 'Create'}
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     );

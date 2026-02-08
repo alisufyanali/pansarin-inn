@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useForm } from '@inertiajs/react';
-import { ArrowLeft, Check, Upload, X } from 'lucide-react';
+import { ArrowLeft, Save, Upload, X, Folder } from 'lucide-react';
 import { Link } from '@inertiajs/react';
 
 type Category = { id: number; name: string };
@@ -53,8 +53,7 @@ export default function CategoryForm({ category, categories, isEdit = false }: C
         if (isEdit && category?.id) {
             post(`/admin/categories/${category.id}`, {
                 forceFormData: true,
-                // @ts-ignore
-                method: 'put',
+                method: 'put' as any,
             });
         } else {
             post('/admin/categories', {
@@ -64,150 +63,147 @@ export default function CategoryForm({ category, categories, isEdit = false }: C
     }
 
     return (
-        <div className="p-3">
-            <div className="flex items-center gap-2 mb-4">
+        <div className="p-4 max-w-2xl mx-auto">
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-6">
                 <Link
                     href="/admin/categories"
-                    className="inline-flex items-center justify-center rounded-md bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-white w-10 h-10 transition"
+                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
                 >
-                    <ArrowLeft />
+                    <ArrowLeft className="w-4 h-4" />
+                    Back
                 </Link>
+                <h1 className="text-2xl font-bold">
+                    {isEdit ? 'Edit Category' : 'New Category'}
+                </h1>
             </div>
 
-            <div className="py-6">
-                <div className="max-w-2xl w-full mx-auto bg-white dark:bg-gray-900 rounded-xl p-6 shadow-lg">
-                    <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2 text-center">
-                        {isEdit ? 'Edit Category' : 'Create New Category'}
-                    </h2>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 text-center">
-                        {isEdit ? 'Update the category details below.' : 'Fill the form below to add a new category.'}
-                    </p>
+            <form onSubmit={submit} className="space-y-6">
+                {/* Basic Info */}
+                <div className="bg-white rounded-lg border p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                        <Folder className="w-5 h-5 text-gray-600" />
+                        <h3 className="font-semibold text-lg">Category Details</h3>
+                    </div>
 
-                    <form onSubmit={submit} className="space-y-5">
-                        {/* Name */}
+                    <div className="space-y-4">
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                Category Name *
+                            <label className="block text-sm font-medium mb-1">
+                                Category Name <span className="text-red-500">*</span>
                             </label>
                             <input
                                 type="text"
                                 placeholder="Enter category name"
-                                className="w-full px-4 py-2.5 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
+                                className="w-full px-3 py-2 border rounded-lg"
                                 value={data.name}
                                 onChange={e => setData('name', e.target.value)}
                                 required
                             />
-                            {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+                            {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
                         </div>
 
-                        {/* Parent Category */}
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                Parent Category (optional)
-                            </label>
+                            <label className="block text-sm font-medium mb-1">Parent Category</label>
                             <select
                                 value={data.parent_id}
                                 onChange={(e) => setData('parent_id', e.target.value)}
-                                className="w-full px-4 py-2.5 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
+                                className="w-full px-3 py-2 border rounded-lg"
                             >
-                                <option value="">No parent (root category)</option>
+                                <option value="">None (Main Category)</option>
                                 {categories.map((cat) => (
                                     <option key={cat.id} value={cat.id}>{cat.name}</option>
                                 ))}
                             </select>
-                            {errors.parent_id && <p className="text-red-500 text-xs mt-1">{errors.parent_id}</p>}
                         </div>
+                    </div>
+                </div>
 
-                        {/* Image Upload */}
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                Category Image
-                            </label>
-                            
-                            {imagePreview ? (
-                                <div className="relative">
-                                    <img 
-                                        src={imagePreview} 
-                                        alt="Preview" 
-                                        className="w-full h-48 object-cover rounded-lg border border-gray-300 dark:border-gray-600"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={removeImage}
-                                        className="absolute top-2 right-2 p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition"
-                                    >
-                                        <X className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            ) : (
-                                <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:border-blue-500 dark:hover:border-blue-400 transition">
-                                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                        <Upload className="w-10 h-10 mb-3 text-gray-400" />
-                                        <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
-                                            <span className="font-semibold">Click to upload</span> or drag and drop
+                {/* Image Upload */}
+                <div className="bg-white rounded-lg border p-6">
+                    <h3 className="font-semibold text-lg mb-4">Category Image</h3>
+                    
+                    <div className="space-y-4">
+                        {imagePreview ? (
+                            <div className="relative">
+                                <img 
+                                    src={imagePreview} 
+                                    alt="Preview" 
+                                    className="w-full h-64 object-cover rounded-lg border"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={removeImage}
+                                    className="absolute top-3 right-3 p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleImageChange}
+                                    className="hidden"
+                                    id="category_image"
+                                />
+                                <label htmlFor="category_image" className="cursor-pointer">
+                                    <div className="py-6">
+                                        <Upload className="w-12 h-12 mx-auto text-gray-400 mb-3" />
+                                        <p className="text-sm text-gray-600 mb-1">
+                                            Click to upload image
                                         </p>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                                            PNG, JPG or GIF (MAX. 2MB)
+                                        <p className="text-xs text-gray-500">
+                                            PNG, JPG, GIF (Max 2MB)
                                         </p>
                                     </div>
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={handleImageChange}
-                                        className="hidden"
-                                    />
                                 </label>
-                            )}
-                            {errors.image && <p className="text-red-500 text-xs mt-1">{errors.image}</p>}
-                        </div>
+                            </div>
+                        )}
+                        
+                        {errors.image && <p className="text-red-500 text-sm mt-1">{errors.image}</p>}
+                    </div>
+                </div>
 
-                        {/* Status */}
-                        <div className="flex items-center gap-3">
-                            <input
-                                type="checkbox"
-                                checked={data.status}
-                                onChange={e => setData('status', e.target.checked)}
-                                className="w-5 h-5 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-2 focus:ring-blue-500"
-                            />
-                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                Active Status
+                {/* Status & Actions */}
+                <div className="bg-white rounded-lg border p-6">
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <label className="block text-sm font-medium mb-1">Active Status</label>
+                                <p className="text-xs text-gray-500">Show this category to users</p>
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={data.status}
+                                    onChange={e => setData('status', e.target.checked)}
+                                    className="sr-only peer"
+                                />
+                                <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                             </label>
                         </div>
 
-                        {/* Buttons */}
-                        <div className="flex justify-end items-center gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+                        <div className="flex gap-3 pt-4 border-t">
                             <Link
                                 href="/admin/categories"
-                                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 font-medium transition"
+                                className="flex-1 text-center border py-2.5 rounded-lg hover:bg-gray-50"
                             >
-                                <ArrowLeft size={16} />
                                 Cancel
                             </Link>
-
+                            
                             <button
                                 type="submit"
                                 disabled={processing}
-                                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium transition"
+                                className="flex-1 bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2"
                             >
-                                {processing ? (
-                                    <>
-                                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                        {isEdit ? 'Updating...' : 'Creating...'}
-                                    </>
-                                ) : (
-                                    <>
-                                        <Check size={16} />
-                                        {isEdit ? 'Update' : 'Create'}
-                                    </>
-                                )}
+                                <Save className="w-4 h-4" />
+                                {processing ? 'Saving...' : (isEdit ? 'Update Category' : 'Create Category')}
                             </button>
                         </div>
-                    </form>
+                    </div>
                 </div>
-            </div>
+            </form>
         </div>
     );
 }

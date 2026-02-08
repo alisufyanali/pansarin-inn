@@ -103,28 +103,45 @@ class Order extends Model
         
     }
     protected static function booted()
-{
-    static::updated(function ($order) {
-        // Jab order status 'processing' ya 'delivered' ho jaye
-        if ($order->wasChanged('status') && $order->status === 'delivered') {
-            $order->reduceStock();
-        }
-    });
-}
-
-public function reduceStock()
-{
-    foreach ($this->items as $item) {
-        \App\Models\Inventory::create([
-            'product_id'   => $item->product_id,
-            'quantity'     => -abs($item->quantity), // Negative quantity for Stock Out
-            'type'         => 'out',
-            'reference'    => 'Order #' . $this->order_number,
-            'unit'         => $item->product->unit ?? 'pcs',
-            'performed_by' => auth()->id() ?? 1, // System or Admin ID
-            'note'         => 'Auto stock out via Order Placement',
-        ]);
+    {
+        static::updated(function ($order) {
+            // Jab order status 'processing' ya 'delivered' ho jaye
+            if ($order->wasChanged('status') && $order->status === 'delivered') {
+                $order->reduceStock();
+            }
+        });
     }
-}
 
+    public function reduceStock()
+    {
+        foreach ($this->items as $item) {
+            \App\Models\Inventory::create([
+                'product_id'   => $item->product_id,
+                'quantity'     => -abs($item->quantity), // Negative quantity for Stock Out
+                'type'         => 'out',
+                'reference'    => 'Order #' . $this->order_number,
+                'unit'         => $item->product->unit ?? 'pcs',
+                'performed_by' => auth()->id() ?? 1, // System or Admin ID
+                'note'         => 'Auto stock out via Order Placement',
+            ]);
+        }
+    }
+
+
+     /**
+     * Get the sale associated with the order
+     */
+    public function sale()
+    {
+        return $this->hasOne(Sale::class);
+    }
+
+    /**
+     * Check if order has a sale
+     */
+    public function hasSale()
+    {
+        return $this->sale()->exists();
+    }
+    
 }

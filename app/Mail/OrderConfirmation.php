@@ -39,7 +39,7 @@ class OrderConfirmation extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.order-confirmation',
+            view: 'emails.order.confirmation',
             with: [
                 'order' => $this->order,
                 'customer' => $this->order->customer,

@@ -11,7 +11,6 @@ return new class extends Migration
         Schema::create('cities', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('country');
             $table->decimal('shipping_charges', 10, 2)->default(0);
             $table->timestamps();
             $table->softDeletes(); // soft delete

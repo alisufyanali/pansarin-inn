@@ -12,6 +12,7 @@ use App\Models\ProductVariant;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\DB;
 use App\Jobs\SendOrderConfirmationEmail;
+use App\Jobs\SendOrderWhatsAppNotification;
 
 class OrderController extends Controller
 {
@@ -186,8 +187,17 @@ class OrderController extends Controller
             // Calculate totals
             $order->calculateTotals();
 
+            // Affiliate Commission Calculate
+            $affiliateService->recordReferral($order);
+            if ($order->status === 'delivered') {
+                $affiliateService->finalizeCommission($order);
+            }
+
             // Dispatch email job
             SendOrderConfirmationEmail::dispatch($order);
+
+            // Send WhatsApp notification
+            SendOrderWhatsAppNotification::dispatch($order);
 
             DB::commit();
             return to_route('admin.orders.index')->with('success', 'Order successfully created! Confirmation email will be sent shortly.');
