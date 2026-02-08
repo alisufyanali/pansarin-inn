@@ -21,28 +21,27 @@ use App\Http\Controllers\Admin\InventoryController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-// Controllers
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\Admin\{
-    RoleController,
-    CategoryController,
-    ProductController,
-    ProductVariantController,
-    ProductAttributeController,
-    OrderController,
-    CustomerController,
-    CouponController,
-    BlogController,
-    BlogCategoryController,
-    BlogsCommentsController,
-    NotificationController,
-    FrontendContentController,
-    NewsletterController,
-    BlogTagsController,
-    InventoryController,
-    ProductsReviewsController,
-    ProductsDealController,
-};
+// use App\Http\Controllers\Admin\UserController;
+// use App\Http\Controllers\Admin{
+//     RoleController,
+//     CategoryController,
+//     ProductController,
+//     ProductVariantController,
+//     ProductAttributeController,
+//     OrderController,
+//     CustomerController,
+//     CouponController,
+//     BlogController,
+//     BlogCategoryController,
+//     BlogsCommentsController,
+//     NotificationController,
+//     FrontendContentController,
+//     NewsletterController,
+//     BlogTagsController,
+//     InventoryController,
+//     ProductsReviewsController,
+//     ProductsDealController,
+// };
 
 Route::middleware(['auth', 'verified'])
     ->prefix('admin')
