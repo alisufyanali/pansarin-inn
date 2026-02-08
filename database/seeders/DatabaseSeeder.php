@@ -18,6 +18,9 @@ class DatabaseSeeder extends Seeder
             AttributeSeeder::class,
             CitySeeder::class,
             OrderSeeder::class,
+            UiSettingSeeder::class,
+            GeneralSettingSeeder::class,
+            BusinessSettingSeeder::class,
             SaleSeeder::class,
             WhatsAppMediaSeeder::class,
             WhatsAppSeeder::class

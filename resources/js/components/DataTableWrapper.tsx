@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import DataTable from "react-data-table-component";
+import { useReactTable, getCoreRowModel, flexRender, ColumnDef } from '@tanstack/react-table'
 import { CSVLink } from "react-csv";
 import { Link } from "@inertiajs/react";
 import jsPDF from "jspdf";

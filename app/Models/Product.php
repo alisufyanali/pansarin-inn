@@ -40,6 +40,7 @@ class Product extends Model
         'thumbnail',
         'social_image',
         'gallery',
+        'affiliate_commission',
     ];
 
     protected $casts = [
@@ -54,6 +55,7 @@ class Product extends Model
         'featured' => 'boolean',
         'tags' => 'array',
         'gallery' => 'array',
+        'affiliate_commission' => 'decimal:2',
     ];
 
     // Relationships

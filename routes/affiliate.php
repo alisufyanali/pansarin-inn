@@ -2,6 +2,7 @@
 
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Vendor\MarketingController;
 use App\Http\Controllers\Vendor\AffiliateController;
 use App\Http\Controllers\Vendor\PayoutController;
 use App\Http\Controllers\Admin\AffiliateController as AdminAffiliate;
@@ -26,6 +27,8 @@ Route::middleware(['auth', 'verified'])->prefix('affiliates')->group(function ()
     // Payouts
     Route::get('/payouts', [PayoutController::class, 'index'])->name('affiliate.payouts');
     Route::post('/payout-request', [PayoutController::class, 'store'])->name('affiliate.payout.store');
+
+    Route::get('/products', [MarketingController::class, 'productCatalog'])->name('products.index');
 });
 
 // --- Admin Side Affiliate Management ---
