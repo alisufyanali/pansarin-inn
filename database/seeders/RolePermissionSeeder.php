@@ -226,6 +226,7 @@ class RolePermissionSeeder extends Seeder
         if (!$adminUser) {
             $adminUser = User::create([
                 'name' => 'Admin User',
+                'username' => 'admin',
                 'email' => $adminEmail,
                 'password' => Hash::make('password123'),
             ]);

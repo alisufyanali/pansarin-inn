@@ -4,8 +4,8 @@ import toast from 'react-hot-toast';
 
 export default function SystemTab({ settings }: { settings: any }) {
     const { data, setData, post, errors, processing } = useForm({
-        system_name: settings.system_name ?? '',
-        system_title: settings.system_title ?? '',
+        system_name: settings?.system_name ?? '',
+        system_title: settings?.system_title ?? '',
     });
 
     const submit = (e: React.FormEvent) => {

@@ -3,13 +3,26 @@ import { Save, MessageCircle, Plus, Trash2 } from 'lucide-react';
 import toast from "react-hot-toast";
 
 export default function FaqsTab({ settings }: { settings: any }) {
-    // Parse existing FAQs or start with an empty array
-    const existingFaqs = settings.faqs?.value ? 
-        (typeof settings.faqs.value === 'string' ? JSON.parse(settings.faqs.value) : settings.faqs.value) 
-        : [{ question: '', answer: '' }];
+    const getInitialFaqs = () => {
+        try {
+            const rawValue = settings?.faqs?.value;
+            
+            if (!rawValue) return [{ question: '', answer: '' }];
+
+            if (Array.isArray(rawValue)) return rawValue;
+            
+            if (typeof rawValue === 'string') {
+                const parsed = JSON.parse(rawValue);
+                return Array.isArray(parsed) ? parsed : [{ question: '', answer: '' }];
+            }
+        } catch (e) {
+            console.error("FAQ Parsing Error:", e);
+        }
+        return [{ question: '', answer: '' }];
+    };
 
     const { data, setData, post, errors, processing } = useForm({
-        faqs: existingFaqs,
+        faqs: getInitialFaqs(),
     });
 
     const addFaq = () => {
