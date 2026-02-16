@@ -4,6 +4,11 @@ use App\Http\Controllers\Admin\Frontend\UiSettingController;
 use App\Http\Controllers\Admin\Frontend\BusinessSettingController;
 use App\Http\Controllers\Admin\Frontend\PageController;
 
+use App\Http\Controllers\Api\FrontendController;
+use Illuminate\Support\Facades\Route;
+
+Route::get('/index', [FrontendController::class, 'index']);
+
 // Route::middleware(['web', 'auth'])->prefix('admin/frontend')->name('admin.')->group(function () {
 //     Route::resource('business-settings', BusinessSettingController::class)->only(['index', 'store']);
 //     Route::resource('pages', PageController::class);

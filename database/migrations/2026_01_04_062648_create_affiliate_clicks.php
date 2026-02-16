@@ -6,24 +6,27 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('affiliate_clicks', function (Blueprint $table) {
             $table->id();
+
             $table->foreignId('affiliate_id')->constrained()->onDelete('cascade');
+
+            $table->string('clicked_url')->nullable();
+            $table->foreignId('product_id')->nullable()->constrained()->nullOnDelete();
+
             $table->string('ip_address', 45)->nullable();
-            $table->text('user_agent')->nullable(); // Browser/Device info
-            $table->string('referring_url')->nullable(); // Traffic source (FB, Insta, etc.)
+            $table->text('user_agent')->nullable();
+            $table->string('referrer_url')->nullable();
+
+            $table->string('session_id')->nullable();
+
             $table->timestamps();
         });
+
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('affiliate_clicks');

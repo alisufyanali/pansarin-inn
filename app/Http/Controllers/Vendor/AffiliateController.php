@@ -18,7 +18,7 @@ class AffiliateController extends Controller
         
         if (!$affiliate) {
             // Registration.tsx file ka sahi path
-            return Inertia::render('Affiliate/Registration'); 
+            return Inertia::render('Affiliate/Registration');
         }
 
         return Inertia::render('Affiliate/Dashboard', [ // Dashboard.tsx

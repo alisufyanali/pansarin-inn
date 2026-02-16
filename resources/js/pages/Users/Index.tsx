@@ -9,7 +9,7 @@ import StatCard from '@/components/StatCard';
 import toast from "react-hot-toast";
 
 const breadcrumbs: BreadcrumbItem[] = [
-  { title: 'Users', href: '/admin/users' },
+  { title: 'Users', href: 'pages/users' },
 ];
 
 interface User {

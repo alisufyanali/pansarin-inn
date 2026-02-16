@@ -20,11 +20,6 @@ class UiSettingController extends Controller
 
     public function index()
     {
-        // $settings = UiSetting::pluck('value', 'type')->all();
-        
-        // return Inertia::render('Admin/Frontend/settings/ui/index', [
-        //     'settings' => $settings
-        // ]);
 
         return Inertia::render('Admin/Frontend/settings/ui/index', [
             'settings' => UiSetting::pluck('value', 'type')->all()
@@ -120,17 +115,4 @@ class UiSettingController extends Controller
 
         return redirect()->back()->with('success', 'Marketing updated!');
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
 }

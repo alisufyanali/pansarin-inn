@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -11,30 +10,17 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasRoles;
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, TwoFactorAuthenticatable;
+    use HasFactory, Notifiable, TwoFactorAuthenticatable, HasRoles;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
         'password',
         'phone',
-        'role',
+        'username',
         'status',
-
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'two_factor_secret',
@@ -42,11 +28,6 @@ class User extends Authenticatable
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -56,16 +37,11 @@ class User extends Authenticatable
         ];
     }
 
-    // Get unread count
     public function unreadNotificationsCount()
     {
         return $this->unreadNotifications()->count();
     }
 
-
-     /**
-     * Get the customer associated with the user.
-     */
     public function customer()
     {
         return $this->hasOne(Customer::class);
@@ -74,6 +50,21 @@ class User extends Authenticatable
     public function affiliate()
     {
         return $this->hasOne(Affiliate::class);
+    }
+
+    public function isAffiliate()
+    {
+        return $this->hasRole('affiliate');
+    }
+
+    public function isCustomer()
+    {
+        return $this->hasRole('customer');
+    }
+
+    public function isAdmin()
+    {
+        return $this->hasRole('admin');
     }
 
 }
