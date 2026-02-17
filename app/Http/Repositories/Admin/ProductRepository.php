@@ -1,0 +1,199 @@
+<?php
+
+namespace App\Http\Repositories\Admin;
+
+use App\Models\Product;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+
+class ProductRepository
+{
+    public function getAll()
+    {
+        return Product::with('category')->latest()->get();
+    }
+
+    public function getAllForDataTable($request)
+    {
+        $query = Product::with('category:id,name')
+            ->select('id', 'name', 'sku', 'price', 'sale_price', 'purchase_price_per_unit', 'sale_price_per_unit', 'quantity', 'unit', 'status', 'featured', 'category_id', 'stock_qty', 'created_at', 'updated_at');
+        
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('sku', 'like', "%{$search}%")
+                  ->orWhereHas('category', fn($q) => $q->where('name', 'like', "%{$search}%"));
+            });
+        }
+        
+        if ($request->filled('status')) {
+            $query->where('status', $request->status === 'active');
+        }
+        
+        if ($request->filled('featured')) {
+            $query->where('featured', $request->featured === 'yes');
+        }
+
+        $sortBy = $request->get('sortBy', 'created_at');
+        $sortOrder = $request->get('sortOrder', 'desc');
+        $query->orderBy($sortBy, $sortOrder);
+
+        $perPage = $request->get('perPage', 10);
+        $page = $request->get('page', 1);
+        
+        $products = $query->paginate($perPage, ['*'], 'page', $page);
+
+        $transformedData = $products->map(function($product) {
+            return [
+                'id' => $product->id,
+                'name' => $product->name,
+                'sku' => $product->sku,
+                'price' => $product->price,
+                'sale_price' => $product->sale_price,
+                'purchase_price_per_unit' => $product->purchase_price_per_unit,
+                'sale_price_per_unit' => $product->sale_price_per_unit,
+                'quantity' => $product->quantity,
+                'unit' => $product->unit,
+                'status' => $product->status,
+                'featured' => $product->featured,
+                'category_id' => $product->category_id,
+                'stock_qty' => $product->stock_qty,
+                'category' => $product->category,
+                'created_at' => $product->created_at,
+                'updated_at' => $product->updated_at,
+            ];
+        });
+
+        return response()->json([
+            'data' => $transformedData,
+            'total' => $products->total(),
+            'per_page' => $products->perPage(),
+            'current_page' => $products->currentPage(),
+            'last_page' => $products->lastPage(),
+        ]);
+    }
+
+    public function find($id)
+    {
+        return Product::findOrFail($id);
+    }
+
+    public function store(array $data, $thumbnailFile = null, $socialImageFile = null, $galleryFiles = [])
+    {
+        if (empty($data['slug'])) {
+            $data['slug'] = $this->generateUniqueSlug($data['name']);
+        }
+
+        if ($thumbnailFile) {
+            $data['thumbnail'] = $thumbnailFile->store('products', 'public');
+        }
+
+        if ($socialImageFile) {
+            $data['social_image'] = $socialImageFile->store('products/social', 'public');
+        }
+
+        if (!empty($galleryFiles)) {
+            $galleryPaths = [];
+            foreach ($galleryFiles as $file) {
+                $galleryPaths[] = $file->store('products/gallery', 'public');
+            }
+            $data['gallery'] = $galleryPaths;
+        }
+
+        return Product::create($data);
+    }
+
+    public function update($id, array $data, $thumbnailFile = null, $socialImageFile = null, $galleryFiles = [])
+    {
+        $product = $this->find($id);
+
+        if ($data['name'] !== $product->name && empty($data['slug'])) {
+            $data['slug'] = $this->generateUniqueSlug($data['name'], $product->id);
+        }
+
+        if ($thumbnailFile) {
+            if ($product->thumbnail) {
+                Storage::disk('public')->delete($product->thumbnail);
+            }
+            $data['thumbnail'] = $thumbnailFile->store('products', 'public');
+        }
+
+        if ($socialImageFile) {
+            if ($product->social_image) {
+                Storage::disk('public')->delete($product->social_image);
+            }
+            $data['social_image'] = $socialImageFile->store('products/social', 'public');
+        }
+
+        if (!empty($galleryFiles)) {
+            // Delete old gallery images
+            if ($product->gallery && is_array($product->gallery)) {
+                foreach ($product->gallery as $oldImage) {
+                    Storage::disk('public')->delete($oldImage);
+                }
+            }
+            
+            $galleryPaths = [];
+            foreach ($galleryFiles as $file) {
+                $galleryPaths[] = $file->store('products/gallery', 'public');
+            }
+            $data['gallery'] = $galleryPaths;
+        }
+
+        $product->update($data);
+        return $product;
+    }
+
+    public function delete($id)
+    {
+        $product = $this->find($id);
+        
+        if ($product->thumbnail) {
+            Storage::disk('public')->delete($product->thumbnail);
+        }
+        
+        if ($product->social_image) {
+            Storage::disk('public')->delete($product->social_image);
+        }
+
+        if ($product->gallery && is_array($product->gallery)) {
+            foreach ($product->gallery as $image) {
+                Storage::disk('public')->delete($image);
+            }
+        }
+        
+        return $product->delete();
+    }
+
+    public function getStats()
+    {
+        return [
+            'total' => Product::count(),
+            'active' => Product::where('status', true)->count(),
+            'featured' => Product::where('featured', true)->count(),
+            'onSale' => Product::whereNotNull('sale_price')
+                ->whereColumn('sale_price', '<', 'price')
+                ->where('sale_price', '>', 0)
+                ->count(),
+        ];
+    }
+
+    private function generateUniqueSlug(string $name, ?int $excludeId = null): string
+    {
+        $baseSlug = Str::slug($name);
+        $slug = $baseSlug;
+        $counter = 1;
+
+        while (
+            Product::where('slug', $slug)
+                ->when($excludeId, fn($q) => $q->where('id', '!=', $excludeId))
+                ->exists()
+        ) {
+            $slug = $baseSlug . '-' . $counter;
+            $counter++;
+        }
+
+        return $slug;
+    }
+}

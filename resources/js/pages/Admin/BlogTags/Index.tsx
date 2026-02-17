@@ -8,7 +8,7 @@ import { CommonColumns, CodeBadge } from '@/components/TableColumns';
 import toast from "react-hot-toast";
 
 const breadcrumbs: BreadcrumbItem[] = [
-  { title: 'Blog Tags', href: '/admin/blogstags' }, // CHANGED
+  { title: 'Blog Tags', href: '/admin/blogtags' }, // CHANGED
 ];
 
 interface BlogTag {
@@ -113,7 +113,7 @@ export default function Index({ stats, flash }: Props) {
     },
     CommonColumns.createdAt(true),
     CommonColumns.actions({
-      baseUrl: '/admin/blogstags', // FIXED
+      baseUrl: '/admin/blogtags', // FIXED
       canEdit,
       canDelete,
     }),
@@ -164,7 +164,7 @@ export default function Index({ stats, flash }: Props) {
 
           {canCreate && (
             <Link
-              href="/admin/blogstags/create"
+              href="/admin/blogtags/create"
               className="inline-flex items-center gap-3 px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 dark:from-blue-500 dark:to-indigo-500 dark:hover:from-blue-600 dark:hover:to-indigo-600 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
             >
               <PlusCircle className="w-5 h-5" />
@@ -196,7 +196,7 @@ export default function Index({ stats, flash }: Props) {
 
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
           <DataTableWrapper
-            fetchUrl="/admin/blogstags-data" // FIXED
+            fetchUrl="/admin/blogtags-data" // FIXED
             columns={columns}
             csvHeaders={csvHeaders}
             searchableKeys={['name', 'slug', 'description']}

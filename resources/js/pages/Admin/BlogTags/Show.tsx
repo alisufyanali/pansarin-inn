@@ -37,7 +37,7 @@ interface Props {
 
 export default function Show({ tag }: Props) {
     const breadcrumbs: BreadcrumbItem[] = [
-        { title: 'Blog Tags', href: '/admin/blogstags' }, // FIXED
+        { title: 'Blog Tags', href: '/admin/blogtags' }, // FIXED
         { title: tag.name, href: '#' },
     ];
 
@@ -61,7 +61,7 @@ export default function Show({ tag }: Props) {
                 <div className="mb-6 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <Link
-                            href="/admin/blogstags" // FIXED
+                            href="/admin/blogtags" // FIXED
                             className="inline-flex h-10 w-10 items-center justify-center rounded-md bg-gray-100 text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
                         >
                             <ArrowLeft className="h-5 w-5" />
@@ -82,7 +82,7 @@ export default function Show({ tag }: Props) {
                         </div>
                     </div>
                     <Link
-                        href={`/admin/blogstags/${tag.id}/edit`} // FIXED
+                        href={`/admin/blogtags/${tag.id}/edit`} // FIXED
                         className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition hover:bg-blue-700"
                     >
                         Edit Tag

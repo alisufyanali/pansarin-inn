@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\{
     CouponController,
     BlogController,
     BlogCategoryController,
+    BlogTagController,
     FrontendContentController,
     BlogsCommentsController,
     BlogTagsController,
@@ -26,6 +27,7 @@ use App\Http\Controllers\Admin\{
     ContactController,
     WhatsAppController,
     SaleController,
+    ProductsDealController
 };
 
 
@@ -73,6 +75,9 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('product-variants-data', [ProductVariantController::class, 'getData'])->name('product-variants.data');
     Route::resource('attributes', ProductAttributeController::class);
     Route::get('attributes-data', [ProductAttributeController::class, 'getData'])->name('attributes.data');
+    
+    
+    Route::resource('deals', ProductsDealController::class);
 
     /*
     |--------------------------------------------------------------------------
@@ -109,6 +114,10 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::resource('blogcategories', BlogCategoryController::class);
     Route::get('blogcategories-data', [BlogCategoryController::class, 'getData'])->name('blogcategories.data');
 
+    Route::resource('blogtags', BlogTagController::class);
+    Route::get('blogtags-data', [BlogTagController::class, 'getData'])->name('blogtags.data');
+    Route::get('blogtags-active', [BlogTagsController::class, 'getActiveTags'])->name('blogstags.active');
+
     Route::post('blogs/{blog}', [BlogController::class, 'update'])->middleware('permission:edit.blogs');
     Route::resource('blogs', BlogController::class);
     Route::get('blogs-data', [BlogController::class, 'getData'])->name('blogs.data');
@@ -119,11 +128,6 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::resource('blogscomments', BlogsCommentsController::class);
     Route::get('blogscomments-data', [BlogsCommentsController::class, 'getData'])->name('blogscomments.data');
 
-
-    // Blog Tags Routes
-    Route::resource('blogstags', BlogTagsController::class);
-    Route::get('blogstags-data', [BlogTagsController::class, 'getData'])->name('blogstags.data');
-    Route::get('blogstags-active', [BlogTagsController::class, 'getActiveTags'])->name('blogstags.active');
 
     // Inventory Management
     Route::resource('inventory', InventoryController::class);
@@ -182,27 +186,27 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
 
       // Contact Routes
         
-        // Contacts CRUD
-        // Route::resource('contacts', ContactController::class)->except(['create', 'store']);
-        Route::resource('contacts', ContactController::class);
-        
-        // Contacts DataTable endpoint
-        Route::get('contacts-data', [ContactController::class, 'getData'])->name('contacts.data');
-        
-        // Update status
-        Route::patch('contacts/{contact}/status', [ContactController::class, 'updateStatus'])
-            ->name('contacts.update-status');
-        
-        // Reply to contact
-        Route::post('contacts/{contact}/reply', [ContactController::class, 'reply'])
-            ->name('contacts.reply');
-        
-        // Bulk actions
-        Route::post('contacts/bulk-delete', [ContactController::class, 'bulkDelete'])
-            ->name('contacts.bulk-delete');
-        
-        Route::post('contacts/bulk-update-status', [ContactController::class, 'bulkUpdateStatus'])
-            ->name('contacts.bulk-update-status');
+    // Contacts CRUD
+    // Route::resource('contacts', ContactController::class)->except(['create', 'store']);
+    Route::resource('contacts', ContactController::class);
+    
+    // Contacts DataTable endpoint
+    Route::get('contacts-data', [ContactController::class, 'getData'])->name('contacts.data');
+    
+    // Update status
+    Route::patch('contacts/{contact}/status', [ContactController::class, 'updateStatus'])
+        ->name('contacts.update-status');
+    
+    // Reply to contact
+    Route::post('contacts/{contact}/reply', [ContactController::class, 'reply'])
+        ->name('contacts.reply');
+    
+    // Bulk actions
+    Route::post('contacts/bulk-delete', [ContactController::class, 'bulkDelete'])
+        ->name('contacts.bulk-delete');
+    
+    Route::post('contacts/bulk-update-status', [ContactController::class, 'bulkUpdateStatus'])
+        ->name('contacts.bulk-update-status');
 
 
             

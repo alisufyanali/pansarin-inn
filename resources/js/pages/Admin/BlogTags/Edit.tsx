@@ -13,8 +13,8 @@ interface EditProps {
 
 export default function Edit({ tag }: EditProps) {
     const breadcrumbs: BreadcrumbItem[] = [
-        { title: 'Blog Tags', href: '/admin/blogstags' },
-        { title: `Edit: ${tag.name}`, href: `/admin/blogstags/${tag.id}/edit` },
+        { title: 'Blog Tags', href: '/admin/blogtags' },
+        { title: `Edit: ${tag.name}`, href: `/admin/blogtags/${tag.id}/edit` },
     ];
 
     // is_active ko explicitly boolean mein convert karo

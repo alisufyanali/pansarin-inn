@@ -4,8 +4,8 @@ import { Head } from '@inertiajs/react';
 import Form from './Form';
 
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Blog Tags', href: '/admin/blogstags' }, // CHANGED
-    { title: 'Create', href: '/admin/blogstags/create' }, // CHANGED
+    { title: 'Blog Tags', href: '/admin/blogtags' }, // CHANGED
+    { title: 'Create', href: '/admin/blogtags/create' }, // CHANGED
 ];
 
 export default function Create() {

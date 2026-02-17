@@ -37,9 +37,9 @@ export default function Form({ initialData, isEdit = false }: BlogTagFormProps) 
     function submit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
         if (isEdit && initialData?.id) {
-            put(`/admin/blogstags/${initialData.id}`);
+            put(`/admin/blogtags/${initialData.id}`);
         } else {
-            post('/admin/blogstags');
+            post('/admin/blogtags');
         }
     }
 
@@ -60,7 +60,7 @@ export default function Form({ initialData, isEdit = false }: BlogTagFormProps) 
             {/* Header */}
             <div className="flex items-center gap-3 mb-6">
                 <Link
-                    href="/admin/blogstags"
+                    href="/admin/blogtags"
                     className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 dark:text-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors"
                 >
                     <ArrowLeft className="w-4 h-4" />
@@ -243,7 +243,7 @@ export default function Form({ initialData, isEdit = false }: BlogTagFormProps) 
                                     {processing ? 'Saving...' : isEdit ? 'Update Tag' : 'Create Tag'}
                                 </button>
                                 <Link
-                                    href="/admin/blogstags"
+                                    href="/admin/blogtags"
                                     className="block w-full text-center border border-gray-300 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
                                 >
                                     Cancel

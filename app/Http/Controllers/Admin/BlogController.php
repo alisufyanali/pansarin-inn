@@ -3,18 +3,22 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\BlogRequest;
+use App\Http\Repositories\Admin\BlogRepository;
 use App\Models\Blog;
 use App\Models\BlogCategory;
 use App\Models\BlogTag;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Yajra\DataTables\Facades\DataTables;
-use Illuminate\Support\Str;
 
 class BlogController extends Controller
 {
-    public function __construct()
+    protected $blogRepo;
+
+    public function __construct(BlogRepository $blogRepo)
     {
+        $this->blogRepo = $blogRepo;
+
         $this->middleware('permission:create.blogs')->only(['create', 'store']);
         $this->middleware('permission:edit.blogs')->only(['edit', 'update']);
         $this->middleware('permission:delete.blogs')->only(['destroy']);
@@ -23,106 +27,21 @@ class BlogController extends Controller
 
     public function index(Request $request)
     {
-        $stats = [
-            'total' => Blog::count(),
-            'published' => Blog::where('status', 'published')->count(),
-            'draft' => Blog::where('status', 'draft')->count(),
-            'with_category' => Blog::whereNotNull('blog_category_id')->count(),
-        ];
-
         return Inertia::render('Admin/Blogs/Index', [
             'userRole' => $request->user()->role ?? 'admin',
-            'stats' => $stats,
+            'stats' => $this->blogRepo->getStats(),
         ]);
     }
 
     public function getData(Request $request)
     {
-        try {
-            // Base query
-            $query = Blog::query()
-                ->with(['category:id,name', 'tags:id,name,color'])
-                ->select('id', 'blog_category_id', 'title', 'slug', 'excerpt', 'status', 'thumbnail', 'created_at', 'updated_at');
-            
-            // Search
-            if ($request->filled('search')) {
-                $search = $request->search;
-                $query->where(function($q) use ($search) {
-                    $q->where('title', 'like', "%{$search}%")
-                    ->orWhere('slug', 'like', "%{$search}%")
-                    ->orWhere('content', 'like', "%{$search}%")
-                    ->orWhereHas('category', function($q) use ($search) {
-                        $q->where('name', 'like', "%{$search}%");
-                    });
-                });
-            }
-            
-            // Filters
-            if ($request->filled('status')) {
-                $query->where('status', $request->status);
-            }
-            
-            if ($request->filled('blog_category_id')) {
-                $query->where('blog_category_id', $request->blog_category_id);
-            }
-
-            // Sorting
-            $sortBy = $request->get('sortBy', 'created_at');
-            $sortOrder = $request->get('sortOrder', 'desc');
-            $query->orderBy($sortBy, $sortOrder);
-
-            // Pagination
-            $perPage = $request->get('perPage', 10);
-            $page = $request->get('page', 1);
-            
-            $blogs = $query->paginate($perPage, ['*'], 'page', $page);
-
-            // Transform data
-            $transformedData = $blogs->map(function($blog) {
-                return [
-                    'id' => $blog->id,
-                    'blog_category_id' => $blog->blog_category_id,
-                    'title' => $blog->title,
-                    'slug' => $blog->slug,
-                    'excerpt' => $blog->excerpt,
-                    'status' => $blog->status,
-                    'thumbnail' => $blog->thumbnail,
-                    'created_at' => $blog->created_at,
-                    'updated_at' => $blog->updated_at,
-                    'category' => $blog->category,
-                    'tags' => $blog->tags,
-                    'category_name' => $blog->category?->name,
-                    'tags_list' => $blog->tags->pluck('name')->toArray(),
-                ];
-            });
-
-            return response()->json([
-                'data' => $transformedData,
-                'total' => $blogs->total(),
-                'per_page' => $blogs->perPage(),
-                'current_page' => $blogs->currentPage(),
-                'last_page' => $blogs->lastPage(),
-            ]);
-
-        } catch (\Exception $e) {
-            \Log::error('Blogs getData error: ' . $e->getMessage());
-            
-            return response()->json([
-                'error' => 'Failed to load data',
-                'message' => $e->getMessage(),
-                'data' => [],
-                'total' => 0,
-            ], 500);
-        }
+        return $this->blogRepo->getAllForDataTable($request);
     }
 
     public function create()
     {
         $categories = BlogCategory::orderBy('name')->get(['id', 'name']);
-        
-        $tags = BlogTag::where('is_active', true)
-                    ->orderBy('name')
-                    ->get(['id', 'name', 'slug', 'color']);
+        $tags = BlogTag::where('is_active', true)->orderBy('name')->get(['id', 'name', 'slug', 'color']);
         
         return Inertia::render('Admin/Blogs/Create', [
             'categories' => $categories,
@@ -130,61 +49,23 @@ class BlogController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(BlogRequest $request)
     {
-        $validated = $request->validate([
-            'blog_category_id'   => 'nullable|exists:blog_categories,id',
-            'title'              => 'required|string|max:255',
-            'slug'               => 'nullable|string|max:255|unique:blogs',
-            'content'            => 'nullable|string',
-            'excerpt'            => 'nullable|string|max:500',
-            'status'             => 'nullable|in:draft,published',
-            'thumbnail'          => 'nullable|image|max:2048',
-            'meta_title'         => 'nullable|string|max:60',
-            'meta_description'   => 'nullable|string|max:160',
-            'meta_keywords'      => 'nullable|string',
-            'schema_markup'      => 'nullable|string',
-            'social_image'       => 'nullable|image|max:2048',
-            'social_description' => 'nullable|string|max:300',
-            'tags'               => 'nullable|array',
-            'tags.*'             => 'exists:blog_tags,id',
-        ]);
-
         try {
-            // Slug generate karo aur unique banao
-            if (empty($validated['slug'])) {
-                $validated['slug'] = $this->generateUniqueSlug($validated['title']);
-            }
+            $this->blogRepo->store(
+                $request->validated(),
+                $request->file('thumbnail'),
+                $request->file('social_image')
+            );
 
-            if (empty($validated['status'])) {
-                $validated['status'] = 'draft';
-            }
-
-            if ($request->hasFile('thumbnail')) {
-                $validated['thumbnail'] = $request->file('thumbnail')->store('blogs', 'public');
-            }
-
-            if ($request->hasFile('social_image')) {
-                $validated['social_image'] = $request->file('social_image')->store('blogs', 'public');
-            }
-
-            $tags = $validated['tags'] ?? [];
-            unset($validated['tags']);
-
-            $blog = Blog::create($validated);
-
-            if (!empty($tags)) {
-                $blog->tags()->attach($tags);
-            }
-
-            return to_route('admin.blogs.index')->with('success', 'Blog post successfully created!');
+            return to_route('admin.blogs.index')
+                ->with('success', 'Blog post successfully created!');
 
         } catch (\Exception $e) {
             \Log::error('Blog creation error: ' . $e->getMessage());
             return back()->withErrors(['error' => 'Failed to create blog post.']);
         }
     }
-
 
     public function show(Blog $blog)
     {
@@ -204,58 +85,18 @@ class BlogController extends Controller
         ]);
     }
 
-    public function update(Request $request, Blog $blog)
+    public function update(BlogRequest $request, Blog $blog)
     {
-        // validate() try-catch se BAHAR — field errors frontend pe aayein
-        $validated = $request->validate([
-            'blog_category_id'   => 'nullable|exists:blog_categories,id',
-            'title'              => 'required|string|max:255',
-            'slug'               => 'nullable|string|max:255|unique:blogs,slug,' . $blog->id,
-            'content'            => 'nullable|string',
-            'excerpt'            => 'nullable|string|max:500',
-            'status'             => 'nullable|in:draft,published',
-            'thumbnail'          => 'nullable|image|max:2048',
-            'meta_title'         => 'nullable|string|max:60',
-            'meta_description'   => 'nullable|string|max:160',
-            'meta_keywords'      => 'nullable|string',
-            'schema_markup'      => 'nullable|string',
-            'social_image'       => 'nullable|image|max:2048',
-            'social_description' => 'nullable|string|max:300',
-            'tags'               => 'nullable|array',
-            'tags.*'             => 'exists:blog_tags,id',
-        ]);
-
         try {
-            if ($validated['title'] !== $blog->title && empty($validated['slug'])) {
-                $validated['slug'] = $this->generateUniqueSlug($validated['title'], $blog->id);
-            }
+            $this->blogRepo->update(
+                $blog->id,
+                $request->validated(),
+                $request->file('thumbnail'),
+                $request->file('social_image')
+            );
 
-            if ($request->hasFile('thumbnail')) {
-                if ($blog->thumbnail) {
-                    \Storage::disk('public')->delete($blog->thumbnail);
-                }
-                $validated['thumbnail'] = $request->file('thumbnail')->store('blogs', 'public');
-            } else {
-                // File nahi aayi toh existing value rakho
-                unset($validated['thumbnail']);
-            }
-
-            if ($request->hasFile('social_image')) {
-                if ($blog->social_image) {
-                    \Storage::disk('public')->delete($blog->social_image);
-                }
-                $validated['social_image'] = $request->file('social_image')->store('blogs', 'public');
-            } else {
-                unset($validated['social_image']);
-            }
-
-            $tags = $validated['tags'] ?? [];
-            unset($validated['tags']);
-
-            $blog->update($validated);
-            $blog->tags()->sync($tags);
-
-            return to_route('admin.blogs.index')->with('success', 'Blog post successfully updated!');
+            return to_route('admin.blogs.index')
+                ->with('success', 'Blog post successfully updated!');
 
         } catch (\Exception $e) {
             \Log::error('Blog update error: ' . $e->getMessage());
@@ -263,51 +104,17 @@ class BlogController extends Controller
         }
     }
 
-
-
     public function destroy(Blog $blog)
     {
         try {
-            if ($blog->thumbnail) {
-                \Storage::disk('public')->delete($blog->thumbnail);
-            }
-            if ($blog->social_image) {
-                \Storage::disk('public')->delete($blog->social_image);
-            }
-
-            // Tags will be automatically detached due to cascade
-            $blog->delete();
+            $this->blogRepo->delete($blog->id);
             
-            return to_route('admin.blogs.index')->with('success', 'Blog post successfully deleted!');
+            return to_route('admin.blogs.index')
+                ->with('success', 'Blog post successfully deleted!');
+
         } catch (\Exception $e) {
             \Log::error('Blog deletion error: ' . $e->getMessage());
             return back()->with('error', 'Failed to delete blog post.');
         }
     }
-
-
-    
-    /**
-     * Unique slug generate karta hai.
-     * Agar "my-title" exist kare toh "my-title-1", "my-title-2" try karta hai.
-     */
-    private function generateUniqueSlug(string $title, ?int $excludeId = null): string
-    {
-        $baseSlug = Str::slug($title);
-        $slug     = $baseSlug;
-        $counter  = 1;
-
-        while (
-            Blog::where('slug', $slug)
-                ->when($excludeId, fn($q) => $q->where('id', '!=', $excludeId))
-                ->exists()
-        ) {
-            $slug = $baseSlug . '-' . $counter;
-            $counter++;
-        }
-
-        return $slug;
-    }
-
-    
 }
