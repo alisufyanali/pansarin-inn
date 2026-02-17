@@ -54,16 +54,22 @@ export function SettingsSections(): NavItem[] {
                 href: '/admin/settings/general',
                 icon: Settings,
             },
+             {
+                title: 'Business Settings',
+                href: '/admin/settings/business',
+                icon: Settings,
+            },
+                {
+                title: 'UI Settings',
+                href: '/admin/settings/ui',
+                icon: Settings,
+            },
             {
                 title: 'Email Templates',
                 href: '/admin/settings/email-templates',
                 icon: Mail,
             },
-            {
-                title: 'Third Party Settings',
-                href: '/admin/settings/third-party',
-                icon: Cpu,
-            },
+           
         ],
     });
 
