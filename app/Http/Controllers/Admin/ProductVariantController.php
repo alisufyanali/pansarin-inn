@@ -134,7 +134,7 @@ class ProductVariantController extends Controller
 
     ProductVariant::create($validated);
 
-    return to_route('product-variants.index')->with('success', 'Variant successfully created!');
+    return to_route('admin.product-variants.index')->with('success', 'Variant successfully created!');
 }
 
 public function update(Request $request, string $id)
@@ -158,7 +158,7 @@ public function update(Request $request, string $id)
 
     $variant->update($validated);
 
-    return to_route('product-variants.index')->with('success', 'Variant successfully updated!');
+    return to_route('admin.product-variants.index')->with('success', 'Variant successfully updated!');
 }
 
 public function edit(string $id)
@@ -202,11 +202,11 @@ public function edit(string $id)
         try {
             ProductVariant::destroy($id);
             
-            return redirect()->route('product-variants.index')
+            return redirect()->route('admin.product-variants.index')
                 ->with('success', 'Variant successfully deleted!');
                 
         } catch (\Exception $e) {
-            return redirect()->route('product-variants.index')
+            return redirect()->route('admin.product-variants.index')
                 ->with('error', 'Failed to delete variant: ' . $e->getMessage());
         }
     }

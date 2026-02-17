@@ -104,7 +104,7 @@ class UserController extends Controller
         // Assign multiple roles via Spatie
         $user->syncRoles($request->roles);
 
-        return to_route('users.index')->with('success', 'User successfully created!');
+        return to_route('admin.users.index')->with('success', 'User successfully created!');
     }
 
     // Show user details
@@ -156,7 +156,7 @@ class UserController extends Controller
         // Update roles
         $user->syncRoles($request->roles);
 
-        return to_route('users.index')->with('success', 'User successfully updated!');
+        return to_route('admin.users.index')->with('success', 'User successfully updated!');
     }
 
     // Delete user
@@ -165,6 +165,6 @@ class UserController extends Controller
         $user = User::findOrFail($id);
         $user->delete();
 
-        return to_route('users.index')->with('success', 'User successfully deleted!');
+        return to_route('admin.users.index')->with('success', 'User successfully deleted!');
     }
 }

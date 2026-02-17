@@ -171,7 +171,7 @@ public function store(Request $request)
         Inventory::create($validated);
 
         DB::commit();
-        return to_route('inventory.index')->with('success', 'Stock updated!');
+        return to_route('admin.inventory.index')->with('success', 'Stock updated!');
 
     } catch (\Exception $e) {
         DB::rollBack();
@@ -267,7 +267,7 @@ public function store(Request $request)
             $inventory->update($validated);
 
             DB::commit();
-            return to_route('inventory.index')
+            return to_route('admin.inventory.index')
                 ->with('success', 'Inventory entry successfully updated!');
 
         } catch (\Exception $e) {
@@ -285,7 +285,7 @@ public function store(Request $request)
             $inventory = Inventory::findOrFail($id);
             $inventory->delete();
             
-            return to_route('inventory.index')
+            return to_route('admin.inventory.index')
                 ->with('success', 'Inventory entry successfully deleted!');
                 
         } catch (\Exception $e) {

@@ -13,27 +13,27 @@ class CategorySeeder extends Seeder
             [
                 'name' => 'Herbals', 
                 'slug' => 'herbals', 
-                'description' => 'Natural and organic herbal products for health and wellness.'
+                'status' => true
             ],
             [
                 'name' => "Men's Fashion", 
                 'slug' => 'mens-fashion', 
-                'description' => 'Latest clothing, footwear, and styles for men.'
+                'status' => true
             ],
             [
                 'name' => "Women's Fashion", 
                 'slug' => 'womens-fashion', 
-                'description' => 'Trendy outfits, jewelry, and accessories for women.'
+                'status' => true
             ],
             [
                 'name' => 'Kids & Baby', 
                 'slug' => 'kids-baby', 
-                'description' => 'Comfortable clothing and toys for children and infants.'
+                'status' => true
             ],
             [
                 'name' => 'Beauty & Personal Care', 
                 'slug' => 'beauty-personal-care', 
-                'description' => 'Skincare, makeup, and personal grooming essentials.'
+                'status' => true
             ],
         ];
 
@@ -42,11 +42,11 @@ class CategorySeeder extends Seeder
                 ['slug' => $category['slug']], // Slug se check karega taake duplicate na ho
                 [
                     'name' => $category['name'], 
-                    'description' => $category['description']
+                    'status' => $category['status']
                 ]
             );
         }
 
-        $this->command->info('Herbals, Mens, and Womens categories seeded successfully!');
+        $this->command->info('Categories seeded successfully!');
     }
 }

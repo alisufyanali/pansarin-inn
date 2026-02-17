@@ -184,11 +184,11 @@ class CustomerController extends Controller
         try {
             Customer::destroy($id);
             
-            return redirect()->route('customers.index')
+            return redirect()->route('admin.customers.index')
                 ->with('success', 'Customer successfully deleted!');
                 
         } catch (\Exception $e) {
-            return redirect()->route('customers.index')
+            return redirect()->route('admin.customers.index')
                 ->with('error', 'Failed to delete customer: ' . $e->getMessage());
         }
     }

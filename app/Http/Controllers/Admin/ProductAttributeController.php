@@ -110,7 +110,7 @@ class ProductAttributeController extends Controller
                 ]);
             }
 
-            return redirect()->route('attributes.index')
+            return redirect()->route('admin.attributes.index')
                 ->with('success', 'Attribute created successfully');
         } catch (\Exception $e) {
             Log::error('Attribute creation failed: ' . $e->getMessage());
@@ -170,7 +170,7 @@ class ProductAttributeController extends Controller
                 ]);
             }
 
-            return redirect()->route('attributes.index')
+            return redirect()->route('admin.attributes.index')
                 ->with('success', 'Attribute updated successfully');
         } catch (\Exception $e) {
             Log::error('Attribute update failed: ' . $e->getMessage());
@@ -189,7 +189,7 @@ class ProductAttributeController extends Controller
             $attribute->values()->delete();
             $attribute->delete();
 
-            return redirect()->route('attributes.index')
+            return redirect()->route('admin.attributes.index')
                 ->with('success', 'Attribute deleted successfully');
         } catch (\Exception $e) {
             Log::error('Attribute deletion failed: ' . $e->getMessage());

@@ -145,7 +145,7 @@ class CategoryController extends Controller
 
             Category::create($validated);
 
-            return to_route('categories.index')->with('success', 'Category successfully created!');
+            return to_route('admin.categories.index')->with('success', 'Category successfully created!');
             
         } catch (\Exception $e) {
             Log::error('Category creation error: ' . $e->getMessage());
@@ -214,7 +214,7 @@ class CategoryController extends Controller
 
             $category->update($validated);
 
-            return to_route('categories.index')->with('success', 'Category successfully updated!');
+            return to_route('admin.categories.index')->with('success', 'Category successfully updated!');
             
         } catch (\Exception $e) {
             Log::error('Category update error: ' . $e->getMessage());
@@ -239,12 +239,12 @@ class CategoryController extends Controller
             
             $category->delete();
 
-            return redirect()->route('categories.index')
+            return redirect()->route('admin.categories.index')
                 ->with('success', 'Category successfully deleted!');
                 
         } catch (\Exception $e) {
             Log::error('Category deletion error: ' . $e->getMessage());
-            return redirect()->route('categories.index')
+            return redirect()->route('admin.categories.index')
                 ->with('error', 'Failed to delete category.');
         }
     }

@@ -221,7 +221,7 @@ class ProductController extends Controller
 
             Product::create($validated);
 
-            return to_route('products.index')->with('success', 'Product successfully created!');
+            return to_route('admin.products.index')->with('success', 'Product successfully created!');
 
         } catch (\Illuminate\Validation\ValidationException $e) {
             return back()
@@ -358,7 +358,7 @@ class ProductController extends Controller
 
             $product->update($validated);
 
-            return to_route('products.index')->with('success', 'Product successfully updated!');
+            return to_route('admin.products.index')->with('success', 'Product successfully updated!');
 
         } catch (\Illuminate\Validation\ValidationException $e) {
             return back()
@@ -393,7 +393,7 @@ class ProductController extends Controller
             
             $product->delete();
             
-            return to_route('products.index')->with('success', 'Product successfully deleted!');
+            return to_route('admin.products.index')->with('success', 'Product successfully deleted!');
 
         } catch (\Exception $e) {
             Log::error('Product deletion error: ' . $e->getMessage());

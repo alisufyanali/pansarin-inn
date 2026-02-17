@@ -11,11 +11,11 @@ use Yajra\DataTables\Facades\DataTables;
 class BlogCategoryController extends Controller
 {
     public function __construct()
-{
-    $this->middleware('permission:create.blog-categories')->only(['create', 'store']);
-    $this->middleware('permission:edit.blog-categories')->only(['edit', 'update']);
-    $this->middleware('permission:delete.blog-categories')->only(['destroy']);
-}
+    {
+        $this->middleware('permission:create.blog-categories')->only(['create', 'store']);
+        $this->middleware('permission:edit.blog-categories')->only(['edit', 'update']);
+        $this->middleware('permission:delete.blog-categories')->only(['destroy']);
+    }
 
     /**
      * Display a listing of the resource.

@@ -105,7 +105,7 @@ class NewsletterController extends Controller
 
         Newsletter::create($validated);
 
-        return redirect()->route('newsletters.index')
+        return redirect()->route('admin.newsletters.index')
             ->with('success', 'Newsletter subscriber successfully created!');
     }
 
@@ -133,7 +133,7 @@ class NewsletterController extends Controller
 
         $newsletter->update($validated);
 
-        return redirect()->route('newsletters.index')
+        return redirect()->route('admin.newsletters.index')
             ->with('success', 'Newsletter subscriber successfully updated!');
     }
 
@@ -144,7 +144,7 @@ class NewsletterController extends Controller
     {
         $newsletter->delete();
         
-        return redirect()->route('newsletters.index')
+        return redirect()->route('admin.newsletters.index')
             ->with('success', 'Newsletter subscriber successfully deleted!');
     }
 }

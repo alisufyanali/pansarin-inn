@@ -330,11 +330,11 @@ class OrderController extends Controller
         try {
             Order::destroy($id);
             
-            return redirect()->route('orders.index')
+            return redirect()->route('admin.orders.index')
                 ->with('success', 'Order successfully deleted!');
                 
         } catch (\Exception $e) {
-            return redirect()->route('orders.index')
+            return redirect()->route('admin.orders.index')
                 ->with('error', 'Failed to delete order: ' . $e->getMessage());
         }
     }

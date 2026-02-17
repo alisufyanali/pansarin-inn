@@ -13,31 +13,36 @@ class CustomerSeeder extends Seeder
     {
         $customers = [
             [
-                'name' => 'Nazar Khan',
+                'first_name' => 'Nazar',
+                'last_name' => 'Khan',
                 'email' => 'nazar@gmail.com',
                 'phone' => '03001234567',
                 'address' => 'House #12, Street 5, Blue Area, Islamabad',
             ],
             [
-                'name' => 'Zeeshan Ahmed',
+                'first_name' => 'Zeeshan',
+                'last_name' => 'Ahmed',
                 'email' => 'zeeshan@example.com',
                 'phone' => '03119876543',
                 'address' => 'Flat 402, Al-Aziz Heights, Gulshan-e-Iqbal, Karachi',
             ],
             [
-                'name' => 'Sara Pervez',
+                'first_name' => 'Sara',
+                'last_name' => 'Pervez',
                 'email' => 'sara.p@gmail.com',
                 'phone' => '03225554433',
                 'address' => 'Villa 88, Phase 6, DHA, Lahore',
             ],
             [
-                'name' => 'Usman Ali',
+                'first_name' => 'Usman',
+                'last_name' => 'Ali',
                 'email' => 'usman.ali@yahoo.com',
                 'phone' => '03451122334',
                 'address' => 'Shop #4, Main Market, Saddar, Rawalpindi',
             ],
             [
-                'name' => 'Ayesha Malik',
+                'first_name' => 'Ayesha',
+                'last_name' => 'Malik',
                 'email' => 'ayesha.m@outlook.com',
                 'phone' => '03337788990',
                 'address' => 'Bungalow 15-B, Model Town, Faisalabad',
@@ -48,18 +53,16 @@ class CustomerSeeder extends Seeder
             Customer::updateOrCreate(
                 ['email' => $customer['email']], // Email check karega taake duplicate na ho
                 [
-                    'name' => $customer['name'],
-                    'password' => Hash::make('password123'), // Default password for all
+                    'first_name' => $customer['first_name'],
+                    'last_name' => $customer['last_name'],
                     'phone' => $customer['phone'],
                     'address' => $customer['address'],
-                    'api_token' => Str::random(60),
-                    'status' => true,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]
             );
         }
 
-        $this->command->info('5  Customers added successfully!');
+        $this->command->info('5 Customers added successfully!');
     }
 }

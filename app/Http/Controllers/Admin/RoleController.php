@@ -144,7 +144,7 @@ class RoleController extends Controller
         $role = Role::create(['name' => $request->name]);
         $role->syncPermissions($request->permission);
         
-        return to_route('roles.index')->with('success', 'Role created successfully.');
+        return to_route('admin.roles.index')->with('success', 'Role created successfully.');
     }
 
     /**
@@ -189,7 +189,7 @@ class RoleController extends Controller
         $role->save();
         $role->syncPermissions($request->permission);
         
-        return to_route('roles.index')->with('success', 'Role updated successfully.');
+        return to_route('admin.roles.index')->with('success', 'Role updated successfully.');
     }
 
     /**
@@ -200,6 +200,6 @@ class RoleController extends Controller
         $role = Role::findOrFail($id);
         $role->delete();
         
-        return to_route('roles.index')->with('success', 'Role deleted successfully.');
+        return to_route('admin.roles.index')->with('success', 'Role deleted successfully.');
     }
 }

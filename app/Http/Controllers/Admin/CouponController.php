@@ -211,11 +211,11 @@ class CouponController extends Controller
         try {
             Coupon::destroy($id);
             
-            return redirect()->route('coupons.index')
+            return redirect()->route('admin.coupons.index')
                 ->with('success', 'Coupon successfully deleted!');
                 
         } catch (\Exception $e) {
-            return redirect()->route('coupons.index')
+            return redirect()->route('admin.coupons.index')
                 ->with('error', 'Failed to delete coupon: ' . $e->getMessage());
         }
     }
