@@ -8,7 +8,19 @@ class Category extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name','slug','image','parent_id','status'];
+    protected $fillable = [
+        'name',
+        'slug',
+        'image',
+        'parent_id',
+        'status',
+        'meta_title',
+        'meta_description',
+        'meta_keywords',
+        'schema_markup',
+        'social_image',
+        'social_description',
+    ];
 
     public function parent()
     {

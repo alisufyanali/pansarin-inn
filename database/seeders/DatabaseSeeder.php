@@ -16,12 +16,17 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RolePermissionSeeder::class,
             AttributeSeeder::class,
-            CitySeeder::class,
-            OrderSeeder::class,
-            UiSettingSeeder::class,
-            GeneralSettingSeeder::class,
             BusinessSettingSeeder::class,
+            CategorySeeder::class,
+            CitySeeder::class,
+            ContactSeeder::class,
+            CustomerSeeder::class,
+            GeneralSettingSeeder::class,
+            ProductsSeeder::class,
+            OrderSeeder::class,
             SaleSeeder::class,
+            
+            UiSettingSeeder::class,
             WhatsAppMediaSeeder::class,
             WhatsAppSeeder::class
 

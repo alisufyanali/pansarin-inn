@@ -123,6 +123,12 @@ class CategoryController extends Controller
                 'parent_id' => 'nullable|exists:categories,id',
                 'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
                 'status' => 'boolean',
+                'meta_title' => 'nullable|string|max:60',
+                'meta_description' => 'nullable|string',
+                'meta_keywords' => 'nullable|string',
+                'schema_markup' => 'nullable|string',
+                'social_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'social_description' => 'nullable|string',
             ]);
 
             $validated['slug'] = str()->slug($validated['name']);
@@ -130,6 +136,11 @@ class CategoryController extends Controller
             // Handle image upload
             if ($request->hasFile('image')) {
                 $validated['image'] = $request->file('image')->store('categories', 'public');
+            }
+
+            // Handle social image upload
+            if ($request->hasFile('social_image')) {
+                $validated['social_image'] = $request->file('social_image')->store('categories/social', 'public');
             }
 
             Category::create($validated);
@@ -171,6 +182,12 @@ class CategoryController extends Controller
                 'parent_id' => 'nullable|exists:categories,id',
                 'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
                 'status' => 'boolean',
+                'meta_title' => 'nullable|string|max:60',
+                'meta_description' => 'nullable|string',
+                'meta_keywords' => 'nullable|string',
+                'schema_markup' => 'nullable|string',
+                'social_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'social_description' => 'nullable|string',
             ]);
 
             if ($validated['name'] !== $category->name) {
@@ -184,6 +201,15 @@ class CategoryController extends Controller
                     Storage::disk('public')->delete($category->image);
                 }
                 $validated['image'] = $request->file('image')->store('categories', 'public');
+            }
+
+            // Handle social image upload
+            if ($request->hasFile('social_image')) {
+                // Delete old social image
+                if ($category->social_image) {
+                    Storage::disk('public')->delete($category->social_image);
+                }
+                $validated['social_image'] = $request->file('social_image')->store('categories/social', 'public');
             }
 
             $category->update($validated);
@@ -204,6 +230,11 @@ class CategoryController extends Controller
             // Delete image
             if ($category->image) {
                 Storage::disk('public')->delete($category->image);
+            }
+            
+            // Delete social image
+            if ($category->social_image) {
+                Storage::disk('public')->delete($category->social_image);
             }
             
             $category->delete();
