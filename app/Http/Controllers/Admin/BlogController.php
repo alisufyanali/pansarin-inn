@@ -206,27 +206,28 @@ class BlogController extends Controller
 
     public function update(Request $request, Blog $blog)
     {
-        try {
-            $validated = $request->validate([
-                'blog_category_id' => 'nullable|exists:blog_categories,id',
-                'title' => 'required|string|max:255',
-                'slug' => 'nullable|string|max:255|unique:blogs,slug,' . $blog->id,
-                'content' => 'nullable|string',
-                'excerpt' => 'nullable|string|max:500',
-                'status' => 'nullable|in:draft,published',
-                'thumbnail' => 'nullable|image|max:2048',
-                'meta_title' => 'nullable|string|max:60',
-                'meta_description' => 'nullable|string|max:160',
-                'meta_keywords' => 'nullable|string',
-                'schema_markup' => 'nullable|string',
-                'social_image' => 'nullable|image|max:2048',
-                'social_description' => 'nullable|string|max:300',
-                'tags' => 'nullable|array',
-                'tags.*' => 'exists:blog_tags,id',
-            ]);
+        // validate() try-catch se BAHAR — field errors frontend pe aayein
+        $validated = $request->validate([
+            'blog_category_id'   => 'nullable|exists:blog_categories,id',
+            'title'              => 'required|string|max:255',
+            'slug'               => 'nullable|string|max:255|unique:blogs,slug,' . $blog->id,
+            'content'            => 'nullable|string',
+            'excerpt'            => 'nullable|string|max:500',
+            'status'             => 'nullable|in:draft,published',
+            'thumbnail'          => 'nullable|image|max:2048',
+            'meta_title'         => 'nullable|string|max:60',
+            'meta_description'   => 'nullable|string|max:160',
+            'meta_keywords'      => 'nullable|string',
+            'schema_markup'      => 'nullable|string',
+            'social_image'       => 'nullable|image|max:2048',
+            'social_description' => 'nullable|string|max:300',
+            'tags'               => 'nullable|array',
+            'tags.*'             => 'exists:blog_tags,id',
+        ]);
 
+        try {
             if ($validated['title'] !== $blog->title && empty($validated['slug'])) {
-                $validated['slug'] = Str::slug($validated['title']);
+                $validated['slug'] = $this->generateUniqueSlug($validated['title'], $blog->id);
             }
 
             if ($request->hasFile('thumbnail')) {
@@ -234,6 +235,9 @@ class BlogController extends Controller
                     \Storage::disk('public')->delete($blog->thumbnail);
                 }
                 $validated['thumbnail'] = $request->file('thumbnail')->store('blogs', 'public');
+            } else {
+                // File nahi aayi toh existing value rakho
+                unset($validated['thumbnail']);
             }
 
             if ($request->hasFile('social_image')) {
@@ -241,23 +245,25 @@ class BlogController extends Controller
                     \Storage::disk('public')->delete($blog->social_image);
                 }
                 $validated['social_image'] = $request->file('social_image')->store('blogs', 'public');
+            } else {
+                unset($validated['social_image']);
             }
 
-            // Extract tags before updating blog
             $tags = $validated['tags'] ?? [];
             unset($validated['tags']);
 
             $blog->update($validated);
-
-            // Sync tags
             $blog->tags()->sync($tags);
 
             return to_route('admin.blogs.index')->with('success', 'Blog post successfully updated!');
+
         } catch (\Exception $e) {
             \Log::error('Blog update error: ' . $e->getMessage());
             return back()->withErrors(['error' => 'Failed to update blog post.']);
         }
     }
+
+
 
     public function destroy(Blog $blog)
     {
@@ -285,13 +291,17 @@ class BlogController extends Controller
      * Unique slug generate karta hai.
      * Agar "my-title" exist kare toh "my-title-1", "my-title-2" try karta hai.
      */
-    private function generateUniqueSlug(string $title): string
+    private function generateUniqueSlug(string $title, ?int $excludeId = null): string
     {
         $baseSlug = Str::slug($title);
         $slug     = $baseSlug;
         $counter  = 1;
 
-        while (Blog::where('slug', $slug)->exists()) {
+        while (
+            Blog::where('slug', $slug)
+                ->when($excludeId, fn($q) => $q->where('id', '!=', $excludeId))
+                ->exists()
+        ) {
             $slug = $baseSlug . '-' . $counter;
             $counter++;
         }

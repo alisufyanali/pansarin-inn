@@ -127,7 +127,7 @@ class BlogCategoryController extends Controller
 
             BlogCategory::create($validated);
 
-            return to_route('blogcategories.index')->with('success', 'Blog category successfully created!');
+            return to_route('admin.blogcategories.index')->with('success', 'Blog category successfully created!');
         } catch (\Exception $e) {
             \Log::error('Blog category creation error: ' . $e->getMessage());
             return back()->withErrors(['error' => 'Failed to create blog category.']);
@@ -189,7 +189,7 @@ class BlogCategoryController extends Controller
 
             $blogcategory->update($validated);
 
-            return to_route('blogcategories.index')->with('success', 'Blog category successfully updated!');
+            return to_route('admin.blogcategories.index')->with('success', 'Blog category successfully updated!');
         } catch (\Exception $e) {
             \Log::error('Blog category update error: ' . $e->getMessage());
             return back()->withErrors(['error' => 'Failed to update blog category.']);
@@ -209,7 +209,7 @@ class BlogCategoryController extends Controller
 
             $blogcategory->delete();
             
-            return to_route('blogcategories.index')->with('success', 'Blog category successfully deleted!');
+            return to_route('admin.blogcategories.index')->with('success', 'Blog category successfully deleted!');
         } catch (\Exception $e) {
             \Log::error('Blog category deletion error: ' . $e->getMessage());
             return back()->with('error', 'Failed to delete blog category.');

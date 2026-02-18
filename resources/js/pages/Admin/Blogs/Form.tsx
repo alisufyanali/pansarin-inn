@@ -65,7 +65,7 @@ export default function BlogForm({
         initialData?.tags?.map((t: BlogTag) => t.id) ?? [],
     );
 
-    const { data, setData, errors, post, processing } = useForm<BlogFormData>({
+    const { data, setData, errors, post, put, processing } = useForm<BlogFormData>({
         blog_category_id: initialData?.blog_category_id || null,
         title: initialData?.title || '',
         slug: initialData?.slug || '',
@@ -113,7 +113,9 @@ export default function BlogForm({
     const submit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (isEdit && initialData?.id) {
-            post(`/admin/blogs/${initialData.id}`, { forceFormData: true, method: 'put' as any });
+            post(`/admin/blogs/${initialData.id}`, {  // POST to /admin/blogs/{id}
+                forceFormData: true,
+            });
         } else {
             post('/admin/blogs', { forceFormData: true });
         }
@@ -357,11 +359,10 @@ export default function BlogForm({
                                         key={tag.id}
                                         type="button"
                                         onClick={() => toggleTag(tag.id)}
-                                        className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                                            selectedTags.includes(tag.id)
-                                                ? 'bg-blue-100 text-blue-700 border border-blue-200 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-700'
-                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-                                        }`}
+                                        className={`px-3 py-1 rounded-full text-sm transition-colors ${selectedTags.includes(tag.id)
+                                            ? 'bg-blue-100 text-blue-700 border border-blue-200 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-700'
+                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                                            }`}
                                     >
                                         {tag.name}
                                     </button>

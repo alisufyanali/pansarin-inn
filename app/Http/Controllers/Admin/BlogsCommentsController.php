@@ -162,7 +162,7 @@ class BlogsCommentsController extends Controller
 
         BlogComments::create($validated);
 
-        return to_route('blogscomments.index') // FIXED - lowercase
+        return to_route('admin.blogscomments.index') // FIXED - lowercase
             ->with('success', 'Comment successfully created!');
 
     } catch (\Exception $e) {
@@ -217,7 +217,7 @@ class BlogsCommentsController extends Controller
 
         $blogsComment->update($validated);
 
-        return to_route('blogscomments.index') // FIXED - lowercase
+        return to_route('admin.blogscomments.index') // FIXED - lowercase
             ->with('success', 'Comment successfully updated!');
 
     } catch (\Exception $e) {
@@ -233,7 +233,7 @@ class BlogsCommentsController extends Controller
     try {
         $blogsComment->delete();
         
-        return to_route('blogscomments.index') // FIXED - lowercase
+        return to_route('admin.blogscomments.index') // FIXED - lowercase
             ->with('success', 'Comment successfully deleted!');
 
     } catch (\Exception $e) {

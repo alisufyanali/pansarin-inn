@@ -17,6 +17,11 @@ interface BlogCommentFormProps {
     selectedBlogId?: number | null;
 }
 
+function FieldError({ message }: { message?: string }) {
+    if (!message) return null;
+    return <p className="text-red-500 dark:text-red-400 text-sm mt-1">{message}</p>;
+}
+
 export default function Form({
     initialData,
     isEdit = false,
@@ -25,7 +30,6 @@ export default function Form({
 }: BlogCommentFormProps) {
     const [hoveredStar, setHoveredStar] = useState<number | null>(null);
 
-    // Get blog_id from URL if provided
     const urlParams = new URLSearchParams(window.location.search);
     const blogIdFromUrl = urlParams.get('blog_id');
 
@@ -39,7 +43,6 @@ export default function Form({
 
     function submit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
-
         if (isEdit && initialData?.id) {
             put(`/admin/blogscomments/${initialData.id}`);
         } else {
@@ -49,33 +52,27 @@ export default function Form({
 
     const getStatusColor = (status: string) => {
         switch (status) {
-            case 'approved':
-                return 'bg-green-100 text-green-800 border-green-200';
-            case 'pending':
-                return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-            case 'rejected':
-                return 'bg-red-100 text-red-800 border-red-200';
-            default:
-                return '';
+            case 'approved': return 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/40 dark:text-green-300 dark:border-green-700';
+            case 'pending':  return 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/40 dark:text-yellow-300 dark:border-yellow-700';
+            case 'rejected': return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/40 dark:text-red-300 dark:border-red-700';
+            default: return '';
         }
     };
 
-    const handleStarClick = (rating: number) => {
-        setData('rating', rating);
-    };
-
-    const handleStarHover = (rating: number) => {
-        setHoveredStar(rating);
-    };
-
-    const handleStarLeave = () => {
-        setHoveredStar(null);
-    };
-
     const displayRating = hoveredStar || data.rating || 0;
-
-    // Get selected blog details
     const selectedBlog = blogs.find((blog) => blog.id === data.blog_id);
+
+    const inputClass = (hasError?: string) =>
+        `w-full px-3 py-2 border rounded-lg bg-white text-gray-900 placeholder-gray-400
+        dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500
+        focus:outline-none focus:ring-2 transition-colors
+        ${hasError
+            ? 'border-red-400 dark:border-red-500 focus:ring-red-400'
+            : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500 dark:focus:ring-blue-400'
+        }`;
+
+    const cardClass = 'bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6';
+    const labelClass = 'block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300';
 
     return (
         <div className="p-4 max-w-6xl mx-auto">
@@ -83,35 +80,42 @@ export default function Form({
             <div className="flex items-center gap-3 mb-6">
                 <Link
                     href="/admin/blogscomments"
-                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 dark:text-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors"
                 >
                     <ArrowLeft className="w-4 h-4" />
                     Back
                 </Link>
-                <h1 className="text-2xl font-bold">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                     {isEdit ? 'Edit Comment' : 'New Comment'}
                 </h1>
             </div>
 
+            {/* Global error */}
+            {(errors as any).error && (
+                <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 dark:bg-red-900/30 dark:border-red-700 dark:text-red-400">
+                    {(errors as any).error}
+                </div>
+            )}
+
             <form onSubmit={submit} className="space-y-6">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Left Column - Main Content */}
+                    {/* Left Column */}
                     <div className="lg:col-span-2 space-y-6">
                         {/* Blog Selection */}
-                        <div className="bg-white rounded-lg border p-6">
+                        <div className={cardClass}>
                             <div className="flex items-center gap-2 mb-4">
-                                <BookOpen className="w-5 h-5 text-gray-600" />
-                                <h3 className="font-semibold text-lg">Blog Selection</h3>
+                                <BookOpen className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                                <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100">Blog Selection</h3>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium mb-1">
+                                <label className={labelClass}>
                                     Select Blog <span className="text-red-500">*</span>
                                 </label>
                                 <select
                                     value={data.blog_id || ''}
                                     onChange={(e) => setData('blog_id', e.target.value ? Number(e.target.value) : null)}
-                                    className="w-full px-3 py-2 border rounded-lg"
+                                    className={inputClass(errors.blog_id)}
                                     required
                                 >
                                     <option value="">-- Choose a blog --</option>
@@ -121,11 +125,11 @@ export default function Form({
                                         </option>
                                     ))}
                                 </select>
-                                {errors.blog_id && <p className="text-red-500 text-sm mt-1">{errors.blog_id}</p>}
+                                <FieldError message={errors.blog_id} />
 
                                 {selectedBlog && (
-                                    <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                                        <p className="text-sm text-blue-800">
+                                    <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-900/20 dark:border-blue-700">
+                                        <p className="text-sm text-blue-800 dark:text-blue-300">
                                             <span className="font-medium">Selected:</span> {selectedBlog.title}
                                         </p>
                                     </div>
@@ -134,133 +138,152 @@ export default function Form({
                         </div>
 
                         {/* Comment */}
-                        <div className="bg-white rounded-lg border p-6">
+                        <div className={cardClass}>
                             <div className="flex items-center gap-2 mb-4">
-                                <MessageSquare className="w-5 h-5 text-gray-600" />
-                                <h3 className="font-semibold text-lg">Comment</h3>
+                                <MessageSquare className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                                <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100">Comment</h3>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium mb-1">
+                                <label className={labelClass}>
                                     Comment <span className="text-red-500">*</span>
                                 </label>
                                 <textarea
                                     value={data.comments}
                                     onChange={(e) => setData('comments', e.target.value)}
                                     placeholder="Write your comment here..."
-                                    className="w-full px-3 py-2 border rounded-lg min-h-[120px]"
+                                    className={inputClass(errors.comments) + ' min-h-[120px]'}
                                     required
                                 />
                                 <div className="flex justify-between items-center mt-2">
-                                    {errors.comments && <p className="text-red-500 text-sm">{errors.comments}</p>}
-                                    <span className="text-xs text-gray-500">
-                                        {data.comments.length}/1000 characters
+                                    <FieldError message={errors.comments} />
+                                    <span className="text-xs text-gray-500 dark:text-gray-400 ml-auto">
+                                        {data.comments.length}/1000
                                     </span>
                                 </div>
                             </div>
                         </div>
 
                         {/* Review & Rating */}
-                        <div className="bg-white rounded-lg border p-6">
+                        <div className={cardClass}>
                             <div className="flex items-center gap-2 mb-4">
-                                <Star className="w-5 h-5 text-gray-600" />
-                                <h3 className="font-semibold text-lg">Review & Rating</h3>
+                                <Star className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                                <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100">Review & Rating</h3>
                             </div>
 
                             <div className="space-y-4">
                                 <div>
-                                    <label className="block text-sm font-medium mb-1">Detailed Review (Optional)</label>
+                                    <label className={labelClass}>
+                                        Detailed Review{' '}
+                                        <span className="text-xs text-gray-400 dark:text-gray-500">(optional)</span>
+                                    </label>
                                     <textarea
                                         value={data.review || ''}
                                         onChange={(e) => setData('review', e.target.value)}
                                         placeholder="Write a detailed review..."
-                                        className="w-full px-3 py-2 border rounded-lg min-h-[100px]"
+                                        className={inputClass(errors.review) + ' min-h-[100px]'}
                                     />
-                                    {data.review && (
-                                        <span className="text-xs text-gray-500 mt-1 block">
-                                            {data.review.length}/2000 characters
-                                        </span>
-                                    )}
+                                    <div className="flex justify-between items-center mt-1">
+                                        <FieldError message={errors.review} />
+                                        {data.review && (
+                                            <span className="text-xs text-gray-500 dark:text-gray-400 ml-auto">
+                                                {data.review.length}/2000
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
 
+                                {/* Star Rating */}
                                 <div>
-                                    <label className="block text-sm font-medium mb-1">Rating (Optional)</label>
+                                    <label className={labelClass}>
+                                        Rating{' '}
+                                        <span className="text-xs text-gray-400 dark:text-gray-500">(optional)</span>
+                                    </label>
                                     <div className="flex items-center gap-1">
                                         {[1, 2, 3, 4, 5].map((star) => (
                                             <button
                                                 key={star}
                                                 type="button"
-                                                onClick={() => handleStarClick(star)}
-                                                onMouseEnter={() => handleStarHover(star)}
-                                                onMouseLeave={handleStarLeave}
+                                                onClick={() => setData('rating', star)}
+                                                onMouseEnter={() => setHoveredStar(star)}
+                                                onMouseLeave={() => setHoveredStar(null)}
                                                 className="focus:outline-none"
                                             >
                                                 <Star
-                                                    className={`w-7 h-7 ${
+                                                    className={`w-7 h-7 transition-colors ${
                                                         star <= displayRating
                                                             ? 'fill-yellow-400 text-yellow-400'
-                                                            : 'text-gray-300'
+                                                            : 'text-gray-300 dark:text-gray-600'
                                                     }`}
                                                 />
                                             </button>
                                         ))}
                                         {data.rating && (
-                                            <span className="ml-2 text-sm text-gray-600">
+                                            <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
                                                 ({data.rating}/5)
                                             </span>
                                         )}
+                                        {data.rating && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setData('rating', null)}
+                                                className="ml-2 text-xs text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400"
+                                            >
+                                                Clear
+                                            </button>
+                                        )}
                                     </div>
+                                    <FieldError message={errors.rating} />
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Right Column - Sidebar */}
+                    {/* Right Column */}
                     <div className="space-y-6">
                         {/* Status */}
-                        <div className="bg-white rounded-lg border p-6">
+                        <div className={cardClass}>
                             <div className="flex items-center gap-2 mb-4">
-                                <Check className="w-5 h-5 text-gray-600" />
-                                <h3 className="font-semibold text-lg">Status</h3>
+                                <Check className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                                <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100">Status</h3>
                             </div>
 
                             <div className="space-y-4">
                                 <div>
-                                    <label className="block text-sm font-medium mb-1">Approval Status</label>
+                                    <label className={labelClass}>Approval Status</label>
                                     <select
                                         value={data.status}
                                         onChange={(e) => setData('status', e.target.value as 'pending' | 'approved' | 'rejected')}
-                                        className="w-full px-3 py-2 border rounded-lg"
+                                        className={inputClass(errors.status)}
                                     >
                                         <option value="pending">Pending</option>
                                         <option value="approved">Approved</option>
                                         <option value="rejected">Rejected</option>
                                     </select>
+                                    <FieldError message={errors.status} />
                                 </div>
 
-                                <div>
-                                    <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(data.status)}`}>
-                                        {data.status.charAt(0).toUpperCase() + data.status.slice(1)}
-                                    </span>
-                                </div>
+                                <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(data.status)}`}>
+                                    {data.status.charAt(0).toUpperCase() + data.status.slice(1)}
+                                </span>
                             </div>
                         </div>
 
-                        {/* Action Buttons */}
-                        <div className="bg-white rounded-lg border p-6">
+                        {/* Actions */}
+                        <div className={cardClass}>
                             <div className="space-y-3">
                                 <button
                                     type="submit"
                                     disabled={processing}
-                                    className="w-full bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                                    className="w-full bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors"
                                 >
                                     <Save className="w-4 h-4" />
-                                    {processing ? 'Saving...' : (isEdit ? 'Update Comment' : 'Create Comment')}
+                                    {processing ? 'Saving...' : isEdit ? 'Update Comment' : 'Create Comment'}
                                 </button>
-                                
+
                                 <Link
                                     href="/admin/blogscomments"
-                                    className="block w-full text-center border py-2.5 rounded-lg hover:bg-gray-50"
+                                    className="block w-full text-center border border-gray-300 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
                                 >
                                     Cancel
                                 </Link>

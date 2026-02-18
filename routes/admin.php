@@ -106,8 +106,11 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::resource('blogcategories', BlogCategoryController::class);
     Route::get('blogcategories-data', [BlogCategoryController::class, 'getData'])->name('blogcategories.data');
 
+    Route::post('blogs/{blog}', [BlogController::class, 'update'])->middleware('permission:edit.blogs');
     Route::resource('blogs', BlogController::class);
     Route::get('blogs-data', [BlogController::class, 'getData'])->name('blogs.data');
+    Route::post('blogs/{blog}/update', [BlogController::class, 'update']);
+
 
     //Blogs Comments Routes
     Route::resource('blogscomments', BlogsCommentsController::class);
