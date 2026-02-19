@@ -1,6 +1,9 @@
 import { Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, Save, MessageSquare, Star, Check, BookOpen } from 'lucide-react';
+import { Save, MessageSquare, Star, Check, BookOpen } from 'lucide-react';
 import React, { useState } from 'react';
+import FieldError from '@/components/FieldError';
+import PageHeader from '@/components/PageHeader';
+import { inputClass, cardClass, labelClass, buttonPrimaryClass, buttonSecondaryClass } from '@/utils/formStyles';
 
 export type BlogCommentFormData = {
     blog_id?: number | null;
@@ -15,11 +18,6 @@ interface BlogCommentFormProps {
     isEdit?: boolean;
     blogs?: { id: number; title: string }[];
     selectedBlogId?: number | null;
-}
-
-function FieldError({ message }: { message?: string }) {
-    if (!message) return null;
-    return <p className="text-red-500 dark:text-red-400 text-sm mt-1">{message}</p>;
 }
 
 export default function Form({
@@ -62,33 +60,12 @@ export default function Form({
     const displayRating = hoveredStar || data.rating || 0;
     const selectedBlog = blogs.find((blog) => blog.id === data.blog_id);
 
-    const inputClass = (hasError?: string) =>
-        `w-full px-3 py-2 border rounded-lg bg-white text-gray-900 placeholder-gray-400
-        dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500
-        focus:outline-none focus:ring-2 transition-colors
-        ${hasError
-            ? 'border-red-400 dark:border-red-500 focus:ring-red-400'
-            : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500 dark:focus:ring-blue-400'
-        }`;
-
-    const cardClass = 'bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6';
-    const labelClass = 'block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300';
-
     return (
         <div className="p-4 max-w-6xl mx-auto">
-            {/* Header */}
-            <div className="flex items-center gap-3 mb-6">
-                <Link
-                    href="/admin/blogscomments"
-                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 dark:text-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors"
-                >
-                    <ArrowLeft className="w-4 h-4" />
-                    Back
-                </Link>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                    {isEdit ? 'Edit Comment' : 'New Comment'}
-                </h1>
-            </div>
+            <PageHeader
+                title={isEdit ? 'Edit Comment' : 'New Comment'}
+                backUrl="/admin/blogscomments"
+            />
 
             {/* Global error */}
             {(errors as any).error && (
@@ -272,19 +249,11 @@ export default function Form({
                         {/* Actions */}
                         <div className={cardClass}>
                             <div className="space-y-3">
-                                <button
-                                    type="submit"
-                                    disabled={processing}
-                                    className="w-full bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors"
-                                >
+                                <button type="submit" disabled={processing} className={buttonPrimaryClass}>
                                     <Save className="w-4 h-4" />
                                     {processing ? 'Saving...' : isEdit ? 'Update Comment' : 'Create Comment'}
                                 </button>
-
-                                <Link
-                                    href="/admin/blogscomments"
-                                    className="block w-full text-center border border-gray-300 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
-                                >
+                                <Link href="/admin/blogscomments" className={buttonSecondaryClass}>
                                     Cancel
                                 </Link>
                             </div>

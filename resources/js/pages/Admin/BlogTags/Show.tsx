@@ -31,29 +31,29 @@ interface BlogTag {
 }
 
 interface Props {
-  tag: BlogTag;
+  blogTag: BlogTag;
 }
 
-export default function Show({ tag }: Props) {
+export default function Show({ blogTag }: Props) {
   const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Blog Tags', href: '/admin/blogtags' },
-    { title: tag.name, href: '#' },
+    { title: blogTag.name, href: '#' },
   ];
 
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
-      <Head title={tag.name} />
+      <Head title={blogTag.name} />
 
       <div className="p-3">
         <PageHeader
           title={
             <div className="flex items-center gap-3">
-              <span className="h-4 w-4 rounded-full" style={{ backgroundColor: tag.color }}></span>
-              <span>{tag.name}</span>
+              <span className="h-4 w-4 rounded-full" style={{ backgroundColor: blogTag.color }}></span>
+              <span>{blogTag.name}</span>
             </div>
           }
           backUrl="/admin/blogtags"
-          actions={<ActionButton href={`/admin/blogtags/${tag.id}/edit`} icon={Edit2} label="Edit Tag" />}
+          actions={<ActionButton href={`/admin/blogtags/${blogTag.id}/edit`} icon={Edit2} label="Edit Tag" />}
         />
 
         <div className="mx-auto max-w-5xl">
@@ -61,29 +61,29 @@ export default function Show({ tag }: Props) {
             <div className="space-y-6 lg:col-span-2">
               <SectionCard title="Tag Information" icon={Tag}>
                 <div className="space-y-4">
-                  <InfoRow label="Name" value={tag.name} />
-                  <InfoRow label="Slug" value={tag.slug} mono />
-                  {tag.description && <InfoRow label="Description" value={tag.description} multiline />}
+                  <InfoRow label="Name" value={blogTag.name} />
+                  <InfoRow label="Slug" value={blogTag.slug} mono />
+                  {blogTag.description && <InfoRow label="Description" value={blogTag.description} multiline />}
                   <div>
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Color Preview</p>
                     <div className="flex items-center gap-3">
-                      <div className="h-12 w-12 rounded-lg border-2 border-gray-200 dark:border-gray-700" style={{ backgroundColor: tag.color }}></div>
+                      <div className="h-12 w-12 rounded-lg border-2 border-gray-200 dark:border-gray-700" style={{ backgroundColor: blogTag.color }}></div>
                       <div>
-                        <span className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium text-white" style={{ backgroundColor: tag.color }}>
+                        <span className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium text-white" style={{ backgroundColor: blogTag.color }}>
                           <span className="h-2 w-2 rounded-full bg-white"></span>
-                          {tag.name}
+                          {blogTag.name}
                         </span>
-                        <p className="mt-1 text-xs text-gray-500">{tag.color}</p>
+                        <p className="mt-1 text-xs text-gray-500">{blogTag.color}</p>
                       </div>
                     </div>
                   </div>
                 </div>
               </SectionCard>
 
-              {tag.blogs && tag.blogs.length > 0 && (
-                <SectionCard title={`Associated Blog Posts (${tag.blogs.length})`} icon={FileText}>
+              {blogTag.blogs && blogTag.blogs.length > 0 && (
+                <SectionCard title={`Associated Blog Posts (${blogTag.blogs.length})`} icon={FileText}>
                   <div className="space-y-3">
-                    {tag.blogs.map((blog) => (
+                    {blogTag.blogs.map((blog) => (
                       <Link
                         key={blog.id}
                         href={`/admin/blogs/${blog.id}`}
@@ -108,7 +108,7 @@ export default function Show({ tag }: Props) {
                 </SectionCard>
               )}
 
-              {tag.blogs && tag.blogs.length === 0 && (
+              {blogTag.blogs && blogTag.blogs.length === 0 && (
                 <div className="rounded-xl border border-gray-200 bg-white p-8 text-center shadow-lg dark:border-gray-800 dark:bg-gray-900">
                   <FileText className="mx-auto mb-3 h-12 w-12 text-gray-400" />
                   <p className="text-gray-600 dark:text-gray-400">No blog posts are using this tag yet.</p>
@@ -117,25 +117,25 @@ export default function Show({ tag }: Props) {
             </div>
 
             <div className="space-y-6">
-              <StatusCard isActive={tag.is_active} />
+              <StatusCard isActive={blogTag.is_active} />
 
               <StatsCard 
                 stats={[
-                  { label: 'Total Blogs', value: tag.blogs?.length || 0 },
+                  { label: 'Total Blogs', value: blogTag.blogs?.length || 0 },
                   { 
                     label: 'Published', 
-                    value: tag.blogs?.filter((b) => b.status === 'published').length || 0,
+                    value: blogTag.blogs?.filter((b) => b.status === 'published').length || 0,
                     color: 'text-green-600 dark:text-green-400'
                   },
                   { 
                     label: 'Drafts', 
-                    value: tag.blogs?.filter((b) => b.status === 'draft').length || 0,
+                    value: blogTag.blogs?.filter((b) => b.status === 'draft').length || 0,
                     color: 'text-yellow-600 dark:text-yellow-400'
                   },
                 ]}
               />
 
-              <TimelineCard createdAt={tag.created_at || ''} updatedAt={tag.updated_at} />
+              <TimelineCard createdAt={blogTag.created_at || ''} updatedAt={blogTag.updated_at} />
             </div>
           </div>
         </div>

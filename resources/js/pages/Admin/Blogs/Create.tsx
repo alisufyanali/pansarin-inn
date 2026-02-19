@@ -1,11 +1,11 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
-import BlogForm from './Form';
+import Form from './Form';
 
 const breadcrumbs: BreadcrumbItem[] = [
   { title: 'Blogs', href: '/admin/blogs' },
-  { title: 'Create', href: '#' },
+  { title: 'Create', href: '/admin/blogs/create' },
 ];
 
 interface BlogTag {
@@ -26,7 +26,7 @@ export default function Create({ categories, tags }: Props) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Create Blog Post" />
-            <BlogForm categories={categories} tags={tags} isEdit={false} />
+            <Form categories={categories} tags={tags} isEdit={false} />
         </AppLayout>
     );
 }

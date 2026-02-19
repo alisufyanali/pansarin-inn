@@ -1,6 +1,9 @@
 import { Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, Save, Image as ImageIcon, Tag as TagIcon, Globe, Search } from 'lucide-react';
+import { Save, Image as ImageIcon, Tag as TagIcon, Globe, Search } from 'lucide-react';
 import React, { useState } from 'react';
+import FieldError from '@/components/FieldError';
+import PageHeader from '@/components/PageHeader';
+import { inputClass, cardClass, labelClass, buttonPrimaryClass, buttonSecondaryClass } from '@/utils/formStyles';
 
 export type BlogFormData = {
     blog_category_id?: number | null;
@@ -43,13 +46,7 @@ interface BlogFormProps {
     tags?: BlogTag[];
 }
 
-// Reusable error message component
-function FieldError({ message }: { message?: string }) {
-    if (!message) return null;
-    return <p className="text-red-500 dark:text-red-400 text-sm mt-1">{message}</p>;
-}
-
-export default function BlogForm({
+export default function Form({
     initialData,
     isEdit = false,
     categories = [],
@@ -113,7 +110,7 @@ export default function BlogForm({
     const submit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (isEdit && initialData?.id) {
-            post(`/admin/blogs/${initialData.id}`, {  // POST to /admin/blogs/{id}
+            post(`/admin/blogs/${initialData.id}`, {
                 forceFormData: true,
             });
         } else {
@@ -121,36 +118,12 @@ export default function BlogForm({
         }
     };
 
-    // inputClass — error hone par red border dikhata hai
-    const inputClass = (hasError?: string) =>
-        `w-full px-3 py-2 border rounded-lg bg-white text-gray-900 placeholder-gray-400
-        dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400
-        focus:outline-none focus:ring-2 transition-colors
-        ${hasError
-            ? 'border-red-400 dark:border-red-500 focus:ring-red-400'
-            : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500 dark:focus:ring-blue-400'
-        }`;
-
-    const cardClass = 'bg-white rounded-lg border border-gray-200 p-4 dark:bg-gray-800 dark:border-gray-700';
-    const labelClass = 'block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300';
-
     return (
         <div className="p-4 max-w-6xl mx-auto">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                    <Link
-                        href="/admin/blogs"
-                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 dark:text-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600"
-                    >
-                        <ArrowLeft className="w-4 h-4" />
-                        Back
-                    </Link>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                        {isEdit ? 'Edit Blog Post' : 'New Blog Post'}
-                    </h1>
-                </div>
-            </div>
+            <PageHeader
+                title={isEdit ? 'Edit Blog Post' : 'New Blog Post'}
+                backUrl="/admin/blogs"
+            />
 
             {/* Global error banner (catch block se aane wala generic error) */}
             {errors.error && (
@@ -424,18 +397,11 @@ export default function BlogForm({
                         {/* Action Buttons */}
                         <div className={cardClass}>
                             <div className="space-y-3">
-                                <button
-                                    type="submit"
-                                    disabled={processing}
-                                    className="w-full bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors"
-                                >
+                                <button type="submit" disabled={processing} className={buttonPrimaryClass}>
                                     <Save className="w-4 h-4" />
                                     {processing ? 'Saving...' : data.status === 'published' ? 'Publish' : 'Save Draft'}
                                 </button>
-                                <Link
-                                    href="/admin/blogs"
-                                    className="block w-full text-center border border-gray-300 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
-                                >
+                                <Link href="/admin/blogs" className={buttonSecondaryClass}>
                                     Cancel
                                 </Link>
                             </div>
