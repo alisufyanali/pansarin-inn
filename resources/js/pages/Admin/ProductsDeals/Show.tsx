@@ -12,6 +12,9 @@ import {
     Users,
     Zap,
 } from 'lucide-react';
+import InfoRow from '@/components/InfoRow';
+import SectionCard from '@/components/SectionCard';
+import PageHeader from '@/components/PageHeader';
 
 interface Product {
     id: number;
@@ -87,18 +90,34 @@ export default function Show({ deal }: Props) {
         ? Math.min((deal.current_uses / deal.max_uses) * 100, 100)
         : 0;
 
+    const actions = (
+        <div className="flex gap-3">
+            <Link
+                href={`/admin/deals/${deal.id}/edit`}
+                className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 font-bold text-white transition hover:bg-blue-700"
+            >
+                <Edit size={20} />
+                Edit Deal
+            </Link>
+            <Link
+                href="/admin/deals"
+                className="flex items-center gap-2 rounded-xl border border-gray-300 px-4 py-2 font-bold transition hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
+            >
+                <ArrowLeft size={20} />
+                Back
+            </Link>
+        </div>
+    );
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={deal.title} />
 
             <div className="mx-auto max-w-6xl">
-                {/* Header */}
-                <div className="mb-8 flex items-center justify-between">
-                    <div>
-                        <div className="mb-2 flex items-center gap-3">
-                            <h1 className="text-3xl font-bold dark:text-white">
-                                {deal.title}
-                            </h1>
+                <PageHeader
+                    title={
+                        <div className="flex items-center gap-3">
+                            <span>{deal.title}</span>
                             {deal.is_featured && (
                                 <span className="flex items-center gap-1 rounded-lg bg-yellow-100 px-3 py-1 text-sm font-bold text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
                                     <Zap size={16} /> Featured
@@ -110,38 +129,19 @@ export default function Show({ deal }: Props) {
                                 {deal.is_active ? 'Active' : 'Inactive'}
                             </span>
                         </div>
-                        <p className="text-gray-600 dark:text-gray-400">
-                            View complete deal information
-                        </p>
-                    </div>
-                    <div className="flex gap-3">
-                        <Link
-                            href={`/admin/deals/${deal.id}/edit`}
-                            className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 font-bold text-white transition hover:bg-blue-700"
-                        >
-                            <Edit size={20} />
-                            Edit Deal
-                        </Link>
-                        <Link
-                            href="/admin/deals"
-                            className="flex items-center gap-2 rounded-xl border border-gray-300 px-4 py-2 font-bold transition hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
-                        >
-                            <ArrowLeft size={20} />
-                            Back
-                        </Link>
-                    </div>
-                </div>
+                    }
+                    backUrl="/admin/deals"
+                    actions={actions}
+                />
 
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                     {/* Main Content */}
                     <div className="space-y-6 lg:col-span-2">
                         {/* Basic Info Card */}
-                        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-                            <h2 className="mb-4 flex items-center gap-2 text-xl font-bold dark:text-white">
-                                <Tag size={24} className="text-blue-600" />
-                                Deal Information
-                            </h2>
-
+                        <SectionCard
+                            title="Deal Information"
+                            icon={Tag}
+                        >
                             {deal.image && (
                                 <img
                                     src={deal.image}
@@ -151,14 +151,10 @@ export default function Show({ deal }: Props) {
                             )}
 
                             <div className="space-y-4">
-                                <div>
-                                    <label className="text-sm font-bold text-gray-600 dark:text-gray-400">
-                                        Slug
-                                    </label>
-                                    <p className="mt-1 text-gray-900 dark:text-gray-100">
-                                        {deal.slug}
-                                    </p>
-                                </div>
+                                <InfoRow
+                                    label="Slug"
+                                    value={deal.slug}
+                                />
 
                                 <div>
                                     <label className="text-sm font-bold text-gray-600 dark:text-gray-400">
@@ -204,24 +200,18 @@ export default function Show({ deal }: Props) {
                                     </div>
                                 </div>
 
-                                <div>
-                                    <label className="text-sm font-bold text-gray-600 dark:text-gray-400">
-                                        Display Order
-                                    </label>
-                                    <p className="mt-1 text-gray-900 dark:text-gray-100">
-                                        {deal.display_order}
-                                    </p>
-                                </div>
+                                <InfoRow
+                                    label="Display Order"
+                                    value={deal.display_order.toString()}
+                                />
                             </div>
-                        </div>
+                        </SectionCard>
 
                         {/* Discount Settings Card */}
-                        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-                            <h2 className="mb-4 flex items-center gap-2 text-xl font-bold dark:text-white">
-                                <Percent size={24} className="text-green-600" />
-                                Discount Settings
-                            </h2>
-
+                        <SectionCard
+                            title="Discount Settings"
+                            icon={Percent}
+                        >
                             <div className="grid grid-cols-2 gap-4">
                                 {(deal.deal_type === 'percentage' ||
                                     deal.deal_type === 'fixed') && (
@@ -291,18 +281,13 @@ export default function Show({ deal }: Props) {
                                     </div>
                                 )}
                             </div>
-                        </div>
+                        </SectionCard>
 
                         {/* Products Card */}
-                        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-                            <h2 className="mb-4 flex items-center gap-2 text-xl font-bold dark:text-white">
-                                <Package
-                                    size={24}
-                                    className="text-orange-600"
-                                />
-                                Products ({deal.products.length})
-                            </h2>
-
+                        <SectionCard
+                            title={`Products (${deal.products.length})`}
+                            icon={Package}
+                        >
                             <div className="space-y-3">
                                 {deal.products.map((product) => (
                                     <div
@@ -353,21 +338,16 @@ export default function Show({ deal }: Props) {
                                     </div>
                                 ))}
                             </div>
-                        </div>
+                        </SectionCard>
                     </div>
 
                     {/* Sidebar */}
                     <div className="space-y-6">
                         {/* Stats Card */}
-                        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-                            <h2 className="mb-4 flex items-center gap-2 text-xl font-bold dark:text-white">
-                                <TrendingUp
-                                    size={24}
-                                    className="text-purple-600"
-                                />
-                                Statistics
-                            </h2>
-
+                        <SectionCard
+                            title="Statistics"
+                            icon={TrendingUp}
+                        >
                             <div className="space-y-4">
                                 <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-900/20">
                                     <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
@@ -392,18 +372,13 @@ export default function Show({ deal }: Props) {
                                     )}
                                 </div>
                             </div>
-                        </div>
+                        </SectionCard>
 
                         {/* Timing Card */}
-                        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-                            <h2 className="mb-4 flex items-center gap-2 text-xl font-bold dark:text-white">
-                                <Calendar
-                                    size={24}
-                                    className="text-purple-600"
-                                />
-                                Duration
-                            </h2>
-
+                        <SectionCard
+                            title="Duration"
+                            icon={Calendar}
+                        >
                             <div className="space-y-4">
                                 {deal.starts_at ? (
                                     <div>
@@ -461,7 +436,7 @@ export default function Show({ deal }: Props) {
                                     </p>
                                 </div>
                             </div>
-                        </div>
+                        </SectionCard>
                     </div>
                 </div>
             </div>

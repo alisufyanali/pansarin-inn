@@ -1,10 +1,10 @@
 import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft } from 'lucide-react';
 import { useEffect } from 'react';
 import toast from 'react-hot-toast';
 import Form from './Form';
+import PageHeader from '@/components/PageHeader';
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Product Deals', href: '/admin/deals' },
@@ -78,24 +78,10 @@ export default function Create({ products, dealTypes, flash }: Props) {
             <Head title="Create Deal" />
 
             <div className="mx-auto max-w-5xl">
-                {/* Header */}
-                <div className="mb-8 flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold dark:text-white">
-                            Create Product Deal
-                        </h1>
-                        <p className="mt-1 text-gray-600 dark:text-gray-400">
-                            Set up a new discount or special offer
-                        </p>
-                    </div>
-                    <Link
-                        href="/admin/deals"
-                        className="flex items-center gap-2 rounded-xl border border-gray-300 px-4 py-2 font-bold transition hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
-                    >
-                        <ArrowLeft size={20} />
-                        Back
-                    </Link>
-                </div>
+                <PageHeader
+                    title="Create Product Deal"
+                    backUrl="/admin/deals"
+                />
 
                 {/* Form Component */}
                 <Form
