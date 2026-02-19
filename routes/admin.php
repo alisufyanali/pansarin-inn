@@ -27,7 +27,8 @@ use App\Http\Controllers\Admin\{
     ContactController,
     WhatsAppController,
     SaleController,
-    ProductsDealController
+    ProductsDealController,
+    ProductsReviewsController
 };
 
 
@@ -79,6 +80,11 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     
     Route::resource('deals', ProductsDealController::class);
     Route::get('deals-data', [ProductsDealController::class, 'getData'])->name('products.data');
+
+    Route::resource('reviews', ProductsReviewsController::class);
+    Route::get('reviews-data', [ProductsReviewsController::class, 'getData'])->name('reviews.data');
+    Route::patch('reviews/{review}/status', [ProductsReviewsController::class, 'updateStatus'])->name('reviews.status');
+   
 
     /*
     |--------------------------------------------------------------------------
