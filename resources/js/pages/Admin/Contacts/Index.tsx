@@ -180,7 +180,7 @@ export default function Index({ stats, flash }: Props) {
             </p>
           </div>
             <Link
-                        href="/admin/contact/create"
+                        href="/admin/contacts/create"
                         className="inline-flex items-center gap-3 px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 dark:from-blue-500 dark:to-indigo-500 dark:hover:from-blue-600 dark:hover:to-indigo-600 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
                     >
                         <Plus className="w-5 h-5" />

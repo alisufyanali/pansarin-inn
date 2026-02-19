@@ -1,7 +1,9 @@
 import React from 'react';
-import { useForm } from '@inertiajs/react';
-import { ArrowLeft, Tag, Percent, DollarSign, Settings, Calendar, TrendingUp, Save } from 'lucide-react';
-import { Link } from '@inertiajs/react';
+import { useForm, Link } from '@inertiajs/react';
+import { Tag, Percent, DollarSign, Settings, Calendar, TrendingUp, Save } from 'lucide-react';
+import FieldError from '@/components/FieldError';
+import PageHeader from '@/components/PageHeader';
+import { inputClass, cardClass, labelClass, buttonPrimaryClass, buttonSecondaryClass } from '@/utils/formStyles';
 
 type Product = { id: number; name: string };
 type Category = { id: number; name: string };
@@ -30,7 +32,7 @@ interface CouponFormProps {
   isEdit?: boolean;
 }
 
-export default function CouponForm({ 
+export default function Form({ 
   coupon, 
   products = [], 
   categories = [], 
@@ -65,26 +67,17 @@ export default function CouponForm({
 
   return (
     <div className="p-4 max-w-6xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <Link
-          href="/admin/coupons"
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back
-        </Link>
-        <h1 className="text-2xl font-bold">
-          {isEdit ? 'Edit Coupon' : 'New Coupon'}
-        </h1>
-      </div>
+      <PageHeader
+        title={isEdit ? 'Edit Coupon' : 'New Coupon'}
+        backUrl="/admin/coupons"
+      />
 
       <form onSubmit={submit}>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Column */}
           <div className="space-y-6">
             {/* Basic Information */}
-            <div className="bg-white rounded-lg border p-6">
+            <div className={cardClass}>
               <div className="flex items-center gap-2 mb-4">
                 <Tag className="w-5 h-5 text-gray-600" />
                 <h3 className="font-semibold text-lg">Basic Information</h3>
@@ -92,7 +85,7 @@ export default function CouponForm({
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">
+                  <label className={labelClass}>
                     Coupon Code <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -100,22 +93,22 @@ export default function CouponForm({
                     placeholder="SUMMER2024"
                     value={data.code}
                     onChange={e => setData('code', e.target.value.toUpperCase())}
-                    className="w-full px-3 py-2 border rounded-lg uppercase font-mono"
+                    className={inputClass(errors.code) + ' uppercase font-mono'}
                     required
                   />
-                  {errors.code && <p className="text-red-500 text-sm mt-1">{errors.code}</p>}
+                  <FieldError message={errors.code} />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Description</label>
+                  <label className={labelClass}>Description</label>
                   <textarea
                     placeholder="Describe this coupon..."
                     value={data.description}
                     onChange={e => setData('description', e.target.value)}
                     rows={3}
-                    className="w-full px-3 py-2 border rounded-lg resize-none"
+                    className={inputClass(errors.description) + ' resize-none'}
                   />
-                  {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
+                  <FieldError message={errors.description} />
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -134,7 +127,7 @@ export default function CouponForm({
             </div>
 
             {/* Discount Configuration */}
-            <div className="bg-white rounded-lg border p-6">
+            <div className={cardClass}>
               <div className="flex items-center gap-2 mb-4">
                 <TrendingUp className="w-5 h-5 text-gray-600" />
                 <h3 className="font-semibold text-lg">Discount Configuration</h3>
@@ -142,7 +135,7 @@ export default function CouponForm({
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">
+                  <label className={labelClass}>
                     Discount Type <span className="text-red-500">*</span>
                   </label>
                   <div className="grid grid-cols-2 gap-3">
@@ -171,11 +164,11 @@ export default function CouponForm({
                       <span className="font-medium">Fixed</span>
                     </button>
                   </div>
-                  {errors.discount_type && <p className="text-red-500 text-sm mt-1">{errors.discount_type}</p>}
+                  <FieldError message={errors.discount_type} />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">
+                  <label className={labelClass}>
                     Discount Value <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
@@ -186,19 +179,19 @@ export default function CouponForm({
                       placeholder={data.discount_type === 'percentage' ? '10' : '500'}
                       value={data.discount_value}
                       onChange={e => setData('discount_value', e.target.value)}
-                      className="w-full px-3 py-2 border rounded-lg"
+                      className={inputClass(errors.discount_value)}
                       required
                     />
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
                       {data.discount_type === 'percentage' ? '%' : 'PKR'}
                     </div>
                   </div>
-                  {errors.discount_value && <p className="text-red-500 text-sm mt-1">{errors.discount_value}</p>}
+                  <FieldError message={errors.discount_value} />
                 </div>
 
                 {data.discount_type === 'percentage' && (
                   <div>
-                    <label className="block text-sm font-medium mb-1">
+                    <label className={labelClass}>
                       Max Discount Amount
                     </label>
                     <div className="relative">
@@ -209,13 +202,13 @@ export default function CouponForm({
                         placeholder="1000 (optional)"
                         value={data.max_discount_amount}
                         onChange={e => setData('max_discount_amount', e.target.value)}
-                        className="w-full px-3 py-2 border rounded-lg"
+                        className={inputClass(errors.max_discount_amount)}
                       />
                       <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
                         PKR
                       </div>
                     </div>
-                    {errors.max_discount_amount && <p className="text-red-500 text-sm mt-1">{errors.max_discount_amount}</p>}
+                    <FieldError message={errors.max_discount_amount} />
                   </div>
                 )}
               </div>
@@ -225,7 +218,7 @@ export default function CouponForm({
           {/* Right Column */}
           <div className="space-y-6">
             {/* Application Scope */}
-            <div className="bg-white rounded-lg border p-6">
+            <div className={cardClass}>
               <div className="flex items-center gap-2 mb-4">
                 <Settings className="w-5 h-5 text-gray-600" />
                 <h3 className="font-semibold text-lg">Application Scope</h3>
@@ -233,7 +226,7 @@ export default function CouponForm({
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">
+                  <label className={labelClass}>
                     Apply To <span className="text-red-500">*</span>
                   </label>
                   <div className="grid grid-cols-3 gap-2">
@@ -271,18 +264,18 @@ export default function CouponForm({
                       Category
                     </button>
                   </div>
-                  {errors.apply_to && <p className="text-red-500 text-sm mt-1">{errors.apply_to}</p>}
+                  <FieldError message={errors.apply_to} />
                 </div>
 
                 {data.apply_to === 'product' && (
                   <div>
-                    <label className="block text-sm font-medium mb-1">
+                    <label className={labelClass}>
                       Select Product <span className="text-red-500">*</span>
                     </label>
                     <select
                       value={data.product_id}
                       onChange={(e) => setData('product_id', e.target.value)}
-                      className="w-full px-3 py-2 border rounded-lg"
+                      className={inputClass(errors.product_id)}
                       required
                     >
                       <option value="">Select a product</option>
@@ -292,19 +285,19 @@ export default function CouponForm({
                         </option>
                       ))}
                     </select>
-                    {errors.product_id && <p className="text-red-500 text-sm mt-1">{errors.product_id}</p>}
+                    <FieldError message={errors.product_id} />
                   </div>
                 )}
 
                 {data.apply_to === 'category' && (
                   <div>
-                    <label className="block text-sm font-medium mb-1">
+                    <label className={labelClass}>
                       Select Category <span className="text-red-500">*</span>
                     </label>
                     <select
                       value={data.category_id}
                       onChange={(e) => setData('category_id', e.target.value)}
-                      className="w-full px-3 py-2 border rounded-lg"
+                      className={inputClass(errors.category_id)}
                       required
                     >
                       <option value="">Select a category</option>
@@ -314,12 +307,12 @@ export default function CouponForm({
                         </option>
                       ))}
                     </select>
-                    {errors.category_id && <p className="text-red-500 text-sm mt-1">{errors.category_id}</p>}
+                    <FieldError message={errors.category_id} />
                   </div>
                 )}
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">
+                  <label className={labelClass}>
                     Minimum Purchase Amount
                   </label>
                   <div className="relative">
@@ -330,19 +323,19 @@ export default function CouponForm({
                       placeholder="1000 (optional)"
                       value={data.min_purchase_amount}
                       onChange={e => setData('min_purchase_amount', e.target.value)}
-                      className="w-full px-3 py-2 border rounded-lg"
+                      className={inputClass(errors.min_purchase_amount)}
                     />
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
                       PKR
                     </div>
                   </div>
-                  {errors.min_purchase_amount && <p className="text-red-500 text-sm mt-1">{errors.min_purchase_amount}</p>}
+                  <FieldError message={errors.min_purchase_amount} />
                 </div>
               </div>
             </div>
 
             {/* Validity Period */}
-            <div className="bg-white rounded-lg border p-6">
+            <div className={cardClass}>
               <div className="flex items-center gap-2 mb-4">
                 <Calendar className="w-5 h-5 text-gray-600" />
                 <h3 className="font-semibold text-lg">Validity Period</h3>
@@ -350,29 +343,29 @@ export default function CouponForm({
 
               <div className="flex space-x-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">
+                  <label className={labelClass}>
                     Start Date
                   </label>
                   <input
                     type="date"
                     value={data.start_date}
                     onChange={e => setData('start_date', e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className={inputClass(errors.start_date)}
                   />
-                  {errors.start_date && <p className="text-red-500 text-sm mt-1">{errors.start_date}</p>}
+                  <FieldError message={errors.start_date} />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">
+                  <label className={labelClass}>
                     End Date
                   </label>
                   <input
                     type="date"
                     value={data.end_date}
                     onChange={e => setData('end_date', e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className={inputClass(errors.end_date)}
                   />
-                  {errors.end_date && <p className="text-red-500 text-sm mt-1">{errors.end_date}</p>}
+                  <FieldError message={errors.end_date} />
                 </div>
               </div>
 
@@ -381,7 +374,7 @@ export default function CouponForm({
             
 
             {/* Usage Limits */}
-            <div className="bg-white rounded-lg border p-6">
+            <div className={cardClass}>
               <div className="flex items-center gap-2 mb-4">
                 <Tag className="w-5 h-5 text-gray-600" />
                 <h3 className="font-semibold text-lg">Usage Limits</h3>
@@ -389,7 +382,7 @@ export default function CouponForm({
 
               <div className="flex space-x-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">
+                  <label className={labelClass}>
                     Total Usage Limit
                   </label>
                   <input
@@ -398,13 +391,13 @@ export default function CouponForm({
                     placeholder="Unlimited"
                     value={data.usage_limit}
                     onChange={e => setData('usage_limit', e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className={inputClass(errors.usage_limit)}
                   />
-                  {errors.usage_limit && <p className="text-red-500 text-sm mt-1">{errors.usage_limit}</p>}
+                  <FieldError message={errors.usage_limit} />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">
+                  <label className={labelClass}>
                     Per User Limit
                   </label>
                   <input
@@ -413,9 +406,9 @@ export default function CouponForm({
                     placeholder="Unlimited"
                     value={data.per_user_limit}
                     onChange={e => setData('per_user_limit', e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className={inputClass(errors.per_user_limit)}
                   />
-                  {errors.per_user_limit && <p className="text-red-500 text-sm mt-1">{errors.per_user_limit}</p>}
+                  <FieldError message={errors.per_user_limit} />
                 </div>
               </div>
             </div>
@@ -423,22 +416,16 @@ export default function CouponForm({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-3 mt-6">
-          <Link
-            href="/admin/coupons"
-            className="flex-1 text-center border py-2.5 rounded-lg hover:bg-gray-50"
-          >
-            Cancel
-          </Link>
-          
-          <button
-            type="submit"
-            disabled={processing}
-            className="flex-1 bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            <Save className="w-4 h-4" />
-            {processing ? 'Saving...' : (isEdit ? 'Update Coupon' : 'Create Coupon')}
-          </button>
+        <div className={cardClass + ' mt-6'}>
+          <div className="space-y-3">
+            <button type="submit" disabled={processing} className={buttonPrimaryClass}>
+              <Save className="w-4 h-4" />
+              {processing ? 'Saving...' : (isEdit ? 'Update Coupon' : 'Create Coupon')}
+            </button>
+            <Link href="/admin/coupons" className={buttonSecondaryClass}>
+              Cancel
+            </Link>
+          </div>
         </div>
       </form>
     </div>
