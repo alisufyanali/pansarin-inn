@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useForm } from '@inertiajs/react';
-import { ArrowLeft, Save, Upload, X, Folder, Search, Globe, Code } from 'lucide-react';
-import { Link } from '@inertiajs/react';
+import { useForm, Link } from '@inertiajs/react';
+import { Save, Upload, X, Folder, Search, Globe, Code } from 'lucide-react';
+import FieldError from '@/components/FieldError';
+import PageHeader from '@/components/PageHeader';
+import { inputClass, cardClass, labelClass, buttonPrimaryClass, buttonSecondaryClass, subTextClass } from '@/utils/formStyles';
+import { generateSlug } from '@/utils/formStyles';
 
 type Category = { id: number; name: string };
 
@@ -25,13 +28,7 @@ interface CategoryFormProps {
     isEdit?: boolean;
 }
 
-// Reusable error message component
-function FieldError({ message }: { message?: string }) {
-    if (!message) return null;
-    return <p className="text-red-500 dark:text-red-400 text-sm mt-1">{message}</p>;
-}
-
-export default function CategoryForm({ category, categories, isEdit = false }: CategoryFormProps) {
+export default function Form({ category, categories, isEdit = false }: CategoryFormProps) {
     const [imagePreview, setImagePreview] = useState<string | null>(
         category?.image ? `/storage/${category.image}` : null
     );
@@ -56,11 +53,7 @@ export default function CategoryForm({ category, categories, isEdit = false }: C
     // Auto-generate slug from name (only on create)
     useEffect(() => {
         if (!isEdit && data.name) {
-            const slug = data.name
-                .toLowerCase()
-                .replace(/[^a-z0-9]+/g, '-')
-                .replace(/^-+|-+$/g, '');
-            setData('slug', slug);
+            setData('slug', generateSlug(data.name));
         }
     }, [data.name, isEdit]);
 
@@ -106,34 +99,12 @@ export default function CategoryForm({ category, categories, isEdit = false }: C
         }
     }
 
-    const inputClass = (hasError?: string) =>
-        `w-full px-3 py-2 border rounded-lg bg-white text-gray-900 placeholder-gray-400
-        dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500
-        focus:outline-none focus:ring-2 transition-colors
-        ${hasError
-            ? 'border-red-400 dark:border-red-500 focus:ring-red-400'
-            : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500 dark:focus:ring-blue-400'
-        }`;
-
-    const cardClass = 'bg-white rounded-lg border border-gray-200 p-6 dark:bg-gray-800 dark:border-gray-700';
-    const labelClass = 'block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300';
-    const subTextClass = 'text-xs text-gray-500 dark:text-gray-400 mt-1';
-
     return (
         <div className="p-4 max-w-6xl mx-auto">
-            {/* Header */}
-            <div className="flex items-center gap-3 mb-6">
-                <Link
-                    href="/admin/categories"
-                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 dark:text-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors"
-                >
-                    <ArrowLeft className="w-4 h-4" />
-                    Back
-                </Link>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                    {isEdit ? 'Edit Category' : 'New Category'}
-                </h1>
-            </div>
+            <PageHeader
+                title={isEdit ? 'Edit Category' : 'New Category'}
+                backUrl="/admin/categories"
+            />
 
             {/* Global error banner */}
             {(errors as any).error && (
@@ -440,19 +411,11 @@ export default function CategoryForm({ category, categories, isEdit = false }: C
                         {/* Action Buttons */}
                         <div className={cardClass}>
                             <div className="space-y-3">
-                                <button
-                                    type="submit"
-                                    disabled={processing}
-                                    className="w-full bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors"
-                                >
+                                <button type="submit" disabled={processing} className={buttonPrimaryClass}>
                                     <Save className="w-4 h-4" />
                                     {processing ? 'Saving...' : isEdit ? 'Update Category' : 'Create Category'}
                                 </button>
-
-                                <Link
-                                    href="/admin/categories"
-                                    className="block w-full text-center border border-gray-300 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
-                                >
+                                <Link href="/admin/categories" className={buttonSecondaryClass}>
                                     Cancel
                                 </Link>
                             </div>
