@@ -28,7 +28,8 @@ use App\Http\Controllers\Admin\{
     WhatsAppController,
     SaleController,
     ProductsDealController,
-    ProductsReviewsController
+    ProductsReviewsController,
+    PermissionController
 };
 
 
@@ -59,6 +60,9 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
 
     Route::resource('roles', RoleController::class);
     Route::get('roles-data', [RoleController::class, 'getData'])->name('roles.data');
+
+    Route::resource('permissions', PermissionController::class);
+    Route::get('permissions-data', [PermissionController::class, 'getData'])->name('permissions.data');
 
     /*
     |--------------------------------------------------------------------------

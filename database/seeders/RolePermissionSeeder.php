@@ -28,6 +28,12 @@ class RolePermissionSeeder extends Seeder
             "edit.roles",
             "delete.roles",
 
+            // Permission permissions
+            "view.permissions",
+            "create.permissions",
+            "edit.permissions",
+            "delete.permissions",
+
             // Product permissions
             "view.products",
             "create.products",
@@ -208,6 +214,27 @@ class RolePermissionSeeder extends Seeder
             "edit.analytics",
             "delete.analytics",
 
+            // newsletter permissions
+            "view.newsletters",
+            "create.newsletters",
+            "edit.newsletters",
+            "delete.newsletters",
+
+            // sales permissions
+            "view.sales",
+            "create.sales",
+            "edit.sales",
+            "delete.sales",
+
+            // deals permissions
+            "view.deals",
+            "create.deals",
+            "edit.deals",
+            "delete.deals",
+
+            // whatsapp permissions
+            "view.whatsapp",
+            "send.whatsapp",
             
         ];
 

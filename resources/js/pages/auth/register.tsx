@@ -1,6 +1,6 @@
 import { login } from '@/routes';
 import { store } from '@/routes/register';
-import { Form, Head } from '@inertiajs/react';
+import { Form, Head, usePage } from '@inertiajs/react';
 
 import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
@@ -10,11 +10,26 @@ import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import AuthLayout from '@/layouts/auth-layout';
 import { Eye, EyeOff } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
+import { Toaster } from 'react-hot-toast';
+
+interface RegisterProps {
+    flash?: {
+        success?: string;
+        error?: string;
+    };
+}
 
 export default function Register() {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const { flash } = usePage<RegisterProps>().props;
+
+    useEffect(() => {
+        if (flash?.success) toast.success(flash.success);
+        if (flash?.error) toast.error(flash.error);
+    }, [flash]);
 
     return (
         <AuthLayout
@@ -22,6 +37,7 @@ export default function Register() {
             description="Enter your details below to create your account"
         >
             <Head title="Register" />
+            <Toaster position="top-right" />
             <Form
                 {...store.form()}
                 resetOnSuccess={['password', 'password_confirmation']}

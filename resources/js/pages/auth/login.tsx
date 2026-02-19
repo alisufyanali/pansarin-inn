@@ -9,14 +9,20 @@ import AuthLayout from '@/layouts/auth-layout';
 import { register } from '@/routes';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
-import { Form, Head } from '@inertiajs/react';
+import { Form, Head, usePage } from '@inertiajs/react';
 import { Eye, EyeOff } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
+import { Toaster } from 'react-hot-toast';
 
 interface LoginProps {
     status?: string;
     canResetPassword: boolean;
     canRegister: boolean;
+    flash?: {
+        success?: string;
+        error?: string;
+    };
 }
 
 export default function Login({
@@ -25,6 +31,12 @@ export default function Login({
     canRegister,
 }: LoginProps) {
     const [showPassword, setShowPassword] = useState(false);
+    const { flash } = usePage<LoginProps>().props;
+
+    useEffect(() => {
+        if (flash?.success) toast.success(flash.success);
+        if (flash?.error) toast.error(flash.error);
+    }, [flash]);
 
     return (
         <AuthLayout
@@ -32,6 +44,7 @@ export default function Login({
             description="Enter your email and password below to log in"
         >
             <Head title="Log in" />
+            <Toaster position="top-right" />
 
             <Form
                 {...store.form()}

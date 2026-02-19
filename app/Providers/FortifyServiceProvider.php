@@ -13,6 +13,8 @@ use Inertia\Inertia;
 use Laravel\Fortify\Features;
 use Laravel\Fortify\Fortify;
 use Laravel\Fortify\Contracts\LoginResponse;
+use Laravel\Fortify\Contracts\RegisterResponse;
+use Laravel\Fortify\Contracts\LogoutResponse;
 
 class FortifyServiceProvider extends ServiceProvider
 {
@@ -41,6 +43,30 @@ class FortifyServiceProvider extends ServiceProvider
                     $request->session()->flash('success', 'Welcome back! You are logged in.');
 
                     return redirect()->intended(route('admin.dashboard'));
+                }
+            };
+        });
+
+        // FIX FOR INERTIA REGISTER REDIRECT
+        $this->app->singleton(RegisterResponse::class, function () {
+            return new class implements RegisterResponse {
+                public function toResponse($request)
+                {
+                    $request->session()->flash('success', 'Welcome! Your account has been created successfully.');
+
+                    return redirect()->intended(route('admin.dashboard'));
+                }
+            };
+        });
+
+        // FIX FOR INERTIA LOGOUT REDIRECT
+        $this->app->singleton(LogoutResponse::class, function () {
+            return new class implements LogoutResponse {
+                public function toResponse($request)
+                {
+                    $request->session()->flash('success', 'You have been logged out successfully.');
+
+                    return redirect()->route('login');
                 }
             };
         });
