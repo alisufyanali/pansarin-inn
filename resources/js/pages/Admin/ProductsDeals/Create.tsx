@@ -2,6 +2,8 @@ import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
+import { useEffect } from 'react';
+import toast from 'react-hot-toast';
 import Form from './Form';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -24,6 +26,10 @@ interface DealType {
 interface Props {
     products: Product[];
     dealTypes: DealType[];
+    flash?: {
+        success?: string;
+        error?: string;
+    };
 }
 
 interface SelectedProduct {
@@ -32,7 +38,7 @@ interface SelectedProduct {
     stock_limit: number | null;
 }
 
-export default function Create({ products, dealTypes }: Props) {
+export default function Create({ products, dealTypes, flash }: Props) {
     const { data, setData, post, processing, errors } = useForm({
         title: '',
         slug: '',
@@ -55,9 +61,16 @@ export default function Create({ products, dealTypes }: Props) {
         products: [] as SelectedProduct[],
     });
 
+    useEffect(() => {
+        if (flash?.success) toast.success(flash.success);
+        if (flash?.error) toast.error(flash.error);
+    }, [flash]);
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        post('/admin/deals');
+        post('/admin/deals', {
+            forceFormData: true,
+        });
     };
 
     return (

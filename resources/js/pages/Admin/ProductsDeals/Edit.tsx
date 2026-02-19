@@ -2,6 +2,8 @@ import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
+import { useEffect } from 'react';
+import toast from 'react-hot-toast';
 import Form from './Form';
 
 interface Product {
@@ -47,6 +49,10 @@ interface Props {
     deal: Deal;
     products: Product[];
     dealTypes: DealType[];
+    flash?: {
+        success?: string;
+        error?: string;
+    };
 }
 
 interface SelectedProduct {
@@ -55,7 +61,7 @@ interface SelectedProduct {
     stock_limit: number | null;
 }
 
-export default function Edit({ deal, products, dealTypes }: Props) {
+export default function Edit({ deal, products, dealTypes, flash }: Props) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Product Deals', href: '/admin/deals' },
         { title: 'Edit Deal', href: `/admin/deals/${deal.id}/edit` },
@@ -73,8 +79,8 @@ export default function Edit({ deal, products, dealTypes }: Props) {
         min_purchase_amount: deal.min_purchase_amount?.toString() || '',
         max_uses: deal.max_uses?.toString() || '',
         max_uses_per_user: deal.max_uses_per_user?.toString() || '',
-        starts_at: deal.starts_at || '',
-        ends_at: deal.ends_at || '',
+        starts_at: deal.starts_at ? deal.starts_at.slice(0, 16) : '', // Convert to YYYY-MM-DDTHH:MM
+        ends_at: deal.ends_at ? deal.ends_at.slice(0, 16) : '', // Convert to YYYY-MM-DDTHH:MM
         badge_text: deal.badge_text,
         badge_color: deal.badge_color,
         display_order: deal.display_order,
@@ -84,9 +90,16 @@ export default function Edit({ deal, products, dealTypes }: Props) {
         _method: 'PUT',
     });
 
+    useEffect(() => {
+        if (flash?.success) toast.success(flash.success);
+        if (flash?.error) toast.error(flash.error);
+    }, [flash]);
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        post(`/admin/deals/${deal.id}`);
+        post(`/admin/deals/${deal.id}`, {
+            forceFormData: true,
+        });
     };
 
     return (

@@ -3,23 +3,26 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Repositories\Admin\ProductDealRepository;
+use App\Http\Requests\Admin\ProductDealRequest;
 use App\Models\Deal;
 use App\Models\Product;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class ProductsDealController extends Controller
 {
+    protected $dealRepository;
+
+    public function __construct(ProductDealRepository $dealRepository)
+    {
+        $this->dealRepository = $dealRepository;
+    }
+
     public function index()
     {
-        $stats = [
-            'total' => Deal::count(),
-            'active' => Deal::active()->count(),
-            'featured' => Deal::featured()->count(),
-            'expired' => Deal::expired()->count(),
-        ];
+        $stats = $this->dealRepository->getStats();
 
         return Inertia::render('Admin/ProductsDeals/Index', [
             'stats' => $stats,
@@ -28,57 +31,41 @@ class ProductsDealController extends Controller
 
     public function getData(Request $request)
     {
-        $query = Deal::withCount('products');
-
-        // Search
-        if ($request->search) {
-            $query->where(function($q) use ($request) {
-                $q->where('title', 'like', "%{$request->search}%")
-                  ->orWhere('description', 'like', "%{$request->search}%");
-            });
+        try {
+            return $this->dealRepository->getAllForDataTable($request);
+        } catch (\Exception $e) {
+            Log::error('Deals getData error: ' . $e->getMessage());
+            
+            return response()->json([
+                'error' => 'Failed to load data',
+                'message' => $e->getMessage(),
+                'data' => [],
+                'total' => 0,
+            ], 500);
         }
-
-        // Filters
-        if ($request->has('is_active') && $request->is_active !== null) {
-            $query->where('is_active', $request->is_active);
-        }
-
-        if ($request->has('deal_type') && $request->deal_type) {
-            $query->where('deal_type', $request->deal_type);
-        }
-
-        // Sorting
-        $sortBy = $request->get('sort_by', 'created_at');
-        $sortOrder = $request->get('sort_order', 'desc');
-        $query->orderBy($sortBy, $sortOrder);
-
-        $perPage = $request->get('per_page', 10);
-        $deals = $query->paginate($perPage);
-
-        return response()->json($deals);
     }
 
     public function create()
     {
-        // Get all products - FIXED: Only select columns that exist
+        // Get all products
         $allProducts = Product::orderBy('name')
             ->get(['id', 'name', 'price']);
         
         // Try with active filter
-        $activeProducts = Product::where('is_active', 1)
-            ->orWhere('is_active', true)
+        $activeProducts = Product::where('status', 1)
+            ->orWhere('status', true)
             ->orderBy('name')
             ->get(['id', 'name', 'price']);
         
         $products = $activeProducts->count() > 0 ? $activeProducts : $allProducts;
         
-        // Format products - FIXED: Handle missing image column
+        // Format products
         $formattedProducts = $products->map(function($product) {
             return [
                 'id' => $product->id,
                 'name' => $product->name,
                 'price' => $product->price,
-                'image' => null, // No image column available
+                'image' => null,
             ];
         });
 
@@ -88,73 +75,32 @@ class ProductsDealController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(ProductDealRequest $request)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'slug' => 'nullable|string|unique:deals,slug',
-            'description' => 'nullable|string',
-            'image' => 'nullable|image|max:2048',
-            'deal_type' => 'required|in:percentage,fixed,buy_x_get_y,bundle,flash_sale',
-            'discount_value' => 'required_if:deal_type,percentage,fixed|nullable|numeric|min:0',
-            'min_quantity' => 'required_if:deal_type,buy_x_get_y|nullable|integer|min:1',
-            'free_quantity' => 'required_if:deal_type,buy_x_get_y|nullable|integer|min:0',
-            'min_purchase_amount' => 'nullable|numeric|min:0',
-            'max_uses' => 'nullable|integer|min:1',
-            'max_uses_per_user' => 'nullable|integer|min:1',
-            'starts_at' => 'nullable|date',
-            'ends_at' => 'nullable|date|after:starts_at',
-            'badge_text' => 'nullable|string|max:50',
-            'badge_color' => 'nullable|string|max:7',
-            'display_order' => 'nullable|integer',
-            'is_featured' => 'boolean',
-            'is_active' => 'boolean',
-            'products' => 'required|array|min:1',
-            'products.*.id' => 'required|exists:products,id',
-            'products.*.custom_discount' => 'nullable|numeric|min:0',
-            'products.*.stock_limit' => 'nullable|integer|min:1',
-        ]);
+        try {
+            $validated = $request->validated();
 
-        // Handle image upload
-        if ($request->hasFile('image')) {
-            $validated['image'] = $request->file('image')->store('deals', 'public');
+            $imageFile = $request->hasFile('image') ? $request->file('image') : null;
+
+            $this->dealRepository->store($validated, $imageFile);
+
+            return redirect()
+                ->route('admin.deals.index')
+                ->with('success', 'Deal created successfully!');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()
+                ->withErrors($e->errors())
+                ->withInput();
+        } catch (\Exception $e) {
+            Log::error('Deal creation error: ' . $e->getMessage());
+            return back()
+                ->withInput()
+                ->with('error', 'Failed to create deal.');
         }
-
-        // Generate slug
-        if (!isset($validated['slug']) || empty($validated['slug'])) {
-            $validated['slug'] = Str::slug($validated['title']);
-            
-            // Ensure unique slug
-            $count = 1;
-            $originalSlug = $validated['slug'];
-            while (Deal::where('slug', $validated['slug'])->exists()) {
-                $validated['slug'] = $originalSlug . '-' . $count;
-                $count++;
-            }
-        }
-
-        // Create deal
-        $products = $validated['products'];
-        unset($validated['products']);
-        
-        $deal = Deal::create($validated);
-
-        // Attach products with pivot data
-        foreach ($products as $product) {
-            $deal->products()->attach($product['id'], [
-                'custom_discount' => $product['custom_discount'] ?? null,
-                'stock_limit' => $product['stock_limit'] ?? null,
-            ]);
-        }
-
-        return redirect()
-            ->route('admin.deals.index')
-            ->with('success', 'Deal created successfully!');
     }
 
     public function show(Deal $deal)
     {
-        // FIXED: Only select columns that exist in products table
         $deal->load(['products' => function($query) {
             $query->select('products.id', 'products.name', 'products.price')
                   ->withPivot('custom_discount', 'stock_limit');
@@ -167,7 +113,6 @@ class ProductsDealController extends Controller
 
     public function edit(Deal $deal)
     {
-        // FIXED: Only select columns that exist in products table
         $deal->load(['products' => function($query) {
             $query->select('products.id', 'products.name', 'products.price')
                   ->withPivot('custom_discount', 'stock_limit');
@@ -179,7 +124,7 @@ class ProductsDealController extends Controller
                 'id' => $product->id,
                 'name' => $product->name,
                 'price' => $product->price,
-                'image' => null, // No image column
+                'image' => null,
                 'custom_discount' => $product->pivot->custom_discount,
                 'stock_limit' => $product->pivot->stock_limit,
             ];
@@ -187,8 +132,8 @@ class ProductsDealController extends Controller
 
         // Get all products for selector
         $allProducts = Product::orderBy('name')->get(['id', 'name', 'price']);
-        $activeProducts = Product::where('is_active', 1)
-            ->orWhere('is_active', true)
+        $activeProducts = Product::where('status', 1)
+            ->orWhere('status', true)
             ->orderBy('name')
             ->get(['id', 'name', 'price']);
         
@@ -225,112 +170,68 @@ class ProductsDealController extends Controller
         ]);
     }
 
-    public function update(Request $request, Deal $deal)
+    public function update(ProductDealRequest $request, Deal $deal)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'slug' => 'nullable|string|unique:deals,slug,' . $deal->id,
-            'description' => 'nullable|string',
-            'image' => 'nullable|image|max:2048',
-            'deal_type' => 'required|in:percentage,fixed,buy_x_get_y,bundle,flash_sale',
-            'discount_value' => 'required_if:deal_type,percentage,fixed|nullable|numeric|min:0',
-            'min_quantity' => 'required_if:deal_type,buy_x_get_y|nullable|integer|min:1',
-            'free_quantity' => 'required_if:deal_type,buy_x_get_y|nullable|integer|min:0',
-            'min_purchase_amount' => 'nullable|numeric|min:0',
-            'max_uses' => 'nullable|integer|min:1',
-            'max_uses_per_user' => 'nullable|integer|min:1',
-            'starts_at' => 'nullable|date',
-            'ends_at' => 'nullable|date|after:starts_at',
-            'badge_text' => 'nullable|string|max:50',
-            'badge_color' => 'nullable|string|max:7',
-            'display_order' => 'nullable|integer',
-            'is_featured' => 'boolean',
-            'is_active' => 'boolean',
-            'products' => 'required|array|min:1',
-            'products.*.id' => 'required|exists:products,id',
-            'products.*.custom_discount' => 'nullable|numeric|min:0',
-            'products.*.stock_limit' => 'nullable|integer|min:1',
-        ]);
+        try {
+            $validated = $request->validated();
 
-        // Handle image upload
-        if ($request->hasFile('image')) {
-            // Delete old image
-            if ($deal->image) {
-                Storage::disk('public')->delete($deal->image);
-            }
-            $validated['image'] = $request->file('image')->store('deals', 'public');
+            $imageFile = $request->hasFile('image') ? $request->file('image') : null;
+
+            $this->dealRepository->update($deal->id, $validated, $imageFile);
+
+            return redirect()
+                ->route('admin.deals.index')
+                ->with('success', 'Deal updated successfully!');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()
+                ->withErrors($e->errors())
+                ->withInput();
+        } catch (\Exception $e) {
+            Log::error('Deal update error: ' . $e->getMessage());
+            return back()
+                ->withInput()
+                ->with('error', 'Failed to update deal.');
         }
-
-        // Update deal
-        $products = $validated['products'];
-        unset($validated['products']);
-        
-        $deal->update($validated);
-
-        // Sync products with pivot data
-        $syncData = [];
-        foreach ($products as $product) {
-            $syncData[$product['id']] = [
-                'custom_discount' => $product['custom_discount'] ?? null,
-                'stock_limit' => $product['stock_limit'] ?? null,
-            ];
-        }
-        $deal->products()->sync($syncData);
-
-        return redirect()
-            ->route('admin.deals.index')
-            ->with('success', 'Deal updated successfully!');
     }
 
     public function destroy(Deal $deal)
     {
-        if ($deal->image) {
-            Storage::disk('public')->delete($deal->image);
+        try {
+            $this->dealRepository->delete($deal->id);
+            
+            return redirect()
+                ->route('admin.deals.index')
+                ->with('success', 'Deal deleted successfully!');
+        } catch (\Exception $e) {
+            Log::error('Deal deletion error: ' . $e->getMessage());
+            return back()->with('error', 'Failed to delete deal.');
         }
-
-        $deal->delete();
-
-        return redirect()
-            ->route('admin.deals.index')
-            ->with('success', 'Deal deleted successfully!');
     }
 
     public function toggleStatus(Deal $deal)
     {
-        $deal->update(['is_active' => !$deal->is_active]);
-
-        return back()->with('success', 'Deal status updated!');
+        try {
+            $this->dealRepository->toggleStatus($deal->id);
+            
+            return back()->with('success', 'Deal status updated!');
+        } catch (\Exception $e) {
+            Log::error('Deal toggle status error: ' . $e->getMessage());
+            return back()->with('error', 'Failed to update deal status.');
+        }
     }
 
     public function duplicate(Deal $deal)
     {
-        $newDeal = $deal->replicate();
-        $newDeal->title = $deal->title . ' (Copy)';
-        $newDeal->slug = Str::slug($newDeal->title);
-        
-        // Ensure unique slug
-        $count = 1;
-        $originalSlug = $newDeal->slug;
-        while (Deal::where('slug', $newDeal->slug)->exists()) {
-            $newDeal->slug = $originalSlug . '-' . $count;
-            $count++;
+        try {
+            $newDeal = $this->dealRepository->duplicate($deal->id);
+            
+            return redirect()
+                ->route('admin.deals.edit', $newDeal)
+                ->with('success', 'Deal duplicated successfully!');
+        } catch (\Exception $e) {
+            Log::error('Deal duplication error: ' . $e->getMessage());
+            return back()->with('error', 'Failed to duplicate deal.');
         }
-        
-        $newDeal->is_active = false;
-        $newDeal->current_uses = 0;
-        $newDeal->save();
-
-        // Copy products
-        foreach ($deal->products as $product) {
-            $newDeal->products()->attach($product->id, [
-                'custom_discount' => $product->pivot->custom_discount,
-                'stock_limit' => $product->pivot->stock_limit,
-            ]);
-        }
-
-        return redirect()
-            ->route('admin.deals.edit', $newDeal)
-            ->with('success', 'Deal duplicated successfully!');
     }
 
     private function getDealTypes()

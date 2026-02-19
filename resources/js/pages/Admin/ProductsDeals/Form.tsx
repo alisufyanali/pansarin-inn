@@ -55,7 +55,7 @@ interface FormData {
 interface FormProps {
     data: FormData;
     setData: (key: keyof FormData | string, value: any) => void;
-    errors: Partial<Record<keyof FormData, string>>;
+    errors: Partial<Record<string, string>>; // Changed to accept any string key for nested errors
     processing: boolean;
     onSubmit: FormEventHandler;
     products: Product[];
@@ -150,6 +150,13 @@ export default function Form({
 
     return (
         <form onSubmit={onSubmit} className="space-y-6">
+            {/* Global error banner */}
+            {errors.error && (
+                <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700 dark:bg-red-900/30 dark:border-red-700 dark:text-red-400">
+                    {errors.error}
+                </div>
+            )}
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Left Column - Main Content */}
                 <div className="lg:col-span-2 space-y-6">
