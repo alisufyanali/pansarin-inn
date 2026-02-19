@@ -3,15 +3,20 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Repositories\Admin\NewsletterRepository;
+use App\Http\Requests\Admin\NewsletterRequest;
 use App\Models\Newsletter;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
-use Yajra\DataTables\Facades\DataTables;
 
 class NewsletterController extends Controller
 {
-    public function __construct()
+    protected $newsletterRepository;
+
+    public function __construct(NewsletterRepository $newsletterRepository)
     {
+        $this->newsletterRepository = $newsletterRepository;
         // $this->middleware('permission:create.newsletters')->only(['create', 'store']);
         // $this->middleware('permission:edit.newsletters')->only(['edit', 'update']);
         // $this->middleware('permission:delete.newsletters')->only(['destroy']);
@@ -22,16 +27,17 @@ class NewsletterController extends Controller
      */
     public function index(Request $request)
     {
-        $stats = [
-            'total' => Newsletter::count(),
-            'active' => Newsletter::where('status', 'active')->count(),
-            'verified' => Newsletter::whereNotNull('verified_at')->count(),
-        ];
+        try {
+            $stats = $this->newsletterRepository->getStats();
 
-        return Inertia::render('Admin/Newsletters/Index', [
-            'userRole' => $request->user()->role ?? 'admin',
-            'stats' => $stats,
-        ]);
+            return Inertia::render('Admin/Newsletters/Index', [
+                'userRole' => $request->user()->role ?? 'admin',
+                'stats' => $stats,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Newsletter index error: ' . $e->getMessage());
+            return back()->with('error', 'Failed to load newsletters.');
+        }
     }
 
     /**
@@ -39,45 +45,18 @@ class NewsletterController extends Controller
      */
     public function getData(Request $request)
     {
-        $query = Newsletter::query()->latest();
-        
-        // Search handling
-        if ($request->has('search') && $request->search !== '') {
-            if (is_string($request->search)) {
-                $search = $request->search;
-                $query->where(function($q) use ($search) {
-                    $q->where('email', 'like', "%{$search}%")
-                      ->orWhere('name', 'like', "%{$search}%")
-                      ->orWhere('source', 'like', "%{$search}%");
-                });
-            }
-            elseif (is_array($request->search) && isset($request->search['value'])) {
-                $search = $request->search['value'];
-                if (!empty($search)) {
-                    $query->where(function($q) use ($search) {
-                        $q->where('email', 'like', "%{$search}%")
-                          ->orWhere('name', 'like', "%{$search}%")
-                          ->orWhere('source', 'like', "%{$search}%");
-                    });
-                }
-            }
+        try {
+            return $this->newsletterRepository->getAllForDataTable($request);
+        } catch (\Exception $e) {
+            Log::error('Newsletter getData error: ' . $e->getMessage());
+            
+            return response()->json([
+                'error' => 'Failed to load data',
+                'message' => $e->getMessage(),
+                'data' => [],
+                'total' => 0,
+            ], 500);
         }
-        
-        // Status filter
-        if ($request->has('status') && $request->status !== '') {
-            $query->where('status', $request->status);
-        }
-
-        // Verification filter
-        if ($request->has('verified') && $request->verified !== '') {
-            if ($request->verified === 'yes') {
-                $query->whereNotNull('verified_at');
-            } else {
-                $query->whereNull('verified_at');
-            }
-        }
-
-        return DataTables::of($query)->make(true);
     }
 
     /**
@@ -91,22 +70,41 @@ class NewsletterController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(NewsletterRequest $request)
     {
-        $validated = $request->validate([
-            'email' => 'required|email|unique:newsletters,email',
-            'name' => 'nullable|string|max:255',
-            'status' => 'required|in:active,unsubscribed,bounced',
-            'source' => 'nullable|string|max:255',
-        ]);
+        try {
+            $validated = $request->validated();
+            
+            $this->newsletterRepository->store($validated);
 
-        $validated['ip_address'] = $request->ip();
-        $validated['user_agent'] = $request->userAgent();
+            return redirect()->route('admin.newsletters.index')
+                ->with('success', 'Newsletter subscriber successfully created!');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()
+                ->withErrors($e->errors())
+                ->withInput();
+        } catch (\Exception $e) {
+            Log::error('Newsletter creation error: ' . $e->getMessage());
+            return back()
+                ->withInput()
+                ->with('error', 'Failed to create newsletter subscriber.');
+        }
+    }
 
-        Newsletter::create($validated);
-
-        return redirect()->route('admin.newsletters.index')
-            ->with('success', 'Newsletter subscriber successfully created!');
+    /**
+     * Display the specified resource.
+     */
+    public function show(Newsletter $newsletter)
+    {
+        try {
+            return Inertia::render('Admin/Newsletters/Show', [
+                'newsletter' => $newsletter
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Newsletter show error: ' . $e->getMessage());
+            return redirect()->route('admin.newsletters.index')
+                ->with('error', 'Failed to load newsletter subscriber.');
+        }
     }
 
     /**
@@ -114,27 +112,39 @@ class NewsletterController extends Controller
      */
     public function edit(Newsletter $newsletter)
     {
-        return Inertia::render('Admin/Newsletters/Edit', [
-            'newsletter' => $newsletter
-        ]);
+        try {
+            return Inertia::render('Admin/Newsletters/Edit', [
+                'newsletter' => $newsletter
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Newsletter edit error: ' . $e->getMessage());
+            return redirect()->route('admin.newsletters.index')
+                ->with('error', 'Failed to load newsletter subscriber.');
+        }
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Newsletter $newsletter)
+    public function update(NewsletterRequest $request, Newsletter $newsletter)
     {
-        $validated = $request->validate([
-            'email' => 'required|email|unique:newsletters,email,' . $newsletter->id,
-            'name' => 'nullable|string|max:255',
-            'status' => 'required|in:active,unsubscribed,bounced',
-            'source' => 'nullable|string|max:255',
-        ]);
+        try {
+            $validated = $request->validated();
+            
+            $this->newsletterRepository->update($newsletter->id, $validated);
 
-        $newsletter->update($validated);
-
-        return redirect()->route('admin.newsletters.index')
-            ->with('success', 'Newsletter subscriber successfully updated!');
+            return redirect()->route('admin.newsletters.index')
+                ->with('success', 'Newsletter subscriber successfully updated!');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()
+                ->withErrors($e->errors())
+                ->withInput();
+        } catch (\Exception $e) {
+            Log::error('Newsletter update error: ' . $e->getMessage());
+            return back()
+                ->withInput()
+                ->with('error', 'Failed to update newsletter subscriber.');
+        }
     }
 
     /**
@@ -142,9 +152,53 @@ class NewsletterController extends Controller
      */
     public function destroy(Newsletter $newsletter)
     {
-        $newsletter->delete();
-        
-        return redirect()->route('admin.newsletters.index')
-            ->with('success', 'Newsletter subscriber successfully deleted!');
+        try {
+            $this->newsletterRepository->delete($newsletter->id);
+            
+            return redirect()->route('admin.newsletters.index')
+                ->with('success', 'Newsletter subscriber successfully deleted!');
+        } catch (\Exception $e) {
+            Log::error('Newsletter deletion error: ' . $e->getMessage());
+            return back()->with('error', 'Failed to delete newsletter subscriber.');
+        }
+    }
+
+    /**
+     * Update newsletter status
+     */
+    public function updateStatus(Request $request, Newsletter $newsletter)
+    {
+        try {
+            $request->validate([
+                'status' => 'required|in:active,unsubscribed,bounced',
+            ]);
+
+            $this->newsletterRepository->updateStatus($newsletter->id, $request->status);
+            
+            return back()->with('success', 'Newsletter status updated!');
+        } catch (\Exception $e) {
+            Log::error('Newsletter status update error: ' . $e->getMessage());
+            return back()->with('error', 'Failed to update newsletter status.');
+        }
+    }
+
+    /**
+     * Bulk delete newsletters
+     */
+    public function bulkDelete(Request $request)
+    {
+        try {
+            $request->validate([
+                'ids' => 'required|array',
+                'ids.*' => 'exists:newsletters,id'
+            ]);
+
+            $count = $this->newsletterRepository->bulkDelete($request->ids);
+
+            return back()->with('success', $count . ' newsletter subscribers deleted!');
+        } catch (\Exception $e) {
+            Log::error('Newsletter bulk delete error: ' . $e->getMessage());
+            return back()->with('error', 'Failed to delete newsletter subscribers.');
+        }
     }
 }

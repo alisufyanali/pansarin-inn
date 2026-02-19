@@ -3,17 +3,21 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Inertia\Inertia;
-use App\Models\Coupon;
+use App\Http\Repositories\Admin\CouponRepository;
+use App\Http\Requests\Admin\CouponRequest;
 use App\Models\Product;
 use App\Models\Category;
-use Yajra\DataTables\Facades\DataTables;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Inertia\Inertia;
 
 class CouponController extends Controller
 {
-    public function __construct()
+    protected $couponRepository;
+
+    public function __construct(CouponRepository $couponRepository)
     {
+        $this->couponRepository = $couponRepository;
         $this->middleware('permission:create.coupons')->only(['create', 'store']);
         $this->middleware('permission:edit.coupons')->only(['edit', 'update']);
         $this->middleware('permission:delete.coupons')->only(['destroy']);
@@ -25,19 +29,17 @@ class CouponController extends Controller
      */
     public function index(Request $request)
     {
-        // Calculate stats
-        $stats = [
-            'total' => Coupon::count(),
-            'active' => Coupon::where('is_active', true)->count(),
-            'percentage' => Coupon::where('discount_type', 'percentage')->count(),
-            'fixed' => Coupon::where('discount_type', 'fixed')->count(),
+        try {
+            $stats = $this->couponRepository->getStats();
 
-        ];
-
-        return Inertia::render('Admin/Coupons/Index', [
-            'userRole' => $request->user()->role ?? 'admin',
-            'stats' => $stats,
-        ]);
+            return Inertia::render('Admin/Coupons/Index', [
+                'userRole' => $request->user()->role ?? 'admin',
+                'stats' => $stats,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Coupon index error: ' . $e->getMessage());
+            return back()->with('error', 'Failed to load coupons.');
+        }
     }
 
     /**
@@ -45,53 +47,18 @@ class CouponController extends Controller
      */
     public function getData(Request $request)
     {
-        $query = Coupon::with(['product', 'category'])->latest();
-        
-        // Search handling
-        if ($request->has('search') && $request->search !== '') {
-            if (is_string($request->search)) {
-                $search = $request->search;
-                $query->where(function($q) use ($search) {
-                    $q->where('code', 'like', "%{$search}%")
-                      ->orWhere('description', 'like', "%{$search}%")
-                      ->orWhere('discount_type', 'like', "%{$search}%")
-                      ->orWhere('apply_to', 'like', "%{$search}%");
-                });
-            }
-            elseif (is_array($request->search) && isset($request->search['value'])) {
-                $search = $request->search['value'];
-                if (!empty($search)) {
-                    $query->where(function($q) use ($search) {
-                        $q->where('code', 'like', "%{$search}%")
-                          ->orWhere('description', 'like', "%{$search}%")
-                          ->orWhere('discount_type', 'like', "%{$search}%")
-                          ->orWhere('apply_to', 'like', "%{$search}%");
-                    });
-                }
-            }
+        try {
+            return $this->couponRepository->getAllForDataTable($request);
+        } catch (\Exception $e) {
+            Log::error('Coupon getData error: ' . $e->getMessage());
+            
+            return response()->json([
+                'error' => 'Failed to load data',
+                'message' => $e->getMessage(),
+                'data' => [],
+                'total' => 0,
+            ], 500);
         }
-        
-        // Filters
-        if ($request->has('discount_type') && $request->discount_type !== '') {
-            $query->where('discount_type', $request->discount_type);
-        }
-        
-        if ($request->has('apply_to') && $request->apply_to !== '') {
-            $query->where('apply_to', $request->apply_to);
-        }
-
-        if ($request->has('is_active') && $request->is_active !== '') {
-            $query->where('is_active', $request->is_active);
-        }
-
-        return DataTables::of($query)
-            ->addColumn('product_name', function($coupon) {
-                return $coupon->product ? $coupon->product->name : null;
-            })
-            ->addColumn('category_name', function($coupon) {
-                return $coupon->category ? $coupon->category->name : null;
-            })
-            ->make(true);
     }
 
     /**
@@ -99,45 +66,39 @@ class CouponController extends Controller
      */
     public function create()
     {
-        return Inertia::render('Admin/Coupons/Create', [
-            'products' => Product::orderBy('name')->get(['id', 'name']),
-            'categories' => Category::orderBy('name')->get(['id', 'name']),
-        ]);
+        try {
+            return Inertia::render('Admin/Coupons/Create', [
+                'products' => Product::orderBy('name')->get(['id', 'name']),
+                'categories' => Category::orderBy('name')->get(['id', 'name']),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Coupon create error: ' . $e->getMessage());
+            return redirect()->route('admin.coupons.index')
+                ->with('error', 'Failed to load create form.');
+        }
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(CouponRequest $request)
     {
-        $validated = $request->validate([
-            'code' => 'required|string|max:50|unique:coupons,code',
-            'description' => 'nullable|string',
-            'discount_type' => 'required|in:percentage,fixed',
-            'discount_value' => 'required|numeric|min:0',
-            'apply_to' => 'required|in:order,product,category',
-            'product_id' => 'nullable|exists:products,id|required_if:apply_to,product',
-            'category_id' => 'nullable|exists:categories,id|required_if:apply_to,category',
-            'min_purchase_amount' => 'nullable|numeric|min:0',
-            'max_discount_amount' => 'nullable|numeric|min:0',
-            'usage_limit' => 'nullable|integer|min:1',
-            'per_user_limit' => 'nullable|integer|min:1',
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
-            'is_active' => 'boolean',
-        ]);
+        try {
+            $validated = $request->validated();
+            
+            $this->couponRepository->store($validated);
 
-        // Clean up product_id and category_id based on apply_to
-        if ($validated['apply_to'] !== 'product') {
-            $validated['product_id'] = null;
+            return to_route('admin.coupons.index')->with('success', 'Coupon successfully created!');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()
+                ->withErrors($e->errors())
+                ->withInput();
+        } catch (\Exception $e) {
+            Log::error('Coupon creation error: ' . $e->getMessage());
+            return back()
+                ->withInput()
+                ->with('error', 'Failed to create coupon.');
         }
-        if ($validated['apply_to'] !== 'category') {
-            $validated['category_id'] = null;
-        }
-
-        Coupon::create($validated);
-
-        return to_route('admin.coupons.index')->with('success', 'Coupon successfully created!');
     }
 
     /**
@@ -145,11 +106,17 @@ class CouponController extends Controller
      */
     public function show(string $id)
     {
-        $coupon = Coupon::with(['product', 'category'])->findOrFail($id);
+        try {
+            $coupon = $this->couponRepository->find($id);
 
-        return Inertia::render('Admin/Coupons/Show', [
-            'coupon' => $coupon
-        ]);
+            return Inertia::render('Admin/Coupons/Show', [
+                'coupon' => $coupon
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Coupon show error: ' . $e->getMessage());
+            return redirect()->route('admin.coupons.index')
+                ->with('error', 'Failed to load coupon.');
+        }
     }
 
     /**
@@ -157,50 +124,42 @@ class CouponController extends Controller
      */
     public function edit(string $id)
     {
-        $coupon = Coupon::with(['product', 'category'])->findOrFail($id);
+        try {
+            $coupon = $this->couponRepository->find($id);
 
-        return Inertia::render('Admin/Coupons/Edit', [
-            'coupon' => $coupon,
-            'products' => Product::orderBy('name')->get(['id', 'name']),
-            'categories' => Category::orderBy('name')->get(['id', 'name']),
-        ]);
+            return Inertia::render('Admin/Coupons/Edit', [
+                'coupon' => $coupon,
+                'products' => Product::orderBy('name')->get(['id', 'name']),
+                'categories' => Category::orderBy('name')->get(['id', 'name']),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Coupon edit error: ' . $e->getMessage());
+            return redirect()->route('admin.coupons.index')
+                ->with('error', 'Failed to load coupon.');
+        }
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(CouponRequest $request, string $id)
     {
-        $coupon = Coupon::findOrFail($id);
+        try {
+            $validated = $request->validated();
+            
+            $this->couponRepository->update($id, $validated);
 
-        $validated = $request->validate([
-            'code' => 'required|string|max:50|unique:coupons,code,' . $id,
-            'description' => 'nullable|string',
-            'discount_type' => 'required|in:percentage,fixed',
-            'discount_value' => 'required|numeric|min:0',
-            'apply_to' => 'required|in:order,product,category',
-            'product_id' => 'nullable|exists:products,id|required_if:apply_to,product',
-            'category_id' => 'nullable|exists:categories,id|required_if:apply_to,category',
-            'min_purchase_amount' => 'nullable|numeric|min:0',
-            'max_discount_amount' => 'nullable|numeric|min:0',
-            'usage_limit' => 'nullable|integer|min:1',
-            'per_user_limit' => 'nullable|integer|min:1',
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
-            'is_active' => 'boolean',
-        ]);
-
-        // Clean up product_id and category_id based on apply_to
-        if ($validated['apply_to'] !== 'product') {
-            $validated['product_id'] = null;
+            return to_route('admin.coupons.index')->with('success', 'Coupon successfully updated!');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()
+                ->withErrors($e->errors())
+                ->withInput();
+        } catch (\Exception $e) {
+            Log::error('Coupon update error: ' . $e->getMessage());
+            return back()
+                ->withInput()
+                ->with('error', 'Failed to update coupon.');
         }
-        if ($validated['apply_to'] !== 'category') {
-            $validated['category_id'] = null;
-        }
-
-        $coupon->update($validated);
-
-        return to_route('admin.coupons.index')->with('success', 'Coupon successfully updated!');
     }
 
     /**
@@ -209,14 +168,14 @@ class CouponController extends Controller
     public function destroy(string $id)
     {
         try {
-            Coupon::destroy($id);
+            $this->couponRepository->delete($id);
             
             return redirect()->route('admin.coupons.index')
                 ->with('success', 'Coupon successfully deleted!');
-                
         } catch (\Exception $e) {
+            Log::error('Coupon deletion error: ' . $e->getMessage());
             return redirect()->route('admin.coupons.index')
-                ->with('error', 'Failed to delete coupon: ' . $e->getMessage());
+                ->with('error', 'Failed to delete coupon.');
         }
     }
 
@@ -225,10 +184,33 @@ class CouponController extends Controller
      */
     public function toggleStatus(string $id)
     {
-        $coupon = Coupon::findOrFail($id);
-        $coupon->is_active = !$coupon->is_active;
-        $coupon->save();
+        try {
+            $this->couponRepository->toggleStatus($id);
+            
+            return back()->with('success', 'Coupon status updated successfully!');
+        } catch (\Exception $e) {
+            Log::error('Coupon toggle status error: ' . $e->getMessage());
+            return back()->with('error', 'Failed to update coupon status.');
+        }
+    }
 
-        return back()->with('success', 'Coupon status updated successfully!');
+    /**
+     * Bulk delete coupons
+     */
+    public function bulkDelete(Request $request)
+    {
+        try {
+            $request->validate([
+                'ids' => 'required|array',
+                'ids.*' => 'exists:coupons,id'
+            ]);
+
+            $count = $this->couponRepository->bulkDelete($request->ids);
+
+            return back()->with('success', $count . ' coupons deleted successfully!');
+        } catch (\Exception $e) {
+            Log::error('Coupon bulk delete error: ' . $e->getMessage());
+            return back()->with('error', 'Failed to delete coupons.');
+        }
     }
 }

@@ -1,30 +1,23 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
-import BlogCategoryForm, { type BlogCategoryFormData } from './Form';
-
-type BlogCategory = { id: number; name: string };
+import NewsletterForm, { type NewsletterFormData } from './Form';
 
 interface Props {
-  blogCategory: BlogCategoryFormData & { id: number };
-  parents: BlogCategory[];
+    newsletter: NewsletterFormData & { id: number };
 }
 
-export default function Edit({ blogCategory, parents }: Props) {
-  const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Blog Categories', href: '/admin/blogcategories' },
-    { title: blogCategory.name, href: '#' },
-    { title: 'Edit', href: '#' },
-  ];
+export default function Edit({ newsletter }: Props) {
+    const breadcrumbs: BreadcrumbItem[] = [
+        { title: 'Newsletter Subscribers', href: '/admin/newsletters' },
+        { title: newsletter.email, href: '#' },
+        { title: 'Edit', href: '#' },
+    ];
 
-  return (
-    <AppLayout breadcrumbs={breadcrumbs}>
-      <Head title={`Edit ${blogCategory.name}`} />
-      <BlogCategoryForm 
-        blogCategory={blogCategory} 
-        parents={parents} 
-        isEdit={true} 
-      />
-    </AppLayout>
-  );
+    return (
+        <AppLayout breadcrumbs={breadcrumbs}>
+            <Head title={`Edit ${newsletter.email}`} />
+            <NewsletterForm newsletter={newsletter} isEdit={true} />
+        </AppLayout>
+    );
 }
