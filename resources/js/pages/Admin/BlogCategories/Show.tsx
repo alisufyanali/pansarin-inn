@@ -1,10 +1,12 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/react';
-import { Edit2, FolderTree, FileText, Search, Globe, Link } from 'lucide-react';
+import { Head, Link } from '@inertiajs/react';
+import { Edit2, FolderTree, FileText, Search, Globe } from 'lucide-react';
 import InfoRow from '@/components/InfoRow';
 import SectionCard from '@/components/SectionCard';
 import PageHeader, { ActionButton } from '@/components/PageHeader';
+import StatsCard from '@/components/StatsCard';
+import TimelineCard from '@/components/TimelineCard';
 import { formatDate } from '@/utils/dateFormat';
 
 interface BlogCategory {
@@ -91,30 +93,18 @@ export default function Show({ blogCategory }: { blogCategory: BlogCategory }) {
           </div>
 
           <div className="space-y-6">
-            <div className="bg-white dark:bg-gray-900 rounded-xl p-6 shadow-lg">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Category Stats</h3>
-              <div className="space-y-3">
-                <StatItem label="Sub Categories" value={blogCategory.children?.length || 0} />
-                <StatItem label="Type" value={blogCategory.parent ? 'Sub Category' : 'Root Category'} />
-              </div>
-            </div>
+            <StatsCard 
+              title="Category Stats"
+              stats={[
+                { label: 'Sub Categories', value: blogCategory.children?.length || 0 },
+                { label: 'Type', value: blogCategory.parent ? 'Sub Category' : 'Root Category' },
+              ]}
+            />
 
-            <div className="bg-white dark:bg-gray-900 rounded-xl p-6 shadow-lg">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Timestamps</h3>
-              <div className="space-y-3">
-                <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Created</p>
-                  <p className="text-sm text-gray-900 dark:text-white">{formatDate(blogCategory.created_at)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Last Updated</p>
-                  <p className="text-sm text-gray-900 dark:text-white">{formatDate(blogCategory.updated_at)}</p>
-                </div>
-              </div>
-            </div>
+            <TimelineCard createdAt={blogCategory.created_at} updatedAt={blogCategory.updated_at} title="Timestamps" />
 
             {blogCategory.children && blogCategory.children.length > 0 && (
-              <div className="bg-white dark:bg-gray-900 rounded-xl p-6 shadow-lg">
+              <div className="bg-white dark:bg-gray-900 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-800">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                   <FolderTree className="w-5 h-5" />
                   Sub Categories
@@ -137,14 +127,5 @@ export default function Show({ blogCategory }: { blogCategory: BlogCategory }) {
         </div>
       </div>
     </AppLayout>
-  );
-}
-
-function StatItem({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-800 last:border-0">
-      <span className="text-sm text-gray-600 dark:text-gray-400">{label}</span>
-      <span className="text-sm font-semibold text-gray-900 dark:text-white">{value}</span>
-    </div>
   );
 }

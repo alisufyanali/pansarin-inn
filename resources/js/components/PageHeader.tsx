@@ -3,7 +3,7 @@ import { ArrowLeft, type LucideIcon } from 'lucide-react';
 import { type ReactNode } from 'react';
 
 interface PageHeaderProps {
-  title: string;
+  title: string | ReactNode;
   backUrl: string;
   backLabel?: string;
   actions?: ReactNode;
