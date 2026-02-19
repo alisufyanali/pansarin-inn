@@ -126,42 +126,40 @@ export default function Index({ stats, flash }: Props) {
     const columns = [
         CommonColumns.id(),
         {
-            name: 'Deal Info',
+            name: 'Deal',
             selector: (row: Deal) => row.title,
             cell: (row: Deal) => (
-                <div className="flex items-center gap-3 py-2">
-                    <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                            <span className="font-bold text-gray-900 dark:text-gray-100">
-                                {row.title}
-                            </span>
-                            {row.is_featured && (
-                                <span className="flex items-center gap-1 rounded-md bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
-                                    <Zap size={12} /> Featured
-                                </span>
-                            )}
-                        </div>
-                        <span
-                            className={`mt-1 inline-block rounded-md px-2 py-0.5 text-xs font-semibold ${getDealTypeColor(row.deal_type)}`}
-                        >
-                            {getDealTypeLabel(row.deal_type)}
+                <div className="py-2">
+                    <div className="flex items-center gap-2">
+                        <span className="font-semibold text-gray-900 dark:text-gray-100">
+                            {row.title}
                         </span>
+                        {row.is_featured && (
+                            <span className="flex items-center gap-1 rounded-md bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
+                                <Zap size={12} />
+                            </span>
+                        )}
                     </div>
+                    <span
+                        className={`mt-1 inline-block rounded-md px-2 py-0.5 text-xs font-medium ${getDealTypeColor(row.deal_type)}`}
+                    >
+                        {getDealTypeLabel(row.deal_type)}
+                    </span>
                 </div>
             ),
             sortable: true,
-            width: '250px',
+            width: '220px',
         },
         {
             name: 'Discount',
             selector: (row: Deal) => row.discount_value,
             cell: (row: Deal) => (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                     <Percent
-                        size={16}
+                        size={14}
                         className="text-green-600 dark:text-green-400"
                     />
-                    <span className="font-bold text-green-600 dark:text-green-400">
+                    <span className="font-semibold text-green-600 dark:text-green-400">
                         {row.deal_type === 'percentage'
                             ? `${row.discount_value}%`
                             : row.deal_type === 'fixed'
@@ -171,22 +169,22 @@ export default function Index({ stats, flash }: Props) {
                 </div>
             ),
             sortable: true,
-            width: '120px',
+            width: '110px',
         },
         {
             name: 'Products',
             selector: (row: Deal) => row.products_count,
             cell: (row: Deal) => (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                     <Package
-                        size={16}
+                        size={14}
                         className="text-blue-600 dark:text-blue-400"
                     />
-                    <span className="font-semibold">{row.products_count}</span>
+                    <span className="font-medium">{row.products_count}</span>
                 </div>
             ),
             sortable: true,
-            width: '100px',
+            width: '90px',
         },
         {
             name: 'Duration',
@@ -194,15 +192,13 @@ export default function Index({ stats, flash }: Props) {
             cell: (row: Deal) => (
                 <div className="text-xs">
                     {row.starts_at && (
-                        <div className="mb-1 text-gray-600 dark:text-gray-400">
-                            <span className="font-semibold">Start:</span>{' '}
+                        <div className="text-gray-600 dark:text-gray-400">
                             {new Date(row.starts_at).toLocaleDateString()}
                         </div>
                     )}
                     {row.ends_at && (
-                        <div className="text-gray-600 dark:text-gray-400">
-                            <span className="font-semibold">End:</span>{' '}
-                            {new Date(row.ends_at).toLocaleDateString()}
+                        <div className="text-gray-500 dark:text-gray-500">
+                            to {new Date(row.ends_at).toLocaleDateString()}
                         </div>
                     )}
                     {!row.starts_at && !row.ends_at && (
@@ -210,30 +206,7 @@ export default function Index({ stats, flash }: Props) {
                     )}
                 </div>
             ),
-            width: '140px',
-        },
-        {
-            name: 'Usage',
-            selector: (row: Deal) => row.current_uses,
-            cell: (row: Deal) => (
-                <div className="text-xs">
-                    <div className="font-semibold text-gray-900 dark:text-gray-100">
-                        {row.current_uses}{' '}
-                        {row.max_uses ? `/ ${row.max_uses}` : ''}
-                    </div>
-                    {row.max_uses && (
-                        <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
-                            <div
-                                className="h-full bg-blue-600"
-                                style={{
-                                    width: `${Math.min((row.current_uses / row.max_uses) * 100, 100)}%`,
-                                }}
-                            />
-                        </div>
-                    )}
-                </div>
-            ),
-            width: '100px',
+            width: '130px',
         },
         {
             name: 'Status',
@@ -245,26 +218,24 @@ export default function Index({ stats, flash }: Props) {
                     row.starts_at && new Date(row.starts_at) > now;
 
                 return (
-                    <div>
-                        <button
-                            onClick={() => handleToggleStatus(row.id)}
-                            className={`rounded-full px-3 py-1 text-xs font-semibold transition-all ${
-                                isExpired
-                                    ? 'cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-gray-800'
-                                    : row.is_active
-                                      ? 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400'
-                                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400'
-                            }`}
-                        >
-                            {isExpired
-                                ? 'Expired'
-                                : isUpcoming
-                                  ? 'Upcoming'
-                                  : row.is_active
-                                    ? 'Active'
-                                    : 'Inactive'}
-                        </button>
-                    </div>
+                    <button
+                        onClick={() => handleToggleStatus(row.id)}
+                        className={`rounded-full px-3 py-1 text-xs font-medium transition-all ${
+                            isExpired
+                                ? 'cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-gray-800'
+                                : row.is_active
+                                  ? 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400'
+                                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400'
+                        }`}
+                    >
+                        {isExpired
+                            ? 'Expired'
+                            : isUpcoming
+                              ? 'Upcoming'
+                              : row.is_active
+                                ? 'Active'
+                                : 'Inactive'}
+                    </button>
                 );
             },
             sortable: true,
@@ -309,7 +280,7 @@ export default function Index({ stats, flash }: Props) {
                     )}
                 </div>
             ),
-            width: '150px',
+            width: '140px',
             right: true,
         },
     ];
@@ -381,7 +352,7 @@ export default function Index({ stats, flash }: Props) {
                 {/* Data Table */}
                 <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
                     <DataTableWrapper
-                        fetchUrl="/admin/deals/data"
+                        fetchUrl="/admin/deals-data"
                         columns={columns}
                         csvHeaders={csvHeaders}
                         searchableKeys={['title', 'description']}

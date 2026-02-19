@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Repositories\Admin\ProductAttributeRepository;
+use App\Http\Requests\Admin\ProductAttributeRequest;
 use App\Models\Attribute;
 use App\Models\AttributeValue;
 use Illuminate\Http\Request;
@@ -12,8 +14,11 @@ use Inertia\Inertia;
 
 class ProductAttributeController extends Controller
 {
-    public function __construct()
+    protected $attributeRepository;
+
+    public function __construct(ProductAttributeRepository $attributeRepository)
     {
+        $this->attributeRepository = $attributeRepository;
         // Permission middleware for each method
         $this->middleware('permission:view.attributes')->only(['index', 'getData', 'show']);
         $this->middleware('permission:create.attributes')->only(['create', 'store']);
@@ -26,7 +31,7 @@ class ProductAttributeController extends Controller
      */
     public function index()
     {
-        $attributes = Attribute::with('values')->get();
+        $attributes = $this->attributeRepository->getAll();
         
         return Inertia::render('Admin/Attributes/Index', [
             'attributes' => $attributes,
@@ -38,42 +43,7 @@ class ProductAttributeController extends Controller
      */
     public function getData(Request $request)
     {
-        $query = Attribute::with('values');
-        
-        // Search
-        if ($request->has('search') && $request->search) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('slug', 'like', "%{$search}%")
-                  ->orWhereHas('values', function($q) use ($search) {
-                      $q->where('value', 'like', "%{$search}%");
-                  });
-            });
-        }
-        
-        // Sorting
-        $sortBy = $request->get('sortBy', 'id');
-        $sortOrder = $request->get('sortOrder', 'desc');
-        
-        if ($sortBy === 'values_count') {
-            $query->withCount('values')
-                  ->orderBy('values_count', $sortOrder);
-        } else {
-            $query->orderBy($sortBy, $sortOrder);
-        }
-        
-        // Pagination
-        $perPage = $request->get('perPage', 10);
-        $attributes = $query->paginate($perPage);
-        
-        return response()->json([
-            'data' => $attributes->items(),
-            'total' => $attributes->total(),
-            'per_page' => $attributes->perPage(),
-            'current_page' => $attributes->currentPage(),
-            'last_page' => $attributes->lastPage(),
-        ]);
+        return $this->attributeRepository->getAllForDataTable($request);
     }
 
     /**
@@ -87,19 +57,12 @@ class ProductAttributeController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(ProductAttributeRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:attributes,name',
-            'values' => 'required|array|min:1',
-            'values.*' => 'required|string|max:255',
-        ]);
+        $validated = $request->validated();
 
         try {
-            $attribute = Attribute::create([
-                'name' => $validated['name'],
-                'slug' => Str::slug($validated['name']),
-            ]);
+            $attribute = $this->attributeRepository->store($validated);
 
             // Create attribute values
             foreach ($validated['values'] as $value) {
@@ -125,6 +88,7 @@ class ProductAttributeController extends Controller
      */
     public function show(Attribute $attribute)
     {
+        $attribute = $this->attributeRepository->find($attribute->id);
         $attribute->load('values');
         
         return Inertia::render('Admin/Attributes/Show', [
@@ -137,6 +101,8 @@ class ProductAttributeController extends Controller
      */
     public function edit(Attribute $attribute)
     {
+        $attribute = $this->attributeRepository->find($attribute->id);
+        
         return Inertia::render('Admin/Attributes/Edit', [
             'attribute' => $attribute->load('values'),
         ]);
@@ -145,19 +111,12 @@ class ProductAttributeController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Attribute $attribute)
+    public function update(ProductAttributeRequest $request, Attribute $attribute)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:attributes,name,' . $attribute->id,
-            'values' => 'required|array|min:1',
-            'values.*' => 'required|string|max:255',
-        ]);
+        $validated = $request->validated();
 
         try {
-            $attribute->update([
-                'name' => $validated['name'],
-                'slug' => Str::slug($validated['name']),
-            ]);
+            $this->attributeRepository->update($attribute->id, $validated);
 
             // Delete existing values and create new ones
             $attribute->values()->delete();
@@ -187,7 +146,7 @@ class ProductAttributeController extends Controller
     {
         try {
             $attribute->values()->delete();
-            $attribute->delete();
+            $this->attributeRepository->delete($attribute->id);
 
             return redirect()->route('admin.attributes.index')
                 ->with('success', 'Attribute deleted successfully');

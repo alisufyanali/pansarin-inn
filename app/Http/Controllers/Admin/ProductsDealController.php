@@ -148,7 +148,7 @@ class ProductsDealController extends Controller
         }
 
         return redirect()
-            ->route('deals.index')
+            ->route('admin.deals.index')
             ->with('success', 'Deal created successfully!');
     }
 
@@ -278,7 +278,7 @@ class ProductsDealController extends Controller
         $deal->products()->sync($syncData);
 
         return redirect()
-            ->route('deals.index')
+            ->route('admin.deals.index')
             ->with('success', 'Deal updated successfully!');
     }
 
@@ -291,7 +291,7 @@ class ProductsDealController extends Controller
         $deal->delete();
 
         return redirect()
-            ->route('deals.index')
+            ->route('admin.deals.index')
             ->with('success', 'Deal deleted successfully!');
     }
 
@@ -329,7 +329,7 @@ class ProductsDealController extends Controller
         }
 
         return redirect()
-            ->route('deals.edit', $newDeal)
+            ->route('admin.deals.edit', $newDeal)
             ->with('success', 'Deal duplicated successfully!');
     }
 

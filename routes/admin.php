@@ -78,6 +78,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     
     
     Route::resource('deals', ProductsDealController::class);
+    Route::get('deals-data', [ProductsDealController::class, 'getData'])->name('products.data');
 
     /*
     |--------------------------------------------------------------------------
