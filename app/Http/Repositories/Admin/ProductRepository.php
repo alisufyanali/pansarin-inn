@@ -112,20 +112,29 @@ class ProductRepository
             $data['slug'] = $this->generateUniqueSlug($data['name'], $product->id);
         }
 
+        // Handle thumbnail
         if ($thumbnailFile) {
             if ($product->thumbnail) {
                 Storage::disk('public')->delete($product->thumbnail);
             }
             $data['thumbnail'] = $thumbnailFile->store('products', 'public');
+        } else {
+            // Don't update thumbnail field if no new image provided
+            unset($data['thumbnail']);
         }
 
+        // Handle social image
         if ($socialImageFile) {
             if ($product->social_image) {
                 Storage::disk('public')->delete($product->social_image);
             }
             $data['social_image'] = $socialImageFile->store('products/social', 'public');
+        } else {
+            // Don't update social_image field if no new image provided
+            unset($data['social_image']);
         }
 
+        // Handle gallery
         if (!empty($galleryFiles)) {
             // Delete old gallery images
             if ($product->gallery && is_array($product->gallery)) {
@@ -139,6 +148,9 @@ class ProductRepository
                 $galleryPaths[] = $file->store('products/gallery', 'public');
             }
             $data['gallery'] = $galleryPaths;
+        } else {
+            // Don't update gallery field if no new images provided
+            unset($data['gallery']);
         }
 
         $product->update($data);

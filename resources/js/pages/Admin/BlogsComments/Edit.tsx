@@ -9,6 +9,8 @@ interface BlogComment {
     id: number;
     blog_id?: number | null;
     comments: string;
+    review?: string;
+    rating?: number | null;
     status: 'pending' | 'approved' | 'rejected';
 }
 

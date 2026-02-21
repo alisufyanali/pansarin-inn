@@ -107,18 +107,26 @@ class CategoryRepository
             $data['slug'] = str()->slug($data['name']);
         }
 
+        // Handle main image
         if ($imageFile) {
             if ($category->image) {
                 Storage::disk('public')->delete($category->image);
             }
             $data['image'] = $imageFile->store('categories', 'public');
+        } else {
+            // Don't update image field if no new image provided
+            unset($data['image']);
         }
 
+        // Handle social image
         if ($socialImageFile) {
             if ($category->social_image) {
                 Storage::disk('public')->delete($category->social_image);
             }
             $data['social_image'] = $socialImageFile->store('categories/social', 'public');
+        } else {
+            // Don't update social_image field if no new image provided
+            unset($data['social_image']);
         }
 
         $category->update($data);

@@ -36,7 +36,7 @@ export default function Form({ category, categories, isEdit = false }: CategoryF
         category?.social_image ? `/storage/${category.social_image}` : null
     );
 
-    const { data, setData, errors, post, processing } = useForm<CategoryFormData>({
+    const { data, setData, errors, post, put, processing } = useForm<CategoryFormData>({
         name: category?.name || '',
         slug: category?.slug || '',
         parent_id: category?.parent_id || '',
@@ -90,9 +90,8 @@ export default function Form({ category, categories, isEdit = false }: CategoryF
     function submit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
         if (isEdit && category?.id) {
-            post(`/admin/categories/${category.id}`, {
+            put(`/admin/categories/${category.id}`, {
                 forceFormData: true,
-                method: 'put' as any,
             });
         } else {
             post('/admin/categories', { forceFormData: true });

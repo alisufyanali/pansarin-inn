@@ -7,7 +7,6 @@ import SectionCard from '@/components/SectionCard';
 import PageHeader, { ActionButton } from '@/components/PageHeader';
 import StatsCard from '@/components/StatsCard';
 import TimelineCard from '@/components/TimelineCard';
-import { formatDate } from '@/utils/dateFormat';
 
 interface BlogCategory {
   id: number;

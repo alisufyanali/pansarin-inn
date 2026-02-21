@@ -13,7 +13,10 @@ class ProductRequest extends FormRequest
 
     public function rules(): array
     {
-        $id = $this->route('product')?->id;
+        $productId = $this->route('product');
+        
+        // If it's a string (ID), use it directly; if it's a model, get the ID
+        $id = is_object($productId) ? $productId->id : $productId;
 
         return [
             'name' => 'required|string|max:255',
@@ -47,7 +50,7 @@ class ProductRequest extends FormRequest
             'schema_markup' => 'nullable|string',
             'social_description' => 'nullable|string|max:300',
             'tags' => 'nullable|array',
-            'affiliate_commission' => 'required|numeric|min:0|max:100',
+            // 'affiliate_commission' => 'required|numeric|min:0|max:100',
         ];
     }
 

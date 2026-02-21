@@ -67,11 +67,11 @@ class BlogsCommentsController extends Controller
         }
     }
 
-    public function show(BlogComments $blogsComment)
+    public function show(BlogComments $blogscomment)
     {
         try {
             return Inertia::render('Admin/BlogsComments/Show', [
-                'blogComment' => $blogsComment->load(['blog', 'user'])
+                'blogComment' => $blogscomment->load(['blog', 'user'])
             ]);
         } catch (\Exception $e) {
             \Log::error('Blog comment show error: ' . $e->getMessage());
@@ -79,7 +79,7 @@ class BlogsCommentsController extends Controller
         }
     }
 
-    public function edit(BlogComments $blogsComment)
+    public function edit(BlogComments $blogscomment)
     {
         try {
             $blogs = Blog::where('status', 'published')
@@ -87,7 +87,7 @@ class BlogsCommentsController extends Controller
                         ->get(['id', 'title']);
 
             return Inertia::render('Admin/BlogsComments/Edit', [
-                'blogComment' => $blogsComment->load(['blog', 'user']),
+                'blogComment' => $blogscomment->load(['blog', 'user']),
                 'blogs' => $blogs
             ]);
         } catch (\Exception $e) {
@@ -96,10 +96,10 @@ class BlogsCommentsController extends Controller
         }
     }
 
-    public function update(BlogCommentsRequest $request, BlogComments $blogsComment)
+    public function update(BlogCommentsRequest $request, BlogComments $blogscomment)
     {
         try {
-            $this->blogCommentsRepo->update($blogsComment->id, $request->validated());
+            $this->blogCommentsRepo->update($blogscomment->id, $request->validated());
 
             return to_route('admin.blogscomments.index')
                 ->with('success', 'Comment successfully updated!');
@@ -110,10 +110,10 @@ class BlogsCommentsController extends Controller
         }
     }
 
-    public function destroy(BlogComments $blogsComment)
+    public function destroy(BlogComments $blogscomment)
     {
         try {
-            $this->blogCommentsRepo->delete($blogsComment->id);
+            $this->blogCommentsRepo->delete($blogscomment->id);
             
             return to_route('admin.blogscomments.index')
                 ->with('success', 'Comment successfully deleted!');

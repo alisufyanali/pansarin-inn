@@ -13,7 +13,10 @@ class CategoryRequest extends FormRequest
 
     public function rules(): array
     {
-        $id = $this->route('category')?->id;
+        $categoryId = $this->route('category');
+        
+        // If it's a string (ID), use it directly; if it's a model, get the ID
+        $id = is_object($categoryId) ? $categoryId->id : $categoryId;
 
         return [
             'name' => 'required|string|max:255',
