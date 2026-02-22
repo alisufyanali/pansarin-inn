@@ -1,0 +1,18 @@
+[phases.setup]
+nixPkgs = ['php84', 'php84Packages.composer', 'nodejs_22']
+
+[phases.install]
+cmds = [
+  'composer install --optimize-autoloader --no-dev --no-interaction',
+  'npm ci'
+]
+
+[phases.build]
+cmds = [
+  'npm run build',
+  'mkdir -p storage/framework/{sessions,views,cache,testing} storage/logs bootstrap/cache',
+  'chmod -R 775 storage bootstrap/cache'
+]
+
+[start]
+cmd = 'php artisan serve --host=0.0.0.0 --port=$PORT'
