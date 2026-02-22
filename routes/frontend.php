@@ -1,9 +1,9 @@
 <?php
-use App\Http\Controllers\Admin\Frontend\GeneralSettingController;
-use App\Http\Controllers\Admin\Frontend\UiSettingController;
-use App\Http\Controllers\Admin\Frontend\BusinessSettingController;
-use App\Http\Controllers\Admin\Frontend\PageController;
 
+use App\Http\Controllers\Admin\Frontend\BusinessSettingController;
+use App\Http\Controllers\Admin\Frontend\GeneralSettingController;
+use App\Http\Controllers\Admin\Frontend\PageController;
+use App\Http\Controllers\Admin\Frontend\UiSettingController;
 use App\Http\Controllers\Api\FrontendController;
 use Illuminate\Support\Facades\Route;
 
@@ -17,13 +17,13 @@ Route::get('/index', [FrontendController::class, 'index']);
 
 Route::middleware(['auth'])->prefix('admin/settings/ui')->name('admin.ui-settings.')->group(function () {
     Route::get('/', [UiSettingController::class, 'index'])->name('index');
-    Route::Post('/branding',[UiSettingController::class, 'updateBrandingUI'])->name('updateBrandingUI');
-    Route::Post('/header',[UiSettingController::class, 'updateHeaderUI'])->name('updateHeaderUI');
-    Route::Post('/homepage',[UiSettingController::class, 'updateHomepageUI'])->name('updateHomepageUI');
-    Route::Post('/categories',[UiSettingController::class, 'updateCategoriesUI'])->name('updateCategoriesUI');
-    Route::Post('/products',[UiSettingController::class, 'updateProductsUI'])->name('updateProductsUI');
-    Route::Post('/email',[UiSettingController::class, 'updateEmailUI'])->name('updateEmailUI');
-    Route::Post('/marketing',[UiSettingController::class, 'updateMarketingUI'])->name('updateMarketingUI');
+    Route::Post('/branding', [UiSettingController::class, 'updateBrandingUI'])->name('updateBrandingUI');
+    Route::Post('/header', [UiSettingController::class, 'updateHeaderUI'])->name('updateHeaderUI');
+    Route::Post('/homepage', [UiSettingController::class, 'updateHomepageUI'])->name('updateHomepageUI');
+    Route::Post('/categories', [UiSettingController::class, 'updateCategoriesUI'])->name('updateCategoriesUI');
+    Route::Post('/products', [UiSettingController::class, 'updateProductsUI'])->name('updateProductsUI');
+    Route::Post('/email', [UiSettingController::class, 'updateEmailUI'])->name('updateEmailUI');
+    Route::Post('/marketing', [UiSettingController::class, 'updateMarketingUI'])->name('updateMarketingUI');
 
 });
 

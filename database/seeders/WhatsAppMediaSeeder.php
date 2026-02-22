@@ -5,8 +5,8 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 
 class WhatsAppMediaSeeder extends Seeder
 {
@@ -16,20 +16,20 @@ class WhatsAppMediaSeeder extends Seeder
     public function run(): void
     {
         // Create whatsapp directory if not exists
-        if (!Storage::disk('public')->exists('whatsapp')) {
+        if (! Storage::disk('public')->exists('whatsapp')) {
             Storage::disk('public')->makeDirectory('whatsapp');
         }
 
         $whatsappPath = storage_path('app/public/whatsapp');
 
         // 1. Create dummy payment screenshot (image)
-        $this->createDummyImage($whatsappPath . '/media_1704723456.jpg');
+        $this->createDummyImage($whatsappPath.'/media_1704723456.jpg');
 
         // 2. Create dummy audio file (voice message)
-        $this->createDummyAudio($whatsappPath . '/media_1704723457.ogg');
+        $this->createDummyAudio($whatsappPath.'/media_1704723457.ogg');
 
         // 3. Create dummy document
-        $this->createDummyDocument($whatsappPath . '/media_1704723458.pdf');
+        $this->createDummyDocument($whatsappPath.'/media_1704723458.pdf');
 
         $this->command->info('Dummy media files created successfully!');
         $this->command->info('Location: storage/app/public/whatsapp/');
@@ -61,7 +61,7 @@ class WhatsAppMediaSeeder extends Seeder
         imagestring($image, 5, 120, 30, 'PAYMENT RECEIPT', $white);
         imagestring($image, 3, 50, 120, 'Transaction ID: TXN-123456789', $black);
         imagestring($image, 3, 50, 160, 'Amount: Rs. 2,500.00', $black);
-        imagestring($image, 3, 50, 200, 'Date: ' . date('Y-m-d H:i:s'), $black);
+        imagestring($image, 3, 50, 200, 'Date: '.date('Y-m-d H:i:s'), $black);
         imagestring($image, 3, 50, 240, 'Status: SUCCESS', $black);
         imagestring($image, 3, 50, 300, 'Payment Method: JazzCash', $black);
         imagestring($image, 3, 50, 340, 'Reference: REF-987654', $black);
@@ -69,7 +69,7 @@ class WhatsAppMediaSeeder extends Seeder
         // Add green checkmark (success indicator)
         $green = imagecolorallocate($image, 37, 211, 102);
         imagefilledellipse($image, 200, 450, 100, 100, $green);
-        
+
         // Save image
         imagejpeg($image, $path, 90);
         imagedestroy($image);
@@ -85,14 +85,14 @@ class WhatsAppMediaSeeder extends Seeder
         // Create a minimal valid OGG audio file header
         // This is a silent audio file
         $oggHeader = pack('C*',
-            0x4f, 0x67, 0x67, 0x53, 0x00, 0x02, 0x00, 0x00, 
+            0x4F, 0x67, 0x67, 0x53, 0x00, 0x02, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00
         );
 
         file_put_contents($path, $oggHeader);
-        
+
         $this->command->info('✓ Created: media_1704723457.ogg (Voice Message)');
     }
 
@@ -112,9 +112,7 @@ class WhatsAppMediaSeeder extends Seeder
         $pdfContent .= "startxref\n408\n%%EOF";
 
         file_put_contents($path, $pdfContent);
-        
+
         $this->command->info('✓ Created: media_1704723458.pdf (Order Document)');
     }
 }
-
- 

@@ -12,13 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('security_settings', function (Blueprint $table) {
-    $table->id();
-    $table->boolean('recaptcha_enabled')->default(false);
-    $table->string('recaptcha_site_key')->nullable();
-    $table->string('recaptcha_secret_key')->nullable();
-    $table->boolean('two_factor_enabled')->default(false);
-    $table->timestamps();
-});
+            $table->id();
+            $table->boolean('recaptcha_enabled')->default(false);
+            $table->string('recaptcha_site_key')->nullable();
+            $table->string('recaptcha_secret_key')->nullable();
+            $table->boolean('two_factor_enabled')->default(false);
+            $table->timestamps();
+        });
 
     }
 

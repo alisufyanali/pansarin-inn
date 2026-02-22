@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Attribute;
 use App\Models\AttributeValue;
+use Illuminate\Database\Seeder;
 
 class AttributeSeeder extends Seeder
 {

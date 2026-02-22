@@ -2,13 +2,11 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\Sale;
-use App\Models\SaleItem;
-use App\Models\Order;
 use App\Models\Customer;
+use App\Models\Order;
 use App\Models\Product;
-use App\Models\ProductVariant;
+use App\Models\Sale;
+use Illuminate\Database\Seeder;
 
 class SaleSeeder extends Seeder
 {
@@ -26,19 +24,20 @@ class SaleSeeder extends Seeder
 
         if ($orders->isEmpty()) {
             $this->command->info('No delivered orders without sales found. Creating sample data...');
-            
+
             // If no orders exist, create sample sales with random data
             $customers = Customer::all();
             $products = Product::with('variants')->get();
 
             if ($customers->isEmpty() || $products->isEmpty()) {
                 $this->command->error('Please seed customers and products first!');
+
                 return;
             }
 
             for ($i = 1; $i <= 5; $i++) {
                 $customer = $customers->random();
-                
+
                 // Create a sample order first
                 $order = Order::create([
                     'customer_id' => $customer->id,
@@ -50,7 +49,7 @@ class SaleSeeder extends Seeder
                     'payment_status' => ['paid', 'unpaid', 'partially_paid'][rand(0, 2)],
                     'payment_method' => ['Cash On Delivery', 'Bank Transfer', 'Card Payment'][rand(0, 2)],
                     'shipping_method' => ['leopard', 'tcs', 'trax', 'rider'][rand(0, 3)],
-                    'shipping_address' => $customer->address ?? 'Sample Address ' . $i,
+                    'shipping_address' => $customer->address ?? 'Sample Address '.$i,
                 ]);
 
                 // Add order items
@@ -119,10 +118,10 @@ class SaleSeeder extends Seeder
             'payment_type' => $paymentTypes[array_rand($paymentTypes)],
             'payment_timestamp' => rand(0, 1) ? now()->subDays(rand(1, 10)) : null,
             'shipping_method' => $shippingMethods[array_rand($shippingMethods)],
-            'shipping_address' => $order->shipping_address ?? 'Sample shipping address for ' . $order->order_number,
-            'shipping_response' => rand(0, 1) ? json_encode(['status' => 'success', 'tracking_id' => 'TRK' . rand(1000, 9999)]) : null,
+            'shipping_address' => $order->shipping_address ?? 'Sample shipping address for '.$order->order_number,
+            'shipping_response' => rand(0, 1) ? json_encode(['status' => 'success', 'tracking_id' => 'TRK'.rand(1000, 9999)]) : null,
             'delivery_datetime' => rand(0, 1) ? now()->addDays(rand(1, 7)) : null,
-            'remarks' => rand(0, 1) ? 'Sample remarks for sale ' . $order->order_number : null,
+            'remarks' => rand(0, 1) ? 'Sample remarks for sale '.$order->order_number : null,
             'review' => rand(0, 1) ? 'Great service! Customer is satisfied.' : null,
             'viewed' => rand(0, 1),
             'sale_datetime' => now()->subDays(rand(0, 30)),

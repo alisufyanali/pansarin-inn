@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Contact;
 use App\Models\User;
 use Faker\Factory as Faker;
+use Illuminate\Database\Seeder;
 
 class ContactSeeder extends Seeder
 {
@@ -57,18 +57,18 @@ class ContactSeeder extends Seeder
             $contact = Contact::create([
                 'name' => $faker->name,
                 'email' => $faker->unique()->safeEmail,
-                'phone' => '03' . $faker->numerify('#########'),
+                'phone' => '03'.$faker->numerify('#########'),
                 'subject' => $faker->randomElement($subjects),
                 'message' => $faker->randomElement($messages),
                 'status' => $status,
-                'admin_reply' => ($status === 'replied' || $status === 'resolved') 
-                    ? 'Thank you for contacting us. ' . $faker->sentence(15) 
+                'admin_reply' => ($status === 'replied' || $status === 'resolved')
+                    ? 'Thank you for contacting us. '.$faker->sentence(15)
                     : null,
-                'replied_at' => ($status === 'replied' || $status === 'resolved') 
-                    ? $faker->dateTimeBetween($createdAt, 'now') 
+                'replied_at' => ($status === 'replied' || $status === 'resolved')
+                    ? $faker->dateTimeBetween($createdAt, 'now')
                     : null,
-                'replied_by' => ($status === 'replied' || $status === 'resolved') && $adminUser 
-                    ? $adminUser->id 
+                'replied_by' => ($status === 'replied' || $status === 'resolved') && $adminUser
+                    ? $adminUser->id
                     : null,
                 'ip_address' => $faker->ipv4,
                 'user_agent' => $faker->userAgent,

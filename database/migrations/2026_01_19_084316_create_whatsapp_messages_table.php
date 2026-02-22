@@ -18,7 +18,7 @@ return new class extends Migration
             $table->boolean('is_read')->default(false);
             $table->timestamp('received_at');
             $table->timestamps();
-            
+
             $table->index('from_number');
             $table->index('is_read');
         });

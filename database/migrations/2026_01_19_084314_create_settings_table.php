@@ -3,8 +3,6 @@
 // database/migrations/2026_01_09_000003_add_whatsapp_settings.php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
@@ -24,7 +22,7 @@ return new class extends Migration
         DB::table('settings')->whereIn('key', [
             'whatsapp_phone_number_id',
             'whatsapp_access_token',
-            'whatsapp_verify_token'
+            'whatsapp_verify_token',
         ])->delete();
     }
 };

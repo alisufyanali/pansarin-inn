@@ -12,12 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('vendor_wallets', function (Blueprint $table) {
-    $table->id();
-    $table->unsignedBigInteger('vendor_id');
-    $table->decimal('balance', 10, 2)->default(0);
-    $table->decimal('withdrawable_balance', 10, 2)->default(0);
-    $table->timestamps();
-});
+            $table->id();
+            $table->unsignedBigInteger('vendor_id');
+            $table->decimal('balance', 10, 2)->default(0);
+            $table->decimal('withdrawable_balance', 10, 2)->default(0);
+            $table->timestamps();
+        });
 
     }
 

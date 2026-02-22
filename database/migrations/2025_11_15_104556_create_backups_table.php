@@ -12,12 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('backups', function (Blueprint $table) {
-    $table->id();
-    $table->string('file_name');
-    $table->string('path');
-    $table->string('type'); // db, files
-    $table->timestamps();
-});
+            $table->id();
+            $table->string('file_name');
+            $table->string('path');
+            $table->string('type'); // db, files
+            $table->timestamps();
+        });
 
     }
 

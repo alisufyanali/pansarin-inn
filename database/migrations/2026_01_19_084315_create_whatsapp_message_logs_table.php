@@ -20,7 +20,7 @@ return new class extends Migration
             $table->text('messages');
             $table->text('api_response')->nullable();
             $table->timestamps();
-            
+
             $table->index('phone');
             $table->index('order_id');
         });

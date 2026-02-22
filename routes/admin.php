@@ -1,37 +1,32 @@
 <?php
 
-use Inertia\Inertia;
-use Illuminate\Support\Facades\Route;
-
+use App\Http\Controllers\Admin\BlogCategoryController;
+use App\Http\Controllers\Admin\BlogController;
 // Controllers
+use App\Http\Controllers\Admin\BlogsCommentsController;
+use App\Http\Controllers\Admin\BlogTagController;
+use App\Http\Controllers\Admin\BlogTagsController;
+use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\ContactController;
+use App\Http\Controllers\Admin\CouponController;
+use App\Http\Controllers\Admin\CustomerController;
+use App\Http\Controllers\Admin\FrontendContentController;
+use App\Http\Controllers\Admin\InventoryController;
+use App\Http\Controllers\Admin\NewsletterController;
+use App\Http\Controllers\Admin\NotificationController;
+use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\PermissionController;
+use App\Http\Controllers\Admin\ProductAttributeController;
+use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\ProductsDealController;
+use App\Http\Controllers\Admin\ProductsReviewsController;
+use App\Http\Controllers\Admin\ProductVariantController;
+use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\SaleController;
+use App\Http\Controllers\Admin\WhatsAppController;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\Admin\{
-    RoleController,
-    CategoryController,
-    NotificationController,
-    ProductController,
-    ProductVariantController,
-    ProductAttributeController,
-    OrderController,
-    CustomerController,
-    CouponController,
-    BlogController,
-    BlogCategoryController,
-    BlogTagController,
-    FrontendContentController,
-    BlogsCommentsController,
-    BlogTagsController,
-    NewsletterController,
-    AffiliateController as AdminAffiliateController,
-    InventoryController,
-    ContactController,
-    WhatsAppController,
-    SaleController,
-    ProductsDealController,
-    ProductsReviewsController,
-    PermissionController
-};
-
+use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {
 
@@ -80,15 +75,13 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('product-variants-data', [ProductVariantController::class, 'getData'])->name('product-variants.data');
     Route::resource('attributes', ProductAttributeController::class);
     Route::get('attributes-data', [ProductAttributeController::class, 'getData'])->name('attributes.data');
-    
-    
+
     Route::resource('deals', ProductsDealController::class);
     Route::get('deals-data', [ProductsDealController::class, 'getData'])->name('products.data');
 
     Route::resource('reviews', ProductsReviewsController::class);
     Route::get('reviews-data', [ProductsReviewsController::class, 'getData'])->name('reviews.data');
     Route::patch('reviews/{review}/status', [ProductsReviewsController::class, 'updateStatus'])->name('reviews.status');
-   
 
     /*
     |--------------------------------------------------------------------------
@@ -134,11 +127,9 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('blogs-data', [BlogController::class, 'getData'])->name('blogs.data');
     Route::post('blogs/{blog}/update', [BlogController::class, 'update']);
 
-
-    //Blogs Comments Routes
+    // Blogs Comments Routes
     Route::resource('blogscomments', BlogsCommentsController::class);
     Route::get('blogscomments-data', [BlogsCommentsController::class, 'getData'])->name('blogscomments.data');
-
 
     // Inventory Management
     Route::resource('inventory', InventoryController::class);
@@ -163,14 +154,6 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::resource('newsletters', NewsletterController::class);
     Route::get('newsletters-data', [NewsletterController::class, 'getData'])->name('newsletters.data');
 
-
-
-
-
-
-
-    
-    
     // WhatsApp Chat Routes
     Route::prefix('whatsapp')->name('whatsapp.')->group(function () {
         Route::get('/chat', [WhatsAppController::class, 'index'])->name('chat');
@@ -179,51 +162,42 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         Route::post('/send', [WhatsAppController::class, 'sendMessage'])->name('send');
     });
 
-    
-
     // Sales CRUD
     Route::resource('sales', SaleController::class);
-    
+
     // Sales DataTable endpoint
     Route::get('sales-data', [SaleController::class, 'getData'])->name('sales.data');
-    
+
     // Update delivery status
     Route::patch('sales/{sale}/delivery-status', [SaleController::class, 'updateDeliveryStatus'])
         ->name('sales.update-delivery-status');
-    
+
     // Update payment status
     Route::patch('sales/{sale}/payment-status', [SaleController::class, 'updatePaymentStatus'])
         ->name('sales.update-payment-status');
 
-      // Contact Routes
-        
+    // Contact Routes
+
     // Contacts CRUD
     // Route::resource('contacts', ContactController::class)->except(['create', 'store']);
     Route::resource('contacts', ContactController::class);
-    
+
     // Contacts DataTable endpoint
     Route::get('contacts-data', [ContactController::class, 'getData'])->name('contacts.data');
-    
+
     // Update status
     Route::patch('contacts/{contact}/status', [ContactController::class, 'updateStatus'])
         ->name('contacts.update-status');
-    
+
     // Reply to contact
     Route::post('contacts/{contact}/reply', [ContactController::class, 'reply'])
         ->name('contacts.reply');
-    
+
     // Bulk actions
     Route::post('contacts/bulk-delete', [ContactController::class, 'bulkDelete'])
         ->name('contacts.bulk-delete');
-    
+
     Route::post('contacts/bulk-update-status', [ContactController::class, 'bulkUpdateStatus'])
         ->name('contacts.bulk-update-status');
 
-
-            
-
-
-
 });
-
-

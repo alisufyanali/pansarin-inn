@@ -13,23 +13,23 @@ return new class extends Migration
             $table->unsignedBigInteger('parent_id')->nullable();
             $table->string('name');
             $table->string('slug')->unique();
-            
+
             // SEO Fields
             $table->string('meta_title', 60)->nullable();
             $table->text('meta_description')->nullable();
             $table->string('meta_keywords')->nullable();
             $table->text('schema_markup')->nullable();
-            
+
             // Social Fields
             $table->string('social_image')->nullable();
             $table->text('social_description')->nullable();
-            
+
             $table->timestamps();
 
             $table->foreign('parent_id')
-                  ->references('id')
-                  ->on('blog_categories')
-                  ->nullOnDelete();
+                ->references('id')
+                ->on('blog_categories')
+                ->nullOnDelete();
         });
     }
 

@@ -14,21 +14,21 @@ class UiSettingSeeder extends Seeder
             'header_color' => 'green-2',
             'footer_color' => 'dark-1',
             'font' => 'Roboto',
-            
+
             // Menu Toggles
             'header_homepage_status' => 'yes',
             'header_blogs_status' => 'no',
             'header_contact_status' => 'yes',
-            
+
             // Homepage
             'featured_show' => 'ok',
             'marquee_text' => 'Welcome to Pansari Inn - Quality at your doorstep!',
             'no_of_featured_products' => '6',
-            
+
             // JSON Structures (Default Empty Arrays)
             'home_categories' => '[]',
             'top_slide_categories' => '[]',
-            
+
             // Marketing
             'whatsapp_number' => '+923001234567',
             'affiliate_system' => 'no',

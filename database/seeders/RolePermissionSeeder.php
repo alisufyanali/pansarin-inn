@@ -2,11 +2,11 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\User;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class RolePermissionSeeder extends Seeder
 {
@@ -17,225 +17,225 @@ class RolePermissionSeeder extends Seeder
 
         // Define permissions
         $permissions = [
-            "view.users",
-            "create.users",
-            "edit.users",
-            "delete.users",
+            'view.users',
+            'create.users',
+            'edit.users',
+            'delete.users',
 
             // Role permissions
-            "view.roles",
-            "create.roles",
-            "edit.roles",
-            "delete.roles",
+            'view.roles',
+            'create.roles',
+            'edit.roles',
+            'delete.roles',
 
             // Permission permissions
-            "view.permissions",
-            "create.permissions",
-            "edit.permissions",
-            "delete.permissions",
+            'view.permissions',
+            'create.permissions',
+            'edit.permissions',
+            'delete.permissions',
 
             // Product permissions
-            "view.products",
-            "create.products",
-            "edit.products",
-            "delete.products",
+            'view.products',
+            'create.products',
+            'edit.products',
+            'delete.products',
 
             // Category permissions
-            "view.categories",
-            "create.categories",
-            "edit.categories",
-            "delete.categories",
+            'view.categories',
+            'create.categories',
+            'edit.categories',
+            'delete.categories',
 
             // Variant permissions
-            "view.variants",
-            "create.variants",
-            "edit.variants",
-            "delete.variants",
+            'view.variants',
+            'create.variants',
+            'edit.variants',
+            'delete.variants',
 
             // Attribute permissions
-            "view.attributes",
-            "create.attributes",
-            "edit.attributes",
-            "delete.attributes",
+            'view.attributes',
+            'create.attributes',
+            'edit.attributes',
+            'delete.attributes',
 
             // BlogCategory permissions
-            "view.blog-categories",
-            "create.blog-categories",
-            "edit.blog-categories",
-            "delete.blog-categories",
+            'view.blog-categories',
+            'create.blog-categories',
+            'edit.blog-categories',
+            'delete.blog-categories',
 
             // Blog permissions
-            "view.blogs",
-            "create.blogs",
-            "edit.blogs",
-            "delete.blogs",
+            'view.blogs',
+            'create.blogs',
+            'edit.blogs',
+            'delete.blogs',
 
             // BlogComments permissions
-            "view.blogcomments",
-            "create.blogcomments",
-            "edit.blogcomments",
-            "delete.blogcomments",
+            'view.blogcomments',
+            'create.blogcomments',
+            'edit.blogcomments',
+            'delete.blogcomments',
 
             // BlogTag permissions
-            "view.blogtags",
-            "create.blogtags",
-            "edit.blogtags",
-            "delete.blogtags",
+            'view.blogtags',
+            'create.blogtags',
+            'edit.blogtags',
+            'delete.blogtags',
 
             // Frontend section permissions
-            "view.frontend",
-            "create.frontend",
-            "edit.frontend",
-            "delete.frontend",
+            'view.frontend',
+            'create.frontend',
+            'edit.frontend',
+            'delete.frontend',
 
             // Order permissions
-            "view.orders",
-            "create.orders",
-            "edit.orders",
-            "delete.orders",
+            'view.orders',
+            'create.orders',
+            'edit.orders',
+            'delete.orders',
 
             // Coupon permissions
-            "view.coupons",
-            "create.coupons",
-            "edit.coupons", 
-            "delete.coupons",
+            'view.coupons',
+            'create.coupons',
+            'edit.coupons',
+            'delete.coupons',
 
             // Shipping permissions
-            "view.shippings",
-            "create.shippings",
-            "edit.shippings",
-            "delete.shippings",
+            'view.shippings',
+            'create.shippings',
+            'edit.shippings',
+            'delete.shippings',
 
             // Setting permissions
-            "view.settings",
-            "edit.settings",
-            "create.settings",
-            "delete.settings",
+            'view.settings',
+            'edit.settings',
+            'create.settings',
+            'delete.settings',
 
             // Report permissions
-            "view.reports",
-            "create.reports",
-            "edit.reports",
-            "delete.reports",
+            'view.reports',
+            'create.reports',
+            'edit.reports',
+            'delete.reports',
 
             // Review permissions
-            "view.reviews",
-            "delete.reviews",
-            "edit.reviews",
-            "create.reviews",
+            'view.reviews',
+            'delete.reviews',
+            'edit.reviews',
+            'create.reviews',
 
             // FAQ permissions
-            "view.faqs",
-            "create.faqs",
-            "edit.faqs",
-            "delete.faqs",
+            'view.faqs',
+            'create.faqs',
+            'edit.faqs',
+            'delete.faqs',
 
             // Subscriber permissions
-            "view.subscribers",
-            "delete.subscribers",
-            "create.subscribers",
-            "edit.subscribers",
+            'view.subscribers',
+            'delete.subscribers',
+            'create.subscribers',
+            'edit.subscribers',
 
             // Contact permissions
-            "view.contacts",
-            "delete.contacts",
-            "create.contacts",
-            "edit.contacts",
+            'view.contacts',
+            'delete.contacts',
+            'create.contacts',
+            'edit.contacts',
 
             // Message permissions
-            "view.messages",
-            "delete.messages",
-            "create.messages",
-            "edit.messages",
+            'view.messages',
+            'delete.messages',
+            'create.messages',
+            'edit.messages',
 
             // Order permissions
-            "view.orders",
-            "create.orders",
-            "edit.orders",
-            "delete.orders",
+            'view.orders',
+            'create.orders',
+            'edit.orders',
+            'delete.orders',
 
             // Wishlist permissions
-            "view.wishlists",
-            "create.wishlists",
-            "edit.wishlists",
-            "delete.wishlists",
+            'view.wishlists',
+            'create.wishlists',
+            'edit.wishlists',
+            'delete.wishlists',
 
             // Cart permissions
-            "view.carts",
-            "create.carts",
-            "edit.carts",
-            "delete.carts",
+            'view.carts',
+            'create.carts',
+            'edit.carts',
+            'delete.carts',
 
             // Payment permissions
-            "view.payments",
-            "create.payments",
-            "edit.payments",
-            "delete.payments",
+            'view.payments',
+            'create.payments',
+            'edit.payments',
+            'delete.payments',
 
             // Refund permissions
-            "view.refunds",
-            "create.refunds",
-            "edit.refunds",
-            "delete.refunds",
+            'view.refunds',
+            'create.refunds',
+            'edit.refunds',
+            'delete.refunds',
 
             // Affiliate permissions
-            "view.affiliates",
-            "create.affiliates",
-            "edit.affiliates",
-            "delete.affiliates",
-            "view.payout.requests",
-            "approve.payout.requests",
-            "view.affiliate.settings",
-            "update.affiliate.settings",
-            "manage.affiliates",
-            "block.affiliates",
+            'view.affiliates',
+            'create.affiliates',
+            'edit.affiliates',
+            'delete.affiliates',
+            'view.payout.requests',
+            'approve.payout.requests',
+            'view.affiliate.settings',
+            'update.affiliate.settings',
+            'manage.affiliates',
+            'block.affiliates',
 
             // Notification permissions
-            "view.notifications",
-            "create.notifications",
-            "edit.notifications",
-            "delete.notifications",
+            'view.notifications',
+            'create.notifications',
+            'edit.notifications',
+            'delete.notifications',
 
             // customer permissions
-            "view.customers",
-            "create.customers",
-            "edit.customers",
-            "delete.customers",
+            'view.customers',
+            'create.customers',
+            'edit.customers',
+            'delete.customers',
 
             // inventory permissions
-            "view.inventory",
-            "create.inventory",
-            "edit.inventory",
-            "delete.inventory",
+            'view.inventory',
+            'create.inventory',
+            'edit.inventory',
+            'delete.inventory',
 
             // analytics permissions
-            "view.analytics",
-            "create.analytics",
-            "edit.analytics",
-            "delete.analytics",
+            'view.analytics',
+            'create.analytics',
+            'edit.analytics',
+            'delete.analytics',
 
             // newsletter permissions
-            "view.newsletters",
-            "create.newsletters",
-            "edit.newsletters",
-            "delete.newsletters",
+            'view.newsletters',
+            'create.newsletters',
+            'edit.newsletters',
+            'delete.newsletters',
 
             // sales permissions
-            "view.sales",
-            "create.sales",
-            "edit.sales",
-            "delete.sales",
+            'view.sales',
+            'create.sales',
+            'edit.sales',
+            'delete.sales',
 
             // deals permissions
-            "view.deals",
-            "create.deals",
-            "edit.deals",
-            "delete.deals",
+            'view.deals',
+            'create.deals',
+            'edit.deals',
+            'delete.deals',
 
             // whatsapp permissions
-            "view.whatsapp",
-            "send.whatsapp",
-            
+            'view.whatsapp',
+            'send.whatsapp',
+
         ];
 
         foreach ($permissions as $permission) {
@@ -250,7 +250,7 @@ class RolePermissionSeeder extends Seeder
         $adminEmail = 'admin@example.com';
         $adminUser = User::where('email', $adminEmail)->first();
 
-        if (!$adminUser) {
+        if (! $adminUser) {
             $adminUser = User::create([
                 'name' => 'Admin User',
                 'username' => 'admin',
@@ -260,7 +260,7 @@ class RolePermissionSeeder extends Seeder
         }
 
         // Assign admin role to admin user
-        if (!$adminUser->hasRole('admin')) {
+        if (! $adminUser->hasRole('admin')) {
             $adminUser->assignRole('admin');
         }
     }

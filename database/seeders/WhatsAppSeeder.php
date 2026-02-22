@@ -4,10 +4,10 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\WhatsappMessage;
 use App\Models\WhatsappMessageLog;
 use Carbon\Carbon;
+use Illuminate\Database\Seeder;
 
 class WhatsAppSeeder extends Seeder
 {
@@ -45,10 +45,10 @@ class WhatsAppSeeder extends Seeder
     {
         $phone = '923001234567';
         $customerName = 'Ahmad Khan';
-        
+
         // Day 1 - Order placed
         $time1 = Carbon::now()->subDays(2)->setTime(10, 30);
-        
+
         // Sent: Order confirmation
         WhatsappMessageLog::create([
             'phone' => $phone,
@@ -93,7 +93,7 @@ class WhatsAppSeeder extends Seeder
 
         // Day 2 - Follow up
         $time2 = Carbon::now()->subDay()->setTime(14, 0);
-        
+
         // Received: Payment confirmation
         WhatsappMessage::create([
             'from_number' => $phone,
@@ -126,7 +126,7 @@ class WhatsAppSeeder extends Seeder
 
         // Today - Delivery update
         $time3 = Carbon::now()->subHours(2);
-        
+
         // Sent: Delivery notification
         WhatsappMessageLog::create([
             'phone' => $phone,
@@ -156,7 +156,7 @@ class WhatsAppSeeder extends Seeder
     {
         $phone = '923112345678';
         $customerName = 'Fatima Ahmed';
-        
+
         $time1 = Carbon::now()->subHours(5);
 
         // Received: Product inquiry
@@ -185,7 +185,7 @@ class WhatsAppSeeder extends Seeder
     {
         $phone = '923331234567';
         $customerName = 'Bilal Hassan';
-        
+
         // 5 days ago
         $time1 = Carbon::now()->subDays(5)->setTime(11, 0);
 
@@ -251,10 +251,10 @@ class WhatsAppSeeder extends Seeder
     {
         $phone = '923451234567';
         $customerName = 'Sara Malik';
-        
+
         // Order 1 - 10 days ago
         $time1 = Carbon::now()->subDays(10)->setTime(9, 0);
-        
+
         WhatsappMessageLog::create([
             'phone' => $phone,
             'customer_name' => $customerName,
@@ -276,7 +276,7 @@ class WhatsAppSeeder extends Seeder
 
         // Order 2 - 3 days ago
         $time2 = Carbon::now()->subDays(3)->setTime(14, 30);
-        
+
         WhatsappMessageLog::create([
             'phone' => $phone,
             'customer_name' => $customerName,
@@ -324,10 +324,10 @@ class WhatsAppSeeder extends Seeder
     {
         $phone = '923219876543';
         $customerName = 'Usman Ali';
-        
+
         // Yesterday - Order sent
         $time1 = Carbon::yesterday()->setTime(16, 0);
-        
+
         WhatsappMessageLog::create([
             'phone' => $phone,
             'customer_name' => $customerName,
@@ -341,7 +341,7 @@ class WhatsAppSeeder extends Seeder
 
         // Today - Unread messages
         $time2 = Carbon::now()->subHours(3);
-        
+
         WhatsappMessage::create([
             'from_number' => $phone,
             'message' => 'Bhai order kab tak aayega? Urgent chahiye tha',
@@ -367,5 +367,3 @@ class WhatsAppSeeder extends Seeder
         ]);
     }
 }
-
- 
