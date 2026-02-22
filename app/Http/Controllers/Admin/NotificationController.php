@@ -6,10 +6,9 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
-
 class NotificationController extends Controller
 {
-     // Get all notifications
+    // Get all notifications
     public function index(Request $request)
     {
         $notifications = $request->user()
@@ -35,15 +34,13 @@ class NotificationController extends Controller
     //     ]);
     // }
 
-
     public function unread()
     {
         return response()->json([
             'count' => auth()->user()->unreadNotifications->count(),
-            'notifications' => auth()->user()->unreadNotifications->take(5)
+            'notifications' => auth()->user()->unreadNotifications->take(5),
         ]);
     }
-
 
     // Mark as read
     public function markAsRead(Request $request, $id)
@@ -51,7 +48,7 @@ class NotificationController extends Controller
         $notification = $request->user()
             ->notifications()
             ->findOrFail($id);
-        
+
         $notification->markAsRead();
 
         return back();
@@ -61,7 +58,7 @@ class NotificationController extends Controller
     public function markAllAsRead(Request $request)
     {
         $request->user()->unreadNotifications->markAsRead();
-        
+
         return back();
     }
 

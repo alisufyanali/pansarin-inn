@@ -2,15 +2,15 @@
 
 namespace App\Jobs;
 
+use App\Mail\SaleConfirmationMail;
+use App\Models\Sale;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use App\Models\Sale;
-use App\Mail\SaleConfirmationMail;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class SendSaleConfirmationEmail implements ShouldQueue
 {
@@ -36,8 +36,9 @@ class SendSaleConfirmationEmail implements ShouldQueue
             $this->sale->load(['customer', 'order', 'items.product', 'items.variant']);
 
             // Check if customer has email
-            if (!$this->sale->customer || !$this->sale->customer->email) {
+            if (! $this->sale->customer || ! $this->sale->customer->email) {
                 Log::info("Sale {$this->sale->sale_code}: Customer has no email address");
+
                 return;
             }
 
@@ -48,7 +49,7 @@ class SendSaleConfirmationEmail implements ShouldQueue
             Log::info("Sale confirmation email sent for sale: {$this->sale->sale_code}");
 
         } catch (\Exception $e) {
-            Log::error("Failed to send sale confirmation email for sale {$this->sale->sale_code}: " . $e->getMessage());
+            Log::error("Failed to send sale confirmation email for sale {$this->sale->sale_code}: ".$e->getMessage());
             throw $e;
         }
     }

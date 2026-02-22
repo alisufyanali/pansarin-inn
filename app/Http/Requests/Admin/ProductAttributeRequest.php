@@ -16,7 +16,7 @@ class ProductAttributeRequest extends FormRequest
         $id = $this->route('attribute')?->id;
 
         return [
-            'name' => 'required|string|max:255|unique:attributes,name,' . $id,
+            'name' => 'required|string|max:255|unique:attributes,name,'.$id,
             'values' => 'required|array|min:1',
             'values.*' => 'required|string|max:255',
         ];

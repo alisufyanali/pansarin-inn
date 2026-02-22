@@ -28,7 +28,7 @@ class PermissionRequest extends FormRequest
                 'required',
                 'string',
                 'max:255',
-                'unique:permissions,name,' . $permissionId,
+                'unique:permissions,name,'.$permissionId,
                 'regex:/^[a-z0-9\-_.]+$/',
             ],
             'guard_name' => 'nullable|string|max:255',

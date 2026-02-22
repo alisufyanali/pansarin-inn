@@ -76,18 +76,18 @@ class Sale extends Model
     {
         if ($orderNumber) {
             // Order number se derive karo
-            return 'SALE-' . substr($orderNumber, 4);
+            return 'SALE-'.substr($orderNumber, 4);
         }
-        
+
         // Ya unique code generate karo
         $date = now()->format('Ymd');
         $lastSale = static::whereDate('created_at', today())
             ->orderBy('id', 'desc')
             ->first();
-        
+
         $sequence = $lastSale ? ((int) substr($lastSale->sale_code, -4)) + 1 : 1;
-        
-        return 'SALE-' . $date . '-' . str_pad($sequence, 4, '0', STR_PAD_LEFT);
+
+        return 'SALE-'.$date.'-'.str_pad($sequence, 4, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -103,11 +103,11 @@ class Sale extends Model
 
         $this->subtotal = $itemsSubtotal;
         $this->product_discount = $itemsDiscount;
-        
-        $this->grand_total = $this->subtotal 
-            - $this->product_discount 
-            - $this->invoice_discount 
-            + $this->vat 
+
+        $this->grand_total = $this->subtotal
+            - $this->product_discount
+            - $this->invoice_discount
+            + $this->vat
             + $this->shipping_charges;
 
         $this->save();
@@ -142,8 +142,8 @@ class Sale extends Model
      */
     public function getCustomerNameAttribute()
     {
-        return $this->customer 
-            ? $this->customer->first_name . ' ' . $this->customer->last_name 
+        return $this->customer
+            ? $this->customer->first_name.' '.$this->customer->last_name
             : null;
     }
 }

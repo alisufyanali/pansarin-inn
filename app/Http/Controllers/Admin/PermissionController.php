@@ -42,8 +42,8 @@ class PermissionController extends Controller
         try {
             return $this->permissionRepository->getAllForDataTable($request);
         } catch (\Exception $e) {
-            Log::error('Permissions getData error: ' . $e->getMessage());
-            
+            Log::error('Permissions getData error: '.$e->getMessage());
+
             return response()->json([
                 'error' => 'Failed to load data',
                 'message' => $e->getMessage(),
@@ -68,9 +68,9 @@ class PermissionController extends Controller
     {
         try {
             $validated = $request->validated();
-            
+
             // Set default guard_name if not provided
-            if (!isset($validated['guard_name'])) {
+            if (! isset($validated['guard_name'])) {
                 $validated['guard_name'] = 'web';
             }
 
@@ -80,7 +80,8 @@ class PermissionController extends Controller
                 ->route('admin.permissions.index')
                 ->with('success', 'Permission created successfully!');
         } catch (\Exception $e) {
-            Log::error('Permission creation error: ' . $e->getMessage());
+            Log::error('Permission creation error: '.$e->getMessage());
+
             return back()
                 ->withInput()
                 ->with('error', 'Failed to create permission.');
@@ -95,7 +96,7 @@ class PermissionController extends Controller
         $permission = $this->permissionRepository->find($id);
 
         return Inertia::render('Admin/Permissions/Show', [
-            'permission' => $permission
+            'permission' => $permission,
         ]);
     }
 
@@ -125,7 +126,8 @@ class PermissionController extends Controller
                 ->route('admin.permissions.index')
                 ->with('success', 'Permission updated successfully!');
         } catch (\Exception $e) {
-            Log::error('Permission update error: ' . $e->getMessage());
+            Log::error('Permission update error: '.$e->getMessage());
+
             return back()
                 ->withInput()
                 ->with('error', 'Failed to update permission.');
@@ -139,12 +141,13 @@ class PermissionController extends Controller
     {
         try {
             $this->permissionRepository->delete($id);
-            
+
             return redirect()
                 ->route('admin.permissions.index')
                 ->with('success', 'Permission deleted successfully!');
         } catch (\Exception $e) {
-            Log::error('Permission deletion error: ' . $e->getMessage());
+            Log::error('Permission deletion error: '.$e->getMessage());
+
             return back()->with('error', 'Failed to delete permission.');
         }
     }

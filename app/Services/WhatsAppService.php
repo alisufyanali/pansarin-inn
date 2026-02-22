@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Mail;
 class WhatsAppService
 {
     protected $phoneNumberId;
+
     protected $accessToken;
 
     public function __construct()
@@ -34,24 +35,24 @@ class WhatsAppService
         $url = "https://graph.facebook.com/v22.0/{$this->phoneNumberId}/messages";
 
         $data = [
-            "messaging_product" => "whatsapp",
-            "to" => $this->cleanPhone($recipientPhone),
-            "type" => "template",
-            "template" => [
-                "name" => $templateName,
-                "language" => ["code" => "en"],
-                "components" => [
+            'messaging_product' => 'whatsapp',
+            'to' => $this->cleanPhone($recipientPhone),
+            'type' => 'template',
+            'template' => [
+                'name' => $templateName,
+                'language' => ['code' => 'en'],
+                'components' => [
                     [
-                        "type" => "body",
-                        "parameters" => [
-                            ["type" => "text", "text" => $customerName],
-                            ["type" => "text", "text" => $orderId],
-                            ["type" => "text", "text" => $orderTotal],
-                            ["type" => "text", "text" => $deliveryAddress]
-                        ]
-                    ]
-                ]
-            ]
+                        'type' => 'body',
+                        'parameters' => [
+                            ['type' => 'text', 'text' => $customerName],
+                            ['type' => 'text', 'text' => $orderId],
+                            ['type' => 'text', 'text' => $orderTotal],
+                            ['type' => 'text', 'text' => $deliveryAddress],
+                        ],
+                    ],
+                ],
+            ],
         ];
 
         try {
@@ -80,7 +81,7 @@ class WhatsAppService
         } catch (\Exception $e) {
             Log::error('WhatsApp Template Message Error', [
                 'error' => $e->getMessage(),
-                'phone' => $recipientPhone
+                'phone' => $recipientPhone,
             ]);
             throw $e;
         }
@@ -94,12 +95,12 @@ class WhatsAppService
         $url = "https://graph.facebook.com/v19.0/{$this->phoneNumberId}/messages";
 
         $data = [
-            "messaging_product" => "whatsapp",
-            "to" => $this->cleanPhone($recipientPhone),
-            "type" => "text",
-            "text" => [
-                "body" => $message
-            ]
+            'messaging_product' => 'whatsapp',
+            'to' => $this->cleanPhone($recipientPhone),
+            'type' => 'text',
+            'text' => [
+                'body' => $message,
+            ],
         ];
 
         try {
@@ -110,7 +111,7 @@ class WhatsAppService
         } catch (\Exception $e) {
             Log::error('WhatsApp Text Message Error', [
                 'error' => $e->getMessage(),
-                'phone' => $recipientPhone
+                'phone' => $recipientPhone,
             ]);
             throw $e;
         }
@@ -149,7 +150,7 @@ class WhatsAppService
 
         try {
             Mail::raw(
-                "WhatsApp API Error:\nMessage: {$errorMessage}\nCode: {$errorCode}\n\nFull Response:\n" . json_encode($errorData, JSON_PRETTY_PRINT),
+                "WhatsApp API Error:\nMessage: {$errorMessage}\nCode: {$errorCode}\n\nFull Response:\n".json_encode($errorData, JSON_PRETTY_PRINT),
                 function ($message) use ($errorCode) {
                     $message->to(config('mail.admin_email', 'alisufyan2410@gmail.com'))
                         ->subject("WhatsApp API Error - Code {$errorCode}");

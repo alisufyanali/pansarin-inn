@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\BusinessSetting;
 use App\Models\GeneralSetting;
 use App\Models\UiSetting;
@@ -22,10 +21,10 @@ class FrontendController extends Controller
             'siteData' => [
                 // General Settings: System Name, Title
                 'general' => [
-                    'name'  => $general['system_name']->value ?? 'Pansari Inn',
+                    'name' => $general['system_name']->value ?? 'Pansari Inn',
                     'title' => $general['system_title']->value ?? 'Welcome',
                 ],
-                
+
                 // Business Settings: Currency, Payment Status
                 'business' => [
                     'currency' => $business['currency_symbol']->value ?? '$',
@@ -36,8 +35,8 @@ class FrontendController extends Controller
                 'ui' => [
                     'logo' => $ui['header_logo']->value ?? null,
                     'theme' => $ui['primary_color']->value ?? '#4f46e5',
-                ]
-            ]
+                ],
+            ],
         ]);
     }
 }

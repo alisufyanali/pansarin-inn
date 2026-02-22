@@ -25,45 +25,44 @@ class ContactRepository
     {
         try {
             $query = Contact::with(['repliedByUser'])->latest();
-            
+
             // Search handling
             if ($request->has('search') && $request->search !== '') {
                 if (is_string($request->search)) {
                     $search = $request->search;
-                    $query->where(function($q) use ($search) {
+                    $query->where(function ($q) use ($search) {
                         $q->where('name', 'like', "%{$search}%")
-                          ->orWhere('email', 'like', "%{$search}%")
-                          ->orWhere('phone', 'like', "%{$search}%")
-                          ->orWhere('subject', 'like', "%{$search}%")
-                          ->orWhere('message', 'like', "%{$search}%");
+                            ->orWhere('email', 'like', "%{$search}%")
+                            ->orWhere('phone', 'like', "%{$search}%")
+                            ->orWhere('subject', 'like', "%{$search}%")
+                            ->orWhere('message', 'like', "%{$search}%");
                     });
-                }
-                elseif (is_array($request->search) && isset($request->search['value'])) {
+                } elseif (is_array($request->search) && isset($request->search['value'])) {
                     $search = $request->search['value'];
-                    if (!empty($search)) {
-                        $query->where(function($q) use ($search) {
+                    if (! empty($search)) {
+                        $query->where(function ($q) use ($search) {
                             $q->where('name', 'like', "%{$search}%")
-                              ->orWhere('email', 'like', "%{$search}%")
-                              ->orWhere('phone', 'like', "%{$search}%")
-                              ->orWhere('subject', 'like', "%{$search}%")
-                              ->orWhere('message', 'like', "%{$search}%");
+                                ->orWhere('email', 'like', "%{$search}%")
+                                ->orWhere('phone', 'like', "%{$search}%")
+                                ->orWhere('subject', 'like', "%{$search}%")
+                                ->orWhere('message', 'like', "%{$search}%");
                         });
                     }
                 }
             }
-            
+
             // Filters
             if ($request->has('status') && $request->status !== '') {
                 $query->where('status', $request->status);
             }
 
             return DataTables::of($query)
-                ->addColumn('replied_by_name', function($contact) {
+                ->addColumn('replied_by_name', function ($contact) {
                     return $contact->repliedByUser ? $contact->repliedByUser->name : null;
                 })
                 ->make(true);
         } catch (\Exception $e) {
-            Log::error('Contact DataTable error: ' . $e->getMessage());
+            Log::error('Contact DataTable error: '.$e->getMessage());
             throw $e;
         }
     }
@@ -83,11 +82,11 @@ class ContactRepository
     {
         try {
             DB::beginTransaction();
-            
+
             $contact = Contact::create($data);
 
             // If there's an admin reply and status is replied, set replied_by
-            if (!empty($data['admin_reply']) && $data['status'] === 'replied' && $userId) {
+            if (! empty($data['admin_reply']) && $data['status'] === 'replied' && $userId) {
                 $contact->update([
                     'replied_by' => $userId,
                     'replied_at' => now(),
@@ -95,10 +94,11 @@ class ContactRepository
             }
 
             DB::commit();
+
             return $contact;
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Contact creation error: ' . $e->getMessage());
+            Log::error('Contact creation error: '.$e->getMessage());
             throw $e;
         }
     }
@@ -110,15 +110,16 @@ class ContactRepository
     {
         try {
             DB::beginTransaction();
-            
+
             $contact = $this->find($id);
             $contact->update($data);
 
             DB::commit();
+
             return $contact;
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Contact update error: ' . $e->getMessage());
+            Log::error('Contact update error: '.$e->getMessage());
             throw $e;
         }
     }
@@ -130,9 +131,10 @@ class ContactRepository
     {
         try {
             $contact = $this->find($id);
+
             return $contact->delete();
         } catch (\Exception $e) {
-            Log::error('Contact deletion error: ' . $e->getMessage());
+            Log::error('Contact deletion error: '.$e->getMessage());
             throw $e;
         }
     }
@@ -145,9 +147,10 @@ class ContactRepository
         try {
             $contact = $this->find($id);
             $contact->update(['status' => $status]);
+
             return $contact;
         } catch (\Exception $e) {
-            Log::error('Contact status update error: ' . $e->getMessage());
+            Log::error('Contact status update error: '.$e->getMessage());
             throw $e;
         }
     }
@@ -160,9 +163,10 @@ class ContactRepository
         try {
             $contact = $this->find($id);
             $contact->markAsRead();
+
             return $contact;
         } catch (\Exception $e) {
-            Log::error('Contact mark as read error: ' . $e->getMessage());
+            Log::error('Contact mark as read error: '.$e->getMessage());
             throw $e;
         }
     }
@@ -175,9 +179,10 @@ class ContactRepository
         try {
             $contact = $this->find($id);
             $contact->markAsReplied($reply, $userId);
+
             return $contact;
         } catch (\Exception $e) {
-            Log::error('Contact reply error: ' . $e->getMessage());
+            Log::error('Contact reply error: '.$e->getMessage());
             throw $e;
         }
     }
@@ -190,7 +195,7 @@ class ContactRepository
         try {
             return Contact::whereIn('id', $ids)->delete();
         } catch (\Exception $e) {
-            Log::error('Contact bulk delete error: ' . $e->getMessage());
+            Log::error('Contact bulk delete error: '.$e->getMessage());
             throw $e;
         }
     }
@@ -203,7 +208,7 @@ class ContactRepository
         try {
             return Contact::whereIn('id', $ids)->update(['status' => $status]);
         } catch (\Exception $e) {
-            Log::error('Contact bulk status update error: ' . $e->getMessage());
+            Log::error('Contact bulk status update error: '.$e->getMessage());
             throw $e;
         }
     }

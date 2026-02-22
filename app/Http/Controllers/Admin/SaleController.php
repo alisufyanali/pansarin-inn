@@ -3,20 +3,17 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Inertia\Inertia;
-use App\Models\Sale;
-use App\Models\Order;
-use App\Models\Customer;
-use App\Models\Product;
-use App\Models\ProductVariant;
-use Yajra\DataTables\Facades\DataTables;
-use Illuminate\Support\Facades\DB;
-use App\Jobs\SendSaleConfirmationEmail;
-use App\Jobs\SendSaleWhatsAppNotification;
 use App\Http\Repositories\Admin\SaleRepository;
 use App\Http\Requests\Admin\SaleRequest;
+use App\Jobs\SendSaleConfirmationEmail;
+use App\Jobs\SendSaleWhatsAppNotification;
+use App\Models\Customer;
+use App\Models\Order;
+use App\Models\Product;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Inertia\Inertia;
+use Yajra\DataTables\Facades\DataTables;
 
 class SaleController extends Controller
 {
@@ -44,7 +41,8 @@ class SaleController extends Controller
                 'stats' => $stats,
             ]);
         } catch (\Exception $e) {
-            Log::error('Failed to load sales index: ' . $e->getMessage());
+            Log::error('Failed to load sales index: '.$e->getMessage());
+
             return back()->with('error', 'Failed to load sales');
         }
     }
@@ -58,12 +56,13 @@ class SaleController extends Controller
             $query = $this->saleRepository->getAllForDataTable($request);
 
             return DataTables::of($query)
-                ->addColumn('customer_name', function($sale) {
+                ->addColumn('customer_name', function ($sale) {
                     return $sale->customer ? $sale->customer->full_name : null;
                 })
                 ->make(true);
         } catch (\Exception $e) {
-            Log::error('Failed to get sales data: ' . $e->getMessage());
+            Log::error('Failed to get sales data: '.$e->getMessage());
+
             return response()->json(['error' => 'Failed to load data'], 500);
         }
     }
@@ -87,7 +86,8 @@ class SaleController extends Controller
                     ->get(['id', 'name', 'sku', 'price', 'stock']),
             ]);
         } catch (\Exception $e) {
-            Log::error('Failed to load sale create form: ' . $e->getMessage());
+            Log::error('Failed to load sale create form: '.$e->getMessage());
+
             return back()->with('error', 'Failed to load form');
         }
     }
@@ -109,8 +109,9 @@ class SaleController extends Controller
             return to_route('admin.sales.index')
                 ->with('success', 'Sale successfully created! Confirmation email and WhatsApp notification will be sent shortly.');
         } catch (\Exception $e) {
-            Log::error('Failed to create sale: ' . $e->getMessage());
-            return back()->with('error', 'Failed to create sale: ' . $e->getMessage());
+            Log::error('Failed to create sale: '.$e->getMessage());
+
+            return back()->with('error', 'Failed to create sale: '.$e->getMessage());
         }
     }
 
@@ -123,10 +124,11 @@ class SaleController extends Controller
             $sale = $this->saleRepository->find($id);
 
             return Inertia::render('Admin/Sales/Show', [
-                'sale' => $sale
+                'sale' => $sale,
             ]);
         } catch (\Exception $e) {
-            Log::error('Failed to load sale: ' . $e->getMessage());
+            Log::error('Failed to load sale: '.$e->getMessage());
+
             return back()->with('error', 'Sale not found');
         }
     }
@@ -151,7 +153,8 @@ class SaleController extends Controller
                     ->get(['id', 'name', 'sku', 'price', 'stock']),
             ]);
         } catch (\Exception $e) {
-            Log::error('Failed to load sale edit form: ' . $e->getMessage());
+            Log::error('Failed to load sale edit form: '.$e->getMessage());
+
             return back()->with('error', 'Failed to load sale');
         }
     }
@@ -167,8 +170,9 @@ class SaleController extends Controller
             return to_route('admin.sales.index')
                 ->with('success', 'Sale successfully updated!');
         } catch (\Exception $e) {
-            Log::error('Failed to update sale: ' . $e->getMessage());
-            return back()->with('error', 'Failed to update sale: ' . $e->getMessage());
+            Log::error('Failed to update sale: '.$e->getMessage());
+
+            return back()->with('error', 'Failed to update sale: '.$e->getMessage());
         }
     }
 
@@ -179,14 +183,15 @@ class SaleController extends Controller
     {
         try {
             $this->saleRepository->delete($id);
-            
+
             return redirect()->route('admin.sales.index')
                 ->with('success', 'Sale successfully deleted!');
-                
+
         } catch (\Exception $e) {
-            Log::error('Failed to delete sale: ' . $e->getMessage());
+            Log::error('Failed to delete sale: '.$e->getMessage());
+
             return redirect()->route('admin.sales.index')
-                ->with('error', 'Failed to delete sale: ' . $e->getMessage());
+                ->with('error', 'Failed to delete sale: '.$e->getMessage());
         }
     }
 
@@ -205,8 +210,9 @@ class SaleController extends Controller
 
             return back()->with('success', 'Delivery status updated successfully!');
         } catch (\Exception $e) {
-            Log::error('Failed to update delivery status: ' . $e->getMessage());
-            return back()->with('error', 'Failed to update delivery status: ' . $e->getMessage());
+            Log::error('Failed to update delivery status: '.$e->getMessage());
+
+            return back()->with('error', 'Failed to update delivery status: '.$e->getMessage());
         }
     }
 
@@ -225,8 +231,9 @@ class SaleController extends Controller
 
             return back()->with('success', 'Payment status updated successfully!');
         } catch (\Exception $e) {
-            Log::error('Failed to update payment status: ' . $e->getMessage());
-            return back()->with('error', 'Failed to update payment status: ' . $e->getMessage());
+            Log::error('Failed to update payment status: '.$e->getMessage());
+
+            return back()->with('error', 'Failed to update payment status: '.$e->getMessage());
         }
     }
 }

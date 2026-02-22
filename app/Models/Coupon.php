@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Model;
 
 class Coupon extends Model
 {
@@ -22,7 +22,7 @@ class Coupon extends Model
         'per_user_limit',
         'start_date',
         'end_date',
-        'is_active'
+        'is_active',
     ];
 
     protected $casts = [
@@ -48,7 +48,7 @@ class Coupon extends Model
     // Check if coupon is valid
     public function isValid()
     {
-        if (!$this->is_active) {
+        if (! $this->is_active) {
             return false;
         }
 
@@ -74,12 +74,12 @@ class Coupon extends Model
     {
         if ($this->discount_type === 'percentage') {
             $discount = ($amount * $this->discount_value) / 100;
-            
+
             // Apply max discount cap if set
             if ($this->max_discount_amount && $discount > $this->max_discount_amount) {
                 $discount = $this->max_discount_amount;
             }
-            
+
             return $discount;
         }
 

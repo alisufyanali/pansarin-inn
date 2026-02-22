@@ -2,8 +2,8 @@
 
 namespace App\Http\Repositories\Admin;
 
-use App\Models\Review;
 use App\Models\Order;
+use App\Models\Review;
 
 class ProductReviewRepository
 {
@@ -19,12 +19,12 @@ class ProductReviewRepository
         // Search
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('customer_name', 'like', "%{$search}%")
-                  ->orWhere('comment', 'like', "%{$search}%")
-                  ->orWhereHas('product', function($q) use ($search) {
-                      $q->where('name', 'like', "%{$search}%");
-                  });
+                    ->orWhere('comment', 'like', "%{$search}%")
+                    ->orWhereHas('product', function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -61,13 +61,13 @@ class ProductReviewRepository
     {
         // Check if order number exists and belongs to this product
         $isVerified = false;
-        if (!empty($data['order_number'])) {
+        if (! empty($data['order_number'])) {
             $order = Order::where('order_number', $data['order_number'])
-                ->whereHas('items', function($q) use ($data) {
+                ->whereHas('items', function ($q) use ($data) {
                     $q->where('product_id', $data['product_id']);
                 })
                 ->first();
-            
+
             $isVerified = $order ? true : false;
         }
 
@@ -81,25 +81,27 @@ class ProductReviewRepository
     public function update($id, array $data)
     {
         $review = $this->find($id);
-        
+
         // Re-verify if order number changed
-        if (!empty($data['order_number']) && $data['order_number'] !== $review->order_number) {
+        if (! empty($data['order_number']) && $data['order_number'] !== $review->order_number) {
             $order = Order::where('order_number', $data['order_number'])
-                ->whereHas('items', function($q) use ($data) {
+                ->whereHas('items', function ($q) use ($data) {
                     $q->where('product_id', $data['product_id']);
                 })
                 ->first();
-            
+
             $data['is_verified'] = $order ? true : false;
         }
 
         $review->update($data);
+
         return $review;
     }
 
     public function delete($id)
     {
         $review = $this->find($id);
+
         return $review->delete();
     }
 
@@ -107,6 +109,7 @@ class ProductReviewRepository
     {
         $review = $this->find($id);
         $review->update(['status' => $status]);
+
         return $review;
     }
 

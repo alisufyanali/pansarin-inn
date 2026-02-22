@@ -5,13 +5,12 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Repositories\Admin\ProductRepository;
 use App\Http\Requests\Admin\ProductRequest;
-use Illuminate\Http\Request;
-use Inertia\Inertia;
-use App\Models\Product;
-use App\Models\Category;
 use App\Models\Attribute;
+use App\Models\Category;
+use App\Models\Product;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
 
 class ProductController extends Controller
 {
@@ -26,7 +25,7 @@ class ProductController extends Controller
         $this->middleware('permission:delete.products')->only(['destroy']);
     }
 
-   public function index(Request $request)
+    public function index(Request $request)
     {
         $stats = $this->productRepository->getStats();
 
@@ -40,8 +39,8 @@ class ProductController extends Controller
         try {
             return $this->productRepository->getAllForDataTable($request);
         } catch (\Exception $e) {
-            Log::error('Products getData error: ' . $e->getMessage());
-            
+            Log::error('Products getData error: '.$e->getMessage());
+
             return response()->json([
                 'error' => 'Failed to load data',
                 'message' => $e->getMessage(),
@@ -66,10 +65,10 @@ class ProductController extends Controller
             if ($request->has('tags') && is_string($request->tags)) {
                 $request->merge([
                     'tags' => collect(explode(',', $request->tags))
-                        ->map(fn($tag) => trim($tag))
+                        ->map(fn ($tag) => trim($tag))
                         ->filter()
                         ->values()
-                        ->toArray()
+                        ->toArray(),
                 ]);
             }
 
@@ -97,7 +96,7 @@ class ProductController extends Controller
             if (empty($validated['sku'])) {
                 $lastProduct = Product::latest('id')->first();
                 $nextNumber = ($lastProduct?->id ?? 0) + 1;
-                $validated['sku'] = 'PROD-' . str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
+                $validated['sku'] = 'PROD-'.str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
             }
 
             $thumbnailFile = $request->hasFile('thumbnail') ? $request->file('thumbnail') : null;
@@ -113,7 +112,8 @@ class ProductController extends Controller
                 ->withErrors($e->errors())
                 ->withInput();
         } catch (\Exception $e) {
-            Log::error('Product creation error: ' . $e->getMessage());
+            Log::error('Product creation error: '.$e->getMessage());
+
             return back()
                 ->withInput()
                 ->with('error', 'Failed to create product.');
@@ -125,7 +125,7 @@ class ProductController extends Controller
         $product = $this->productRepository->find($id);
 
         return Inertia::render('Admin/Products/Show', [
-            'product' => $product
+            'product' => $product,
         ]);
     }
 
@@ -147,10 +147,10 @@ class ProductController extends Controller
             if ($request->has('tags') && is_string($request->tags)) {
                 $request->merge([
                     'tags' => collect(explode(',', $request->tags))
-                        ->map(fn($tag) => trim($tag))
+                        ->map(fn ($tag) => trim($tag))
                         ->filter()
                         ->values()
-                        ->toArray()
+                        ->toArray(),
                 ]);
             }
 
@@ -184,7 +184,8 @@ class ProductController extends Controller
                 ->withErrors($e->errors())
                 ->withInput();
         } catch (\Exception $e) {
-            Log::error('Product update error: ' . $e->getMessage());
+            Log::error('Product update error: '.$e->getMessage());
+
             return back()
                 ->withInput()
                 ->with('error', 'Failed to update product.');
@@ -195,11 +196,12 @@ class ProductController extends Controller
     {
         try {
             $this->productRepository->delete($id);
-            
+
             return to_route('admin.products.index')->with('success', 'Product successfully deleted!');
 
         } catch (\Exception $e) {
-            Log::error('Product deletion error: ' . $e->getMessage());
+            Log::error('Product deletion error: '.$e->getMessage());
+
             return back()->with('error', 'Failed to delete product.');
         }
     }
@@ -207,24 +209,21 @@ class ProductController extends Controller
     public function search(Request $request)
     {
         $search = $request->get('q', '');
-        
+
         $products = Product::query()
             ->with(['variants:id,product_id,name,price,stock'])
             ->where('status', 'active')
-            ->where(function($query) use ($search) {
+            ->where(function ($query) use ($search) {
                 $query->where('name', 'like', "%{$search}%")
                     ->orWhere('sku', 'like', "%{$search}%");
             })
             ->limit(20)
             ->get(['id', 'name', 'sku', 'price', 'stock']);
 
-        $products = Product::
-            with(['variants:id,product_id,name,price,stock'])
+        $products = Product::with(['variants:id,product_id,name,price,stock'])
             ->limit(20)
             ->get(['id', 'name', 'sku', 'price', 'stock']);
 
-
         return response()->json($products);
     }
-
 }

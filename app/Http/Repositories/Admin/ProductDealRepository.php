@@ -20,9 +20,9 @@ class ProductDealRepository
         // Search
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+                    ->orWhere('description', 'like', "%{$search}%");
             });
         }
 
@@ -67,7 +67,7 @@ class ProductDealRepository
         $deal = Deal::create($data);
 
         // Attach products with pivot data
-        if (!empty($products)) {
+        if (! empty($products)) {
             $syncData = [];
             foreach ($products as $product) {
                 $syncData[$product['id']] = [
@@ -133,16 +133,17 @@ class ProductDealRepository
     public function toggleStatus($id)
     {
         $deal = $this->find($id);
-        $deal->update(['is_active' => !$deal->is_active]);
+        $deal->update(['is_active' => ! $deal->is_active]);
+
         return $deal;
     }
 
     public function duplicate($id)
     {
         $deal = $this->find($id);
-        
+
         $newDeal = $deal->replicate();
-        $newDeal->title = $deal->title . ' (Copy)';
+        $newDeal->title = $deal->title.' (Copy)';
         $newDeal->slug = $this->generateUniqueSlug($newDeal->title);
         $newDeal->is_active = false;
         $newDeal->current_uses = 0;
@@ -177,10 +178,10 @@ class ProductDealRepository
 
         while (
             Deal::where('slug', $slug)
-                ->when($excludeId, fn($q) => $q->where('id', '!=', $excludeId))
+                ->when($excludeId, fn ($q) => $q->where('id', '!=', $excludeId))
                 ->exists()
         ) {
-            $slug = $baseSlug . '-' . $counter;
+            $slug = $baseSlug.'-'.$counter;
             $counter++;
         }
 

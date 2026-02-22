@@ -5,10 +5,10 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Repositories\Admin\ContactRepository;
 use App\Http\Requests\Admin\ContactRequest;
+use App\Models\Contact;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
-use App\Models\Contact;
 
 class ContactController extends Controller
 {
@@ -35,7 +35,8 @@ class ContactController extends Controller
                 'stats' => $stats,
             ]);
         } catch (\Exception $e) {
-            Log::error('Contact index error: ' . $e->getMessage());
+            Log::error('Contact index error: '.$e->getMessage());
+
             return back()->with('error', 'Failed to load contacts.');
         }
     }
@@ -48,8 +49,8 @@ class ContactController extends Controller
         try {
             return $this->contactRepository->getAllForDataTable($request);
         } catch (\Exception $e) {
-            Log::error('Contact getData error: ' . $e->getMessage());
-            
+            Log::error('Contact getData error: '.$e->getMessage());
+
             return response()->json([
                 'error' => 'Failed to load data',
                 'message' => $e->getMessage(),
@@ -58,7 +59,6 @@ class ContactController extends Controller
             ], 500);
         }
     }
-
 
     /**
      * Show the form for creating a new resource.
@@ -75,7 +75,7 @@ class ContactController extends Controller
     {
         try {
             $validated = $request->validated();
-            
+
             $this->contactRepository->store($validated, $request->user()->id);
 
             return to_route('admin.contacts.index')->with('success', 'Contact successfully created!');
@@ -84,7 +84,8 @@ class ContactController extends Controller
                 ->withErrors($e->errors())
                 ->withInput();
         } catch (\Exception $e) {
-            Log::error('Contact creation error: ' . $e->getMessage());
+            Log::error('Contact creation error: '.$e->getMessage());
+
             return back()
                 ->withInput()
                 ->with('error', 'Failed to create contact.');
@@ -106,10 +107,11 @@ class ContactController extends Controller
             }
 
             return Inertia::render('Admin/Contacts/Show', [
-                'contact' => $contact
+                'contact' => $contact,
             ]);
         } catch (\Exception $e) {
-            Log::error('Contact show error: ' . $e->getMessage());
+            Log::error('Contact show error: '.$e->getMessage());
+
             return redirect()->route('admin.contacts.index')
                 ->with('error', 'Failed to load contact.');
         }
@@ -127,7 +129,8 @@ class ContactController extends Controller
                 'contact' => $contact,
             ]);
         } catch (\Exception $e) {
-            Log::error('Contact edit error: ' . $e->getMessage());
+            Log::error('Contact edit error: '.$e->getMessage());
+
             return redirect()->route('admin.contacts.index')
                 ->with('error', 'Failed to load contact.');
         }
@@ -140,7 +143,7 @@ class ContactController extends Controller
     {
         try {
             $validated = $request->validated();
-            
+
             $this->contactRepository->update($id, $validated);
 
             return to_route('admin.contacts.index')->with('success', 'Contact updated successfully!');
@@ -149,7 +152,8 @@ class ContactController extends Controller
                 ->withErrors($e->errors())
                 ->withInput();
         } catch (\Exception $e) {
-            Log::error('Contact update error: ' . $e->getMessage());
+            Log::error('Contact update error: '.$e->getMessage());
+
             return back()
                 ->withInput()
                 ->with('error', 'Failed to update contact.');
@@ -163,11 +167,12 @@ class ContactController extends Controller
     {
         try {
             $this->contactRepository->delete($id);
-            
+
             return redirect()->route('admin.contacts.index')
                 ->with('success', 'Contact deleted successfully!');
         } catch (\Exception $e) {
-            Log::error('Contact deletion error: ' . $e->getMessage());
+            Log::error('Contact deletion error: '.$e->getMessage());
+
             return redirect()->route('admin.contacts.index')
                 ->with('error', 'Failed to delete contact.');
         }
@@ -187,7 +192,8 @@ class ContactController extends Controller
 
             return back()->with('success', 'Contact status updated successfully!');
         } catch (\Exception $e) {
-            Log::error('Contact status update error: ' . $e->getMessage());
+            Log::error('Contact status update error: '.$e->getMessage());
+
             return back()->with('error', 'Failed to update contact status.');
         }
     }
@@ -208,7 +214,8 @@ class ContactController extends Controller
 
             return back()->with('success', 'Reply sent successfully!');
         } catch (\Exception $e) {
-            Log::error('Contact reply error: ' . $e->getMessage());
+            Log::error('Contact reply error: '.$e->getMessage());
+
             return back()->with('error', 'Failed to send reply.');
         }
     }
@@ -226,9 +233,10 @@ class ContactController extends Controller
 
             $count = $this->contactRepository->bulkDelete($request->ids);
 
-            return back()->with('success', $count . ' contacts deleted successfully!');
+            return back()->with('success', $count.' contacts deleted successfully!');
         } catch (\Exception $e) {
-            Log::error('Contact bulk delete error: ' . $e->getMessage());
+            Log::error('Contact bulk delete error: '.$e->getMessage());
+
             return back()->with('error', 'Failed to delete contacts.');
         }
     }
@@ -247,9 +255,10 @@ class ContactController extends Controller
 
             $count = $this->contactRepository->bulkUpdateStatus($request->ids, $request->status);
 
-            return back()->with('success', $count . ' contacts updated successfully!');
+            return back()->with('success', $count.' contacts updated successfully!');
         } catch (\Exception $e) {
-            Log::error('Contact bulk status update error: ' . $e->getMessage());
+            Log::error('Contact bulk status update error: '.$e->getMessage());
+
             return back()->with('error', 'Failed to update contacts.');
         }
     }

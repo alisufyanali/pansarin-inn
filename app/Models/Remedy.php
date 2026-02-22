@@ -7,6 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 class Remedy extends Model
 {
     protected $fillable = [
-        'title','slug','description','image'
+        'title', 'slug', 'description', 'image',
     ];
 }

@@ -2,12 +2,12 @@
 
 namespace App\Jobs;
 
+use App\Models\Sale;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use App\Models\Sale;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -35,17 +35,18 @@ class SendSaleWhatsAppNotification implements ShouldQueue
             $this->sale->load(['customer', 'order', 'items.product']);
 
             // Check if customer has phone
-            if (!$this->sale->customer || !$this->sale->customer->phone) {
+            if (! $this->sale->customer || ! $this->sale->customer->phone) {
                 Log::info("Sale {$this->sale->sale_code}: Customer has no phone number");
+
                 return;
             }
 
             // Format phone number (remove spaces, dashes, etc.)
             $phone = preg_replace('/[^0-9]/', '', $this->sale->customer->phone);
-            
+
             // Add country code if not present (assuming Pakistan +92)
-            if (!str_starts_with($phone, '92')) {
-                $phone = '92' . ltrim($phone, '0');
+            if (! str_starts_with($phone, '92')) {
+                $phone = '92'.ltrim($phone, '0');
             }
 
             // Prepare message
@@ -57,7 +58,7 @@ class SendSaleWhatsAppNotification implements ShouldQueue
             Log::info("Sale WhatsApp notification sent for sale: {$this->sale->sale_code}");
 
         } catch (\Exception $e) {
-            Log::error("Failed to send sale WhatsApp notification for sale {$this->sale->sale_code}: " . $e->getMessage());
+            Log::error("Failed to send sale WhatsApp notification for sale {$this->sale->sale_code}: ".$e->getMessage());
             throw $e;
         }
     }
@@ -67,7 +68,7 @@ class SendSaleWhatsAppNotification implements ShouldQueue
      */
     private function prepareMessage(): string
     {
-        $customerName = $this->sale->customer->first_name . ' ' . $this->sale->customer->last_name;
+        $customerName = $this->sale->customer->first_name.' '.$this->sale->customer->last_name;
         $saleCode = $this->sale->sale_code;
         $orderNumber = $this->sale->order->order_number ?? 'N/A';
         $grandTotal = number_format($this->sale->grand_total, 2);
@@ -82,7 +83,7 @@ class SendSaleWhatsAppNotification implements ShouldQueue
             $variantName = $item->meta['variant_name'] ?? '';
             $qty = $item->quantity;
             $price = number_format($item->subtotal, 2);
-            
+
             $itemsList .= "\n{$num}. {$productName}";
             if ($variantName) {
                 $itemsList .= " ({$variantName})";
@@ -105,16 +106,16 @@ class SendSaleWhatsAppNotification implements ShouldQueue
 
         if ($this->sale->shipping_address) {
             $message .= "📍 *Shipping Address:*\n";
-            $message .= $this->sale->shipping_address . "\n\n";
+            $message .= $this->sale->shipping_address."\n\n";
         }
 
         if ($this->sale->shipping_method) {
-            $message .= "🚚 *Shipping Method:* " . ucfirst($this->sale->shipping_method) . "\n\n";
+            $message .= '🚚 *Shipping Method:* '.ucfirst($this->sale->shipping_method)."\n\n";
         }
 
         $message .= "Thank you for your business! 🙏\n\n";
         $message .= "For any queries, please contact us.\n";
-        $message .= "━━━━━━━━━━━━━━━━";
+        $message .= '━━━━━━━━━━━━━━━━';
 
         return $message;
     }
@@ -164,14 +165,14 @@ class SendSaleWhatsAppNotification implements ShouldQueue
         $apiToken = config('services.whatsapp.token', 'your-api-token');
 
         $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $apiToken,
+            'Authorization' => 'Bearer '.$apiToken,
         ])->post($apiUrl, [
             'phone' => $phone,
             'message' => $message,
         ]);
 
-        if (!$response->successful()) {
-            Log::warning("WhatsApp API returned error: " . $response->body());
+        if (! $response->successful()) {
+            Log::warning('WhatsApp API returned error: '.$response->body());
             // Don't throw exception to prevent job failure
             // throw new \Exception('WhatsApp API Error: ' . $response->body());
         }

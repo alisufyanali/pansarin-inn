@@ -3,7 +3,6 @@
 namespace App\Http\Repositories\Admin;
 
 use App\Models\Attribute;
-use App\Models\AttributeValue;
 
 class ProductAttributeRepository
 {
@@ -15,21 +14,21 @@ class ProductAttributeRepository
     public function getAllForDataTable($request)
     {
         $query = Attribute::withCount('values')->latest();
-        
+
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('slug', 'like', "%{$search}%");
+                    ->orWhere('slug', 'like', "%{$search}%");
             });
         }
 
         $perPage = $request->get('perPage', 10);
         $page = $request->get('page', 1);
-        
+
         $attributes = $query->paginate($perPage, ['*'], 'page', $page);
 
-        $transformedData = $attributes->map(function($attribute) {
+        $transformedData = $attributes->map(function ($attribute) {
             return [
                 'id' => $attribute->id,
                 'name' => $attribute->name,
@@ -72,12 +71,14 @@ class ProductAttributeRepository
         }
 
         $attribute->update($data);
+
         return $attribute;
     }
 
     public function delete($id)
     {
         $attribute = $this->find($id);
+
         return $attribute->delete();
     }
 

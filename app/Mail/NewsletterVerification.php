@@ -21,6 +21,6 @@ class NewsletterVerification extends Mailable
     public function build()
     {
         return $this->subject('Verify Your Email')
-                    ->view('emails.newsletter.verification');
+            ->view('emails.newsletter.verification');
     }
 }

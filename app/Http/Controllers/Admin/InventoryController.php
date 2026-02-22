@@ -32,7 +32,8 @@ class InventoryController extends Controller
                 'stats' => $stats,
             ]);
         } catch (\Exception $e) {
-            Log::error('Inventory index error: ' . $e->getMessage());
+            Log::error('Inventory index error: '.$e->getMessage());
+
             return back()->with('error', 'Failed to load inventory.');
         }
     }
@@ -42,7 +43,8 @@ class InventoryController extends Controller
         try {
             return $this->inventoryRepository->getAllForDataTable($request);
         } catch (\Exception $e) {
-            Log::error('Inventory getData error: ' . $e->getMessage());
+            Log::error('Inventory getData error: '.$e->getMessage());
+
             return response()->json([
                 'error' => 'Failed to load inventory data',
                 'message' => $e->getMessage(),
@@ -61,7 +63,8 @@ class InventoryController extends Controller
                 'products' => $products,
             ]);
         } catch (\Exception $e) {
-            Log::error('Inventory create error: ' . $e->getMessage());
+            Log::error('Inventory create error: '.$e->getMessage());
+
             return redirect()->route('admin.inventory.index')
                 ->with('error', 'Failed to load create form.');
         }
@@ -71,7 +74,7 @@ class InventoryController extends Controller
     {
         try {
             $validated = $request->validated();
-            
+
             $this->inventoryRepository->store($validated, Auth::id());
 
             return to_route('admin.inventory.index')->with('success', 'Stock updated!');
@@ -80,7 +83,8 @@ class InventoryController extends Controller
                 ->withErrors($e->errors())
                 ->withInput();
         } catch (\Exception $e) {
-            Log::error('Inventory creation error: ' . $e->getMessage());
+            Log::error('Inventory creation error: '.$e->getMessage());
+
             return back()
                 ->withInput()
                 ->with('error', $e->getMessage());
@@ -96,7 +100,8 @@ class InventoryController extends Controller
                 'inventory' => $inventory,
             ]);
         } catch (\Exception $e) {
-            Log::error('Inventory show error: ' . $e->getMessage());
+            Log::error('Inventory show error: '.$e->getMessage());
+
             return redirect()->route('admin.inventory.index')
                 ->with('error', 'Failed to load inventory entry.');
         }
@@ -121,7 +126,8 @@ class InventoryController extends Controller
                 'products' => $products,
             ]);
         } catch (\Exception $e) {
-            Log::error('Inventory edit error: ' . $e->getMessage());
+            Log::error('Inventory edit error: '.$e->getMessage());
+
             return redirect()->route('admin.inventory.index')
                 ->with('error', 'Failed to load inventory entry.');
         }
@@ -131,7 +137,7 @@ class InventoryController extends Controller
     {
         try {
             $validated = $request->validated();
-            
+
             $this->inventoryRepository->update($id, $validated);
 
             return to_route('admin.inventory.index')
@@ -141,7 +147,8 @@ class InventoryController extends Controller
                 ->withErrors($e->errors())
                 ->withInput();
         } catch (\Exception $e) {
-            Log::error('Inventory update error: ' . $e->getMessage());
+            Log::error('Inventory update error: '.$e->getMessage());
+
             return back()
                 ->withInput()
                 ->with('error', $e->getMessage());
@@ -152,11 +159,12 @@ class InventoryController extends Controller
     {
         try {
             $this->inventoryRepository->delete($id);
-            
+
             return to_route('admin.inventory.index')
                 ->with('success', 'Inventory entry successfully deleted!');
         } catch (\Exception $e) {
-            Log::error('Inventory destroy error: ' . $e->getMessage());
+            Log::error('Inventory destroy error: '.$e->getMessage());
+
             return back()
                 ->with('error', 'Failed to delete inventory entry.');
         }

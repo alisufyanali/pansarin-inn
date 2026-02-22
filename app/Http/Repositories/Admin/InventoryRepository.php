@@ -27,18 +27,18 @@ class InventoryRepository
             $query = Inventory::with([
                 'product:id,name,sku,price,stock_qty,stock_alert,category_id,unit',
                 'product.category:id,name',
-                'performer:id,name'
+                'performer:id,name',
             ])->latest();
 
             if ($request->filled('search')) {
                 $search = $request->search;
-                $query->where(function($q) use ($search) {
+                $query->where(function ($q) use ($search) {
                     $q->where('reference', 'like', "%{$search}%")
-                      ->orWhere('note', 'like', "%{$search}%")
-                      ->orWhereHas('product', function($q) use ($search) {
-                          $q->where('name', 'like', "%{$search}%")
-                            ->orWhere('sku', 'like', "%{$search}%");
-                      });
+                        ->orWhere('note', 'like', "%{$search}%")
+                        ->orWhereHas('product', function ($q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%")
+                                ->orWhere('sku', 'like', "%{$search}%");
+                        });
                 });
             }
 
@@ -47,7 +47,7 @@ class InventoryRepository
             }
 
             if ($request->filled('low_stock') && $request->low_stock === 'yes') {
-                $query->whereHas('product', function($q) {
+                $query->whereHas('product', function ($q) {
                     $q->whereColumn('stock_qty', '<=', 'stock_alert');
                 });
             }
@@ -74,7 +74,7 @@ class InventoryRepository
                 'last_page' => $inventories->lastPage(),
             ]);
         } catch (\Exception $e) {
-            Log::error('Inventory DataTable error: ' . $e->getMessage());
+            Log::error('Inventory DataTable error: '.$e->getMessage());
             throw $e;
         }
     }
@@ -95,14 +95,14 @@ class InventoryRepository
         DB::beginTransaction();
         try {
             $product = Product::findOrFail($data['product_id']);
-            
+
             // Set unit from product
             $data['unit'] = $product->unit ?? 'units';
-            
+
             // Handle stock out
             if ($data['type'] === 'out') {
                 if ($product->stock_qty < $data['quantity']) {
-                    throw new \Exception("Insufficient stock!");
+                    throw new \Exception('Insufficient stock!');
                 }
                 $data['quantity'] = -abs($data['quantity']);
             } else {
@@ -110,14 +110,15 @@ class InventoryRepository
             }
 
             $data['performed_by'] = $userId;
-            
+
             $inventory = Inventory::create($data);
 
             DB::commit();
+
             return $inventory;
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Inventory creation error: ' . $e->getMessage());
+            Log::error('Inventory creation error: '.$e->getMessage());
             throw $e;
         }
     }
@@ -130,17 +131,17 @@ class InventoryRepository
         DB::beginTransaction();
         try {
             $inventory = $this->find($id);
-            
+
             if ($data['type'] === 'out') {
                 $product = Product::find($data['product_id']);
-                
+
                 $currentContribution = $inventory->quantity;
                 $availableStock = $product->stock_qty - $currentContribution;
-                
+
                 if ($availableStock < $data['quantity']) {
                     throw new \Exception("Insufficient stock! Available: {$availableStock} units");
                 }
-                
+
                 $data['quantity'] = -abs($data['quantity']);
             } else {
                 $data['quantity'] = abs($data['quantity']);
@@ -149,10 +150,11 @@ class InventoryRepository
             $inventory->update($data);
 
             DB::commit();
+
             return $inventory;
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Inventory update error: ' . $e->getMessage());
+            Log::error('Inventory update error: '.$e->getMessage());
             throw $e;
         }
     }
@@ -164,9 +166,10 @@ class InventoryRepository
     {
         try {
             $inventory = $this->find($id);
+
             return $inventory->delete();
         } catch (\Exception $e) {
-            Log::error('Inventory deletion error: ' . $e->getMessage());
+            Log::error('Inventory deletion error: '.$e->getMessage());
             throw $e;
         }
     }
@@ -207,7 +210,7 @@ class InventoryRepository
                     'stock_alert' => $product->stock_alert,
                     'price' => $product->price,
                     'unit' => $product->unit,
-                    'attribute_values' => $product->attributeValues->map(function($av) {
+                    'attribute_values' => $product->attributeValues->map(function ($av) {
                         return [
                             'id' => $av->id,
                             'attribute_id' => $av->attribute_id,

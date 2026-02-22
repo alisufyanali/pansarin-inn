@@ -24,29 +24,28 @@ class NewsletterRepository
     {
         try {
             $query = Newsletter::query()->latest();
-            
+
             // Search handling
             if ($request->has('search') && $request->search !== '') {
                 if (is_string($request->search)) {
                     $search = $request->search;
-                    $query->where(function($q) use ($search) {
+                    $query->where(function ($q) use ($search) {
                         $q->where('email', 'like', "%{$search}%")
-                          ->orWhere('name', 'like', "%{$search}%")
-                          ->orWhere('source', 'like', "%{$search}%");
+                            ->orWhere('name', 'like', "%{$search}%")
+                            ->orWhere('source', 'like', "%{$search}%");
                     });
-                }
-                elseif (is_array($request->search) && isset($request->search['value'])) {
+                } elseif (is_array($request->search) && isset($request->search['value'])) {
                     $search = $request->search['value'];
-                    if (!empty($search)) {
-                        $query->where(function($q) use ($search) {
+                    if (! empty($search)) {
+                        $query->where(function ($q) use ($search) {
                             $q->where('email', 'like', "%{$search}%")
-                              ->orWhere('name', 'like', "%{$search}%")
-                              ->orWhere('source', 'like', "%{$search}%");
+                                ->orWhere('name', 'like', "%{$search}%")
+                                ->orWhere('source', 'like', "%{$search}%");
                         });
                     }
                 }
             }
-            
+
             // Status filter
             if ($request->has('status') && $request->status !== '') {
                 $query->where('status', $request->status);
@@ -63,7 +62,7 @@ class NewsletterRepository
 
             return DataTables::of($query)->make(true);
         } catch (\Exception $e) {
-            Log::error('Newsletter DataTable error: ' . $e->getMessage());
+            Log::error('Newsletter DataTable error: '.$e->getMessage());
             throw $e;
         }
     }
@@ -84,7 +83,7 @@ class NewsletterRepository
         try {
             return Newsletter::create($data);
         } catch (\Exception $e) {
-            Log::error('Newsletter creation error: ' . $e->getMessage());
+            Log::error('Newsletter creation error: '.$e->getMessage());
             throw $e;
         }
     }
@@ -97,9 +96,10 @@ class NewsletterRepository
         try {
             $newsletter = $this->find($id);
             $newsletter->update($data);
+
             return $newsletter;
         } catch (\Exception $e) {
-            Log::error('Newsletter update error: ' . $e->getMessage());
+            Log::error('Newsletter update error: '.$e->getMessage());
             throw $e;
         }
     }
@@ -111,9 +111,10 @@ class NewsletterRepository
     {
         try {
             $newsletter = $this->find($id);
+
             return $newsletter->delete();
         } catch (\Exception $e) {
-            Log::error('Newsletter deletion error: ' . $e->getMessage());
+            Log::error('Newsletter deletion error: '.$e->getMessage());
             throw $e;
         }
     }
@@ -126,9 +127,10 @@ class NewsletterRepository
         try {
             $newsletter = $this->find($id);
             $newsletter->update(['status' => $status]);
+
             return $newsletter;
         } catch (\Exception $e) {
-            Log::error('Newsletter status update error: ' . $e->getMessage());
+            Log::error('Newsletter status update error: '.$e->getMessage());
             throw $e;
         }
     }
@@ -141,9 +143,10 @@ class NewsletterRepository
         try {
             $newsletter = $this->find($id);
             $newsletter->verify();
+
             return $newsletter;
         } catch (\Exception $e) {
-            Log::error('Newsletter verification error: ' . $e->getMessage());
+            Log::error('Newsletter verification error: '.$e->getMessage());
             throw $e;
         }
     }
@@ -156,7 +159,7 @@ class NewsletterRepository
         try {
             return Newsletter::whereIn('id', $ids)->delete();
         } catch (\Exception $e) {
-            Log::error('Newsletter bulk delete error: ' . $e->getMessage());
+            Log::error('Newsletter bulk delete error: '.$e->getMessage());
             throw $e;
         }
     }

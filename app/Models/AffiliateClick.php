@@ -8,10 +8,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class AffiliateClick extends Model
 {
     protected $fillable = [
-        'affiliate_id', 
-        'ip_address', 
-        'user_agent', 
-        'referring_url'
+        'affiliate_id',
+        'ip_address',
+        'user_agent',
+        'referring_url',
     ];
 
     public function affiliate(): BelongsTo

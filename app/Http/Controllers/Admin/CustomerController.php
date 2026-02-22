@@ -36,7 +36,8 @@ class CustomerController extends Controller
                 'stats' => $stats,
             ]);
         } catch (\Exception $e) {
-            Log::error('Customer index error: ' . $e->getMessage());
+            Log::error('Customer index error: '.$e->getMessage());
+
             return back()->with('error', 'Failed to load customers.');
         }
     }
@@ -49,8 +50,8 @@ class CustomerController extends Controller
         try {
             return $this->customerRepository->getAllForDataTable($request);
         } catch (\Exception $e) {
-            Log::error('Customer getData error: ' . $e->getMessage());
-            
+            Log::error('Customer getData error: '.$e->getMessage());
+
             return response()->json([
                 'error' => 'Failed to load data',
                 'message' => $e->getMessage(),
@@ -70,7 +71,8 @@ class CustomerController extends Controller
                 'cities' => City::orderBy('name')->get(['id', 'name']),
             ]);
         } catch (\Exception $e) {
-            Log::error('Customer create error: ' . $e->getMessage());
+            Log::error('Customer create error: '.$e->getMessage());
+
             return redirect()->route('admin.customers.index')
                 ->with('error', 'Failed to load create form.');
         }
@@ -83,7 +85,7 @@ class CustomerController extends Controller
     {
         try {
             $validated = $request->validated();
-            
+
             $this->customerRepository->store($validated);
 
             return to_route('admin.customers.index')->with('success', 'Customer successfully created!');
@@ -92,7 +94,8 @@ class CustomerController extends Controller
                 ->withErrors($e->errors())
                 ->withInput();
         } catch (\Exception $e) {
-            Log::error('Customer creation error: ' . $e->getMessage());
+            Log::error('Customer creation error: '.$e->getMessage());
+
             return back()
                 ->withInput()
                 ->with('error', 'Failed to create customer.');
@@ -108,10 +111,11 @@ class CustomerController extends Controller
             $customer = $this->customerRepository->find($id);
 
             return Inertia::render('Admin/Customers/Show', [
-                'customer' => $customer
+                'customer' => $customer,
             ]);
         } catch (\Exception $e) {
-            Log::error('Customer show error: ' . $e->getMessage());
+            Log::error('Customer show error: '.$e->getMessage());
+
             return redirect()->route('admin.customers.index')
                 ->with('error', 'Failed to load customer.');
         }
@@ -130,7 +134,8 @@ class CustomerController extends Controller
                 'cities' => City::orderBy('name')->get(['id', 'name']),
             ]);
         } catch (\Exception $e) {
-            Log::error('Customer edit error: ' . $e->getMessage());
+            Log::error('Customer edit error: '.$e->getMessage());
+
             return redirect()->route('admin.customers.index')
                 ->with('error', 'Failed to load customer.');
         }
@@ -143,7 +148,7 @@ class CustomerController extends Controller
     {
         try {
             $validated = $request->validated();
-            
+
             $this->customerRepository->update($id, $validated);
 
             return to_route('admin.customers.index')->with('success', 'Customer successfully updated!');
@@ -152,7 +157,8 @@ class CustomerController extends Controller
                 ->withErrors($e->errors())
                 ->withInput();
         } catch (\Exception $e) {
-            Log::error('Customer update error: ' . $e->getMessage());
+            Log::error('Customer update error: '.$e->getMessage());
+
             return back()
                 ->withInput()
                 ->with('error', 'Failed to update customer.');
@@ -166,11 +172,12 @@ class CustomerController extends Controller
     {
         try {
             $this->customerRepository->delete($id);
-            
+
             return redirect()->route('admin.customers.index')
                 ->with('success', 'Customer successfully deleted!');
         } catch (\Exception $e) {
-            Log::error('Customer deletion error: ' . $e->getMessage());
+            Log::error('Customer deletion error: '.$e->getMessage());
+
             return redirect()->route('admin.customers.index')
                 ->with('error', 'Failed to delete customer.');
         }
@@ -184,10 +191,11 @@ class CustomerController extends Controller
         try {
             $search = $request->get('q', '');
             $customers = $this->customerRepository->search($search);
-            
+
             return response()->json($customers);
         } catch (\Exception $e) {
-            Log::error('Customer search error: ' . $e->getMessage());
+            Log::error('Customer search error: '.$e->getMessage());
+
             return response()->json(['error' => 'Search failed'], 500);
         }
     }
@@ -200,14 +208,15 @@ class CustomerController extends Controller
         try {
             $request->validate([
                 'ids' => 'required|array',
-                'ids.*' => 'exists:customers,id'
+                'ids.*' => 'exists:customers,id',
             ]);
 
             $count = $this->customerRepository->bulkDelete($request->ids);
 
-            return back()->with('success', $count . ' customers deleted successfully!');
+            return back()->with('success', $count.' customers deleted successfully!');
         } catch (\Exception $e) {
-            Log::error('Customer bulk delete error: ' . $e->getMessage());
+            Log::error('Customer bulk delete error: '.$e->getMessage());
+
             return back()->with('error', 'Failed to delete customers.');
         }
     }

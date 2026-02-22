@@ -17,20 +17,20 @@ class ProductRepository
     {
         $query = Product::with('category:id,name')
             ->select('id', 'name', 'sku', 'price', 'sale_price', 'purchase_price_per_unit', 'sale_price_per_unit', 'quantity', 'unit', 'status', 'featured', 'category_id', 'stock_qty', 'created_at', 'updated_at');
-        
+
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('sku', 'like', "%{$search}%")
-                  ->orWhereHas('category', fn($q) => $q->where('name', 'like', "%{$search}%"));
+                    ->orWhere('sku', 'like', "%{$search}%")
+                    ->orWhereHas('category', fn ($q) => $q->where('name', 'like', "%{$search}%"));
             });
         }
-        
+
         if ($request->filled('status')) {
             $query->where('status', $request->status === 'active');
         }
-        
+
         if ($request->filled('featured')) {
             $query->where('featured', $request->featured === 'yes');
         }
@@ -41,10 +41,10 @@ class ProductRepository
 
         $perPage = $request->get('perPage', 10);
         $page = $request->get('page', 1);
-        
+
         $products = $query->paginate($perPage, ['*'], 'page', $page);
 
-        $transformedData = $products->map(function($product) {
+        $transformedData = $products->map(function ($product) {
             return [
                 'id' => $product->id,
                 'name' => $product->name,
@@ -93,7 +93,7 @@ class ProductRepository
             $data['social_image'] = $socialImageFile->store('products/social', 'public');
         }
 
-        if (!empty($galleryFiles)) {
+        if (! empty($galleryFiles)) {
             $galleryPaths = [];
             foreach ($galleryFiles as $file) {
                 $galleryPaths[] = $file->store('products/gallery', 'public');
@@ -135,14 +135,14 @@ class ProductRepository
         }
 
         // Handle gallery
-        if (!empty($galleryFiles)) {
+        if (! empty($galleryFiles)) {
             // Delete old gallery images
             if ($product->gallery && is_array($product->gallery)) {
                 foreach ($product->gallery as $oldImage) {
                     Storage::disk('public')->delete($oldImage);
                 }
             }
-            
+
             $galleryPaths = [];
             foreach ($galleryFiles as $file) {
                 $galleryPaths[] = $file->store('products/gallery', 'public');
@@ -154,17 +154,18 @@ class ProductRepository
         }
 
         $product->update($data);
+
         return $product;
     }
 
     public function delete($id)
     {
         $product = $this->find($id);
-        
+
         if ($product->thumbnail) {
             Storage::disk('public')->delete($product->thumbnail);
         }
-        
+
         if ($product->social_image) {
             Storage::disk('public')->delete($product->social_image);
         }
@@ -174,7 +175,7 @@ class ProductRepository
                 Storage::disk('public')->delete($image);
             }
         }
-        
+
         return $product->delete();
     }
 
@@ -199,10 +200,10 @@ class ProductRepository
 
         while (
             Product::where('slug', $slug)
-                ->when($excludeId, fn($q) => $q->where('id', '!=', $excludeId))
+                ->when($excludeId, fn ($q) => $q->where('id', '!=', $excludeId))
                 ->exists()
         ) {
-            $slug = $baseSlug . '-' . $counter;
+            $slug = $baseSlug.'-'.$counter;
             $counter++;
         }
 

@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Affiliate;
 
 use App\Http\Controllers\Controller;
-use App\Models\Product;
 use App\Models\Category;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -25,7 +25,7 @@ class MarketingController extends Controller
             'products' => $products,
             'categories' => $categories,
             // Hum auth user ki ID bhej rahe hain link generator ke liye
-            'affiliate_id' => $request->user()->id 
+            'affiliate_id' => $request->user()->id,
         ]);
     }
 }

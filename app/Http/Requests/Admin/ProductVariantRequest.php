@@ -23,7 +23,7 @@ class ProductVariantRequest extends FormRequest
 
         return [
             'product_id' => 'required|exists:products,id',
-            'sku' => 'required|string|unique:product_variants,sku,' . $variantId,
+            'sku' => 'required|string|unique:product_variants,sku,'.$variantId,
             'price' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
             'is_default' => 'boolean',

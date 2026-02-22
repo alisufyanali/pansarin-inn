@@ -21,40 +21,39 @@ class ProductVariantRepository
     public function getAllForDataTable($request)
     {
         $query = ProductVariant::with('product')->latest();
-        
+
         // Search handling
         if ($request->has('search') && $request->search !== '') {
             if (is_string($request->search)) {
                 $search = $request->search;
-                $query->where(function($q) use ($search) {
+                $query->where(function ($q) use ($search) {
                     $q->where('sku', 'like', "%{$search}%")
-                      ->orWhere('price', 'like', "%{$search}%")
-                      ->orWhere('stock', 'like', "%{$search}%")
-                      ->orWhereHas('product', function($q) use ($search) {
-                          $q->where('name', 'like', "%{$search}%");
-                      });
+                        ->orWhere('price', 'like', "%{$search}%")
+                        ->orWhere('stock', 'like', "%{$search}%")
+                        ->orWhereHas('product', function ($q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%");
+                        });
                 });
-            }
-            elseif (is_array($request->search) && isset($request->search['value'])) {
+            } elseif (is_array($request->search) && isset($request->search['value'])) {
                 $search = $request->search['value'];
-                if (!empty($search)) {
-                    $query->where(function($q) use ($search) {
+                if (! empty($search)) {
+                    $query->where(function ($q) use ($search) {
                         $q->where('sku', 'like', "%{$search}%")
-                          ->orWhere('price', 'like', "%{$search}%")
-                          ->orWhere('stock', 'like', "%{$search}%")
-                          ->orWhereHas('product', function($q) use ($search) {
-                              $q->where('name', 'like', "%{$search}%");
-                          });
+                            ->orWhere('price', 'like', "%{$search}%")
+                            ->orWhere('stock', 'like', "%{$search}%")
+                            ->orWhereHas('product', function ($q) use ($search) {
+                                $q->where('name', 'like', "%{$search}%");
+                            });
                     });
                 }
             }
         }
-        
+
         // Additional filters
         if ($request->has('status') && $request->status !== '') {
             $query->where('status', $request->status === 'active');
         }
-        
+
         if ($request->has('product_id') && $request->product_id !== '') {
             $query->where('product_id', $request->product_id);
         }
@@ -95,7 +94,7 @@ class ProductVariantRepository
 
             return ProductVariant::create($data);
         } catch (\Exception $e) {
-            Log::error('Failed to create variant: ' . $e->getMessage());
+            Log::error('Failed to create variant: '.$e->getMessage());
             throw $e;
         }
     }
@@ -114,9 +113,10 @@ class ProductVariantRepository
             }
 
             $variant->update($data);
+
             return $variant;
         } catch (\Exception $e) {
-            Log::error('Failed to update variant: ' . $e->getMessage());
+            Log::error('Failed to update variant: '.$e->getMessage());
             throw $e;
         }
     }
@@ -129,7 +129,7 @@ class ProductVariantRepository
         try {
             return ProductVariant::destroy($id);
         } catch (\Exception $e) {
-            Log::error('Failed to delete variant: ' . $e->getMessage());
+            Log::error('Failed to delete variant: '.$e->getMessage());
             throw $e;
         }
     }

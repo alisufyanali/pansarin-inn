@@ -83,51 +83,54 @@ class Product extends Model
     // Accessors
     public function getThumbnailUrlAttribute()
     {
-        return $this->thumbnail 
-            ? asset('storage/' . $this->thumbnail) 
+        return $this->thumbnail
+            ? asset('storage/'.$this->thumbnail)
             : asset('images/placeholder.png');
     }
 
     public function getSocialImageUrlAttribute()
     {
-        return $this->social_image 
-            ? asset('storage/' . $this->social_image) 
+        return $this->social_image
+            ? asset('storage/'.$this->social_image)
             : $this->getThumbnailUrlAttribute();
     }
 
     public function getGalleryUrlsAttribute()
     {
-        if (!$this->gallery || !is_array($this->gallery)) {
+        if (! $this->gallery || ! is_array($this->gallery)) {
             return [];
         }
 
-        return collect($this->gallery)->map(function($image) {
-            return asset('storage/' . $image);
+        return collect($this->gallery)->map(function ($image) {
+            return asset('storage/'.$image);
         })->toArray();
     }
 
     // Computed attributes for profit calculations
     public function getProfitPerUnitAttribute()
     {
-        if (!$this->sale_price_per_unit || !$this->purchase_price_per_unit) {
+        if (! $this->sale_price_per_unit || ! $this->purchase_price_per_unit) {
             return 0;
         }
+
         return $this->sale_price_per_unit - $this->purchase_price_per_unit;
     }
 
     public function getTotalProfitAttribute()
     {
-        if (!$this->quantity) {
+        if (! $this->quantity) {
             return 0;
         }
+
         return $this->profit_per_unit * $this->quantity;
     }
 
     public function getProfitMarginAttribute()
     {
-        if (!$this->purchase_price_per_unit || $this->purchase_price_per_unit == 0) {
+        if (! $this->purchase_price_per_unit || $this->purchase_price_per_unit == 0) {
             return 0;
         }
+
         return ($this->profit_per_unit / $this->purchase_price_per_unit) * 100;
     }
 
@@ -172,10 +175,10 @@ class Product extends Model
     {
         return $this->deals()
             ->where('is_active', true)
-            ->where(function($q) {
+            ->where(function ($q) {
                 $q->whereNull('starts_at')->orWhere('starts_at', '<=', now());
             })
-            ->where(function($q) {
+            ->where(function ($q) {
                 $q->whereNull('ends_at')->orWhere('ends_at', '>=', now());
             });
     }
@@ -188,17 +191,19 @@ class Product extends Model
     public function getDiscountedPriceAttribute()
     {
         $deal = $this->best_deal;
-        
-        if (!$deal) return $this->price;
-        
+
+        if (! $deal) {
+            return $this->price;
+        }
+
         $discount = $deal->pivot->custom_discount ?? $deal->discount_value;
-        
+
         if ($deal->deal_type === 'percentage') {
             return $this->price - (($this->price * $discount) / 100);
         } elseif ($deal->deal_type === 'fixed') {
             return max(0, $this->price - $discount);
         }
-        
+
         return $this->price;
     }
 
@@ -206,5 +211,4 @@ class Product extends Model
     {
         return $this->price - $this->discounted_price;
     }
-
 }

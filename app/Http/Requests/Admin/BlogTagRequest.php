@@ -17,22 +17,22 @@ class BlogTagRequest extends FormRequest
         $id = $this->route('blogtag')?->id;
 
         return [
-            'name'        => 'required|string|max:255',
-            'slug'        => 'nullable|string|max:255|unique:blog_tags,slug,' . $id,
+            'name' => 'required|string|max:255',
+            'slug' => 'nullable|string|max:255|unique:blog_tags,slug,'.$id,
             'description' => 'nullable|string|max:500',
-            'color'       => 'nullable|string|max:7', // Hex color code
-            'is_active'   => 'boolean',
+            'color' => 'nullable|string|max:7', // Hex color code
+            'is_active' => 'boolean',
         ];
     }
 
     public function messages(): array
     {
         return [
-            'name.required'      => 'Tag name is required.',
-            'name.max'           => 'Tag name cannot exceed 255 characters.',
-            'slug.unique'        => 'This slug is already taken.',
-            'description.max'    => 'Description cannot exceed 500 characters.',
-            'color.max'          => 'Color code must be a valid hex color.',
+            'name.required' => 'Tag name is required.',
+            'name.max' => 'Tag name cannot exceed 255 characters.',
+            'slug.unique' => 'This slug is already taken.',
+            'description.max' => 'Description cannot exceed 500 characters.',
+            'color.max' => 'Color code must be a valid hex color.',
         ];
     }
 

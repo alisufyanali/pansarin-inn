@@ -3,15 +3,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Inertia\Inertia;
-use App\Models\ProductVariant;
-use App\Models\Product;
-use App\Models\Attribute;
-use Yajra\DataTables\Facades\DataTables;
 use App\Http\Repositories\Admin\ProductVariantRepository;
 use App\Http\Requests\Admin\ProductVariantRequest;
+use App\Models\Attribute;
+use App\Models\Product;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Inertia\Inertia;
+use Yajra\DataTables\Facades\DataTables;
 
 class ProductVariantController extends Controller
 {
@@ -38,7 +37,8 @@ class ProductVariantController extends Controller
                 'stats' => $stats,
             ]);
         } catch (\Exception $e) {
-            Log::error('Failed to load variants index: ' . $e->getMessage());
+            Log::error('Failed to load variants index: '.$e->getMessage());
+
             return back()->with('error', 'Failed to load variants');
         }
     }
@@ -52,21 +52,22 @@ class ProductVariantController extends Controller
             $query = $this->variantRepository->getAllForDataTable($request);
 
             return DataTables::of($query)
-                ->addColumn('product_name', function($variant) {
+                ->addColumn('product_name', function ($variant) {
                     return $variant->product ? $variant->product->name : null;
                 })
-                ->addColumn('status_text', function($variant) {
+                ->addColumn('status_text', function ($variant) {
                     return $variant->status ? 'Active' : 'Inactive';
                 })
-                ->addColumn('is_default_text', function($variant) {
+                ->addColumn('is_default_text', function ($variant) {
                     return $variant->is_default ? 'Yes' : 'No';
                 })
-                ->addColumn('stock_status', function($variant) {
+                ->addColumn('stock_status', function ($variant) {
                     return $variant->stock > 0 ? 'In Stock' : 'Out of Stock';
                 })
                 ->make(true);
         } catch (\Exception $e) {
-            Log::error('Failed to get variants data: ' . $e->getMessage());
+            Log::error('Failed to get variants data: '.$e->getMessage());
+
             return response()->json(['error' => 'Failed to load data'], 500);
         }
     }
@@ -82,7 +83,8 @@ class ProductVariantController extends Controller
                 'attributes' => Attribute::with('values')->get(),
             ]);
         } catch (\Exception $e) {
-            Log::error('Failed to load variant create form: ' . $e->getMessage());
+            Log::error('Failed to load variant create form: '.$e->getMessage());
+
             return back()->with('error', 'Failed to load form');
         }
     }
@@ -98,8 +100,9 @@ class ProductVariantController extends Controller
             return to_route('admin.product-variants.index')
                 ->with('success', 'Variant successfully created!');
         } catch (\Exception $e) {
-            Log::error('Failed to create variant: ' . $e->getMessage());
-            return back()->with('error', 'Failed to create variant: ' . $e->getMessage());
+            Log::error('Failed to create variant: '.$e->getMessage());
+
+            return back()->with('error', 'Failed to create variant: '.$e->getMessage());
         }
     }
 
@@ -112,10 +115,11 @@ class ProductVariantController extends Controller
             $variant = $this->variantRepository->find($id);
 
             return Inertia::render('Admin/Variants/Show', [
-                'variant' => $variant
+                'variant' => $variant,
             ]);
         } catch (\Exception $e) {
-            Log::error('Failed to load variant: ' . $e->getMessage());
+            Log::error('Failed to load variant: '.$e->getMessage());
+
             return back()->with('error', 'Variant not found');
         }
     }
@@ -127,7 +131,7 @@ class ProductVariantController extends Controller
     {
         try {
             $variant = $this->variantRepository->find($id);
-            
+
             // Parse attributes if they're stored as JSON string
             if ($variant->attributes && is_string($variant->attributes)) {
                 $variant->attributes = json_decode($variant->attributes, true);
@@ -139,7 +143,8 @@ class ProductVariantController extends Controller
                 'attributes' => Attribute::with('values')->get(),
             ]);
         } catch (\Exception $e) {
-            Log::error('Failed to load variant edit form: ' . $e->getMessage());
+            Log::error('Failed to load variant edit form: '.$e->getMessage());
+
             return back()->with('error', 'Failed to load variant');
         }
     }
@@ -155,8 +160,9 @@ class ProductVariantController extends Controller
             return to_route('admin.product-variants.index')
                 ->with('success', 'Variant successfully updated!');
         } catch (\Exception $e) {
-            Log::error('Failed to update variant: ' . $e->getMessage());
-            return back()->with('error', 'Failed to update variant: ' . $e->getMessage());
+            Log::error('Failed to update variant: '.$e->getMessage());
+
+            return back()->with('error', 'Failed to update variant: '.$e->getMessage());
         }
     }
 
@@ -167,14 +173,15 @@ class ProductVariantController extends Controller
     {
         try {
             $this->variantRepository->delete($id);
-            
+
             return redirect()->route('admin.product-variants.index')
                 ->with('success', 'Variant successfully deleted!');
-                
+
         } catch (\Exception $e) {
-            Log::error('Failed to delete variant: ' . $e->getMessage());
+            Log::error('Failed to delete variant: '.$e->getMessage());
+
             return redirect()->route('admin.product-variants.index')
-                ->with('error', 'Failed to delete variant: ' . $e->getMessage());
+                ->with('error', 'Failed to delete variant: '.$e->getMessage());
         }
     }
 }

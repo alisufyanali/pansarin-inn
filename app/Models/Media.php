@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Media extends Model
 {
     protected $fillable = [
-        'file_name','file_type','path','user_id'
+        'file_name', 'file_type', 'path', 'user_id',
     ];
 
     public function user()
@@ -15,4 +15,3 @@ class Media extends Model
         return $this->belongsTo(User::class);
     }
 }
-

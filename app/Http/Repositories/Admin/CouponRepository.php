@@ -24,36 +24,35 @@ class CouponRepository
     {
         try {
             $query = Coupon::with(['product', 'category'])->latest();
-            
+
             // Search handling
             if ($request->has('search') && $request->search !== '') {
                 if (is_string($request->search)) {
                     $search = $request->search;
-                    $query->where(function($q) use ($search) {
+                    $query->where(function ($q) use ($search) {
                         $q->where('code', 'like', "%{$search}%")
-                          ->orWhere('description', 'like', "%{$search}%")
-                          ->orWhere('discount_type', 'like', "%{$search}%")
-                          ->orWhere('apply_to', 'like', "%{$search}%");
+                            ->orWhere('description', 'like', "%{$search}%")
+                            ->orWhere('discount_type', 'like', "%{$search}%")
+                            ->orWhere('apply_to', 'like', "%{$search}%");
                     });
-                }
-                elseif (is_array($request->search) && isset($request->search['value'])) {
+                } elseif (is_array($request->search) && isset($request->search['value'])) {
                     $search = $request->search['value'];
-                    if (!empty($search)) {
-                        $query->where(function($q) use ($search) {
+                    if (! empty($search)) {
+                        $query->where(function ($q) use ($search) {
                             $q->where('code', 'like', "%{$search}%")
-                              ->orWhere('description', 'like', "%{$search}%")
-                              ->orWhere('discount_type', 'like', "%{$search}%")
-                              ->orWhere('apply_to', 'like', "%{$search}%");
+                                ->orWhere('description', 'like', "%{$search}%")
+                                ->orWhere('discount_type', 'like', "%{$search}%")
+                                ->orWhere('apply_to', 'like', "%{$search}%");
                         });
                     }
                 }
             }
-            
+
             // Filters
             if ($request->has('discount_type') && $request->discount_type !== '') {
                 $query->where('discount_type', $request->discount_type);
             }
-            
+
             if ($request->has('apply_to') && $request->apply_to !== '') {
                 $query->where('apply_to', $request->apply_to);
             }
@@ -63,15 +62,15 @@ class CouponRepository
             }
 
             return DataTables::of($query)
-                ->addColumn('product_name', function($coupon) {
+                ->addColumn('product_name', function ($coupon) {
                     return $coupon->product ? $coupon->product->name : null;
                 })
-                ->addColumn('category_name', function($coupon) {
+                ->addColumn('category_name', function ($coupon) {
                     return $coupon->category ? $coupon->category->name : null;
                 })
                 ->make(true);
         } catch (\Exception $e) {
-            Log::error('Coupon DataTable error: ' . $e->getMessage());
+            Log::error('Coupon DataTable error: '.$e->getMessage());
             throw $e;
         }
     }
@@ -100,7 +99,7 @@ class CouponRepository
 
             return Coupon::create($data);
         } catch (\Exception $e) {
-            Log::error('Coupon creation error: ' . $e->getMessage());
+            Log::error('Coupon creation error: '.$e->getMessage());
             throw $e;
         }
     }
@@ -112,7 +111,7 @@ class CouponRepository
     {
         try {
             $coupon = $this->find($id);
-            
+
             // Clean up product_id and category_id based on apply_to
             if ($data['apply_to'] !== 'product') {
                 $data['product_id'] = null;
@@ -122,9 +121,10 @@ class CouponRepository
             }
 
             $coupon->update($data);
+
             return $coupon;
         } catch (\Exception $e) {
-            Log::error('Coupon update error: ' . $e->getMessage());
+            Log::error('Coupon update error: '.$e->getMessage());
             throw $e;
         }
     }
@@ -136,9 +136,10 @@ class CouponRepository
     {
         try {
             $coupon = $this->find($id);
+
             return $coupon->delete();
         } catch (\Exception $e) {
-            Log::error('Coupon deletion error: ' . $e->getMessage());
+            Log::error('Coupon deletion error: '.$e->getMessage());
             throw $e;
         }
     }
@@ -150,11 +151,12 @@ class CouponRepository
     {
         try {
             $coupon = $this->find($id);
-            $coupon->is_active = !$coupon->is_active;
+            $coupon->is_active = ! $coupon->is_active;
             $coupon->save();
+
             return $coupon;
         } catch (\Exception $e) {
-            Log::error('Coupon toggle status error: ' . $e->getMessage());
+            Log::error('Coupon toggle status error: '.$e->getMessage());
             throw $e;
         }
     }
@@ -181,7 +183,7 @@ class CouponRepository
         try {
             return Coupon::whereIn('id', $ids)->delete();
         } catch (\Exception $e) {
-            Log::error('Coupon bulk delete error: ' . $e->getMessage());
+            Log::error('Coupon bulk delete error: '.$e->getMessage());
             throw $e;
         }
     }

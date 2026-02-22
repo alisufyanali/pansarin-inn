@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\BlogCommentsRequest;
 use App\Http\Repositories\Admin\BlogCommentsRepository;
-use App\Models\BlogComments;
+use App\Http\Requests\Admin\BlogCommentsRequest;
 use App\Models\Blog;
+use App\Models\BlogComments;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -41,14 +41,15 @@ class BlogsCommentsController extends Controller
     {
         try {
             $blogs = Blog::where('status', 'published')
-                        ->orderBy('title')
-                        ->get(['id', 'title']);
+                ->orderBy('title')
+                ->get(['id', 'title']);
 
             return Inertia::render('Admin/BlogsComments/Create', [
-                'blogs' => $blogs
+                'blogs' => $blogs,
             ]);
         } catch (\Exception $e) {
-            \Log::error('Blog comments create page error: ' . $e->getMessage());
+            \Log::error('Blog comments create page error: '.$e->getMessage());
+
             return back()->with('error', 'Failed to load create form.');
         }
     }
@@ -62,8 +63,9 @@ class BlogsCommentsController extends Controller
                 ->with('success', 'Comment successfully created!');
 
         } catch (\Exception $e) {
-            \Log::error('Blog comment creation error: ' . $e->getMessage());
-            return back()->withInput()->with('error', 'Failed to create comment: ' . $e->getMessage());
+            \Log::error('Blog comment creation error: '.$e->getMessage());
+
+            return back()->withInput()->with('error', 'Failed to create comment: '.$e->getMessage());
         }
     }
 
@@ -71,10 +73,11 @@ class BlogsCommentsController extends Controller
     {
         try {
             return Inertia::render('Admin/BlogsComments/Show', [
-                'blogComment' => $blogscomment->load(['blog', 'user'])
+                'blogComment' => $blogscomment->load(['blog', 'user']),
             ]);
         } catch (\Exception $e) {
-            \Log::error('Blog comment show error: ' . $e->getMessage());
+            \Log::error('Blog comment show error: '.$e->getMessage());
+
             return back()->with('error', 'Failed to load comment details.');
         }
     }
@@ -83,15 +86,16 @@ class BlogsCommentsController extends Controller
     {
         try {
             $blogs = Blog::where('status', 'published')
-                        ->orderBy('title')
-                        ->get(['id', 'title']);
+                ->orderBy('title')
+                ->get(['id', 'title']);
 
             return Inertia::render('Admin/BlogsComments/Edit', [
                 'blogComment' => $blogscomment->load(['blog', 'user']),
-                'blogs' => $blogs
+                'blogs' => $blogs,
             ]);
         } catch (\Exception $e) {
-            \Log::error('Blog comment edit page error: ' . $e->getMessage());
+            \Log::error('Blog comment edit page error: '.$e->getMessage());
+
             return back()->with('error', 'Failed to load edit form.');
         }
     }
@@ -105,8 +109,9 @@ class BlogsCommentsController extends Controller
                 ->with('success', 'Comment successfully updated!');
 
         } catch (\Exception $e) {
-            \Log::error('Blog comment update error: ' . $e->getMessage());
-            return back()->withInput()->with('error', 'Failed to update comment: ' . $e->getMessage());
+            \Log::error('Blog comment update error: '.$e->getMessage());
+
+            return back()->withInput()->with('error', 'Failed to update comment: '.$e->getMessage());
         }
     }
 
@@ -114,12 +119,13 @@ class BlogsCommentsController extends Controller
     {
         try {
             $this->blogCommentsRepo->delete($blogscomment->id);
-            
+
             return to_route('admin.blogscomments.index')
                 ->with('success', 'Comment successfully deleted!');
 
         } catch (\Exception $e) {
-            \Log::error('Blog comment deletion error: ' . $e->getMessage());
+            \Log::error('Blog comment deletion error: '.$e->getMessage());
+
             return back()->with('error', 'Failed to delete comment.');
         }
     }

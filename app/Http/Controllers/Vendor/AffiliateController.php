@@ -4,19 +4,18 @@ namespace App\Http\Controllers\Vendor;
 
 use App\Http\Controllers\Controller;
 use App\Models\Affiliate;
-use App\Models\Referral;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
-use Illuminate\Support\Facades\Cookie;
 
 class AffiliateController extends Controller
 {
     public function index()
     {
         $affiliate = auth()->user()->affiliate;
-        
-        if (!$affiliate) {
+
+        if (! $affiliate) {
             // Registration.tsx file ka sahi path
             return Inertia::render('Affiliate/Registration');
         }
@@ -27,7 +26,7 @@ class AffiliateController extends Controller
                 'total_referrals' => $affiliate->referrals()->count(),
                 'pending_commissions' => $affiliate->referrals()->where('status', 'pending')->sum('commission_amount'),
                 'affiliate_code' => $affiliate->affiliate_code,
-            ]
+            ],
         ]);
     }
 
@@ -50,7 +49,7 @@ class AffiliateController extends Controller
             'affiliate_code' => Str::upper(Str::random(8)),
             'commission_rate' => 5.00,
             'status' => 1,
-            'parent_id' => $parentAffiliateId
+            'parent_id' => $parentAffiliateId,
         ]);
 
         $user->update(['role' => 'affiliate']);
@@ -59,19 +58,19 @@ class AffiliateController extends Controller
     }
 
     public function referrals()
-{
-    $affiliate = auth()->user()->affiliate;
+    {
+        $affiliate = auth()->user()->affiliate;
 
-    // Safety Check: Agar user affiliate nahi hai toh referrals page nahi dikha sakte
-    if (!$affiliate) {
-        return redirect()->route('affiliate.register.view')
-            ->with('error', 'Please register as an affiliate first.');
+        // Safety Check: Agar user affiliate nahi hai toh referrals page nahi dikha sakte
+        if (! $affiliate) {
+            return redirect()->route('affiliate.register.view')
+                ->with('error', 'Please register as an affiliate first.');
+        }
+
+        $referrals = $affiliate->referrals()->with('order')->latest()->get();
+
+        return Inertia::render('Affiliate/Referrals', [
+            'referrals' => $referrals,
+        ]);
     }
-
-    $referrals = $affiliate->referrals()->with('order')->latest()->get();
-    
-    return Inertia::render('Affiliate/Referrals', [
-        'referrals' => $referrals
-    ]);
-}
 }

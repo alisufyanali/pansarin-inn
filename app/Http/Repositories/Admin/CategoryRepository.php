@@ -16,22 +16,22 @@ class CategoryRepository
     {
         $query = Category::with('parent:id,name')
             ->select('id', 'name', 'slug', 'image', 'status', 'parent_id', 'created_at', 'updated_at');
-        
+
         // Search
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('slug', 'like', "%{$search}%")
-                  ->orWhereHas('parent', fn($q) => $q->where('name', 'like', "%{$search}%"));
+                    ->orWhere('slug', 'like', "%{$search}%")
+                    ->orWhereHas('parent', fn ($q) => $q->where('name', 'like', "%{$search}%"));
             });
         }
-        
+
         // Status filter
         if ($request->filled('status')) {
             $query->where('status', $request->status === 'active');
         }
-        
+
         // Parent filter
         if ($request->filled('parent_id')) {
             $query->where('parent_id', $request->parent_id);
@@ -45,11 +45,11 @@ class CategoryRepository
         // Pagination
         $perPage = $request->get('perPage', 10);
         $page = $request->get('page', 1);
-        
+
         $categories = $query->paginate($perPage, ['*'], 'page', $page);
 
         // Transform data
-        $transformedData = $categories->map(function($category) {
+        $transformedData = $categories->map(function ($category) {
             return [
                 'id' => $category->id,
                 'name' => $category->name,
@@ -80,7 +80,7 @@ class CategoryRepository
     public function getParents($excludeId = null)
     {
         return Category::orderBy('name')
-            ->when($excludeId, fn($q) => $q->where('id', '!=', $excludeId))
+            ->when($excludeId, fn ($q) => $q->where('id', '!=', $excludeId))
             ->get(['id', 'name']);
     }
 
@@ -130,21 +130,22 @@ class CategoryRepository
         }
 
         $category->update($data);
+
         return $category;
     }
 
     public function delete($id)
     {
         $category = $this->find($id);
-        
+
         if ($category->image) {
             Storage::disk('public')->delete($category->image);
         }
-        
+
         if ($category->social_image) {
             Storage::disk('public')->delete($category->social_image);
         }
-        
+
         return $category->delete();
     }
 

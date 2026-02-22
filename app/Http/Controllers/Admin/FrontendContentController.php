@@ -5,9 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\FrontendContent;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
 
 class FrontendContentController extends Controller
 {
@@ -28,7 +28,7 @@ class FrontendContentController extends Controller
             'banner' => FrontendContent::where('type', 'banner')->count(),
             'active' => FrontendContent::where('is_active', true)->count(),
         ];
-        
+
         return Inertia::render('Admin/Frontend/Index', [
             'stats' => $stats,
         ]);
@@ -38,35 +38,35 @@ class FrontendContentController extends Controller
     public function getData(Request $request)
     {
         $query = FrontendContent::query()->orderBy('order', 'asc');
-        
+
         // Apply filters
         if ($request->filled('type')) {
             $query->where('type', $request->type);
         }
-        
+
         if ($request->filled('is_active')) {
             $query->where('is_active', $request->is_active === '1');
         }
-        
+
         // Apply search
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%")
-                  ->orWhere('type', 'like', "%{$search}%");
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhere('type', 'like', "%{$search}%");
             });
         }
-        
+
         // Apply sorting
         if ($request->filled('sort_by') && $request->filled('sort_order')) {
             $query->orderBy($request->sort_by, $request->sort_order);
         }
-        
+
         // Pagination
         $perPage = $request->input('per_page', 10);
         $contents = $query->paginate($perPage);
-        
+
         return response()->json($contents);
     }
 
@@ -102,15 +102,16 @@ class FrontendContentController extends Controller
             return redirect()
                 ->route('frontend.index')
                 ->with('success', 'Content created successfully.');
-                
+
         } catch (\Illuminate\Validation\ValidationException $e) {
             return back()
                 ->withErrors($e->errors())
                 ->withInput();
         } catch (\Exception $e) {
-            Log::error('FrontendContent creation error: ' . $e->getMessage());
+            Log::error('FrontendContent creation error: '.$e->getMessage());
+
             return back()
-                ->with('error', 'Failed to create content: ' . $e->getMessage())
+                ->with('error', 'Failed to create content: '.$e->getMessage())
                 ->withInput();
         }
     }
@@ -118,14 +119,14 @@ class FrontendContentController extends Controller
     public function show(FrontendContent $frontend)
     {
         return Inertia::render('Admin/Frontend/Show', [
-            'frontendContent' => $frontend
+            'frontendContent' => $frontend,
         ]);
     }
 
     public function edit(FrontendContent $frontend)
     {
         return Inertia::render('Admin/Frontend/Edit', [
-            'frontendContent' => $frontend
+            'frontendContent' => $frontend,
         ]);
     }
 
@@ -156,15 +157,16 @@ class FrontendContentController extends Controller
             return redirect()
                 ->route('frontend.index')
                 ->with('success', 'Content updated successfully.');
-                
+
         } catch (\Illuminate\Validation\ValidationException $e) {
             return back()
                 ->withErrors($e->errors())
                 ->withInput();
         } catch (\Exception $e) {
-            Log::error('FrontendContent update error: ' . $e->getMessage());
+            Log::error('FrontendContent update error: '.$e->getMessage());
+
             return back()
-                ->with('error', 'Failed to update content: ' . $e->getMessage())
+                ->with('error', 'Failed to update content: '.$e->getMessage())
                 ->withInput();
         }
     }
@@ -182,11 +184,12 @@ class FrontendContentController extends Controller
             return redirect()
                 ->route('frontend.index')
                 ->with('success', 'Content deleted successfully.');
-                
+
         } catch (\Exception $e) {
-            Log::error('FrontendContent deletion error: ' . $e->getMessage());
+            Log::error('FrontendContent deletion error: '.$e->getMessage());
+
             return back()
-                ->with('error', 'Failed to delete content: ' . $e->getMessage());
+                ->with('error', 'Failed to delete content: '.$e->getMessage());
         }
     }
 }

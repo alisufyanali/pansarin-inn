@@ -19,12 +19,12 @@ class BlogCommentsRepository
         // Search
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('comments', 'like', "%{$search}%")
-                  ->orWhere('review', 'like', "%{$search}%")
-                  ->orWhere('id', 'like', "%{$search}%")
-                  ->orWhereHas('blog', fn($q) => $q->where('title', 'like', "%{$search}%"))
-                  ->orWhereHas('user', fn($q) => $q->where('name', 'like', "%{$search}%"));
+                    ->orWhere('review', 'like', "%{$search}%")
+                    ->orWhere('id', 'like', "%{$search}%")
+                    ->orWhereHas('blog', fn ($q) => $q->where('title', 'like', "%{$search}%"))
+                    ->orWhereHas('user', fn ($q) => $q->where('name', 'like', "%{$search}%"));
             });
         }
 
@@ -49,11 +49,11 @@ class BlogCommentsRepository
         // Pagination
         $perPage = $request->get('perPage', 10);
         $page = $request->get('page', 1);
-        
+
         $comments = $query->paginate($perPage, ['*'], 'page', $page);
 
         // Transform data
-        $transformedData = $comments->map(function($comment) {
+        $transformedData = $comments->map(function ($comment) {
             return [
                 'id' => $comment->id,
                 'blog_id' => $comment->blog_id,
@@ -88,7 +88,7 @@ class BlogCommentsRepository
     public function store(array $data)
     {
         $data['user_id'] = auth()->id();
-        
+
         if (empty($data['status'])) {
             $data['status'] = 'pending';
         }
@@ -100,12 +100,14 @@ class BlogCommentsRepository
     {
         $comment = $this->find($id);
         $comment->update($data);
+
         return $comment;
     }
 
     public function delete($id)
     {
         $comment = $this->find($id);
+
         return $comment->delete();
     }
 

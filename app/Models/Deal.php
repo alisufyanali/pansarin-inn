@@ -16,7 +16,7 @@ class Deal extends Model
         'min_purchase_amount', 'max_uses', 'max_uses_per_user', 'current_uses',
         'starts_at', 'ends_at',
         'badge_text', 'badge_color', 'display_order', 'is_featured', 'is_active',
-        'meta_title', 'meta_description'
+        'meta_title', 'meta_description',
     ];
 
     protected $casts = [
@@ -32,7 +32,7 @@ class Deal extends Model
     protected static function booted()
     {
         static::creating(function ($deal) {
-            if (!$deal->slug) {
+            if (! $deal->slug) {
                 $deal->slug = Str::slug($deal->title);
             }
         });
@@ -51,10 +51,10 @@ class Deal extends Model
     public function scopeActive($query)
     {
         return $query->where('is_active', true)
-            ->where(function($q) {
+            ->where(function ($q) {
                 $q->whereNull('starts_at')->orWhere('starts_at', '<=', now());
             })
-            ->where(function($q) {
+            ->where(function ($q) {
                 $q->whereNull('ends_at')->orWhere('ends_at', '>=', now());
             });
     }
@@ -77,20 +77,28 @@ class Deal extends Model
     // Accessors
     public function getIsActiveNowAttribute()
     {
-        if (!$this->is_active) return false;
-        
+        if (! $this->is_active) {
+            return false;
+        }
+
         $now = now();
-        
-        if ($this->starts_at && $now->lt($this->starts_at)) return false;
-        if ($this->ends_at && $now->gt($this->ends_at)) return false;
-        
+
+        if ($this->starts_at && $now->lt($this->starts_at)) {
+            return false;
+        }
+        if ($this->ends_at && $now->gt($this->ends_at)) {
+            return false;
+        }
+
         return true;
     }
 
     public function getTimeRemainingAttribute()
     {
-        if (!$this->ends_at) return null;
-        
+        if (! $this->ends_at) {
+            return null;
+        }
+
         return now()->diffInSeconds($this->ends_at, false);
     }
 
@@ -101,17 +109,23 @@ class Deal extends Model
 
     public function getUsagePercentageAttribute()
     {
-        if (!$this->max_uses) return 0;
-        
+        if (! $this->max_uses) {
+            return 0;
+        }
+
         return ($this->current_uses / $this->max_uses) * 100;
     }
 
     // Methods
     public function canBeUsed()
     {
-        if (!$this->is_active_now) return false;
-        if ($this->max_uses && $this->current_uses >= $this->max_uses) return false;
-        
+        if (! $this->is_active_now) {
+            return false;
+        }
+        if ($this->max_uses && $this->current_uses >= $this->max_uses) {
+            return false;
+        }
+
         return true;
     }
 
@@ -120,16 +134,17 @@ class Deal extends Model
         switch ($this->deal_type) {
             case 'percentage':
                 return ($subtotal * $this->discount_value) / 100;
-                
+
             case 'fixed':
                 return $this->discount_value;
-                
+
             case 'buy_x_get_y':
                 // Calculate free items value
                 $freeItems = floor($quantity / $this->min_quantity) * $this->free_quantity;
+
                 // Assuming product price calculation
                 return 0; // Implement based on product
-                
+
             default:
                 return 0;
         }

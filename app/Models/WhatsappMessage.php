@@ -13,7 +13,7 @@ class WhatsappMessage extends Model
         'message',
         'media_url',
         'is_read',
-        'received_at'
+        'received_at',
     ];
 
     protected $casts = [
@@ -29,6 +29,7 @@ class WhatsappMessage extends Model
     public function scopeFromNumber($query, $phone)
     {
         $cleanPhone = preg_replace('/\D+/', '', $phone);
+
         return $query->whereRaw("REPLACE(REPLACE(REPLACE(from_number, '-', ''), ' ', ''), '+', '') = ?", [$cleanPhone]);
     }
 }

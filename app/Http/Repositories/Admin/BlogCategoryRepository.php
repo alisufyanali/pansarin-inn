@@ -3,8 +3,8 @@
 namespace App\Http\Repositories\Admin;
 
 use App\Models\BlogCategory;
-use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\Storage;
+use Yajra\DataTables\Facades\DataTables;
 
 class BlogCategoryRepository
 {
@@ -18,14 +18,14 @@ class BlogCategoryRepository
         $query = BlogCategory::with('parent')->latest();
 
         // Search
-        if ($request->has('search') && !empty($request->search)) {
+        if ($request->has('search') && ! empty($request->search)) {
             $search = is_array($request->search) ? $request->search['value'] : $request->search;
-            if (!empty($search)) {
+            if (! empty($search)) {
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('slug', 'like', "%{$search}%")
-                      ->orWhere('meta_title', 'like', "%{$search}%")
-                      ->orWhereHas('parent', fn($q) => $q->where('name', 'like', "%{$search}%"));
+                        ->orWhere('slug', 'like', "%{$search}%")
+                        ->orWhere('meta_title', 'like', "%{$search}%")
+                        ->orWhereHas('parent', fn ($q) => $q->where('name', 'like', "%{$search}%"));
                 });
             }
         }
@@ -41,7 +41,7 @@ class BlogCategoryRepository
 
         return DataTables::of($query)
             ->addIndexColumn()
-            ->addColumn('parent_name', fn($row) => $row->parent?->name ?? 'N/A')
+            ->addColumn('parent_name', fn ($row) => $row->parent?->name ?? 'N/A')
             ->make(true);
     }
 
@@ -53,7 +53,7 @@ class BlogCategoryRepository
     public function getParents($excludeId = null)
     {
         return BlogCategory::whereNull('parent_id')
-            ->when($excludeId, fn($q) => $q->where('id', '!=', $excludeId))
+            ->when($excludeId, fn ($q) => $q->where('id', '!=', $excludeId))
             ->get(['id', 'name']);
     }
 
@@ -87,6 +87,7 @@ class BlogCategoryRepository
         }
 
         $blogCategory->update($data);
+
         return $blogCategory;
     }
 
@@ -108,9 +109,9 @@ class BlogCategoryRepository
     public function getStats()
     {
         return [
-            'total'            => BlogCategory::count(),
-            'with_parent'      => BlogCategory::whereNotNull('parent_id')->count(),
-            'root_categories'  => BlogCategory::whereNull('parent_id')->count(),
+            'total' => BlogCategory::count(),
+            'with_parent' => BlogCategory::whereNotNull('parent_id')->count(),
+            'root_categories' => BlogCategory::whereNull('parent_id')->count(),
         ];
     }
 }

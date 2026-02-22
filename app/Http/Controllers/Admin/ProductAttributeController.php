@@ -8,8 +8,8 @@ use App\Http\Requests\Admin\ProductAttributeRequest;
 use App\Models\Attribute;
 use App\Models\AttributeValue;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class ProductAttributeController extends Controller
@@ -32,7 +32,7 @@ class ProductAttributeController extends Controller
     public function index()
     {
         $attributes = $this->attributeRepository->getAll();
-        
+
         return Inertia::render('Admin/Attributes/Index', [
             'attributes' => $attributes,
         ]);
@@ -76,7 +76,8 @@ class ProductAttributeController extends Controller
             return redirect()->route('admin.attributes.index')
                 ->with('success', 'Attribute created successfully');
         } catch (\Exception $e) {
-            Log::error('Attribute creation failed: ' . $e->getMessage());
+            Log::error('Attribute creation failed: '.$e->getMessage());
+
             return redirect()->back()
                 ->withInput()
                 ->with('error', 'Failed to create attribute. Please try again.');
@@ -90,7 +91,7 @@ class ProductAttributeController extends Controller
     {
         $attribute = $this->attributeRepository->find($attribute->id);
         $attribute->load('values');
-        
+
         return Inertia::render('Admin/Attributes/Show', [
             'attribute' => $attribute,
         ]);
@@ -102,7 +103,7 @@ class ProductAttributeController extends Controller
     public function edit(Attribute $attribute)
     {
         $attribute = $this->attributeRepository->find($attribute->id);
-        
+
         return Inertia::render('Admin/Attributes/Edit', [
             'attribute' => $attribute->load('values'),
         ]);
@@ -132,7 +133,8 @@ class ProductAttributeController extends Controller
             return redirect()->route('admin.attributes.index')
                 ->with('success', 'Attribute updated successfully');
         } catch (\Exception $e) {
-            Log::error('Attribute update failed: ' . $e->getMessage());
+            Log::error('Attribute update failed: '.$e->getMessage());
+
             return redirect()->back()
                 ->withInput()
                 ->with('error', 'Failed to update attribute. Please try again.');
@@ -151,7 +153,8 @@ class ProductAttributeController extends Controller
             return redirect()->route('admin.attributes.index')
                 ->with('success', 'Attribute deleted successfully');
         } catch (\Exception $e) {
-            Log::error('Attribute deletion failed: ' . $e->getMessage());
+            Log::error('Attribute deletion failed: '.$e->getMessage());
+
             return redirect()->back()
                 ->with('error', 'Failed to delete attribute. Please try again.');
         }

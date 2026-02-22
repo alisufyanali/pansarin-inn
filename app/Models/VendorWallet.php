@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class VendorWallet extends Model
 {
-    protected $fillable = ['vendor_id','balance','withdrawable_balance'];
+    protected $fillable = ['vendor_id', 'balance', 'withdrawable_balance'];
 
     public function vendor()
     {

@@ -34,8 +34,8 @@ class ProductsDealController extends Controller
         try {
             return $this->dealRepository->getAllForDataTable($request);
         } catch (\Exception $e) {
-            Log::error('Deals getData error: ' . $e->getMessage());
-            
+            Log::error('Deals getData error: '.$e->getMessage());
+
             return response()->json([
                 'error' => 'Failed to load data',
                 'message' => $e->getMessage(),
@@ -50,17 +50,17 @@ class ProductsDealController extends Controller
         // Get all products
         $allProducts = Product::orderBy('name')
             ->get(['id', 'name', 'price']);
-        
+
         // Try with active filter
         $activeProducts = Product::where('status', 1)
             ->orWhere('status', true)
             ->orderBy('name')
             ->get(['id', 'name', 'price']);
-        
+
         $products = $activeProducts->count() > 0 ? $activeProducts : $allProducts;
-        
+
         // Format products
-        $formattedProducts = $products->map(function($product) {
+        $formattedProducts = $products->map(function ($product) {
             return [
                 'id' => $product->id,
                 'name' => $product->name,
@@ -92,7 +92,8 @@ class ProductsDealController extends Controller
                 ->withErrors($e->errors())
                 ->withInput();
         } catch (\Exception $e) {
-            Log::error('Deal creation error: ' . $e->getMessage());
+            Log::error('Deal creation error: '.$e->getMessage());
+
             return back()
                 ->withInput()
                 ->with('error', 'Failed to create deal.');
@@ -101,9 +102,9 @@ class ProductsDealController extends Controller
 
     public function show(Deal $deal)
     {
-        $deal->load(['products' => function($query) {
+        $deal->load(['products' => function ($query) {
             $query->select('products.id', 'products.name', 'products.price')
-                  ->withPivot('custom_discount', 'stock_limit');
+                ->withPivot('custom_discount', 'stock_limit');
         }]);
 
         return Inertia::render('Admin/ProductsDeals/Show', [
@@ -113,13 +114,13 @@ class ProductsDealController extends Controller
 
     public function edit(Deal $deal)
     {
-        $deal->load(['products' => function($query) {
+        $deal->load(['products' => function ($query) {
             $query->select('products.id', 'products.name', 'products.price')
-                  ->withPivot('custom_discount', 'stock_limit');
+                ->withPivot('custom_discount', 'stock_limit');
         }]);
-        
+
         // Format deal products for form
-        $dealProducts = $deal->products->map(function($product) {
+        $dealProducts = $deal->products->map(function ($product) {
             return [
                 'id' => $product->id,
                 'name' => $product->name,
@@ -136,10 +137,10 @@ class ProductsDealController extends Controller
             ->orWhere('status', true)
             ->orderBy('name')
             ->get(['id', 'name', 'price']);
-        
+
         $products = $activeProducts->count() > 0 ? $activeProducts : $allProducts;
-        
-        $formattedProducts = $products->map(function($product) {
+
+        $formattedProducts = $products->map(function ($product) {
             return [
                 'id' => $product->id,
                 'name' => $product->name,
@@ -150,12 +151,12 @@ class ProductsDealController extends Controller
 
         // Fix deal image
         if ($deal->image) {
-            $deal->image = asset('storage/' . $deal->image);
+            $deal->image = asset('storage/'.$deal->image);
         }
 
         // Override deal products with formatted ones
         $dealData = $deal->toArray();
-        $dealData['products'] = $dealProducts->map(function($product) {
+        $dealData['products'] = $dealProducts->map(function ($product) {
             return [
                 'id' => $product['id'],
                 'custom_discount' => $product['custom_discount'],
@@ -187,7 +188,8 @@ class ProductsDealController extends Controller
                 ->withErrors($e->errors())
                 ->withInput();
         } catch (\Exception $e) {
-            Log::error('Deal update error: ' . $e->getMessage());
+            Log::error('Deal update error: '.$e->getMessage());
+
             return back()
                 ->withInput()
                 ->with('error', 'Failed to update deal.');
@@ -198,12 +200,13 @@ class ProductsDealController extends Controller
     {
         try {
             $this->dealRepository->delete($deal->id);
-            
+
             return redirect()
                 ->route('admin.deals.index')
                 ->with('success', 'Deal deleted successfully!');
         } catch (\Exception $e) {
-            Log::error('Deal deletion error: ' . $e->getMessage());
+            Log::error('Deal deletion error: '.$e->getMessage());
+
             return back()->with('error', 'Failed to delete deal.');
         }
     }
@@ -212,10 +215,11 @@ class ProductsDealController extends Controller
     {
         try {
             $this->dealRepository->toggleStatus($deal->id);
-            
+
             return back()->with('success', 'Deal status updated!');
         } catch (\Exception $e) {
-            Log::error('Deal toggle status error: ' . $e->getMessage());
+            Log::error('Deal toggle status error: '.$e->getMessage());
+
             return back()->with('error', 'Failed to update deal status.');
         }
     }
@@ -224,12 +228,13 @@ class ProductsDealController extends Controller
     {
         try {
             $newDeal = $this->dealRepository->duplicate($deal->id);
-            
+
             return redirect()
                 ->route('admin.deals.edit', $newDeal)
                 ->with('success', 'Deal duplicated successfully!');
         } catch (\Exception $e) {
-            Log::error('Deal duplication error: ' . $e->getMessage());
+            Log::error('Deal duplication error: '.$e->getMessage());
+
             return back()->with('error', 'Failed to duplicate deal.');
         }
     }

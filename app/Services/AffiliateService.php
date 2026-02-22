@@ -3,8 +3,8 @@
 namespace App\Services;
 
 use App\Models\Affiliate;
-use App\Models\Referral;
 use App\Models\AffiliateSetting;
+use App\Models\Referral;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\DB;
 
@@ -21,16 +21,22 @@ class AffiliateService
         }
 
         $affiliateCode = Cookie::get('affiliate_referral');
-        if (!$affiliateCode) return;
+        if (! $affiliateCode) {
+            return;
+        }
 
         $affiliate = Affiliate::where('affiliate_code', $affiliateCode)
             ->where('status', 1)
             ->first();
 
-        if (!$affiliate) return;
+        if (! $affiliate) {
+            return;
+        }
 
         // Self-order protection
-        if ($order->customer_id === $affiliate->user_id) return;
+        if ($order->customer_id === $affiliate->user_id) {
+            return;
+        }
 
         $rate = AffiliateSetting::where('key', 'default_commission')->value('value')
             ?? $affiliate->commission_rate;
@@ -39,13 +45,13 @@ class AffiliateService
         $commissionAmount = ($baseAmount * $rate) / 100;
 
         Referral::create([
-            'affiliate_id'       => $affiliate->id,
-            'order_id'           => $order->id,
-            'user_id'            => $order->customer_id,
-            'order_amount'       => $baseAmount,
-            'commission_amount'  => $commissionAmount,
-            'referral_type'      => 'direct',
-            'status'             => 'pending',
+            'affiliate_id' => $affiliate->id,
+            'order_id' => $order->id,
+            'user_id' => $order->customer_id,
+            'order_amount' => $baseAmount,
+            'commission_amount' => $commissionAmount,
+            'referral_type' => 'direct',
+            'status' => 'pending',
         ]);
     }
 
@@ -58,7 +64,9 @@ class AffiliateService
             ->where('referral_type', 'direct')
             ->first();
 
-        if (!$referral || $referral->status !== 'pending') return;
+        if (! $referral || $referral->status !== 'pending') {
+            return;
+        }
 
         $affiliate = $referral->affiliate;
 
@@ -69,7 +77,7 @@ class AffiliateService
         $newCommission = ($baseAmount * $rate) / 100;
 
         $referral->update([
-            'order_amount'      => $baseAmount,
+            'order_amount' => $baseAmount,
             'commission_amount' => $newCommission,
         ]);
     }
@@ -86,7 +94,9 @@ class AffiliateService
                 ->lockForUpdate()
                 ->first();
 
-            if (!$referral) return;
+            if (! $referral) {
+                return;
+            }
 
             /**
              * ORDER DELIVERED
@@ -110,7 +120,7 @@ class AffiliateService
                             ->where('referral_type', 'level_2')
                             ->exists();
 
-                        if (!$exists) {
+                        if (! $exists) {
                             $l2Rate = AffiliateSetting::where('key', 'level_2_commission')->value('value') ?? 2;
                             $baseAmount = $order->grand_total;
                             $parentCommission = ($baseAmount * $l2Rate) / 100;
@@ -118,13 +128,13 @@ class AffiliateService
                             $parent->increment('balance', $parentCommission);
 
                             Referral::create([
-                                'affiliate_id'      => $parent->id,
-                                'order_id'          => $order->id,
-                                'user_id'           => $order->customer_id,
-                                'order_amount'      => $baseAmount,
+                                'affiliate_id' => $parent->id,
+                                'order_id' => $order->id,
+                                'user_id' => $order->customer_id,
+                                'order_amount' => $baseAmount,
                                 'commission_amount' => $parentCommission,
-                                'referral_type'     => 'level_2',
-                                'status'            => 'approved',
+                                'referral_type' => 'level_2',
+                                'status' => 'approved',
                             ]);
                         }
                     }

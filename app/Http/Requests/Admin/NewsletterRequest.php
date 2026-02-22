@@ -74,13 +74,13 @@ class NewsletterRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         // Add IP address and user agent if not present
-        if (!$this->has('ip_address')) {
+        if (! $this->has('ip_address')) {
             $this->merge([
                 'ip_address' => $this->ip(),
             ]);
         }
 
-        if (!$this->has('user_agent')) {
+        if (! $this->has('user_agent')) {
             $this->merge([
                 'user_agent' => $this->userAgent(),
             ]);

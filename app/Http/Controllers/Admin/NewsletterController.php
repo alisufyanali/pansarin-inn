@@ -35,7 +35,8 @@ class NewsletterController extends Controller
                 'stats' => $stats,
             ]);
         } catch (\Exception $e) {
-            Log::error('Newsletter index error: ' . $e->getMessage());
+            Log::error('Newsletter index error: '.$e->getMessage());
+
             return back()->with('error', 'Failed to load newsletters.');
         }
     }
@@ -48,8 +49,8 @@ class NewsletterController extends Controller
         try {
             return $this->newsletterRepository->getAllForDataTable($request);
         } catch (\Exception $e) {
-            Log::error('Newsletter getData error: ' . $e->getMessage());
-            
+            Log::error('Newsletter getData error: '.$e->getMessage());
+
             return response()->json([
                 'error' => 'Failed to load data',
                 'message' => $e->getMessage(),
@@ -74,7 +75,7 @@ class NewsletterController extends Controller
     {
         try {
             $validated = $request->validated();
-            
+
             $this->newsletterRepository->store($validated);
 
             return redirect()->route('admin.newsletters.index')
@@ -84,7 +85,8 @@ class NewsletterController extends Controller
                 ->withErrors($e->errors())
                 ->withInput();
         } catch (\Exception $e) {
-            Log::error('Newsletter creation error: ' . $e->getMessage());
+            Log::error('Newsletter creation error: '.$e->getMessage());
+
             return back()
                 ->withInput()
                 ->with('error', 'Failed to create newsletter subscriber.');
@@ -98,10 +100,11 @@ class NewsletterController extends Controller
     {
         try {
             return Inertia::render('Admin/Newsletters/Show', [
-                'newsletter' => $newsletter
+                'newsletter' => $newsletter,
             ]);
         } catch (\Exception $e) {
-            Log::error('Newsletter show error: ' . $e->getMessage());
+            Log::error('Newsletter show error: '.$e->getMessage());
+
             return redirect()->route('admin.newsletters.index')
                 ->with('error', 'Failed to load newsletter subscriber.');
         }
@@ -114,10 +117,11 @@ class NewsletterController extends Controller
     {
         try {
             return Inertia::render('Admin/Newsletters/Edit', [
-                'newsletter' => $newsletter
+                'newsletter' => $newsletter,
             ]);
         } catch (\Exception $e) {
-            Log::error('Newsletter edit error: ' . $e->getMessage());
+            Log::error('Newsletter edit error: '.$e->getMessage());
+
             return redirect()->route('admin.newsletters.index')
                 ->with('error', 'Failed to load newsletter subscriber.');
         }
@@ -130,7 +134,7 @@ class NewsletterController extends Controller
     {
         try {
             $validated = $request->validated();
-            
+
             $this->newsletterRepository->update($newsletter->id, $validated);
 
             return redirect()->route('admin.newsletters.index')
@@ -140,7 +144,8 @@ class NewsletterController extends Controller
                 ->withErrors($e->errors())
                 ->withInput();
         } catch (\Exception $e) {
-            Log::error('Newsletter update error: ' . $e->getMessage());
+            Log::error('Newsletter update error: '.$e->getMessage());
+
             return back()
                 ->withInput()
                 ->with('error', 'Failed to update newsletter subscriber.');
@@ -154,11 +159,12 @@ class NewsletterController extends Controller
     {
         try {
             $this->newsletterRepository->delete($newsletter->id);
-            
+
             return redirect()->route('admin.newsletters.index')
                 ->with('success', 'Newsletter subscriber successfully deleted!');
         } catch (\Exception $e) {
-            Log::error('Newsletter deletion error: ' . $e->getMessage());
+            Log::error('Newsletter deletion error: '.$e->getMessage());
+
             return back()->with('error', 'Failed to delete newsletter subscriber.');
         }
     }
@@ -174,10 +180,11 @@ class NewsletterController extends Controller
             ]);
 
             $this->newsletterRepository->updateStatus($newsletter->id, $request->status);
-            
+
             return back()->with('success', 'Newsletter status updated!');
         } catch (\Exception $e) {
-            Log::error('Newsletter status update error: ' . $e->getMessage());
+            Log::error('Newsletter status update error: '.$e->getMessage());
+
             return back()->with('error', 'Failed to update newsletter status.');
         }
     }
@@ -190,14 +197,15 @@ class NewsletterController extends Controller
         try {
             $request->validate([
                 'ids' => 'required|array',
-                'ids.*' => 'exists:newsletters,id'
+                'ids.*' => 'exists:newsletters,id',
             ]);
 
             $count = $this->newsletterRepository->bulkDelete($request->ids);
 
-            return back()->with('success', $count . ' newsletter subscribers deleted!');
+            return back()->with('success', $count.' newsletter subscribers deleted!');
         } catch (\Exception $e) {
-            Log::error('Newsletter bulk delete error: ' . $e->getMessage());
+            Log::error('Newsletter bulk delete error: '.$e->getMessage());
+
             return back()->with('error', 'Failed to delete newsletter subscribers.');
         }
     }

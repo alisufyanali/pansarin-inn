@@ -7,16 +7,18 @@ use Illuminate\Database\Eloquent\Model;
 class ProductReview extends Model
 {
     protected $fillable = [
-        'product_id', 'user_id', 'customer_name', 'customer_email', 
-        'order_number', 'rating', 'comment', 'is_verified', 'status'
+        'product_id', 'user_id', 'customer_name', 'customer_email',
+        'order_number', 'rating', 'comment', 'is_verified', 'status',
     ];
 
     // Relationships
-    public function product() {
+    public function product()
+    {
         return $this->belongsTo(Product::class);
     }
 
-    public function user() {
+    public function user()
+    {
         return $this->belongsTo(User::class);
     }
 
@@ -35,7 +37,7 @@ class ProductReview extends Model
                 //    ->whereHas('items', function($q) use ($review) {
                 //        $q->where('product_id', $review->product_id);
                 //    })->exists();
-                
+
                 // $review->is_verified = $hasPurchased;
             }
         });

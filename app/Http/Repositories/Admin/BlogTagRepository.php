@@ -17,13 +17,13 @@ class BlogTagRepository
         $query = BlogTag::withCount('blogs')->latest();
 
         // Search
-        if ($request->has('search') && !empty($request->search)) {
+        if ($request->has('search') && ! empty($request->search)) {
             $search = is_array($request->search) ? $request->search['value'] : $request->search;
-            if (!empty($search)) {
+            if (! empty($search)) {
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('slug', 'like', "%{$search}%")
-                      ->orWhere('description', 'like', "%{$search}%");
+                        ->orWhere('slug', 'like', "%{$search}%")
+                        ->orWhere('description', 'like', "%{$search}%");
                 });
             }
         }
@@ -35,7 +35,7 @@ class BlogTagRepository
 
         return DataTables::of($query)
             ->addIndexColumn()
-            ->addColumn('blogs_count', fn($row) => $row->blogs_count)
+            ->addColumn('blogs_count', fn ($row) => $row->blogs_count)
             ->make(true);
     }
 
@@ -56,7 +56,7 @@ class BlogTagRepository
         }
 
         // Set default is_active if not provided
-        if (!isset($data['is_active'])) {
+        if (! isset($data['is_active'])) {
             $data['is_active'] = true;
         }
 
@@ -72,6 +72,7 @@ class BlogTagRepository
         }
 
         $blogTag->update($data);
+
         return $blogTag;
     }
 
@@ -89,8 +90,8 @@ class BlogTagRepository
     public function getStats()
     {
         return [
-            'total'   => BlogTag::count(),
-            'active'  => BlogTag::where('is_active', true)->count(),
+            'total' => BlogTag::count(),
+            'active' => BlogTag::where('is_active', true)->count(),
             'inactive' => BlogTag::where('is_active', false)->count(),
         ];
     }

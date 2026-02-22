@@ -14,7 +14,7 @@ class PermissionRepository
     public function getAllForDataTable($request)
     {
         $query = Permission::select('id', 'name', 'guard_name', 'created_at', 'updated_at');
-        
+
         // Search
         if ($request->filled('search')) {
             $search = $request->search;
@@ -29,11 +29,11 @@ class PermissionRepository
         // Pagination
         $perPage = $request->get('perPage', 10);
         $page = $request->get('page', 1);
-        
+
         $permissions = $query->paginate($perPage, ['*'], 'page', $page);
 
         // Transform data
-        $transformedData = $permissions->map(function($permission) {
+        $transformedData = $permissions->map(function ($permission) {
             return [
                 'id' => $permission->id,
                 'name' => $permission->name,
@@ -66,25 +66,27 @@ class PermissionRepository
     {
         $permission = $this->find($id);
         $permission->update($data);
+
         return $permission;
     }
 
     public function delete($id)
     {
         $permission = $this->find($id);
+
         return $permission->delete();
     }
 
     public function getStats()
     {
         $permissions = Permission::all();
-        
+
         // Group by action type
-        $viewCount = $permissions->filter(fn($p) => str_starts_with($p->name, 'view.'))->count();
-        $createCount = $permissions->filter(fn($p) => str_starts_with($p->name, 'create.'))->count();
-        $editCount = $permissions->filter(fn($p) => str_starts_with($p->name, 'edit.'))->count();
-        $deleteCount = $permissions->filter(fn($p) => str_starts_with($p->name, 'delete.'))->count();
-        
+        $viewCount = $permissions->filter(fn ($p) => str_starts_with($p->name, 'view.'))->count();
+        $createCount = $permissions->filter(fn ($p) => str_starts_with($p->name, 'create.'))->count();
+        $editCount = $permissions->filter(fn ($p) => str_starts_with($p->name, 'edit.'))->count();
+        $deleteCount = $permissions->filter(fn ($p) => str_starts_with($p->name, 'delete.'))->count();
+
         return [
             'total' => $permissions->count(),
             'view' => $viewCount,

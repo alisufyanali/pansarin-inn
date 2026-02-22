@@ -24,44 +24,43 @@ class OrderRepository
     public function getAllForDataTable($request)
     {
         $query = Order::with(['customer'])->latest();
-        
+
         // Search handling
         if ($request->has('search') && $request->search !== '') {
             if (is_string($request->search)) {
                 $search = $request->search;
-                $query->where(function($q) use ($search) {
+                $query->where(function ($q) use ($search) {
                     $q->where('order_number', 'like', "%{$search}%")
-                      ->orWhere('status', 'like', "%{$search}%")
-                      ->orWhere('payment_status', 'like', "%{$search}%")
-                      ->orWhereHas('customer', function($q) use ($search) {
-                          $q->where('first_name', 'like', "%{$search}%")
-                            ->orWhere('last_name', 'like', "%{$search}%")
-                            ->orWhere('phone', 'like', "%{$search}%");
-                      });
-                });
-            }
-            elseif (is_array($request->search) && isset($request->search['value'])) {
-                $search = $request->search['value'];
-                if (!empty($search)) {
-                    $query->where(function($q) use ($search) {
-                        $q->where('order_number', 'like', "%{$search}%")
-                          ->orWhere('status', 'like', "%{$search}%")
-                          ->orWhere('payment_status', 'like', "%{$search}%")
-                          ->orWhereHas('customer', function($q) use ($search) {
-                              $q->where('first_name', 'like', "%{$search}%")
+                        ->orWhere('status', 'like', "%{$search}%")
+                        ->orWhere('payment_status', 'like', "%{$search}%")
+                        ->orWhereHas('customer', function ($q) use ($search) {
+                            $q->where('first_name', 'like', "%{$search}%")
                                 ->orWhere('last_name', 'like', "%{$search}%")
                                 ->orWhere('phone', 'like', "%{$search}%");
-                          });
+                        });
+                });
+            } elseif (is_array($request->search) && isset($request->search['value'])) {
+                $search = $request->search['value'];
+                if (! empty($search)) {
+                    $query->where(function ($q) use ($search) {
+                        $q->where('order_number', 'like', "%{$search}%")
+                            ->orWhere('status', 'like', "%{$search}%")
+                            ->orWhere('payment_status', 'like', "%{$search}%")
+                            ->orWhereHas('customer', function ($q) use ($search) {
+                                $q->where('first_name', 'like', "%{$search}%")
+                                    ->orWhere('last_name', 'like', "%{$search}%")
+                                    ->orWhere('phone', 'like', "%{$search}%");
+                            });
                     });
                 }
             }
         }
-        
+
         // Filters
         if ($request->has('status') && $request->status !== '') {
             $query->where('status', $request->status);
         }
-        
+
         if ($request->has('payment_status') && $request->payment_status !== '') {
             $query->where('payment_status', $request->payment_status);
         }
@@ -127,10 +126,11 @@ class OrderRepository
             $order->calculateTotals();
 
             DB::commit();
+
             return $order;
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Failed to create order: ' . $e->getMessage());
+            Log::error('Failed to create order: '.$e->getMessage());
             throw $e;
         }
     }
@@ -189,10 +189,11 @@ class OrderRepository
             $order->calculateTotals();
 
             DB::commit();
+
             return $order;
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Failed to update order: ' . $e->getMessage());
+            Log::error('Failed to update order: '.$e->getMessage());
             throw $e;
         }
     }
@@ -205,7 +206,7 @@ class OrderRepository
         try {
             return Order::destroy($id);
         } catch (\Exception $e) {
-            Log::error('Failed to delete order: ' . $e->getMessage());
+            Log::error('Failed to delete order: '.$e->getMessage());
             throw $e;
         }
     }
@@ -218,9 +219,10 @@ class OrderRepository
         try {
             $order = Order::findOrFail($id);
             $order->update(['status' => $status]);
+
             return $order->fresh();
         } catch (\Exception $e) {
-            Log::error('Failed to update order status: ' . $e->getMessage());
+            Log::error('Failed to update order status: '.$e->getMessage());
             throw $e;
         }
     }
@@ -236,9 +238,10 @@ class OrderRepository
                 'payment_status' => $data['payment_status'],
                 'payment_date' => $data['payment_date'] ?? now(),
             ]);
+
             return $order;
         } catch (\Exception $e) {
-            Log::error('Failed to update payment status: ' . $e->getMessage());
+            Log::error('Failed to update payment status: '.$e->getMessage());
             throw $e;
         }
     }

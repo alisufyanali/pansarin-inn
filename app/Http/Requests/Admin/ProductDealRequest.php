@@ -17,7 +17,7 @@ class ProductDealRequest extends FormRequest
 
         return [
             'title' => 'required|string|max:255',
-            'slug' => 'nullable|string|unique:deals,slug,' . $id,
+            'slug' => 'nullable|string|unique:deals,slug,'.$id,
             'description' => 'nullable|string',
             'image' => 'nullable|image|max:2048',
             'deal_type' => 'required|in:percentage,fixed,buy_x_get_y,bundle,flash_sale',

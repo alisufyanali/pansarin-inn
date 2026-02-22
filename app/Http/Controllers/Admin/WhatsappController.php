@@ -59,7 +59,7 @@ class WhatsAppController extends Controller
             $cleanPhone = preg_replace('/\D+/', '', $row->phone);
             $time = $row->last_activity;
 
-            if (!isset($phones[$cleanPhone]) || 
+            if (! isset($phones[$cleanPhone]) ||
                 strtotime($time) > strtotime($phones[$cleanPhone]['last_activity'])) {
                 $phones[$cleanPhone] = [
                     'phone' => $cleanPhone,
@@ -85,7 +85,7 @@ class WhatsAppController extends Controller
 
         // Sort by last activity
         $sorted = array_values($phones);
-        usort($sorted, function($a, $b) {
+        usort($sorted, function ($a, $b) {
             return strtotime($b['last_activity']) - strtotime($a['last_activity']);
         });
 
@@ -110,12 +110,12 @@ class WhatsAppController extends Controller
         $sent = WhatsappMessageLog::forPhone($cleanPhone)
             ->orderBy('created_at', 'asc')
             ->get()
-            ->map(function($msg) {
+            ->map(function ($msg) {
                 return [
                     'type' => 'sent',
                     'message' => $msg->messages,
                     'time' => $msg->created_at->toDateTimeString(),
-                    'media_url' => null
+                    'media_url' => null,
                 ];
             });
 
@@ -123,17 +123,17 @@ class WhatsAppController extends Controller
         $received = WhatsappMessage::fromNumber($cleanPhone)
             ->orderBy('received_at', 'asc')
             ->get()
-            ->map(function($msg) {
+            ->map(function ($msg) {
                 return [
                     'type' => 'received',
                     'message' => $msg->message,
                     'time' => $msg->received_at->toDateTimeString(),
-                    'media_url' => $msg->media_url
+                    'media_url' => $msg->media_url,
                 ];
             });
 
         // Merge and sort by time
-        $messages = $sent->concat($received)->sortBy(function($msg) {
+        $messages = $sent->concat($received)->sortBy(function ($msg) {
             return strtotime($msg['time']);
         })->values();
 
@@ -145,7 +145,7 @@ class WhatsAppController extends Controller
         return response()->json([
             'phone' => $cleanPhone,
             'order_id' => $orderId,
-            'messages' => $messages
+            'messages' => $messages,
         ]);
     }
 
@@ -156,7 +156,7 @@ class WhatsAppController extends Controller
     {
         $request->validate([
             'phone' => 'required|string',
-            'message' => 'required|string'
+            'message' => 'required|string',
         ]);
 
         try {
@@ -168,7 +168,7 @@ class WhatsAppController extends Controller
             WhatsappMessageLog::create([
                 'phone' => $request->phone,
                 'customer_name' => 'Manual',
-                'order_id' => 'Manual-' . mt_rand(1000, 9999),
+                'order_id' => 'Manual-'.mt_rand(1000, 9999),
                 'order_total' => 0,
                 'delivery_address' => '',
                 'messages' => $request->message,
@@ -177,14 +177,14 @@ class WhatsAppController extends Controller
 
             // Return JSON response for AJAX/Inertia
             return response()->json([
-                'success' => true, 
-                'response' => $response
+                'success' => true,
+                'response' => $response,
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
-                'success' => false, 
-                'error' => $e->getMessage()
+                'success' => false,
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -205,14 +205,14 @@ class WhatsAppController extends Controller
             if ($mode === 'subscribe' && $token === $verifyToken) {
                 return response($challenge, 200);
             }
-            
+
             return response('Forbidden', 403);
         }
 
         // POST: Handle incoming messages
         try {
             $data = $request->all();
-            
+
             // Log webhook data
             Log::info('WhatsApp Webhook', ['data' => $data]);
 
@@ -232,7 +232,7 @@ class WhatsAppController extends Controller
                 if (in_array($type, ['image', 'document', 'audio'])) {
                     $mediaId = $messageData[$type]['id'];
                     $mediaFileName = $this->downloadMedia($mediaId, $type);
-                    $message = strtoupper($type) . " RECEIVED";
+                    $message = strtoupper($type).' RECEIVED';
                 }
 
                 // Save message
@@ -247,6 +247,7 @@ class WhatsAppController extends Controller
             return response('OK', 200);
         } catch (\Exception $e) {
             Log::error('WhatsApp Webhook Error', ['error' => $e->getMessage()]);
+
             return response('OK', 200);
         }
     }
@@ -257,7 +258,7 @@ class WhatsAppController extends Controller
     protected function downloadMedia($mediaId, $type)
     {
         $accessToken = config('services.whatsapp.access_token');
-        
+
         try {
             // Get media URL
             $response = Http::withToken($accessToken)
@@ -265,7 +266,7 @@ class WhatsAppController extends Controller
 
             $mediaUrl = $response->json()['url'] ?? null;
 
-            if (!$mediaUrl) {
+            if (! $mediaUrl) {
                 return null;
             }
 
@@ -278,9 +279,9 @@ class WhatsAppController extends Controller
             $contentType = Http::withToken($accessToken)
                 ->get($mediaUrl)
                 ->header('Content-Type');
-            
+
             $ext = explode('/', $contentType)[1] ?? 'bin';
-            $fileName = "media_" . time() . "." . $ext;
+            $fileName = 'media_'.time().'.'.$ext;
 
             // Save file
             Storage::disk('public')->put("whatsapp/{$fileName}", $mediaContent);
@@ -288,6 +289,7 @@ class WhatsAppController extends Controller
             return $fileName;
         } catch (\Exception $e) {
             Log::error('Media Download Error', ['error' => $e->getMessage()]);
+
             return null;
         }
     }

@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\CategoryRequest;
 use App\Http\Repositories\Admin\CategoryRepository;
+use App\Http\Requests\Admin\CategoryRequest;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -52,9 +52,10 @@ class CategoryController extends Controller
 
             return to_route('admin.categories.index')
                 ->with('success', 'Category successfully created!');
-            
+
         } catch (\Exception $e) {
-            \Log::error('Category creation error: ' . $e->getMessage());
+            \Log::error('Category creation error: '.$e->getMessage());
+
             return back()->withInput()->with('error', 'Failed to create category.');
         }
     }
@@ -64,7 +65,7 @@ class CategoryController extends Controller
         $category = $this->categoryRepo->find($id);
 
         return Inertia::render('Admin/Categories/Show', [
-            'category' => $category->load(['parent', 'children'])
+            'category' => $category->load(['parent', 'children']),
         ]);
     }
 
@@ -90,9 +91,10 @@ class CategoryController extends Controller
 
             return to_route('admin.categories.index')
                 ->with('success', 'Category successfully updated!');
-            
+
         } catch (\Exception $e) {
-            \Log::error('Category update error: ' . $e->getMessage());
+            \Log::error('Category update error: '.$e->getMessage());
+
             return back()->withInput()->with('error', 'Failed to update category.');
         }
     }
@@ -104,9 +106,10 @@ class CategoryController extends Controller
 
             return redirect()->route('admin.categories.index')
                 ->with('success', 'Category successfully deleted!');
-                
+
         } catch (\Exception $e) {
-            \Log::error('Category deletion error: ' . $e->getMessage());
+            \Log::error('Category deletion error: '.$e->getMessage());
+
             return redirect()->route('admin.categories.index')
                 ->with('error', 'Failed to delete category.');
         }

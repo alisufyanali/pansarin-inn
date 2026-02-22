@@ -15,7 +15,7 @@ class WhatsappMessageLog extends Model
         'order_total',
         'delivery_address',
         'messages',
-        'api_response'
+        'api_response',
     ];
 
     protected $casts = [
@@ -25,6 +25,7 @@ class WhatsappMessageLog extends Model
     public function scopeForPhone($query, $phone)
     {
         $cleanPhone = preg_replace('/\D+/', '', $phone);
+
         return $query->whereRaw("REPLACE(REPLACE(REPLACE(phone, '-', ''), ' ', ''), '+', '') = ?", [$cleanPhone]);
     }
 }

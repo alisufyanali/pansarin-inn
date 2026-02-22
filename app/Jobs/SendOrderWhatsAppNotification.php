@@ -37,15 +37,16 @@ class SendOrderWhatsAppNotification implements ShouldQueue
             $this->order->load(['customer', 'items.product']);
 
             // Check if customer has phone
-            if (!$this->order->customer || !$this->order->customer->phone) {
+            if (! $this->order->customer || ! $this->order->customer->phone) {
                 Log::warning('No customer phone for WhatsApp', ['order_id' => $this->order->id]);
+
                 return;
             }
 
             // Prepare message data
             $customerName = $this->order->customer->full_name ?? $this->order->customer->first_name;
             $orderNumber = $this->order->order_number;
-            $orderTotal = 'Rs. ' . number_format($this->order->grand_total, 2);
+            $orderTotal = 'Rs. '.number_format($this->order->grand_total, 2);
             $deliveryAddress = $this->order->shipping_address ?? 'N/A';
 
             // Send WhatsApp message using template
@@ -60,21 +61,20 @@ class SendOrderWhatsAppNotification implements ShouldQueue
 
             Log::info('Order WhatsApp sent', [
                 'order_id' => $this->order->id,
-                'phone' => $this->order->customer->phone
+                'phone' => $this->order->customer->phone,
             ]);
 
         } catch (\Exception $e) {
             Log::error('Failed to send order WhatsApp', [
                 'order_id' => $this->order->id,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
-            
+
             throw $e;
         }
     }
 }
-
 
 // Update your OrderController.php store method:
 // Add at top: use App\Jobs\SendOrderWhatsAppNotification;

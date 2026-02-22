@@ -14,13 +14,13 @@ class ProductRequest extends FormRequest
     public function rules(): array
     {
         $productId = $this->route('product');
-        
+
         // If it's a string (ID), use it directly; if it's a model, get the ID
         $id = is_object($productId) ? $productId->id : $productId;
 
         return [
             'name' => 'required|string|max:255',
-            'slug' => 'nullable|string|max:255|unique:products,slug,' . $id,
+            'slug' => 'nullable|string|max:255|unique:products,slug,'.$id,
             'sku' => 'nullable|string|max:255',
             'barcode' => 'nullable|string|max:255',
             'category_id' => 'required|exists:categories,id',

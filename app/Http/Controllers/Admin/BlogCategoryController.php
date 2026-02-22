@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\BlogCategoryRequest;
 use App\Http\Repositories\Admin\BlogCategoryRepository;
+use App\Http\Requests\Admin\BlogCategoryRequest;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -25,7 +25,7 @@ class BlogCategoryController extends Controller
     {
         return Inertia::render('Admin/BlogCategories/Index', [
             'userRole' => $request->user()->role ?? 'admin',
-            'stats'    => $this->blogCategoryRepo->getStats(),
+            'stats' => $this->blogCategoryRepo->getStats(),
         ]);
     }
 
@@ -53,7 +53,8 @@ class BlogCategoryController extends Controller
                 ->with('success', 'Blog category successfully created!');
 
         } catch (\Exception $e) {
-            \Log::error('Blog category creation error: ' . $e->getMessage());
+            \Log::error('Blog category creation error: '.$e->getMessage());
+
             return back()->withErrors(['error' => 'Failed to create blog category.']);
         }
     }
@@ -73,7 +74,7 @@ class BlogCategoryController extends Controller
 
         return Inertia::render('Admin/BlogCategories/Edit', [
             'blogCategory' => $blogCategory,
-            'parents'      => $this->blogCategoryRepo->getParents($id),
+            'parents' => $this->blogCategoryRepo->getParents($id),
         ]);
     }
 
@@ -90,7 +91,8 @@ class BlogCategoryController extends Controller
                 ->with('success', 'Blog category successfully updated!');
 
         } catch (\Exception $e) {
-            \Log::error('Blog category update error: ' . $e->getMessage());
+            \Log::error('Blog category update error: '.$e->getMessage());
+
             return back()->withErrors(['error' => 'Failed to update blog category.']);
         }
     }
@@ -104,7 +106,8 @@ class BlogCategoryController extends Controller
                 ->with('success', 'Blog category successfully deleted!');
 
         } catch (\Exception $e) {
-            \Log::error('Blog category deletion error: ' . $e->getMessage());
+            \Log::error('Blog category deletion error: '.$e->getMessage());
+
             return back()->with('error', $e->getMessage());
         }
     }

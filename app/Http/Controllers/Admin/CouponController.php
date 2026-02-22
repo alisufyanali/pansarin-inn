@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Repositories\Admin\CouponRepository;
 use App\Http\Requests\Admin\CouponRequest;
-use App\Models\Product;
 use App\Models\Category;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
@@ -37,7 +37,8 @@ class CouponController extends Controller
                 'stats' => $stats,
             ]);
         } catch (\Exception $e) {
-            Log::error('Coupon index error: ' . $e->getMessage());
+            Log::error('Coupon index error: '.$e->getMessage());
+
             return back()->with('error', 'Failed to load coupons.');
         }
     }
@@ -50,8 +51,8 @@ class CouponController extends Controller
         try {
             return $this->couponRepository->getAllForDataTable($request);
         } catch (\Exception $e) {
-            Log::error('Coupon getData error: ' . $e->getMessage());
-            
+            Log::error('Coupon getData error: '.$e->getMessage());
+
             return response()->json([
                 'error' => 'Failed to load data',
                 'message' => $e->getMessage(),
@@ -72,7 +73,8 @@ class CouponController extends Controller
                 'categories' => Category::orderBy('name')->get(['id', 'name']),
             ]);
         } catch (\Exception $e) {
-            Log::error('Coupon create error: ' . $e->getMessage());
+            Log::error('Coupon create error: '.$e->getMessage());
+
             return redirect()->route('admin.coupons.index')
                 ->with('error', 'Failed to load create form.');
         }
@@ -85,7 +87,7 @@ class CouponController extends Controller
     {
         try {
             $validated = $request->validated();
-            
+
             $this->couponRepository->store($validated);
 
             return to_route('admin.coupons.index')->with('success', 'Coupon successfully created!');
@@ -94,7 +96,8 @@ class CouponController extends Controller
                 ->withErrors($e->errors())
                 ->withInput();
         } catch (\Exception $e) {
-            Log::error('Coupon creation error: ' . $e->getMessage());
+            Log::error('Coupon creation error: '.$e->getMessage());
+
             return back()
                 ->withInput()
                 ->with('error', 'Failed to create coupon.');
@@ -110,10 +113,11 @@ class CouponController extends Controller
             $coupon = $this->couponRepository->find($id);
 
             return Inertia::render('Admin/Coupons/Show', [
-                'coupon' => $coupon
+                'coupon' => $coupon,
             ]);
         } catch (\Exception $e) {
-            Log::error('Coupon show error: ' . $e->getMessage());
+            Log::error('Coupon show error: '.$e->getMessage());
+
             return redirect()->route('admin.coupons.index')
                 ->with('error', 'Failed to load coupon.');
         }
@@ -133,7 +137,8 @@ class CouponController extends Controller
                 'categories' => Category::orderBy('name')->get(['id', 'name']),
             ]);
         } catch (\Exception $e) {
-            Log::error('Coupon edit error: ' . $e->getMessage());
+            Log::error('Coupon edit error: '.$e->getMessage());
+
             return redirect()->route('admin.coupons.index')
                 ->with('error', 'Failed to load coupon.');
         }
@@ -146,7 +151,7 @@ class CouponController extends Controller
     {
         try {
             $validated = $request->validated();
-            
+
             $this->couponRepository->update($id, $validated);
 
             return to_route('admin.coupons.index')->with('success', 'Coupon successfully updated!');
@@ -155,7 +160,8 @@ class CouponController extends Controller
                 ->withErrors($e->errors())
                 ->withInput();
         } catch (\Exception $e) {
-            Log::error('Coupon update error: ' . $e->getMessage());
+            Log::error('Coupon update error: '.$e->getMessage());
+
             return back()
                 ->withInput()
                 ->with('error', 'Failed to update coupon.');
@@ -169,11 +175,12 @@ class CouponController extends Controller
     {
         try {
             $this->couponRepository->delete($id);
-            
+
             return redirect()->route('admin.coupons.index')
                 ->with('success', 'Coupon successfully deleted!');
         } catch (\Exception $e) {
-            Log::error('Coupon deletion error: ' . $e->getMessage());
+            Log::error('Coupon deletion error: '.$e->getMessage());
+
             return redirect()->route('admin.coupons.index')
                 ->with('error', 'Failed to delete coupon.');
         }
@@ -186,10 +193,11 @@ class CouponController extends Controller
     {
         try {
             $this->couponRepository->toggleStatus($id);
-            
+
             return back()->with('success', 'Coupon status updated successfully!');
         } catch (\Exception $e) {
-            Log::error('Coupon toggle status error: ' . $e->getMessage());
+            Log::error('Coupon toggle status error: '.$e->getMessage());
+
             return back()->with('error', 'Failed to update coupon status.');
         }
     }
@@ -202,14 +210,15 @@ class CouponController extends Controller
         try {
             $request->validate([
                 'ids' => 'required|array',
-                'ids.*' => 'exists:coupons,id'
+                'ids.*' => 'exists:coupons,id',
             ]);
 
             $count = $this->couponRepository->bulkDelete($request->ids);
 
-            return back()->with('success', $count . ' coupons deleted successfully!');
+            return back()->with('success', $count.' coupons deleted successfully!');
         } catch (\Exception $e) {
-            Log::error('Coupon bulk delete error: ' . $e->getMessage());
+            Log::error('Coupon bulk delete error: '.$e->getMessage());
+
             return back()->with('error', 'Failed to delete coupons.');
         }
     }

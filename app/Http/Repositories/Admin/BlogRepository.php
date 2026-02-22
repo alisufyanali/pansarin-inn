@@ -3,8 +3,8 @@
 namespace App\Http\Repositories\Admin;
 
 use App\Models\Blog;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class BlogRepository
 {
@@ -17,23 +17,23 @@ class BlogRepository
     {
         $query = Blog::with(['category:id,name', 'tags:id,name,color'])
             ->select('id', 'blog_category_id', 'title', 'slug', 'excerpt', 'status', 'thumbnail', 'created_at', 'updated_at');
-        
+
         // Search
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('slug', 'like', "%{$search}%")
-                  ->orWhere('content', 'like', "%{$search}%")
-                  ->orWhereHas('category', fn($q) => $q->where('name', 'like', "%{$search}%"));
+                    ->orWhere('slug', 'like', "%{$search}%")
+                    ->orWhere('content', 'like', "%{$search}%")
+                    ->orWhereHas('category', fn ($q) => $q->where('name', 'like', "%{$search}%"));
             });
         }
-        
+
         // Filters
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
-        
+
         if ($request->filled('blog_category_id')) {
             $query->where('blog_category_id', $request->blog_category_id);
         }
@@ -46,11 +46,11 @@ class BlogRepository
         // Pagination
         $perPage = $request->get('perPage', 10);
         $page = $request->get('page', 1);
-        
+
         $blogs = $query->paginate($perPage, ['*'], 'page', $page);
 
         // Transform data
-        $transformedData = $blogs->map(function($blog) {
+        $transformedData = $blogs->map(function ($blog) {
             return [
                 'id' => $blog->id,
                 'blog_category_id' => $blog->blog_category_id,
@@ -105,7 +105,7 @@ class BlogRepository
 
         $blog = Blog::create($data);
 
-        if (!empty($tags)) {
+        if (! empty($tags)) {
             $blog->tags()->attach($tags);
         }
 
@@ -179,10 +179,10 @@ class BlogRepository
 
         while (
             Blog::where('slug', $slug)
-                ->when($excludeId, fn($q) => $q->where('id', '!=', $excludeId))
+                ->when($excludeId, fn ($q) => $q->where('id', '!=', $excludeId))
                 ->exists()
         ) {
-            $slug = $baseSlug . '-' . $counter;
+            $slug = $baseSlug.'-'.$counter;
             $counter++;
         }
 

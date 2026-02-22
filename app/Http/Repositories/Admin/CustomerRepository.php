@@ -24,60 +24,59 @@ class CustomerRepository
     {
         try {
             $query = Customer::with('city')->latest();
-            
+
             // Search handling
             if ($request->has('search') && $request->search !== '') {
                 if (is_string($request->search)) {
                     $search = $request->search;
-                    $query->where(function($q) use ($search) {
+                    $query->where(function ($q) use ($search) {
                         $q->where('first_name', 'like', "%{$search}%")
-                          ->orWhere('last_name', 'like', "%{$search}%")
-                          ->orWhere('phone', 'like', "%{$search}%")
-                          ->orWhere('email', 'like', "%{$search}%")
-                          ->orWhere('address', 'like', "%{$search}%")
-                          ->orWhere('country', 'like', "%{$search}%")
-                          ->orWhereHas('city', function($q) use ($search) {
-                              $q->where('name', 'like', "%{$search}%");
-                          });
+                            ->orWhere('last_name', 'like', "%{$search}%")
+                            ->orWhere('phone', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%")
+                            ->orWhere('address', 'like', "%{$search}%")
+                            ->orWhere('country', 'like', "%{$search}%")
+                            ->orWhereHas('city', function ($q) use ($search) {
+                                $q->where('name', 'like', "%{$search}%");
+                            });
                     });
-                }
-                elseif (is_array($request->search) && isset($request->search['value'])) {
+                } elseif (is_array($request->search) && isset($request->search['value'])) {
                     $search = $request->search['value'];
-                    if (!empty($search)) {
-                        $query->where(function($q) use ($search) {
+                    if (! empty($search)) {
+                        $query->where(function ($q) use ($search) {
                             $q->where('first_name', 'like', "%{$search}%")
-                              ->orWhere('last_name', 'like', "%{$search}%")
-                              ->orWhere('phone', 'like', "%{$search}%")
-                              ->orWhere('email', 'like', "%{$search}%")
-                              ->orWhere('address', 'like', "%{$search}%")
-                              ->orWhere('country', 'like', "%{$search}%")
-                              ->orWhereHas('city', function($q) use ($search) {
-                                  $q->where('name', 'like', "%{$search}%");
-                              });
+                                ->orWhere('last_name', 'like', "%{$search}%")
+                                ->orWhere('phone', 'like', "%{$search}%")
+                                ->orWhere('email', 'like', "%{$search}%")
+                                ->orWhere('address', 'like', "%{$search}%")
+                                ->orWhere('country', 'like', "%{$search}%")
+                                ->orWhereHas('city', function ($q) use ($search) {
+                                    $q->where('name', 'like', "%{$search}%");
+                                });
                         });
                     }
                 }
             }
-            
+
             // Filters
             if ($request->has('city_id') && $request->city_id !== '') {
                 $query->where('city_id', $request->city_id);
             }
-            
+
             if ($request->has('country') && $request->country !== '') {
                 $query->where('country', $request->country);
             }
 
             return DataTables::of($query)
-                ->addColumn('city_name', function($customer) {
+                ->addColumn('city_name', function ($customer) {
                     return $customer->city ? $customer->city->name : null;
                 })
-                ->addColumn('full_name', function($customer) {
+                ->addColumn('full_name', function ($customer) {
                     return $customer->full_name;
                 })
                 ->make(true);
         } catch (\Exception $e) {
-            Log::error('Customer DataTable error: ' . $e->getMessage());
+            Log::error('Customer DataTable error: '.$e->getMessage());
             throw $e;
         }
     }
@@ -98,7 +97,7 @@ class CustomerRepository
         try {
             return Customer::create($data);
         } catch (\Exception $e) {
-            Log::error('Customer creation error: ' . $e->getMessage());
+            Log::error('Customer creation error: '.$e->getMessage());
             throw $e;
         }
     }
@@ -111,9 +110,10 @@ class CustomerRepository
         try {
             $customer = $this->find($id);
             $customer->update($data);
+
             return $customer;
         } catch (\Exception $e) {
-            Log::error('Customer update error: ' . $e->getMessage());
+            Log::error('Customer update error: '.$e->getMessage());
             throw $e;
         }
     }
@@ -125,9 +125,10 @@ class CustomerRepository
     {
         try {
             $customer = $this->find($id);
+
             return $customer->delete();
         } catch (\Exception $e) {
-            Log::error('Customer deletion error: ' . $e->getMessage());
+            Log::error('Customer deletion error: '.$e->getMessage());
             throw $e;
         }
     }
@@ -139,7 +140,7 @@ class CustomerRepository
     {
         try {
             return Customer::query()
-                ->where(function($query) use ($searchTerm) {
+                ->where(function ($query) use ($searchTerm) {
                     $query->where('first_name', 'like', "%{$searchTerm}%")
                         ->orWhere('last_name', 'like', "%{$searchTerm}%")
                         ->orWhere('phone', 'like', "%{$searchTerm}%")
@@ -148,7 +149,7 @@ class CustomerRepository
                 ->limit($limit)
                 ->get(['id', 'first_name', 'last_name', 'phone', 'email']);
         } catch (\Exception $e) {
-            Log::error('Customer search error: ' . $e->getMessage());
+            Log::error('Customer search error: '.$e->getMessage());
             throw $e;
         }
     }
@@ -174,7 +175,7 @@ class CustomerRepository
         try {
             return Customer::whereIn('id', $ids)->delete();
         } catch (\Exception $e) {
-            Log::error('Customer bulk delete error: ' . $e->getMessage());
+            Log::error('Customer bulk delete error: '.$e->getMessage());
             throw $e;
         }
     }

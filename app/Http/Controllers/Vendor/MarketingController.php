@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Vendor;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Models\Product;
 use App\Models\Category;
+use App\Models\Product;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class MarketingController extends Controller
@@ -18,10 +18,11 @@ class MarketingController extends Controller
             ->select('id', 'name', 'slug', 'sale_price', 'thumbnail', 'category_id', 'affiliate_commission')
             ->where('stock_qty', '>', 0)
             ->paginate(12)
-            ->through(function($product) {
+            ->through(function ($product) {
                 // Har product ke liye commission amount calculate karein (Rs. mein)
                 // Agar sale_price 1000 hai aur commission 5% hai, to ye 50 banayega.
                 $product->commission_amount = ($product->sale_price * $product->affiliate_commission) / 100;
+
                 return $product;
             });
 
@@ -31,7 +32,7 @@ class MarketingController extends Controller
         return Inertia::render('Affiliate/ProductCatalog', [
             'products' => $products,
             'categories' => $categories,
-            'affiliate_id' => $request->user()->id 
+            'affiliate_id' => $request->user()->id,
         ]);
     }
 }

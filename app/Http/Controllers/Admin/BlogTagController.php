@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\BlogTagRequest;
 use App\Http\Repositories\Admin\BlogTagRepository;
+use App\Http\Requests\Admin\BlogTagRequest;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -25,7 +25,7 @@ class BlogTagController extends Controller
     {
         return Inertia::render('Admin/BlogTags/Index', [
             'userRole' => $request->user()->role ?? 'admin',
-            'stats'    => $this->blogTagRepo->getStats(),
+            'stats' => $this->blogTagRepo->getStats(),
         ]);
     }
 
@@ -48,7 +48,8 @@ class BlogTagController extends Controller
                 ->with('success', 'Blog tag successfully created!');
 
         } catch (\Exception $e) {
-            \Log::error('Blog tag creation error: ' . $e->getMessage());
+            \Log::error('Blog tag creation error: '.$e->getMessage());
+
             return back()->withErrors(['error' => 'Failed to create blog tag.']);
         }
     }
@@ -80,7 +81,8 @@ class BlogTagController extends Controller
                 ->with('success', 'Blog tag successfully updated!');
 
         } catch (\Exception $e) {
-            \Log::error('Blog tag update error: ' . $e->getMessage());
+            \Log::error('Blog tag update error: '.$e->getMessage());
+
             return back()->withErrors(['error' => 'Failed to update blog tag.']);
         }
     }
@@ -94,7 +96,8 @@ class BlogTagController extends Controller
                 ->with('success', 'Blog tag successfully deleted!');
 
         } catch (\Exception $e) {
-            \Log::error('Blog tag deletion error: ' . $e->getMessage());
+            \Log::error('Blog tag deletion error: '.$e->getMessage());
+
             return back()->with('error', $e->getMessage());
         }
     }

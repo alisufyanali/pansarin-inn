@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Repositories\Admin\ProductReviewRepository;
 use App\Http\Requests\Admin\ProductReviewRequest;
-use App\Models\Review;
 use App\Models\Product;
+use App\Models\Review;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
@@ -34,8 +34,8 @@ class ProductsReviewsController extends Controller
         try {
             return $this->reviewRepository->getAllForDataTable($request);
         } catch (\Exception $e) {
-            Log::error('Reviews getData error: ' . $e->getMessage());
-            
+            Log::error('Reviews getData error: '.$e->getMessage());
+
             return response()->json([
                 'error' => 'Failed to load data',
                 'message' => $e->getMessage(),
@@ -51,16 +51,16 @@ class ProductsReviewsController extends Controller
             ->orWhere('status', true)
             ->orderBy('name')
             ->get(['id', 'name', 'thumbnail']);
-        
+
         if ($products->count() === 0) {
             $products = Product::orderBy('name')->get(['id', 'name', 'thumbnail']);
         }
-        
-        $formattedProducts = $products->map(function($product) {
+
+        $formattedProducts = $products->map(function ($product) {
             return [
                 'id' => $product->id,
                 'name' => $product->name,
-                'image' => $product->thumbnail ? asset('storage/' . $product->thumbnail) : null,
+                'image' => $product->thumbnail ? asset('storage/'.$product->thumbnail) : null,
             ];
         });
 
@@ -84,7 +84,8 @@ class ProductsReviewsController extends Controller
                 ->withErrors($e->errors())
                 ->withInput();
         } catch (\Exception $e) {
-            Log::error('Review creation error: ' . $e->getMessage());
+            Log::error('Review creation error: '.$e->getMessage());
+
             return back()
                 ->withInput()
                 ->with('error', 'Failed to create review.');
@@ -94,25 +95,25 @@ class ProductsReviewsController extends Controller
     public function edit(Review $review)
     {
         $review->load('product:id,name,thumbnail');
-        
+
         if ($review->product && $review->product->thumbnail) {
-            $review->product->image = asset('storage/' . $review->product->thumbnail);
+            $review->product->image = asset('storage/'.$review->product->thumbnail);
         }
-        
+
         $products = Product::where('status', 1)
             ->orWhere('status', true)
             ->orderBy('name')
             ->get(['id', 'name', 'thumbnail']);
-        
+
         if ($products->count() === 0) {
             $products = Product::orderBy('name')->get(['id', 'name', 'thumbnail']);
         }
-        
-        $formattedProducts = $products->map(function($product) {
+
+        $formattedProducts = $products->map(function ($product) {
             return [
                 'id' => $product->id,
                 'name' => $product->name,
-                'image' => $product->thumbnail ? asset('storage/' . $product->thumbnail) : null,
+                'image' => $product->thumbnail ? asset('storage/'.$product->thumbnail) : null,
             ];
         });
 
@@ -137,7 +138,8 @@ class ProductsReviewsController extends Controller
                 ->withErrors($e->errors())
                 ->withInput();
         } catch (\Exception $e) {
-            Log::error('Review update error: ' . $e->getMessage());
+            Log::error('Review update error: '.$e->getMessage());
+
             return back()
                 ->withInput()
                 ->with('error', 'Failed to update review.');
@@ -148,10 +150,11 @@ class ProductsReviewsController extends Controller
     {
         try {
             $this->reviewRepository->updateStatus($review->id, $request->status);
-            
+
             return back()->with('success', 'Review status updated!');
         } catch (\Exception $e) {
-            Log::error('Review status update error: ' . $e->getMessage());
+            Log::error('Review status update error: '.$e->getMessage());
+
             return back()->with('error', 'Failed to update review status.');
         }
     }
@@ -160,12 +163,13 @@ class ProductsReviewsController extends Controller
     {
         try {
             $this->reviewRepository->delete($review->id);
-            
+
             return redirect()
                 ->route('admin.reviews.index')
                 ->with('success', 'Review deleted successfully!');
         } catch (\Exception $e) {
-            Log::error('Review deletion error: ' . $e->getMessage());
+            Log::error('Review deletion error: '.$e->getMessage());
+
             return back()->with('error', 'Failed to delete review.');
         }
     }
@@ -175,14 +179,15 @@ class ProductsReviewsController extends Controller
         try {
             $request->validate([
                 'ids' => 'required|array',
-                'ids.*' => 'exists:reviews,id'
+                'ids.*' => 'exists:reviews,id',
             ]);
 
             $count = $this->reviewRepository->bulkDelete($request->ids);
 
-            return back()->with('success', $count . ' reviews deleted!');
+            return back()->with('success', $count.' reviews deleted!');
         } catch (\Exception $e) {
-            Log::error('Bulk delete error: ' . $e->getMessage());
+            Log::error('Bulk delete error: '.$e->getMessage());
+
             return back()->with('error', 'Failed to delete reviews.');
         }
     }

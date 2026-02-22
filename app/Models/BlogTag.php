@@ -50,7 +50,7 @@ class BlogTag extends Model
     public function blogs()
     {
         return $this->belongsToMany(Blog::class, 'blog_blog_tag', 'blog_tag_id', 'blog_id')
-                    ->withTimestamps();
+            ->withTimestamps();
     }
 
     /**

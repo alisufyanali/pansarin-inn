@@ -2,10 +2,10 @@
 
 namespace App\Http\Repositories\Admin;
 
-use App\Models\Sale;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Models\Sale;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -25,44 +25,43 @@ class SaleRepository
     public function getAllForDataTable($request)
     {
         $query = Sale::with(['customer', 'order'])->latest();
-        
+
         // Search handling
         if ($request->has('search') && $request->search !== '') {
             if (is_string($request->search)) {
                 $search = $request->search;
-                $query->where(function($q) use ($search) {
+                $query->where(function ($q) use ($search) {
                     $q->where('sale_code', 'like', "%{$search}%")
-                      ->orWhere('delivery_status', 'like', "%{$search}%")
-                      ->orWhere('payment_status', 'like', "%{$search}%")
-                      ->orWhereHas('customer', function($q) use ($search) {
-                          $q->where('first_name', 'like', "%{$search}%")
-                            ->orWhere('last_name', 'like', "%{$search}%")
-                            ->orWhere('phone', 'like', "%{$search}%");
-                      });
-                });
-            }
-            elseif (is_array($request->search) && isset($request->search['value'])) {
-                $search = $request->search['value'];
-                if (!empty($search)) {
-                    $query->where(function($q) use ($search) {
-                        $q->where('sale_code', 'like', "%{$search}%")
-                          ->orWhere('delivery_status', 'like', "%{$search}%")
-                          ->orWhere('payment_status', 'like', "%{$search}%")
-                          ->orWhereHas('customer', function($q) use ($search) {
-                              $q->where('first_name', 'like', "%{$search}%")
+                        ->orWhere('delivery_status', 'like', "%{$search}%")
+                        ->orWhere('payment_status', 'like', "%{$search}%")
+                        ->orWhereHas('customer', function ($q) use ($search) {
+                            $q->where('first_name', 'like', "%{$search}%")
                                 ->orWhere('last_name', 'like', "%{$search}%")
                                 ->orWhere('phone', 'like', "%{$search}%");
-                          });
+                        });
+                });
+            } elseif (is_array($request->search) && isset($request->search['value'])) {
+                $search = $request->search['value'];
+                if (! empty($search)) {
+                    $query->where(function ($q) use ($search) {
+                        $q->where('sale_code', 'like', "%{$search}%")
+                            ->orWhere('delivery_status', 'like', "%{$search}%")
+                            ->orWhere('payment_status', 'like', "%{$search}%")
+                            ->orWhereHas('customer', function ($q) use ($search) {
+                                $q->where('first_name', 'like', "%{$search}%")
+                                    ->orWhere('last_name', 'like', "%{$search}%")
+                                    ->orWhere('phone', 'like', "%{$search}%");
+                            });
                     });
                 }
             }
         }
-        
+
         // Filters
         if ($request->has('delivery_status') && $request->delivery_status !== '') {
             $query->where('delivery_status', $request->delivery_status);
         }
-        
+
         if ($request->has('payment_status') && $request->payment_status !== '') {
             $query->where('payment_status', $request->payment_status);
         }
@@ -137,10 +136,11 @@ class SaleRepository
             $sale->calculateTotals();
 
             DB::commit();
+
             return $sale;
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Failed to create sale: ' . $e->getMessage());
+            Log::error('Failed to create sale: '.$e->getMessage());
             throw $e;
         }
     }
@@ -203,10 +203,11 @@ class SaleRepository
             $sale->calculateTotals();
 
             DB::commit();
+
             return $sale;
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Failed to update sale: ' . $e->getMessage());
+            Log::error('Failed to update sale: '.$e->getMessage());
             throw $e;
         }
     }
@@ -219,7 +220,7 @@ class SaleRepository
         try {
             return Sale::destroy($id);
         } catch (\Exception $e) {
-            Log::error('Failed to delete sale: ' . $e->getMessage());
+            Log::error('Failed to delete sale: '.$e->getMessage());
             throw $e;
         }
     }
@@ -235,9 +236,10 @@ class SaleRepository
                 'delivery_status' => $data['delivery_status'],
                 'delivery_datetime' => $data['delivery_datetime'] ?? now(),
             ]);
+
             return $sale;
         } catch (\Exception $e) {
-            Log::error('Failed to update delivery status: ' . $e->getMessage());
+            Log::error('Failed to update delivery status: '.$e->getMessage());
             throw $e;
         }
     }
@@ -253,9 +255,10 @@ class SaleRepository
                 'payment_status' => $data['payment_status'],
                 'payment_timestamp' => $data['payment_timestamp'] ?? now(),
             ]);
+
             return $sale;
         } catch (\Exception $e) {
-            Log::error('Failed to update payment status: ' . $e->getMessage());
+            Log::error('Failed to update payment status: '.$e->getMessage());
             throw $e;
         }
     }
