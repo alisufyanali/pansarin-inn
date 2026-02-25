@@ -65,11 +65,11 @@ class ProductAttributeController extends Controller
             $attribute = $this->attributeRepository->store($validated);
 
             // Create attribute values
-            foreach ($validated['values'] as $value) {
+            foreach ($validated['values'] as $valueData) {
                 AttributeValue::create([
                     'attribute_id' => $attribute->id,
-                    'value' => $value,
-                    'slug' => Str::slug($value),
+                    'value' => $valueData['value'],
+                    'slug' => $valueData['slug'],
                 ]);
             }
 
@@ -122,11 +122,11 @@ class ProductAttributeController extends Controller
             // Delete existing values and create new ones
             $attribute->values()->delete();
 
-            foreach ($validated['values'] as $value) {
+            foreach ($validated['values'] as $valueData) {
                 AttributeValue::create([
                     'attribute_id' => $attribute->id,
-                    'value' => $value,
-                    'slug' => Str::slug($value),
+                    'value' => $valueData['value'],
+                    'slug' => $valueData['slug'],
                 ]);
             }
 

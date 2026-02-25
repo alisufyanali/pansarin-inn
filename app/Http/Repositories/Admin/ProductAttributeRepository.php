@@ -13,7 +13,7 @@ class ProductAttributeRepository
 
     public function getAllForDataTable($request)
     {
-        $query = Attribute::withCount('values')->latest();
+        $query = Attribute::with('values')->withCount('values')->latest();
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -33,6 +33,7 @@ class ProductAttributeRepository
                 'id' => $attribute->id,
                 'name' => $attribute->name,
                 'slug' => $attribute->slug,
+                'values' => $attribute->values,
                 'values_count' => $attribute->values_count,
                 'created_at' => $attribute->created_at,
                 'updated_at' => $attribute->updated_at,

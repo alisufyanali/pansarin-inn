@@ -10,21 +10,21 @@ class AttributeSeeder extends Seeder
 {
     public function run()
     {
-        // Size/Volume Attribute
+        //  Volume Attribute
         $sizeAttribute = Attribute::firstOrCreate(
-            ['slug' => 'size'],
-            ['name' => 'Size/Volume']
+            ['slug' => 'volume'],
+            ['name' => 'Volume']
         );
 
-        // Size values (ml/weights)
+        //  Volume values (ml/weights)
         $sizes = [
-            ['value' => '100ml', 'slug' => '100ml'],
-            ['value' => '120ml', 'slug' => '120ml'],
-            ['value' => '150ml', 'slug' => '150ml'],
-            ['value' => '200ml', 'slug' => '200ml'],
-            ['value' => '250ml', 'slug' => '250ml'],
-            ['value' => '500ml', 'slug' => '500ml'],
-            ['value' => '1L', 'slug' => '1l'],
+            ['value' => '100', 'slug' => 'ml'],
+            ['value' => '120', 'slug' => 'ml'],
+            ['value' => '150', 'slug' => 'ml'],
+            ['value' => '200', 'slug' => 'ml'],
+            ['value' => '250', 'slug' => 'ml'],
+            ['value' => '500', 'slug' => 'ml'],
+            ['value' => '1', 'slug' => 'l'],
         ];
 
         foreach ($sizes as $size) {
@@ -36,19 +36,13 @@ class AttributeSeeder extends Seeder
 
         // Unit Attribute
         $unitAttribute = Attribute::firstOrCreate(
-            ['slug' => 'unit'],
-            ['name' => 'Unit']
+            ['slug' => 'weights'],
+            ['name' => 'Weights']
         );
 
         $units = [
-            ['value' => 'kg', 'slug' => 'kg'],
-            ['value' => 'g', 'slug' => 'g'],
-            ['value' => 'L', 'slug' => 'l'],
-            ['value' => 'ml', 'slug' => 'ml'],
-            ['value' => 'Piece', 'slug' => 'piece'],
-            ['value' => 'Box', 'slug' => 'box'],
-            ['value' => 'Bottle', 'slug' => 'bottle'],
-            ['value' => 'Jar', 'slug' => 'jar'],
+            ['value' => '60', 'slug' => 'gm'],
+            ['value' => '120', 'slug' => 'gm'],
         ];
 
         foreach ($units as $unit) {
