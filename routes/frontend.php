@@ -1,15 +1,15 @@
 <?php
+use App\Http\Controllers\Admin\Settings\GeneralSettingController;
+use App\Http\Controllers\Admin\Settings\UiSettingController;
+use App\Http\Controllers\Admin\Settings\BusinessSettingController;
+use App\Http\Controllers\Admin\PageController;
 
-use App\Http\Controllers\Admin\Frontend\BusinessSettingController;
-use App\Http\Controllers\Admin\Frontend\GeneralSettingController;
-use App\Http\Controllers\Admin\Frontend\PageController;
-use App\Http\Controllers\Admin\Frontend\UiSettingController;
 use App\Http\Controllers\Api\FrontendController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/index', [FrontendController::class, 'index']);
 
-// Route::middleware(['web', 'auth'])->prefix('admin/frontend')->name('admin.')->group(function () {
+// Route::middleware(['auth'])->prefix('admin/pages')->name('admin.')->group(function () {
 //     Route::resource('business-settings', BusinessSettingController::class)->only(['index', 'store']);
 //     Route::resource('pages', PageController::class);
 //     Route::get('admin/pages-data', [PageController::class, 'getPagesData'])->name('admin.pages.data');

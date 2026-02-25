@@ -28,7 +28,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function Payouts({ balance }: Props) {
-    // useForm hook with initial values
+    const minWithdraw = 500; // Minimum limit
     const { data, setData, post, processing, errors, reset } = useForm({
         amount: '',
         payment_method: 'JazzCash',
@@ -37,17 +37,19 @@ export default function Payouts({ balance }: Props) {
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        
-        // Amount validation (Client-side)
+        if (Number(data.amount) < minWithdraw) {
+            toast.error(`Kam az kam Rs. ${minWithdraw} withdraw kar sakte hain.`);
+            return;
+        }
         if (Number(data.amount) > balance) {
-            toast.error("Your balance is not reach to minimum limit to withdraw amount.");
+            toast.error("Aapka balance kam hai.");
             return;
         }
 
         post(route('affiliate.payout.store'), {
             onSuccess: () => {
                 toast.success("Payout request successfully submit!");
-                reset(); // Form clear karne ke liye
+                reset();    
             },
             onError: () => {
                 toast.error("check Form, something error happens.");

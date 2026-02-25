@@ -30,7 +30,7 @@ const Registration: React.FC = () => {
             return;
         }
 
-        post(route('vendor.affiliate.store'), {
+        post(route('affiliate.register.store'), {
             onSuccess: () => {
                 toast.success('Congratulations! you are now a part of affiliate program.');
             },

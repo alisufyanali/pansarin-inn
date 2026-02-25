@@ -1,7 +1,5 @@
 <?php
 
-// app/Http/Controllers/Admin/WhatsAppController.php
-
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;

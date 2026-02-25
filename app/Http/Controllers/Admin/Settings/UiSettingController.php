@@ -1,38 +1,58 @@
 <?php
 
-namespace App\Http\Controllers\Admin\Frontend;
+namespace App\Http\Controllers\Admin\Settings;
 
 use App\Http\Controllers\Controller;
 use App\Models\UiSetting;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Storage;
 
 class UiSettingController extends Controller
 {
-    private function updateSettings($request, $keys)
-    {
+
+    private function updateSettings(Request $request, $keys) {
         foreach ($keys as $key) {
-            UiSetting::updateOrCreate(
-                ['type' => $key],
-                ['value' => $request->$key]
-            );
+            if ($request->has($key)) {
+                $value = $request->$key;
+
+                if ($request->hasFile($key)) {
+                   
+                    $oldSetting = UiSetting::where('type', $key)->first();
+                    if ($oldSetting && $oldSetting->value) {
+                        
+                        $oldPath = str_replace('/storage/', '', $oldSetting->value);
+                        Storage::disk('public')->delete($oldPath);
+                    }
+
+                    $path = $request->file($key)->store('uploads/ui', 'public');
+                    $value = Storage::url($path); 
+                }
+
+                if ($value !== null) {
+                    UiSetting::updateOrCreate(
+                        ['type' => $key],
+                        ['value' => $value]
+                    );
+                }
+            }
         }
     }
 
-    public function index()
-    {
-
-        return Inertia::render('Admin/Frontend/settings/ui/index', [
-            'settings' => UiSetting::pluck('value', 'type')->all(),
+    public function index() {
+        return Inertia::render('Admin/Settings/ui/index', [
+            'settings' => UiSetting::pluck('value', 'type')->all()
         ]);
     }
 
-    public function updateBrandingUI(Request $request)
-    {
+    public function updateBrandingUI(Request $request) {
+
+        $request->validate([
+            'home_top_logo' => 'nullable|image|max:2048',
+            'fav_ext' => 'nullable|image|max:1024',
+        ]);
 
         $this->updateSettings($request, [
-            'logo',
-            'favicon',
             'header_color',
             'footer_color',
             'font',
@@ -75,8 +95,7 @@ class UiSettingController extends Controller
         return redirect()->back()->with('success', 'Homepage updated!');
     }
 
-    public function updateCategoriesUI(Request $request)
-    {
+    public function updateCategoriesUI(Request $request){
 
         $this->updateSettings($request, [
             'category_slides',

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin\Frontend;
+namespace App\Http\Controllers\Admin\Settings;
 
 use App\Http\Controllers\Controller;
 use App\Models\Page;
@@ -23,14 +23,14 @@ class PageController extends Controller
 
     public function index()
     {
-        return Inertia::render('Admin/Frontend/Pages/Index', [
-            'pages' => Page::latest()->get(),
+        return Inertia::render('Admin/Pages/Index', [
+            'pages' => Page::latest()->get()
         ]);
     }
 
     public function create()
     {
-        return Inertia::render('Admin/Frontend/Pages/Create');
+        return Inertia::render('Admin/Pages/Create');
     }
 
     public function store(Request $request)
@@ -54,8 +54,8 @@ class PageController extends Controller
 
     public function edit($id)
     {
-        return Inertia::render('Admin/Frontend/Pages/Edit', [
-            'page' => Page::findOrFail($id),
+        return Inertia::render('Admin/Pages/Edit', [
+            'page' => Page::findOrFail($id)
         ]);
     }
 
