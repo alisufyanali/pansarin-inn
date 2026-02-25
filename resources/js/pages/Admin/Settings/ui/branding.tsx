@@ -12,8 +12,8 @@ import toast from 'react-hot-toast';
 
 export default function BrandingTab({ settings }: { settings: any }) {
     const [previews, setPreviews] = useState({
-        logo: settings.home_top_logo_url || null,
-        favicon: settings.fav_ext_url || null,
+    logo: settings.home_top_logo || settings.logo || null, // Database ki key ke mutabiq
+    favicon: settings.fav_ext || settings.favicon || null,
     });
 
     const { data, setData, post, errors, processing } = useForm({
@@ -21,7 +21,9 @@ export default function BrandingTab({ settings }: { settings: any }) {
         header_color: settings.header_color || '#27ae60',
         footer_color: settings.footer_color || '#1a1a1a',
         font: settings.font || 'Inter',
-        home_top_logo: null as File | null,
+        // Yahan hum File object nahi rakh sakte refresh par, 
+        // lekin hum isay null rakhenge taaki controller purana data overwrite na kare
+        home_top_logo: null as File | null, 
         fav_ext: null as File | null,
     });
 

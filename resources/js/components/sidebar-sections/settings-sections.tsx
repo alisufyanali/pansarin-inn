@@ -6,46 +6,46 @@ export function SettingsSections(): NavItem[] {
     const footerNavItems: NavItem[] = [];
 
     // Slider Settings
-    footerNavItems.push({
-        title: 'Slider Settings',
-        href: '#',
-        icon: Sliders,
-        children: [
-            {
-                title: 'Slides',
-                href: '/admin/slides',
-                icon: Image,
-            }
-        ],
-    });
+    // footerNavItems.push({
+    //     title: 'Slider Settings',
+    //     href: '#',
+    //     icon: Sliders,
+    //     children: [
+    //         {
+    //             title: 'Slider Settings',
+    //             href: '/admin/slides',
+    //             icon: Image,
+    //         }
+    //     ],
+    // });
 
     // Display Settings
-    footerNavItems.push({
-        title: 'Display Settings',
-        href: '#',
-        icon: Settings,
-        children: [
-            {
-                title: 'Home Page',
-                href: '/admin/display/home',
-                icon: Home,
-            },
-            {
-                title: 'Contact Page',
-                href: '/admin/display/contact',
-                icon: Contact,
-            },
-            {
-                title: 'Extra Pages',
-                href: '/admin/display/pages',
-                icon: FileText,
-            },
-        ],
-    });
+    // footerNavItems.push({
+    //     title: 'Display Settings',
+    //     href: '#',
+    //     icon: Settings,
+    //     children: [
+    //         {
+    //             title: 'Home Page',
+    //             href: '/admin/display/home',
+    //             icon: Home,
+    //         },
+    //         {
+    //             title: 'Contact Page',
+    //             href: '/admin/display/contact',
+    //             icon: Contact,
+    //         },
+    //         {
+    //             title: 'Extra Pages',
+    //             href: '/admin/display/pages',
+    //             icon: FileText,
+    //         },
+    //     ],
+    // });
 
     // Site Settings
     footerNavItems.push({
-        title: 'Site Settings',
+        title: 'Settings',
         href: '#',
         icon: Settings,
         children: [
@@ -55,15 +55,25 @@ export function SettingsSections(): NavItem[] {
                 icon: Settings,
             },
             {
-                title: 'Email Templates',
-                href: '/admin/settings/email-templates',
-                icon: Mail,
+                title: 'UI Settings',
+                href: '/admin/settings/ui',
+                icon: Settings,
             },
             {
-                title: 'Third Party Settings',
-                href: '/admin/settings/third-party',
-                icon: Cpu,
+                title: 'Business Settings',
+                href: '/admin/settings/business',
+                icon: Settings,
             },
+            // {
+            //     title: 'Email Templates',
+            //     href: '/admin/settings/email-templates',
+            //     icon: Mail,
+            // },
+            // {
+            //     title: 'Third Party Settings',
+            //     href: '/admin/settings/third-party',
+            //     icon: Cpu,
+            // },
         ],
     });
 

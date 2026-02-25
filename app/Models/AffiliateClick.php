@@ -11,7 +11,7 @@ class AffiliateClick extends Model
         'affiliate_id', 
         'ip_address', 
         'user_agent', 
-        'referring_url'
+        'referrer_url'
     ];
 
     public function affiliate(): BelongsTo

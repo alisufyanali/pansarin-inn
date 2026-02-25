@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin\Frontend;
+namespace App\Http\Controllers\Admin\Settings;
 
 use App\Http\Controllers\Controller;
 use App\Models\GeneralSetting;
@@ -18,9 +18,8 @@ class GeneralSettingController extends Controller
         }
     }
 
-    public function index()
-    {
-        return Inertia::render('Admin/Frontend/settings/general/index', [
+    public function index() {
+        return Inertia::render('Admin/Settings/general/index', [
             'settings' => GeneralSetting::pluck('value', 'type')->all()
         ]);
     }

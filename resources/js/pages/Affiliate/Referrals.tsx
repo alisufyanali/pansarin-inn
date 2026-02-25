@@ -9,7 +9,7 @@ interface Referral {
     id: number;
     order_amount: number;
     commission_amount: number;
-    status: 'pending' | 'approved' | 'completed' | 'cancelled';
+    status: 'pending' | 'approved' | 'completed' | 'cancelled' | 'rejected';
     created_at: string;
     order?: {
         order_number: string;
@@ -70,15 +70,10 @@ export default function Referrals({ referrals }: Props) {
                                                     </span>
                                                 </td>
                                                 <td className="p-4">
-                                                    <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-tighter ${
-                                                        ref.status === 'approved' || ref.status === 'completed'
-                                                            ? 'bg-green-100 text-green-700' 
-                                                            : ref.status === 'cancelled'
-                                                            ? 'bg-red-100 text-red-700'
-                                                            : 'bg-yellow-100 text-yellow-700'
-                                                    }`}>
-                                                        {ref.status}
-                                                    </span>
+<span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-tighter ${ ref.status === 'approved' || ref.status === 'completed' ? 'bg-green-100 text-green-700' : ref.status === 'cancelled' || ref.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'  }`}>
+        {ref.status}
+</span>
+
                                                 </td>
                                                 <td className="p-4 text-sm text-gray-500">
                                                     {new Date(ref.created_at).toLocaleDateString('en-GB', {

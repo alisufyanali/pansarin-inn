@@ -13,8 +13,7 @@ class AffiliateService
     /**
      * Create referral when order is placed
      */
-    public function recordReferral($order): void
-    {
+    public function recordReferral($order): void {
         // Prevent duplicate referral
         if (Referral::where('order_id', $order->id)->exists()) {
             return;
@@ -23,8 +22,9 @@ class AffiliateService
         $affiliateCode = Cookie::get('affiliate_referral');
         if (!$affiliateCode) return;
 
+        // Matching status with Enum 'active'
         $affiliate = Affiliate::where('affiliate_code', $affiliateCode)
-            ->where('status', 1)
+            ->where('status', 'active')
             ->first();
 
         if (!$affiliate) return;
@@ -39,21 +39,21 @@ class AffiliateService
         $commissionAmount = ($baseAmount * $rate) / 100;
 
         Referral::create([
-            'affiliate_id'       => $affiliate->id,
-            'order_id'           => $order->id,
-            'user_id'            => $order->customer_id,
-            'order_amount'       => $baseAmount,
-            'commission_amount'  => $commissionAmount,
-            'referral_type'      => 'direct',
-            'status'             => 'pending',
+            'affiliate_id'             => $affiliate->id,
+            'order_id'                 => $order->id,
+            'user_id'                  => $order->customer_id,
+            'order_amount'             => $baseAmount,
+            'commission_rate_snapshot' => $rate,
+            'commission_amount'        => $commissionAmount,
+            'referral_type'            => 'direct',
+            'status'                   => 'pending',
         ]);
     }
 
     /**
      * Update referral if order amount changes (before approval)
      */
-    public function updateReferral($order): void
-    {
+    public function updateReferral($order): void {
         $referral = Referral::where('order_id', $order->id)
             ->where('referral_type', 'direct')
             ->first();
@@ -77,8 +77,7 @@ class AffiliateService
     /**
      * Finalize commission on order status change
      */
-    public function finalizeCommission($order): void
-    {
+    public function finalizeCommission($order): void {
         DB::transaction(function () use ($order) {
 
             $referral = Referral::where('order_id', $order->id)
@@ -89,7 +88,7 @@ class AffiliateService
             if (!$referral) return;
 
             /**
-             * ORDER DELIVERED
+             * ORDER DELIVERED - Approve Commission
              */
             if ($order->status === 'delivered' && $referral->status === 'pending') {
 
@@ -97,42 +96,43 @@ class AffiliateService
                 $referral->update(['status' => 'approved']);
                 $referral->affiliate->increment('balance', $referral->commission_amount);
 
-                // LEVEL 2 COMMISSION
-                $parentId = $referral->affiliate->parent_id;
-                if ($parentId) {
+                // LEVEL 2 COMMISSION LOGIC
+                // $parentId = $referral->affiliate->parent_id;
+                // if ($parentId) {
 
-                    $parent = Affiliate::where('id', $parentId)
-                        ->where('status', 1)
-                        ->first();
+                //     $parent = Affiliate::where('id', $parentId)
+                //         ->where('status', 'active') // Changed from 1 to 'active'
+                //         ->first();
 
-                    if ($parent) {
-                        $exists = Referral::where('order_id', $order->id)
-                            ->where('referral_type', 'level_2')
-                            ->exists();
+                //     if ($parent) {
+                //         $exists = Referral::where('order_id', $order->id)
+                //             ->where('referral_type', 'level_2')
+                //             ->exists();
 
-                        if (!$exists) {
-                            $l2Rate = AffiliateSetting::where('key', 'level_2_commission')->value('value') ?? 2;
-                            $baseAmount = $order->grand_total;
-                            $parentCommission = ($baseAmount * $l2Rate) / 100;
+                //         if (!$exists) {
+                //             $l2Rate = AffiliateSetting::where('key', 'level_2_commission')->value('value') ?? 2;
+                //             $baseAmount = $order->grand_total;
+                //             $parentCommission = ($baseAmount * $l2Rate) / 100;
 
-                            $parent->increment('balance', $parentCommission);
+                //             $parent->increment('balance', $parentCommission);
 
-                            Referral::create([
-                                'affiliate_id'      => $parent->id,
-                                'order_id'          => $order->id,
-                                'user_id'           => $order->customer_id,
-                                'order_amount'      => $baseAmount,
-                                'commission_amount' => $parentCommission,
-                                'referral_type'     => 'level_2',
-                                'status'            => 'approved',
-                            ]);
-                        }
-                    }
-                }
+                //             Referral::create([
+                //                 'affiliate_id'      => $parent->id,
+                //                 'order_id'          => $order->id,
+                //                 'user_id'           => $order->customer_id,
+                //                 'order_amount'      => $baseAmount,
+                //                 'commission_rate_snapshot' => $l2Rate,
+                //                 'commission_amount' => $parentCommission,
+                //                 'referral_type'     => 'level_2',
+                //                 'status'            => 'approved',
+                //             ]);
+                //         }
+                //     }
+                // }
             }
 
             /**
-             * ORDER CANCELLED / REFUNDED
+             * ORDER CANCELLED / REFUNDED - Rollback Commission
              */
             if (in_array($order->status, ['cancelled', 'refunded'])) {
 

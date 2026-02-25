@@ -2,12 +2,11 @@
 
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Vendor\MarketingController;
-use App\Http\Controllers\Vendor\AffiliateController;
-use App\Http\Controllers\Vendor\PayoutController;
+use App\Http\Controllers\Affiliate\MarketingController;
+use App\Http\Controllers\Affiliate\AffiliateController;
+use App\Http\Controllers\Affiliate\PayoutController;
 use App\Http\Controllers\Admin\AffiliateController as AdminAffiliate;
 
-// --- User/Vendor Side Routes ---
 // URL: domain.com/affiliates/...
 Route::middleware(['auth', 'verified'])->prefix('affiliates')->group(function () {
     

@@ -5,13 +5,13 @@ import { Button } from '@/components/ui/button';
 import { toast } from "sonner";
 import React, { useState } from 'react';
 
-export default function ProductCatalog({ products, categories, affiliate_id }: any) {
+export default function ProductCatalog({ products, categories, affiliate_code }: any) {
     const [selectedCategory, setSelectedCategory] = useState('all');
 
     const copyAffiliateLink = (slug: string) => {
-        const url = `${window.location.origin}/products/${slug}?ref=${affiliate_id}`;
+        const url = `${window.location.origin}/products/${slug}?ref=${affiliate_code}`;
         navigator.clipboard.writeText(url);
-        toast.success("Link copied! Ab aap isay share kar sakte hain.");
+        toast.success("Link copied");
     };
 
     // Filter products based on category

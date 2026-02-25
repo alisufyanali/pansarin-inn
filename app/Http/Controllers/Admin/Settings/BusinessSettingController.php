@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin\Frontend;
+namespace App\Http\Controllers\Admin\Settings;
 
 use App\Http\Controllers\Controller;
 use App\Models\BusinessSetting;
@@ -22,11 +22,10 @@ class BusinessSettingController extends Controller
         );
     }
 
-    public function index()
-    {
+    public function index() {
         $settings = BusinessSetting::all()->keyBy('type');
 
-        return Inertia::render('Admin/Frontend/settings/business/index', [
+        return Inertia::render('Admin/Settings/business/index', [
             'settings' => $settings
         ]);
     }

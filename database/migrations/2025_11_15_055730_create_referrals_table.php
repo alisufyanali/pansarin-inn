@@ -19,10 +19,10 @@ return new class extends Migration
             $table->decimal('commission_rate_snapshot', 5, 2);
             $table->decimal('commission_amount', 10, 2);
 
-            $table->enum('status', ['pending', 'approved', 'cancelled', 'paid'])->default('pending');
+            $table->enum('status', ['pending', 'approved', 'rejected', 'cancelled', 'paid'])->default('pending');
 
             $table->tinyInteger('level')->default(1);
-            $table->string('source_type')->default('direct');
+            $table->string('referral_type')->default('direct');
 
             $table->unique('order_id');
             $table->index(['affiliate_id', 'status']);
