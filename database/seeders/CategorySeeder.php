@@ -11,28 +11,28 @@ class CategorySeeder extends Seeder
     {
         $categories = [
             [
-                'name' => 'Herbals',
-                'slug' => 'herbals',
+                'name' => 'Herbal',
+                'slug' => 'herbal',
                 'status' => true,
             ],
             [
-                'name' => "Men's Fashion",
-                'slug' => 'mens-fashion',
+                'name' => "Oils",
+                'slug' => 'oils',
                 'status' => true,
             ],
             [
-                'name' => "Women's Fashion",
-                'slug' => 'womens-fashion',
+                'name' => "Supplements",
+                'slug' => 'supplements',
                 'status' => true,
             ],
             [
-                'name' => 'Kids & Baby',
-                'slug' => 'kids-baby',
+                'name' => 'Beauty Corner',
+                'slug' => 'beauty-corner',
                 'status' => true,
             ],
             [
-                'name' => 'Beauty & Personal Care',
-                'slug' => 'beauty-personal-care',
+                'name' => 'Dawakhana',
+                'slug' => 'dawakhana',
                 'status' => true,
             ],
         ];
