@@ -3,17 +3,22 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Inertia\Inertia;
-use App\Models\ProductVariant;
-use App\Models\Product;
+use App\Http\Repositories\Admin\ProductVariantRepository;
+use App\Http\Requests\Admin\ProductVariantRequest;
 use App\Models\Attribute;
+use App\Models\Product;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Inertia\Inertia;
 use Yajra\DataTables\Facades\DataTables;
 
 class ProductVariantController extends Controller
 {
-    public function __construct()
+    protected $variantRepository;
+
+    public function __construct(ProductVariantRepository $variantRepository)
     {
+        $this->variantRepository = $variantRepository;
         $this->middleware('permission:create.variants')->only(['create', 'store']);
         $this->middleware('permission:edit.variants')->only(['edit', 'update']);
         $this->middleware('permission:delete.variants')->only(['destroy']);
@@ -24,9 +29,18 @@ class ProductVariantController extends Controller
      */
     public function index(Request $request)
     {
-        return Inertia::render('Admin/Variants/Index', [
-            'userRole' => $request->user()->role ?? 'admin',
-        ]);
+        try {
+            $stats = $this->variantRepository->getStats();
+
+            return Inertia::render('Admin/Variants/Index', [
+                'userRole' => $request->user()->role ?? 'admin',
+                'stats' => $stats,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to load variants index: '.$e->getMessage());
+
+            return back()->with('error', 'Failed to load variants');
+        }
     }
 
     /**
@@ -34,71 +48,28 @@ class ProductVariantController extends Controller
      */
     public function getData(Request $request)
     {
-        $query = ProductVariant::with('product')->latest();
-        
-        // Search handling
-        if ($request->has('search') && $request->search !== '') {
-            if (is_string($request->search)) {
-                $search = $request->search;
-                $query->where(function($q) use ($search) {
-                    $q->where('sku', 'like', "%{$search}%")
-                      ->orWhere('price', 'like', "%{$search}%")
-                      ->orWhere('stock', 'like', "%{$search}%")
-                      ->orWhereHas('product', function($q) use ($search) {
-                          $q->where('name', 'like', "%{$search}%");
-                      });
-                });
-            }
-            elseif (is_array($request->search) && isset($request->search['value'])) {
-                $search = $request->search['value'];
-                if (!empty($search)) {
-                    $query->where(function($q) use ($search) {
-                        $q->where('sku', 'like', "%{$search}%")
-                          ->orWhere('price', 'like', "%{$search}%")
-                          ->orWhere('stock', 'like', "%{$search}%")
-                          ->orWhereHas('product', function($q) use ($search) {
-                              $q->where('name', 'like', "%{$search}%");
-                          });
-                    });
-                }
-            }
-        }
-        
-        // Additional filters
-        if ($request->has('status') && $request->status !== '') {
-            $query->where('status', $request->status === 'active');
-        }
-        
-        if ($request->has('product_id') && $request->product_id !== '') {
-            $query->where('product_id', $request->product_id);
-        }
+        try {
+            $query = $this->variantRepository->getAllForDataTable($request);
 
-        if ($request->has('is_default') && $request->is_default !== '') {
-            $query->where('is_default', $request->is_default === 'yes');
-        }
+            return DataTables::of($query)
+                ->addColumn('product_name', function ($variant) {
+                    return $variant->product ? $variant->product->name : null;
+                })
+                ->addColumn('status_text', function ($variant) {
+                    return $variant->status ? 'Active' : 'Inactive';
+                })
+                ->addColumn('is_default_text', function ($variant) {
+                    return $variant->is_default ? 'Yes' : 'No';
+                })
+                ->addColumn('stock_status', function ($variant) {
+                    return $variant->stock > 0 ? 'In Stock' : 'Out of Stock';
+                })
+                ->make(true);
+        } catch (\Exception $e) {
+            Log::error('Failed to get variants data: '.$e->getMessage());
 
-        if ($request->has('stock_status') && $request->stock_status !== '') {
-            if ($request->stock_status === 'in_stock') {
-                $query->where('stock', '>', 0);
-            } elseif ($request->stock_status === 'out_of_stock') {
-                $query->where('stock', '<=', 0);
-            }
+            return response()->json(['error' => 'Failed to load data'], 500);
         }
-
-        return DataTables::of($query)
-            ->addColumn('product_name', function($variant) {
-                return $variant->product ? $variant->product->name : null;
-            })
-            ->addColumn('status_text', function($variant) {
-                return $variant->status ? 'Active' : 'Inactive';
-            })
-            ->addColumn('is_default_text', function($variant) {
-                return $variant->is_default ? 'Yes' : 'No';
-            })
-            ->addColumn('stock_status', function($variant) {
-                return $variant->stock > 0 ? 'In Stock' : 'Out of Stock';
-            })
-            ->make(true);
     }
 
     /**
@@ -106,93 +77,94 @@ class ProductVariantController extends Controller
      */
     public function create()
     {
-        return Inertia::render('Admin/Variants/Create', [
-            'products' => Product::all(['id', 'name', 'price']),
-            'attributes' => Attribute::with('values')->get(),
-        ]);
+        try {
+            return Inertia::render('Admin/Variants/Create', [
+                'products' => Product::all(['id', 'name', 'price']),
+                'attributes' => Attribute::with('values')->get(),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to load variant create form: '.$e->getMessage());
+
+            return back()->with('error', 'Failed to load form');
+        }
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
-{
-    $validated = $request->validate([
-        'product_id' => 'required|exists:products,id',
-        'sku' => 'required|string|unique:product_variants,sku',
-        'price' => 'required|numeric|min:0',
-        'stock' => 'required|integer|min:0',
-        'is_default' => 'boolean',
-        'status' => 'boolean',
-        'attributes' => 'nullable|string', // Changed to string since we're sending JSON
-    ]);
+    public function store(ProductVariantRequest $request)
+    {
+        try {
+            $this->variantRepository->store($request->validated());
 
-    // Ensure attributes is stored as JSON string
-    if (isset($validated['attributes']) && is_array($validated['attributes'])) {
-        $validated['attributes'] = json_encode($validated['attributes']);
+            return to_route('admin.product-variants.index')
+                ->with('success', 'Variant successfully created!');
+        } catch (\Exception $e) {
+            Log::error('Failed to create variant: '.$e->getMessage());
+
+            return back()->with('error', 'Failed to create variant: '.$e->getMessage());
+        }
     }
-
-    ProductVariant::create($validated);
-
-    return to_route('product-variants.index')->with('success', 'Variant successfully created!');
-}
-
-public function update(Request $request, string $id)
-{
-    $variant = ProductVariant::findOrFail($id);
-
-    $validated = $request->validate([
-        'product_id' => 'required|exists:products,id',
-        'sku' => 'required|string|unique:product_variants,sku,' . $id,
-        'price' => 'required|numeric|min:0',
-        'stock' => 'required|integer|min:0',
-        'is_default' => 'boolean',
-        'status' => 'boolean',
-        'attributes' => 'nullable|string', // Changed to string
-    ]);
-
-    // Ensure attributes is stored as JSON string
-    if (isset($validated['attributes']) && is_array($validated['attributes'])) {
-        $validated['attributes'] = json_encode($validated['attributes']);
-    }
-
-    $variant->update($validated);
-
-    return to_route('product-variants.index')->with('success', 'Variant successfully updated!');
-}
-
-public function edit(string $id)
-{
-    $variant = ProductVariant::findOrFail($id);
-    
-    // Parse attributes if they're stored as JSON string
-    if ($variant->attributes && is_string($variant->attributes)) {
-        $variant->attributes = json_decode($variant->attributes, true);
-    }
-
-    return Inertia::render('Admin/Variants/Edit', [
-        'variant' => $variant,
-        'products' => Product::all(['id', 'name', 'price']),
-        'attributes' => Attribute::with('values')->get(),
-    ]);
-}
 
     /**
      * Display the specified resource.
      */
     public function show(string $id)
     {
-        $variant = ProductVariant::with('product')->findOrFail($id);
+        try {
+            $variant = $this->variantRepository->find($id);
 
-        return Inertia::render('Admin/Variants/Show', [
-            'variant' => $variant
-        ]);
+            return Inertia::render('Admin/Variants/Show', [
+                'variant' => $variant,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to load variant: '.$e->getMessage());
+
+            return back()->with('error', 'Variant not found');
+        }
     }
 
     /**
      * Show the form for editing the existing resource.
      */
-   
+    public function edit(string $id)
+    {
+        try {
+            $variant = $this->variantRepository->find($id);
+
+            // Parse attributes if they're stored as JSON string
+            if ($variant->attributes && is_string($variant->attributes)) {
+                $variant->attributes = json_decode($variant->attributes, true);
+            }
+
+            return Inertia::render('Admin/Variants/Edit', [
+                'variant' => $variant,
+                'products' => Product::all(['id', 'name', 'price']),
+                'attributes' => Attribute::with('values')->get(),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to load variant edit form: '.$e->getMessage());
+
+            return back()->with('error', 'Failed to load variant');
+        }
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(ProductVariantRequest $request, string $id)
+    {
+        try {
+            $this->variantRepository->update($id, $request->validated());
+
+            return to_route('admin.product-variants.index')
+                ->with('success', 'Variant successfully updated!');
+        } catch (\Exception $e) {
+            Log::error('Failed to update variant: '.$e->getMessage());
+
+            return back()->with('error', 'Failed to update variant: '.$e->getMessage());
+        }
+    }
 
     /**
      * Remove the specified resource from storage.
@@ -200,14 +172,16 @@ public function edit(string $id)
     public function destroy(string $id)
     {
         try {
-            ProductVariant::destroy($id);
-            
-            return redirect()->route('product-variants.index')
+            $this->variantRepository->delete($id);
+
+            return redirect()->route('admin.product-variants.index')
                 ->with('success', 'Variant successfully deleted!');
-                
+
         } catch (\Exception $e) {
-            return redirect()->route('product-variants.index')
-                ->with('error', 'Failed to delete variant: ' . $e->getMessage());
+            Log::error('Failed to delete variant: '.$e->getMessage());
+
+            return redirect()->route('admin.product-variants.index')
+                ->with('error', 'Failed to delete variant: '.$e->getMessage());
         }
     }
 }

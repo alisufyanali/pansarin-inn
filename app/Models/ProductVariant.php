@@ -1,8 +1,9 @@
 <?php
+
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ProductVariant extends Model
@@ -16,14 +17,14 @@ class ProductVariant extends Model
         'price',
         'stock',
         'is_default',
-        'status'
+        'status',
     ];
 
-   protected $casts = [
-    'attributes' => 'array', // This will automatically convert JSON to array
-    'is_default' => 'boolean',
-    'status' => 'boolean',
-];
+    protected $casts = [
+        'attributes' => 'array', // This will automatically convert JSON to array
+        'is_default' => 'boolean',
+        'status' => 'boolean',
+    ];
 
     // Relationships
     public function product()
@@ -39,7 +40,7 @@ class ProductVariant extends Model
     // Helper method to get variant display name (e.g., "120ml", "Red - M", etc.)
     public function getVariantNameAttribute(): string
     {
-        if (!$this->attributes || empty($this->attributes)) {
+        if (! $this->attributes || empty($this->attributes)) {
             return $this->sku;
         }
 
@@ -47,6 +48,7 @@ class ProductVariant extends Model
         foreach ($this->attributes as $key => $value) {
             $parts[] = $value;
         }
+
         return implode(' - ', $parts);
     }
 

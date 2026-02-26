@@ -16,13 +16,13 @@ class RoleController extends Controller
     private function getOrganizedPermissions()
     {
         $permissions = Permission::all(['id', 'name']);
-        
+
         $organized = [];
         foreach ($permissions as $permission) {
             // Extract category from permission name (e.g., "view.users" -> "users")
             $parts = explode('.', $permission->name);
             $category = ucfirst(end($parts)); // Get last part and capitalize
-            
+
             // Map category names to readable format
             $categoryMap = [
                 'Users' => 'User Management',
@@ -31,21 +31,21 @@ class RoleController extends Controller
                 'Categories' => 'Category Management',
                 'Variants' => 'Variant Management',
             ];
-            
-            $categoryLabel = $categoryMap[$category] ?? ucfirst($category) . ' Management';
-            
-            if (!isset($organized[$categoryLabel])) {
+
+            $categoryLabel = $categoryMap[$category] ?? ucfirst($category).' Management';
+
+            if (! isset($organized[$categoryLabel])) {
                 $organized[$categoryLabel] = [];
             }
-            
+
             $organized[$categoryLabel][] = $permission;
         }
-        
+
         // Convert to array format expected by frontend
         return array_map(function ($category, $perms) {
             return [
                 'category' => $category,
-                'permissions' => $perms
+                'permissions' => $perms,
             ];
         }, array_keys($organized), array_values($organized));
     }
@@ -59,11 +59,11 @@ class RoleController extends Controller
         $totalRoles = Role::count();
         $withPermissions = Role::has('permissions')->count();
         $totalPermissions = Permission::count();
-        
+
         // Get roles with permission counts
         $rolesWithCounts = Role::withCount('permissions')->get();
-        $avgPermissions = $totalRoles > 0 
-            ? round($rolesWithCounts->sum('permissions_count') / $totalRoles) 
+        $avgPermissions = $totalRoles > 0
+            ? round($rolesWithCounts->sum('permissions_count') / $totalRoles)
             : 0;
 
         return Inertia::render('Admin/Roles/Index', [
@@ -83,33 +83,33 @@ class RoleController extends Controller
     public function getData(Request $request)
     {
         $query = Role::with('permissions')->latest();
-        
+
         // Search
         if ($request->has('search') && $request->search) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhereHas('permissions', function($q) use ($search) {
-                      $q->where('name', 'like', "%{$search}%");
-                  });
+                    ->orWhereHas('permissions', function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%");
+                    });
             });
         }
-        
+
         // Sorting
         $sortBy = $request->get('sortBy', 'id');
         $sortOrder = $request->get('sortOrder', 'desc');
-        
+
         if ($sortBy === 'permissions_count') {
             $query->withCount('permissions')
-                  ->orderBy('permissions_count', $sortOrder);
+                ->orderBy('permissions_count', $sortOrder);
         } else {
             $query->orderBy($sortBy, $sortOrder);
         }
-        
+
         // Pagination
         $perPage = $request->get('perPage', 10);
         $roles = $query->paginate($perPage);
-        
+
         return response()->json([
             'data' => $roles->items(),
             'total' => $roles->total(),
@@ -125,9 +125,9 @@ class RoleController extends Controller
     public function create()
     {
         $allPermissions = Permission::all(['id', 'name'])->toArray();
-        
+
         return Inertia::render('Admin/Roles/Create', [
-            'permissions' => $allPermissions
+            'permissions' => $allPermissions,
         ]);
     }
 
@@ -138,13 +138,13 @@ class RoleController extends Controller
     {
         $request->validate([
             'name' => 'required|unique:roles,name',
-            'permission' => 'required|array|min:1'
+            'permission' => 'required|array|min:1',
         ]);
-        
+
         $role = Role::create(['name' => $request->name]);
         $role->syncPermissions($request->permission);
-        
-        return to_route('roles.index')->with('success', 'Role created successfully.');
+
+        return to_route('admin.roles.index')->with('success', 'Role created successfully.');
     }
 
     /**
@@ -153,6 +153,7 @@ class RoleController extends Controller
     public function show(string $id)
     {
         $role = Role::with('permissions')->findOrFail($id);
+
         return Inertia::render('Admin/Roles/Show', [
             'role' => $role,
             'rolepermissions' => $role->permissions->pluck('name')->toArray(),
@@ -166,11 +167,11 @@ class RoleController extends Controller
     {
         $role = Role::with('permissions')->findOrFail($id);
         $allPermissions = Permission::all(['id', 'name'])->toArray();
-        
+
         return Inertia::render('Admin/Roles/Edit', [
             'role' => $role,
             'rolepermissions' => $role->permissions->pluck('name')->toArray(),
-            'permissions' => $allPermissions
+            'permissions' => $allPermissions,
         ]);
     }
 
@@ -181,15 +182,15 @@ class RoleController extends Controller
     {
         $request->validate([
             'name' => 'required|unique:roles,name,'.$id,
-            'permission' => 'required|array|min:1'
+            'permission' => 'required|array|min:1',
         ]);
-        
+
         $role = Role::findOrFail($id);
         $role->name = $request->name;
         $role->save();
         $role->syncPermissions($request->permission);
-        
-        return to_route('roles.index')->with('success', 'Role updated successfully.');
+
+        return to_route('admin.roles.index')->with('success', 'Role updated successfully.');
     }
 
     /**
@@ -199,7 +200,7 @@ class RoleController extends Controller
     {
         $role = Role::findOrFail($id);
         $role->delete();
-        
-        return to_route('roles.index')->with('success', 'Role deleted successfully.');
+
+        return to_route('admin.roles.index')->with('success', 'Role deleted successfully.');
     }
 }

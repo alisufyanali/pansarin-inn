@@ -14,17 +14,16 @@ class OrderItem extends Model
         'price',
         'discount',
         'subtotal',
-        'meta'
+        'meta',
     ];
 
     protected $casts = [
         'quantity' => 'int',
-        'price'    => 'float',
+        'price' => 'float',
         'discount' => 'float',
         'subtotal' => 'float',
-        'meta'     => 'array',
+        'meta' => 'array',
     ];
-
 
     // Relationships
     public function order()
@@ -55,7 +54,7 @@ class OrderItem extends Model
         if ($this->meta && isset($this->meta['product_name'])) {
             return $this->meta['product_name'];
         }
-        
+
         return $this->product?->name ?? 'N/A';
     }
 
@@ -65,7 +64,7 @@ class OrderItem extends Model
         if ($this->meta && isset($this->meta['variant_name'])) {
             return $this->meta['variant_name'];
         }
-        
+
         return $this->variant?->name ?? null;
     }
 }

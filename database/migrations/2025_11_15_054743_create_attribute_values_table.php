@@ -10,16 +10,16 @@ return new class extends Migration
      * Run the migrations.
      */
     public function up()
-{
-    Schema::create('attribute_values', function (Blueprint $table) {
-        $table->id();
-        $table->foreignId('attribute_id')->constrained('attributes')->onDelete('cascade');
-        $table->string('value');
-        $table->string('slug')->nullable();
-        $table->timestamps();
-        $table->index(['attribute_id','value']);
-    });
-}
+    {
+        Schema::create('attribute_values', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('attribute_id')->constrained('attributes')->onDelete('cascade');
+            $table->string('value');
+            $table->string('slug')->nullable();
+            $table->timestamps();
+            $table->index(['attribute_id', 'value']);
+        });
+    }
 
     /**
      * Reverse the migrations.

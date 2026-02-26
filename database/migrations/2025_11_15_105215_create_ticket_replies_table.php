@@ -12,12 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('ticket_replies', function (Blueprint $table) {
-    $table->id();
-    $table->unsignedBigInteger('ticket_id');
-    $table->unsignedBigInteger('user_id')->nullable();
-    $table->text('message');
-    $table->timestamps();
-});
+            $table->id();
+            $table->unsignedBigInteger('ticket_id');
+            $table->unsignedBigInteger('user_id')->nullable();
+            $table->text('message');
+            $table->timestamps();
+        });
 
     }
 

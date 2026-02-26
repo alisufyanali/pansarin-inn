@@ -28,7 +28,7 @@ class Newsletter extends Model
         parent::boot();
 
         static::creating(function ($newsletter) {
-            if (!$newsletter->verification_token) {
+            if (! $newsletter->verification_token) {
                 $newsletter->verification_token = Str::random(64);
             }
         });
@@ -53,7 +53,7 @@ class Newsletter extends Model
 
     public function isVerified(): bool
     {
-        return !is_null($this->verified_at);
+        return ! is_null($this->verified_at);
     }
 
     public function verify(): void

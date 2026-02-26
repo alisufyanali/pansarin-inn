@@ -7,11 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 class Page extends Model
 {
     protected $fillable = [
-        'title', 
-        'slug', 
-        'content', 
+        'title',
+        'slug',
+        'content',
         'status',
-        'meta_title', 
-        'meta_description'
+        'meta_title',
+        'meta_description',
     ];
 }

@@ -37,14 +37,13 @@ interface Props {
   };
 }
 
-export default function Index({ stats: propsStats, flash }: Props) {
+export default function Index({ stats, flash }: Props) {
   const canCreate = true;
   const canEdit = true;
   const canDelete = true;
   const canView = true;
 
-  // Use stats from props with defaults
-  const stats = propsStats || {
+  const categoryStats = stats || {
     total: 0,
     active: 0,
     withParent: 0,
@@ -65,9 +64,6 @@ export default function Index({ stats: propsStats, flash }: Props) {
             src={`/storage/${row.image}`} 
             alt={row.name}
             className="w-12 h-12 rounded-lg object-cover border border-gray-200 dark:border-gray-700"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"%3E%3Crect fill="%23f3f4f6" width="48" height="48"/%3E%3Ctext x="24" y="24" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="20" fill="%239ca3af"%3E?%3C/text%3E%3C/svg%3E';
-            }}
           />
         ) : (
           <div className="w-12 h-12 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center border border-gray-200 dark:border-gray-700">
@@ -80,16 +76,10 @@ export default function Index({ stats: propsStats, flash }: Props) {
       name: 'Category Name',
       selector: (row: Category) => row.name,
       sortable: true,
-      sortField: 'name',
       cell: (row: Category) => (
-        <div className="flex flex-col">
-          <span className="font-semibold text-gray-900 dark:text-white">
-            {row.name}
-          </span>
-          <span className="text-xs text-gray-500 dark:text-gray-400">
-            ID: {row.id}
-          </span>
-        </div>
+        <span className="font-semibold text-gray-900 dark:text-white">
+          {row.name}
+        </span>
       ),
       width: '200px',
     },
@@ -97,7 +87,6 @@ export default function Index({ stats: propsStats, flash }: Props) {
       name: 'Slug',
       selector: (row: Category) => row.slug || '-',
       sortable: true,
-      sortField: 'slug',
       cell: (row: Category) => (
         row.slug ? <CodeBadge text={row.slug} /> : <span className="text-gray-400">-</span>
       ),
@@ -106,7 +95,6 @@ export default function Index({ stats: propsStats, flash }: Props) {
       name: 'Parent Category',
       selector: (row: Category) => row.parent?.name || '-',
       sortable: true,
-      sortField: 'parent_id',
       cell: (row: Category) => (
         row.parent ? (
           <div className="flex items-center gap-2">
@@ -128,16 +116,12 @@ export default function Index({ stats: propsStats, flash }: Props) {
       name: 'Status',
       selector: (row: Category) => row.status ? 'Active' : 'Inactive',
       sortable: true,
-      sortField: 'status',
       cell: (row: Category) => (
-        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
+        <span className={`px-3 py-1.5 text-xs rounded-full font-medium ${
           row.status
-            ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-            : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+            ? 'bg-green-500/10 dark:bg-green-500/20 text-green-700 dark:text-green-400'
+            : 'bg-gray-500/10 dark:bg-gray-500/20 text-gray-700 dark:text-gray-400'
         }`}>
-          <span className={`w-1.5 h-1.5 rounded-full ${
-            row.status ? 'bg-green-600 dark:bg-green-400' : 'bg-gray-400'
-          }`}></span>
           {row.status ? 'Active' : 'Inactive'}
         </span>
       ),
@@ -147,7 +131,7 @@ export default function Index({ stats: propsStats, flash }: Props) {
     CommonColumns.createdAt(true),
     CommonColumns.actions({
       baseUrl: '/admin/categories',
-      canView,
+      showView: true,
       canEdit,
       canDelete,
     }),
@@ -159,9 +143,7 @@ export default function Index({ stats: propsStats, flash }: Props) {
     { label: 'Slug', key: 'slug' },
     { label: 'Parent Category', key: 'parent.name' },
     { label: 'Status', key: 'status' },
-    { label: 'Image', key: 'image' },
     { label: 'Created At', key: 'created_at' },
-    { label: 'Updated At', key: 'updated_at' },
   ];
 
   useEffect(() => {
@@ -213,25 +195,25 @@ export default function Index({ stats: propsStats, flash }: Props) {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard 
             title="Total Categories" 
-            value={stats.total} 
+            value={categoryStats.total} 
             color="blue" 
             icon={FolderTree} 
           />
           <StatCard 
             title="Active" 
-            value={stats.active} 
+            value={categoryStats.active} 
             color="emerald" 
             icon={CheckCircle} 
           />
           <StatCard 
             title="With Parent" 
-            value={stats.withParent} 
+            value={categoryStats.withParent} 
             color="purple" 
             icon={Layers} 
           />
           <StatCard 
             title="Root Level" 
-            value={stats.topLevel} 
+            value={categoryStats.topLevel} 
             color="amber" 
             icon={FolderTree} 
           />
@@ -245,7 +227,6 @@ export default function Index({ stats: propsStats, flash }: Props) {
             csvHeaders={csvHeaders}
             searchableKeys={['name', 'slug', 'parent.name']}
             additionalFilters={additionalFilters}
-            defaultPerPage={10}
           />
         </div>
       </div>

@@ -9,7 +9,8 @@ use Inertia\Inertia;
 
 class GeneralSettingController extends Controller
 {
-    private function updateSettings($request, $keys) {
+    private function updateSettings($request, $keys)
+    {
         foreach ($keys as $key) {
             GeneralSetting::updateOrCreate(
                 ['type' => $key],
@@ -18,36 +19,39 @@ class GeneralSettingController extends Controller
         }
     }
 
-    public function index() {
-        return Inertia::render('Admin/Settings/general/index', [
-            'settings' => GeneralSetting::pluck('value', 'type')->all()
+    public function index()
+    {
+        return Inertia::render('Admin/Frontend/settings/general/index', [
+            'settings' => GeneralSetting::pluck('value', 'type')->all(),
         ]);
     }
 
-    public function updateSystem(Request $request) {
+    public function updateSystem(Request $request)
+    {
 
         $request->validate([
-            'system_name'  => 'required|string|max:100',
+            'system_name' => 'required|string|max:100',
             'system_title' => 'required|string|max:150',
         ]);
-    
+
         $this->updateSettings($request, [
             'system_name',
             'system_title',
         ]);
-        
+
         return redirect()->back()->with('success', 'System basics updated successfully!');
     }
 
-    public function updateContact(Request $request) {
+    public function updateContact(Request $request)
+    {
 
         $request->validate([
             'contact_address' => 'string|nullable|max:150',
             'contact_phone' => 'string|nullable|max:16',
             'contact_email' => 'string|nullable|max:100',
-            'facebook_url'  => 'string|nullable|max:100',
+            'facebook_url' => 'string|nullable|max:100',
             'instagram_url' => 'string|nullable|max:100',
-            'footer_text'   => 'string|nullable|max:150',
+            'footer_text' => 'string|nullable|max:150',
         ]);
 
         $this->updateSettings($request, [
@@ -62,7 +66,8 @@ class GeneralSettingController extends Controller
         return redirect()->back()->with('success', 'Contact and footer settings updated!');
     }
 
-    public function updateSeo(Request $request){
+    public function updateSeo(Request $request)
+    {
 
         $this->updateSettings($request, [
             'meta_title',
@@ -74,7 +79,8 @@ class GeneralSettingController extends Controller
         return redirect()->back()->with('success', 'SEO and Meta tags updated!');
     }
 
-    public function updateAuth(Request $request){
+    public function updateAuth(Request $request)
+    {
 
         $request->validate([
             'google_client_id' => 'string|nullable|max:100',
@@ -83,16 +89,17 @@ class GeneralSettingController extends Controller
         ]);
 
         $this->updateSettings($request, [
-        'google_login',
-        'google_client_id',
-        'facebook_login',
-        'facebook_app_id',
+            'google_login',
+            'google_client_id',
+            'facebook_login',
+            'facebook_app_id',
         ]);
 
         return redirect()->back()->with('success', 'Social login settings updated!');
     }
 
-    public function updateEcommerce(Request $request){
+    public function updateEcommerce(Request $request)
+    {
 
         $this->updateSettings($request, [
             'vendor_system',
@@ -104,7 +111,8 @@ class GeneralSettingController extends Controller
         return redirect()->back()->with('success', 'Ecommerce core settings updated!');
     }
 
-    public function updateEmail(Request $request){
+    public function updateEmail(Request $request)
+    {
 
         $this->updateSettings($request, [
             'mail_driver',
@@ -119,7 +127,8 @@ class GeneralSettingController extends Controller
         return redirect()->back()->with('success', 'SMTP / Email configuration updated!');
     }
 
-    public function updateSecurity(Request $request){
+    public function updateSecurity(Request $request)
+    {
 
         $this->updateSettings($request, [
             'captcha_status',
@@ -130,7 +139,8 @@ class GeneralSettingController extends Controller
         return redirect()->back()->with('success', 'Security and Captcha settings updated!');
     }
 
-    public function updateIntegrations(Request $request){
+    public function updateIntegrations(Request $request)
+    {
 
         $this->updateSettings($request, [
             'facebook_pixel_id',
@@ -140,10 +150,11 @@ class GeneralSettingController extends Controller
         return redirect()->back()->with('success', 'External integrations updated!');
     }
 
-    public function updateLegal(Request $request){
+    public function updateLegal(Request $request)
+    {
 
         $this->updateSettings($request, [
-           'terms_and_conditions',
+            'terms_and_conditions',
             'privacy_policy',
             'return_policy',
         ]);
@@ -151,7 +162,8 @@ class GeneralSettingController extends Controller
         return redirect()->back()->with('success', 'Legal pages content updated!');
     }
 
-    public function updateAdvanced(Request $request){
+    public function updateAdvanced(Request $request)
+    {
 
         $this->updateSettings($request, [
             'cache_time',

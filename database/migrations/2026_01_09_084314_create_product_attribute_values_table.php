@@ -18,7 +18,7 @@ return new class extends Migration
                 ->cascadeOnDelete();
             $table->decimal('price_adjustment', 10, 2)->default(0);
             $table->timestamps();
-            
+
             // Unique constraint
             $table->unique(['product_id', 'attribute_value_id']);
         });

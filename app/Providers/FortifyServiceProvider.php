@@ -10,9 +10,11 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
+use Laravel\Fortify\Contracts\LoginResponse;
+use Laravel\Fortify\Contracts\LogoutResponse;
+use Laravel\Fortify\Contracts\RegisterResponse;
 use Laravel\Fortify\Features;
 use Laravel\Fortify\Fortify;
-use Laravel\Fortify\Contracts\LoginResponse;
 
 class FortifyServiceProvider extends ServiceProvider
 {
@@ -33,9 +35,10 @@ class FortifyServiceProvider extends ServiceProvider
         $this->configureViews();
         $this->configureRateLimiting();
 
-           //  FIX FOR INERTIA LOGIN REDIRECT
+        //  FIX FOR INERTIA LOGIN REDIRECT
         $this->app->singleton(LoginResponse::class, function () {
-            return new class implements LoginResponse {
+            return new class implements LoginResponse
+            {
                 public function toResponse($request)
                 {
                     $request->session()->flash('success', 'Welcome back! You are logged in.');
@@ -45,7 +48,32 @@ class FortifyServiceProvider extends ServiceProvider
             };
         });
 
-    
+        // FIX FOR INERTIA REGISTER REDIRECT
+        $this->app->singleton(RegisterResponse::class, function () {
+            return new class implements RegisterResponse
+            {
+                public function toResponse($request)
+                {
+                    $request->session()->flash('success', 'Welcome! Your account has been created successfully.');
+
+                    return redirect()->intended(route('admin.dashboard'));
+                }
+            };
+        });
+
+        // FIX FOR INERTIA LOGOUT REDIRECT
+        $this->app->singleton(LogoutResponse::class, function () {
+            return new class implements LogoutResponse
+            {
+                public function toResponse($request)
+                {
+                    $request->session()->flash('success', 'You have been logged out successfully.');
+
+                    return redirect()->route('login');
+                }
+            };
+        });
+
     }
 
     /**

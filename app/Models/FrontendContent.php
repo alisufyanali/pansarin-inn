@@ -10,12 +10,12 @@ class FrontendContent extends Model
     use HasFactory;
 
     protected $fillable = [
-    'type',
-    'image',
-    'title',
-    'order',
-    'is_active',
-    'link',
-    'description',
-];
+        'type',
+        'image',
+        'title',
+        'order',
+        'is_active',
+        'link',
+        'description',
+    ];
 }

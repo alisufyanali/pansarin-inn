@@ -11,6 +11,8 @@ import {
     Share2,
     Tag,
 } from 'lucide-react';
+import SectionCard from '@/components/SectionCard';
+import PageHeader from '@/components/PageHeader';
 
 interface Product {
     id: number;
@@ -64,51 +66,35 @@ export default function Show({ product }: { product: Product }) {
         });
     };
 
+    const actions = (
+        <Link
+            href={`/admin/products/${product.id}/edit`}
+            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition hover:bg-blue-700"
+        >
+            <Edit2 className="h-4 w-4" />
+            Edit Product
+        </Link>
+    );
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={product.name} />
 
             <div className="p-3">
-                {/* Header Actions */}
-                <div className="mb-6 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <Link
-                            href="/admin/products"
-                            className="inline-flex h-10 w-10 items-center justify-center rounded-md bg-gray-100 text-gray-700 transition hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
-                        >
-                            <ArrowLeft className="h-5 w-5" />
-                        </Link>
-                        <div>
-                            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                                {product.name}
-                            </h1>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                                Product Details
-                            </p>
-                        </div>
-                    </div>
-
-                    <Link
-                        href={`/admin/products/${product.id}/edit`}
-                        className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition hover:bg-blue-700"
-                    >
-                        <Edit2 className="h-4 w-4" />
-                        Edit Product
-                    </Link>
-                </div>
+                <PageHeader
+                    title={product.name}
+                    backUrl="/admin/products"
+                    actions={actions}
+                />
 
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                     {/* Main Content - 2 columns */}
                     <div className="space-y-6 lg:col-span-2">
                         {/* Basic Information */}
-                        <div className="rounded-xl bg-white p-6 shadow-lg dark:bg-gray-900">
-                            <div className="mb-4 flex items-center gap-2 border-b border-gray-200 pb-4 dark:border-gray-800">
-                                <Info className="h-5 w-5 text-blue-600" />
-                                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                                    Basic Information
-                                </h2>
-                            </div>
-
+                        <SectionCard
+                            title="Basic Information"
+                            icon={Info}
+                        >
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <InfoRow
                                     label="Product Name"
@@ -170,17 +156,13 @@ export default function Show({ product }: { product: Product }) {
                                     </p>
                                 </div>
                             )}
-                        </div>
+                        </SectionCard>
 
                         {/* Pricing & Stock */}
-                        <div className="rounded-xl bg-white p-6 shadow-lg dark:bg-gray-900">
-                            <div className="mb-4 flex items-center gap-2 border-b border-gray-200 pb-4 dark:border-gray-800">
-                                <DollarSign className="h-5 w-5 text-green-600" />
-                                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                                    Pricing & Stock
-                                </h2>
-                            </div>
-
+                        <SectionCard
+                            title="Pricing & Stock"
+                            icon={DollarSign}
+                        >
                             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                                 <div className="rounded-lg border border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100 p-4 dark:border-blue-800 dark:from-blue-900/20 dark:to-blue-800/20">
                                     <p className="mb-1 text-sm text-blue-700 dark:text-blue-300">
@@ -217,19 +199,14 @@ export default function Show({ product }: { product: Product }) {
                                     value={product.stock_alert?.toString()}
                                 />
                             </div>
-                        </div>
+                        </SectionCard>
 
                         {/* Gallery Images */}
                         {product.gallery && product.gallery.length > 0 && (
-                            <div className="rounded-xl bg-white p-6 shadow-lg dark:bg-gray-900">
-                                <div className="mb-4 flex items-center gap-2 border-b border-gray-200 pb-4 dark:border-gray-800">
-                                    <ImageIcon className="h-5 w-5 text-purple-600" />
-                                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                                        Product Gallery (
-                                        {product.gallery.length} images)
-                                    </h2>
-                                </div>
-
+                            <SectionCard
+                                title={`Product Gallery (${product.gallery.length} images)`}
+                                icon={ImageIcon}
+                            >
                                 <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
                                     {product.gallery.map((image, index) => (
                                         <div
@@ -253,21 +230,17 @@ export default function Show({ product }: { product: Product }) {
                                         </div>
                                     ))}
                                 </div>
-                            </div>
+                            </SectionCard>
                         )}
 
                         {/* SEO Information */}
                         {(product.meta_title ||
                             product.meta_description ||
                             product.meta_keywords) && (
-                            <div className="rounded-xl bg-white p-6 shadow-lg dark:bg-gray-900">
-                                <div className="mb-4 flex items-center gap-2 border-b border-gray-200 pb-4 dark:border-gray-800">
-                                    <Tag className="h-5 w-5 text-orange-600" />
-                                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                                        SEO Information
-                                    </h2>
-                                </div>
-
+                            <SectionCard
+                                title="SEO Information"
+                                icon={Tag}
+                            >
                                 <div className="space-y-4">
                                     <InfoRow
                                         label="Meta Title"
@@ -303,18 +276,17 @@ export default function Show({ product }: { product: Product }) {
                                         </div>
                                     )}
                                 </div>
-                            </div>
+                            </SectionCard>
                         )}
                     </div>
 
                     {/* Sidebar - 1 column */}
                     <div className="space-y-6">
                         {/* Thumbnail Image */}
-                        <div className="rounded-xl bg-white p-6 shadow-lg dark:bg-gray-900">
-                            <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
-                                <Package className="h-5 w-5" />
-                                Thumbnail Image
-                            </h3>
+                        <SectionCard
+                            title="Thumbnail Image"
+                            icon={Package}
+                        >
                             {product.thumbnail ? (
                                 <img
                                     src={`/storage/${product.thumbnail}`}
@@ -333,15 +305,14 @@ export default function Show({ product }: { product: Product }) {
                                     </p>
                                 </div>
                             )}
-                        </div>
+                        </SectionCard>
 
                         {/* Social Media Image */}
                         {product.social_image && (
-                            <div className="rounded-xl bg-white p-6 shadow-lg dark:bg-gray-900">
-                                <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
-                                    <Share2 className="h-5 w-5" />
-                                    Social Media Image
-                                </h3>
+                            <SectionCard
+                                title="Social Media Image"
+                                icon={Share2}
+                            >
                                 <img
                                     src={`/storage/${product.social_image}`}
                                     alt="Social preview"
@@ -356,14 +327,14 @@ export default function Show({ product }: { product: Product }) {
                                         {product.social_description}
                                     </p>
                                 )}
-                            </div>
+                            </SectionCard>
                         )}
 
                         {/* Status Cards */}
-                        <div className="rounded-xl bg-white p-6 shadow-lg dark:bg-gray-900">
-                            <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
-                                Status
-                            </h3>
+                        <SectionCard
+                            title="Status"
+                            icon={Info}
+                        >
                             <div className="space-y-3">
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm text-gray-600 dark:text-gray-400">
@@ -394,13 +365,13 @@ export default function Show({ product }: { product: Product }) {
                                     </span>
                                 </div>
                             </div>
-                        </div>
+                        </SectionCard>
 
                         {/* Timestamps */}
-                        <div className="rounded-xl bg-white p-6 shadow-lg dark:bg-gray-900">
-                            <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
-                                Timestamps
-                            </h3>
+                        <SectionCard
+                            title="Timestamps"
+                            icon={Info}
+                        >
                             <div className="space-y-3">
                                 <div>
                                     <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -419,7 +390,7 @@ export default function Show({ product }: { product: Product }) {
                                     </p>
                                 </div>
                             </div>
-                        </div>
+                        </SectionCard>
                     </div>
                 </div>
             </div>

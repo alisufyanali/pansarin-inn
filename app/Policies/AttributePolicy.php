@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Models\Attribute;
+use App\Models\User;
 
 class AttributePolicy
 {

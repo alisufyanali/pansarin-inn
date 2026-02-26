@@ -1,7 +1,7 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
-import BlogForm, { type BlogFormData } from './Form';
+import Form, { type BlogFormData } from './Form';
 
 interface BlogTag {
     id: number;
@@ -13,9 +13,9 @@ interface BlogTag {
 type BlogCategory = { id: number; name: string };
 
 interface Props {
-    blog: BlogFormData & { 
-        id: number; 
-        thumbnail?: string; 
+    blog: BlogFormData & {
+        id: number;
+        thumbnail?: string;
         social_image?: string;
         tags?: BlogTag[];
     };
@@ -33,11 +33,11 @@ export default function Edit({ blog, categories, tags }: Props) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Edit ${blog.title}`} />
-            <BlogForm 
-                initialData={blog} 
+            <Form
+                initialData={blog}
                 categories={categories}
                 tags={tags}
-                isEdit={true} 
+                isEdit={true}
             />
         </AppLayout>
     );

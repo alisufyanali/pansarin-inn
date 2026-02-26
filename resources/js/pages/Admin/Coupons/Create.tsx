@@ -1,8 +1,7 @@
-// Create.tsx
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
-import CouponForm from './Form';
+import Form from './Form';
 
 const breadcrumbs: BreadcrumbItem[] = [
   { title: 'Coupons', href: '/admin/coupons' },
@@ -21,7 +20,7 @@ export default function Create({ products, categories }: CreateProps) {
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="Create Coupon" />
-      <CouponForm products={products} categories={categories} isEdit={false} />
+      <Form products={products} categories={categories} isEdit={false} />
     </AppLayout>
   );
 }

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class City extends Model
 {
-    protected $fillable = ['name','shipping_charges', 'country'];
+    protected $fillable = ['name', 'shipping_charges', 'country'];
 
     public function customers()
     {

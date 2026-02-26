@@ -12,14 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('payment_settings', function (Blueprint $table) {
-    $table->id();
-    $table->boolean('cod')->default(true);
-    $table->string('stripe_key')->nullable();
-    $table->string('stripe_secret')->nullable();
-    $table->string('paypal_client_id')->nullable();
-    $table->string('paypal_secret')->nullable();
-    $table->timestamps();
-});
+            $table->id();
+            $table->boolean('cod')->default(true);
+            $table->string('stripe_key')->nullable();
+            $table->string('stripe_secret')->nullable();
+            $table->string('paypal_client_id')->nullable();
+            $table->string('paypal_secret')->nullable();
+            $table->timestamps();
+        });
 
     }
 

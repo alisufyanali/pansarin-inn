@@ -1,7 +1,7 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
-import BlogCommentForm from './Form';
+import Form from './Form';
 
 type Blog = { id: number; title: string };
 
@@ -9,6 +9,8 @@ interface BlogComment {
     id: number;
     blog_id?: number | null;
     comments: string;
+    review?: string;
+    rating?: number | null;
     status: 'pending' | 'approved' | 'rejected';
 }
 
@@ -26,7 +28,7 @@ export default function Edit({ blogComment, blogs = [] }: Props) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Edit Blog Comment" />
-            <BlogCommentForm
+            <Form
                 initialData={blogComment}
                 blogs={blogs}
                 isEdit={true}

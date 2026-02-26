@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Affiliate;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Models\Product;
 use App\Models\Category;
+use App\Models\Product;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class MarketingController extends Controller
@@ -31,7 +31,8 @@ class MarketingController extends Controller
         return Inertia::render('Affiliate/ProductCatalog', [
             'products' => $products,
             'categories' => $categories,
-            'affiliate_id' => $request->user()->id 
+            // Hum auth user ki ID bhej rahe hain link generator ke liye
+            'affiliate_id' => $request->user()->id,
         ]);
     }
 }

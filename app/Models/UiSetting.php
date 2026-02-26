@@ -12,7 +12,7 @@ class UiSetting extends Model implements HasMedia
 
     protected $fillable = ['type', 'value'];
 
-    public function registerMediaConversions(\Spatie\MediaLibrary\MediaCollections\Models\Media $media = null): void
+    public function registerMediaConversions(?\Spatie\MediaLibrary\MediaCollections\Models\Media $media = null): void
     {
         $this->addMediaConversion('thumb')->width(100)->height(100);
     }

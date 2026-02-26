@@ -1,5 +1,6 @@
 import { Link, router, useForm } from '@inertiajs/react';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { ArrowLeft, Check, Upload, X, Info, Search, Globe } from 'lucide-react';
 
 type Category = { id: number; name: string };
 type Attribute = { id: number; name: string; slug: string; values: any[] };
@@ -43,6 +44,7 @@ interface ProductFormProps {
         id?: number;
         gallery?: string[];
         social_image?: string;
+        thumbnail?: string;
     };
     categories: Category[];
     attributes?: Attribute[];
@@ -55,46 +57,46 @@ export default function ProductForm({
     attributes = [],
     isEdit = false,
 }: ProductFormProps) {
-    const { data, setData, errors, post, processing } =
-        useForm<ProductFormData>({
-            name: product?.name || '',
-            category_id: product?.category_id || '',
-            sub_category_id: product?.sub_category_id || '',
-            short_description: product?.short_description || '',
-            long_description: product?.long_description || '',
-            urdu_name: product?.urdu_name || '',
-            scientific_name: product?.scientific_name || '',
-            alternative_name: product?.alternative_name || '',
-            other_name: product?.other_name || '',
-            slug: product?.slug || '',
-            unit: product?.unit || '',
-            quantity: product?.quantity || '',
-            purchase_price_per_unit: product?.purchase_price_per_unit || '',
-            sale_price_per_unit: product?.sale_price_per_unit || '',
-            price: product?.price || '',
-            sale_price: product?.sale_price || '',
-            sku: product?.sku || '',
-            barcode: product?.barcode || '',
-            stock_qty: product?.stock_qty || '',
-            stock_alert: product?.stock_alert || '',
-            status: product?.status ?? true,
-            featured: product?.featured ?? false,
-            meta_title: product?.meta_title || '',
-            meta_description: product?.meta_description || '',
-            meta_keywords: product?.meta_keywords || '',
-            tags: product?.tags
-                ? Array.isArray(product.tags)
-                    ? product.tags.join(', ')
-                    : product.tags
-                : '',
-            schema_markup: product?.schema_markup || '',
-            social_description: product?.social_description || '',
-            thumbnail: product?.thumbnail || null,
-            social_image: product?.social_image || null,
-            gallery: product?.gallery || [],
-        });
+    const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(product?.thumbnail || null);
+    const [socialImagePreview, setSocialImagePreview] = useState<string | null>(product?.social_image || null);
+    const [galleryPreviews, setGalleryPreviews] = useState<string[]>(
+        Array.isArray(product?.gallery) ? product.gallery : []
+    );
 
-    // Auto-calculate prices when quantity or per-unit prices change
+    const { data, setData, errors, post, processing } = useForm<ProductFormData>({
+        name: product?.name || '',
+        category_id: product?.category_id || '',
+        sub_category_id: product?.sub_category_id || '',
+        short_description: product?.short_description || '',
+        long_description: product?.long_description || '',
+        urdu_name: product?.urdu_name || '',
+        scientific_name: product?.scientific_name || '',
+        alternative_name: product?.alternative_name || '',
+        other_name: product?.other_name || '',
+        slug: product?.slug || '',
+        unit: product?.unit || '',
+        quantity: product?.quantity || '',
+        purchase_price_per_unit: product?.purchase_price_per_unit || '',
+        sale_price_per_unit: product?.sale_price_per_unit || '',
+        price: product?.price || '',
+        sale_price: product?.sale_price || '',
+        sku: product?.sku || '',
+        barcode: product?.barcode || '',
+        stock_qty: product?.stock_qty || '',
+        stock_alert: product?.stock_alert || '',
+        status: product?.status ?? true,
+        featured: product?.featured ?? false,
+        meta_title: product?.meta_title || '',
+        meta_description: product?.meta_description || '',
+        meta_keywords: product?.meta_keywords || '',
+        tags: product?.tags ? (Array.isArray(product.tags) ? product.tags.join(', ') : product.tags) : '',
+        schema_markup: product?.schema_markup || '',
+        social_description: product?.social_description || '',
+        thumbnail: product?.thumbnail || null,
+        social_image: product?.social_image || null,
+        gallery: product?.gallery || [],
+    });
+
     useEffect(() => {
         const qty = parseFloat(data.quantity as string) || 0;
         const purchasePricePerUnit = parseFloat(data.purchase_price_per_unit as string) || 0;
@@ -109,12 +111,59 @@ export default function ProductForm({
         }
     }, [data.quantity, data.purchase_price_per_unit, data.sale_price_per_unit]);
 
+    const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setData('thumbnail', file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setThumbnailPreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleSocialImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setData('social_image', file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setSocialImagePreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleGalleryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        setData('gallery', files);
+
+        const previews: string[] = [];
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                previews.push(reader.result as string);
+                if (previews.length === files.length) {
+                    setGalleryPreviews(previews);
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+    };
+
+    const removeGalleryImage = (index: number) => {
+        const newPreviews = [...galleryPreviews];
+        newPreviews.splice(index, 1);
+        setGalleryPreviews(newPreviews);
+
+        const newGallery = [...(data.gallery as File[])];
+        newGallery.splice(index, 1);
+        setData('gallery', newGallery);
+    };
+
     const generateSlug = (name: string) => {
-        return name
-            .toLowerCase()
-            .replace(/[^\w\s-]/g, '')
-            .replace(/\s+/g, '-')
-            .replace(/-+/g, '-');
+        return name.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
     };
 
     function submit(e: React.FormEvent) {
@@ -145,10 +194,9 @@ export default function ProductForm({
             return;
         }
 
-        // Validation: Sale price per unit must be greater than purchase price per unit
         const purchasePricePerUnit = parseFloat(data.purchase_price_per_unit as string);
         const salePricePerUnit = parseFloat(data.sale_price_per_unit as string);
-        
+
         if (salePricePerUnit <= purchasePricePerUnit) {
             alert('Sale price per unit must be greater than purchase price per unit!');
             return;
@@ -156,31 +204,16 @@ export default function ProductForm({
 
         const submitData = {
             ...data,
-            tags: data.tags
-                .split(',')
-                .map((tag) => tag.trim())
-                .filter((tag) => tag),
+            tags: data.tags.split(',').map((tag) => tag.trim()).filter((tag) => tag),
         };
 
         if (isEdit && product?.id) {
-            router.post(
-                `/admin/products/${product.id}`,
-                {
-                    ...submitData,
-                    _method: 'PUT',
-                },
-                {
-                    forceFormData: true,
-                },
-            );
+            router.post(`/admin/products/${product.id}`, { ...submitData, _method: 'PUT' }, { forceFormData: true });
         } else {
-            post('/admin/products', {
-                forceFormData: true,
-            });
+            post('/admin/products', { forceFormData: true });
         }
     }
 
-    // Calculate profit and margin
     const calculateProfit = () => {
         const purchasePrice = parseFloat(data.purchase_price_per_unit as string) || 0;
         const salePrice = parseFloat(data.sale_price_per_unit as string) || 0;
@@ -190,7 +223,6 @@ export default function ProductForm({
             const profitPerUnit = salePrice - purchasePrice;
             const totalProfit = profitPerUnit * qty;
             const profitMargin = ((profitPerUnit / purchasePrice) * 100).toFixed(2);
-
             return { profitPerUnit, totalProfit, profitMargin };
         }
         return null;
@@ -199,726 +231,613 @@ export default function ProductForm({
     const profitData = calculateProfit();
 
     return (
-        <div className="p-3">
-            <div className="mb-4 flex items-center gap-2">
+        <div className="p-4 max-w-7xl mx-auto">
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-6">
                 <Link
                     href="/admin/products"
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
-                    title="Back"
+                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
                 >
-                    ←
+                    <ArrowLeft className="w-4 h-4" />
+                    Back to Products
                 </Link>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {isEdit ? 'Edit Product' : 'Create New Product'}
+                </h1>
             </div>
 
-            <div className="mx-auto max-w-6xl py-6">
-                <h2 className="mb-6 text-2xl font-semibold text-gray-900 dark:text-white">
-                    {isEdit ? 'Edit Product' : 'Create New Product'}
-                </h2>
+            {/* Info Banner */}
+            <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <div className="flex items-start gap-3">
+                    <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                    <div className="text-sm text-blue-800 dark:text-blue-300">
+                        <p className="font-medium mb-1">Important: Fill all required fields marked with *</p>
+                        <p>Sale price must be higher than purchase price for profitability.</p>
+                    </div>
+                </div>
+            </div>
 
-                <form onSubmit={submit} className="space-y-6">
-                    {/* CARD 1: Basic Details */}
-                    <div className="rounded-lg border border-gray-200 bg-white p-6 shadow dark:border-gray-800 dark:bg-gray-900">
-                        <h3 className="mb-4 border-b border-gray-200 pb-2 text-lg font-semibold text-gray-900 dark:border-gray-800 dark:text-white">
-                            Basic Details
-                        </h3>
-                        <div className="space-y-4">
-                            {/* Product Name */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Product Name *
-                                </label>
-                                <input
-                                    type="text"
-                                    placeholder="Enter product name"
-                                    className="mt-1 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
-                                    value={data.name}
-                                    onChange={(e) =>
-                                        setData('name', e.target.value)
-                                    }
-                                />
-                                {errors.name && (
-                                    <div className="mt-1 text-sm text-red-500">
-                                        {errors.name}
+            <form onSubmit={submit} className="space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Left Column - Main Details (2/3) */}
+                    <div className="lg:col-span-2 space-y-6">
+                        {/* Basic Information */}
+                        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+                            <div className="flex items-center gap-2 mb-6">
+                                <div className="w-2 h-6 bg-blue-600 rounded-full"></div>
+                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Basic Information</h3>
+                            </div>
+                            <div className="space-y-5">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            Product Name <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            placeholder="Enter product name"
+                                            value={data.name}
+                                            onChange={(e) => setData('name', e.target.value)}
+                                            className="w-full px-4 py-3 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                                        />
+                                        {errors.name && <p className="text-red-500 text-sm mt-2 flex items-center gap-1"><Info className="w-4 h-4" /> {errors.name}</p>}
                                     </div>
-                                )}
-                            </div>
 
-                            {/* Category */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Category *
-                                </label>
-                                <select
-                                    value={data.category_id}
-                                    onChange={(e) =>
-                                        setData('category_id', e.target.value)
-                                    }
-                                    className="mt-1 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
-                                >
-                                    <option value="">Select category</option>
-                                    {categories.map((cat) => (
-                                        <option key={cat.id} value={cat.id}>
-                                            {cat.name}
-                                        </option>
-                                    ))}
-                                </select>
-                                {errors.category_id && (
-                                    <div className="mt-1 text-sm text-red-500">
-                                        {errors.category_id}
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            Category <span className="text-red-500">*</span>
+                                        </label>
+                                        <select
+                                            value={data.category_id}
+                                            onChange={(e) => setData('category_id', e.target.value)}
+                                            className="w-full px-4 py-3 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition appearance-none"
+                                        >
+                                            <option value="">Select category</option>
+                                            {categories.map((cat) => (
+                                                <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                            ))}
+                                        </select>
                                     </div>
-                                )}
-                            </div>
+                                </div>
 
-                            {/* Short Description */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Short Description
-                                </label>
-                                <textarea
-                                    placeholder="Brief description"
-                                    value={data.short_description}
-                                    onChange={(e) =>
-                                        setData(
-                                            'short_description',
-                                            e.target.value,
-                                        )
-                                    }
-                                    rows={3}
-                                    className="mt-1 w-full resize-none rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
-                                />
-                            </div>
+                                <div className="grid grid-cols-2 gap-5">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Urdu Name</label>
+                                        <input
+                                            type="text"
+                                            placeholder="اردو نام"
+                                            value={data.urdu_name}
+                                            onChange={(e) => setData('urdu_name', e.target.value)}
+                                            className="w-full px-4 py-3 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Scientific Name</label>
+                                        <input
+                                            type="text"
+                                            placeholder="Curcuma longa"
+                                            value={data.scientific_name}
+                                            onChange={(e) => setData('scientific_name', e.target.value)}
+                                            className="w-full px-4 py-3 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                                        />
+                                    </div>
+                                </div>
 
-                            {/* Long Description */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Long Description
-                                </label>
-                                <textarea
-                                    placeholder="Detailed description"
-                                    value={data.long_description}
-                                    onChange={(e) =>
-                                        setData(
-                                            'long_description',
-                                            e.target.value,
-                                        )
-                                    }
-                                    rows={3}
-                                    className="mt-1 w-full resize-none rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
-                                />
-                            </div>
-
-                            {/* Urdu Name */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Urdu Name
-                                </label>
-                                <input
-                                    type="text"
-                                    placeholder="اردو نام"
-                                    value={data.urdu_name}
-                                    onChange={(e) =>
-                                        setData('urdu_name', e.target.value)
-                                    }
-                                    className="mt-1 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
-                                />
-                            </div>
-
-                            {/* Scientific Name */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Scientific Name
-                                </label>
-                                <input
-                                    type="text"
-                                    placeholder="e.g., Curcuma longa"
-                                    value={data.scientific_name}
-                                    onChange={(e) =>
-                                        setData(
-                                            'scientific_name',
-                                            e.target.value,
-                                        )
-                                    }
-                                    className="mt-1 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
-                                />
-                            </div>
-
-                            {/* Alternative Name */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Alternative Name
-                                </label>
-                                <input
-                                    type="text"
-                                    placeholder="Other name"
-                                    value={data.alternative_name}
-                                    onChange={(e) =>
-                                        setData(
-                                            'alternative_name',
-                                            e.target.value,
-                                        )
-                                    }
-                                    className="mt-1 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
-                                />
-                            </div>
-
-                            {/* Other Name */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Other Name
-                                </label>
-                                <input
-                                    type="text"
-                                    placeholder="Additional name"
-                                    value={data.other_name}
-                                    onChange={(e) =>
-                                        setData('other_name', e.target.value)
-                                    }
-                                    className="mt-1 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
-                                />
-                            </div>
-
-                            {/* Slug */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Slug
-                                </label>
-                                <div className="mt-1 flex gap-2">
-                                    <input
-                                        type="text"
-                                        placeholder="auto-generated-slug"
-                                        value={data.slug}
-                                        onChange={(e) =>
-                                            setData('slug', e.target.value)
-                                        }
-                                        className="flex-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Short Description</label>
+                                    <textarea
+                                        placeholder="Brief product description"
+                                        value={data.short_description}
+                                        onChange={(e) => setData('short_description', e.target.value)}
+                                        rows={2}
+                                        className="w-full px-4 py-3 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition resize-none"
                                     />
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            setData(
-                                                'slug',
-                                                generateSlug(data.name),
-                                            )
-                                        }
-                                        className="rounded-md bg-blue-600 px-4 py-2 font-medium text-white transition hover:bg-blue-700"
-                                    >
-                                        Generate
-                                    </button>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Long Description</label>
+                                    <textarea
+                                        placeholder="Detailed product description"
+                                        value={data.long_description}
+                                        onChange={(e) => setData('long_description', e.target.value)}
+                                        rows={4}
+                                        className="w-full px-4 py-3 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition resize-none"
+                                    />
                                 </div>
                             </div>
                         </div>
+
+                        {/* Pricing & Inventory */}
+                        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+                            <div className="flex items-center gap-2 mb-6">
+                                <div className="w-2 h-6 bg-green-600 rounded-full"></div>
+                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Pricing & Inventory</h3>
+                            </div>
+                            <div className="space-y-5">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            Unit <span className="text-red-500">*</span>
+                                        </label>
+                                        <select
+                                            value={data.unit}
+                                            onChange={(e) => setData('unit', e.target.value)}
+                                            className="w-full px-4 py-3 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition appearance-none"
+                                        >
+                                            <option value="">Select unit</option>
+                                            {attributes.find((attr) => attr.slug === 'unit')?.values.map((val) => (
+                                                <option key={val.id} value={val.value}>{val.value}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            Quantity <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            placeholder="100"
+                                            value={data.quantity}
+                                            onChange={(e) => setData('quantity', e.target.value)}
+                                            className="w-full px-4 py-3 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                                        />
+                                    </div>
+
+                                    <div className="md:col-span-3 grid grid-cols-2 gap-5">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                Purchase Price/Unit <span className="text-red-500">*</span>
+                                            </label>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                placeholder="0.00"
+                                                value={data.purchase_price_per_unit}
+                                                onChange={(e) => setData('purchase_price_per_unit', e.target.value)}
+                                                className="w-full px-4 py-3 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                Sale Price/Unit <span className="text-red-500">*</span>
+                                            </label>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                placeholder="0.00"
+                                                value={data.sale_price_per_unit}
+                                                onChange={(e) => setData('sale_price_per_unit', e.target.value)}
+                                                className="w-full px-4 py-3 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Profit Summary */}
+                                {profitData && (
+                                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/10 dark:to-indigo-900/10 border border-blue-200 dark:border-blue-800 rounded-xl p-5">
+                                        <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-3">Profit Summary</h4>
+                                        <div className="grid grid-cols-3 gap-4">
+                                            <div className="text-center p-3 bg-white dark:bg-gray-800 rounded-lg">
+                                                <div className="text-sm text-gray-600 dark:text-gray-400">Profit/Unit</div>
+                                                <div className="text-xl font-bold text-green-600 dark:text-green-400">Rs {profitData.profitPerUnit.toFixed(2)}</div>
+                                            </div>
+                                            <div className="text-center p-3 bg-white dark:bg-gray-800 rounded-lg">
+                                                <div className="text-sm text-gray-600 dark:text-gray-400">Total Profit</div>
+                                                <div className="text-xl font-bold text-green-600 dark:text-green-400">Rs {profitData.totalProfit.toFixed(2)}</div>
+                                            </div>
+                                            <div className="text-center p-3 bg-white dark:bg-gray-800 rounded-lg">
+                                                <div className="text-sm text-gray-600 dark:text-gray-400">Margin</div>
+                                                <div className="text-xl font-bold text-purple-600 dark:text-purple-400">{profitData.profitMargin}%</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">SKU</label>
+                                        <input
+                                            type="text"
+                                            placeholder="Auto-generated"
+                                            value={data.sku}
+                                            onChange={(e) => setData('sku', e.target.value)}
+                                            className="w-full px-4 py-3 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Barcode</label>
+                                        <input
+                                            type="text"
+                                            placeholder="Barcode"
+                                            value={data.barcode}
+                                            onChange={(e) => setData('barcode', e.target.value)}
+                                            className="w-full px-4 py-3 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Stock Quantity</label>
+                                        <input
+                                            type="number"
+                                            placeholder="0"
+                                            value={data.stock_qty}
+                                            onChange={(e) => setData('stock_qty', e.target.value)}
+                                            className="w-full px-4 py-3 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Low Stock Alert</label>
+                                        <input
+                                            type="number"
+                                            placeholder="5"
+                                            value={data.stock_alert}
+                                            onChange={(e) => setData('stock_alert', e.target.value)}
+                                            className="w-full px-4 py-3 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {/* Images */}
+
+                        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+                            <div className="flex items-center gap-2 mb-6">
+                                <div className="w-2 h-6 bg-purple-600 rounded-full"></div>
+                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Images</h3>
+                            </div>
+                            <div className="space-y-6">
+
+                                {/* Thumbnail */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Thumbnail Image</label>
+                                    <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-4 text-center hover:border-blue-500 transition">
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleThumbnailChange}
+                                            className="hidden"
+                                            id="thumbnail"
+                                        />
+                                        <label htmlFor="thumbnail" className="cursor-pointer block">
+                                            {thumbnailPreview ? (
+                                                <div className="relative">
+                                                    <img
+                                                        src={thumbnailPreview}
+                                                        alt="Thumbnail"
+                                                        className="h-40 w-full object-cover rounded-lg"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setThumbnailPreview(null);
+                                                            setData('thumbnail', null);
+                                                        }}
+                                                        className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600"
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div className="py-8">
+                                                    <Upload className="w-10 h-10 mx-auto text-gray-400 mb-3" />
+                                                    <p className="text-sm text-gray-600 dark:text-gray-400">Click to upload thumbnail</p>
+                                                    <p className="text-xs text-gray-500 mt-1">Recommended: 800x800px</p>
+                                                </div>
+                                            )}
+                                        </label>
+                                    </div>
+                                </div>
+
+
+
+                                {/* Gallery */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Gallery Images</label>
+                                    <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-4 text-center hover:border-blue-500 transition">
+                                        <input
+                                            type="file"
+                                            multiple
+                                            accept="image/*"
+                                            onChange={handleGalleryChange}
+                                            className="hidden"
+                                            id="gallery"
+                                        />
+                                        <label htmlFor="gallery" className="cursor-pointer block">
+                                            <div className="py-6">
+                                                <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                                                <p className="text-sm text-gray-600 dark:text-gray-400">Click to upload multiple images</p>
+                                                <p className="text-xs text-gray-500 mt-1">Supports JPG, PNG, GIF</p>
+                                            </div>
+                                        </label>
+                                    </div>
+
+                                    {galleryPreviews.length > 0 && (
+                                        <div className="mt-4 grid grid-cols-3 gap-2">
+                                            {galleryPreviews.map((preview, index) => (
+                                                <div key={index} className="relative">
+                                                    <img
+                                                        src={preview}
+                                                        alt={`Gallery ${index + 1}`}
+                                                        className="h-20 w-full object-cover rounded-lg"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeGalleryImage(index)}
+                                                        className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                                                    >
+                                                        <X className="w-3 h-3" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
 
-                    {/* CARD 2: Unit-Based Pricing */}
-                    <div className="rounded-lg border border-gray-200 bg-white p-6 shadow dark:border-gray-800 dark:bg-gray-900">
-                        <h3 className="mb-4 border-b border-gray-200 pb-2 text-lg font-semibold text-gray-900 dark:border-gray-800 dark:text-white">
-                            Unit-Based Pricing
-                        </h3>
-                        <div className="space-y-4">
-                            {/* Unit Selection */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Unit *
-                                </label>
-                                <select
-                                    value={data.unit}
-                                    onChange={(e) =>
-                                        setData('unit', e.target.value)
-                                    }
-                                    className="mt-1 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
-                                    required
-                                >
-                                    <option value="">Select unit</option>
-                                    {attributes
-                                        .find((attr) => attr.slug === 'unit')
-                                        ?.values.map((val) => (
-                                            <option
-                                                key={val.id}
-                                                value={val.value}
-                                            >
-                                                {val.value}
-                                            </option>
-                                        ))}
-                                </select>
-                                {errors.unit && (
-                                    <div className="mt-1 text-sm text-red-500">
-                                        {errors.unit}
-                                    </div>
-                                )}
-                            </div>
+                    {/* Right Column - Sidebar (1/3) */}
+                    <div className="space-y-6">
 
-                            {/* Quantity */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Quantity * {data.unit && `(in ${data.unit})`}
-                                </label>
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
-                                    placeholder="e.g., 100"
-                                    value={data.quantity}
-                                    onChange={(e) =>
-                                        setData('quantity', e.target.value)
-                                    }
-                                    className="mt-1 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
-                                    required
-                                />
-                                {errors.quantity && (
-                                    <div className="mt-1 text-sm text-red-500">
-                                        {errors.quantity}
-                                    </div>
-                                )}
+                        {/* SEO Section - ADDED BACK */}
+                        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+                            <div className="flex items-center gap-2 mb-6">
+                                <div className="w-2 h-6 bg-yellow-600 rounded-full"></div>
+                                <Search className="w-5 h-5 text-yellow-600" />
+                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">SEO Settings</h3>
                             </div>
-
-                            {/* Purchase Price Per Unit */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Purchase Price Per {data.unit || 'Unit'} (Rs) *
-                                </label>
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
-                                    placeholder="e.g., 1.00"
-                                    value={data.purchase_price_per_unit}
-                                    onChange={(e) =>
-                                        setData('purchase_price_per_unit', e.target.value)
-                                    }
-                                    className="mt-1 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
-                                    required
-                                />
-                                {errors.purchase_price_per_unit && (
-                                    <div className="mt-1 text-sm text-red-500">
-                                        {errors.purchase_price_per_unit}
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Sale Price Per Unit */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Sale Price Per {data.unit || 'Unit'} (Rs) *
-                                </label>
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
-                                    placeholder="e.g., 5.00"
-                                    value={data.sale_price_per_unit}
-                                    onChange={(e) =>
-                                        setData('sale_price_per_unit', e.target.value)
-                                    }
-                                    className="mt-1 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
-                                    required
-                                />
-                                {errors.sale_price_per_unit && (
-                                    <div className="mt-1 text-sm text-red-500">
-                                        {errors.sale_price_per_unit}
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Auto-Calculated Total Prices */}
-                            {data.quantity && data.purchase_price_per_unit && data.sale_price_per_unit && (
-                                <div className="mt-4 rounded-lg bg-blue-50 p-4 dark:bg-blue-900/20">
-                                    <h4 className="mb-3 font-semibold text-gray-900 dark:text-white">
-                                        💡 Auto-Calculated Prices
-                                    </h4>
-                                    <div className="space-y-2 text-sm">
-                                        <div className="flex justify-between">
-                                            <span className="text-gray-600 dark:text-gray-400">
-                                                Total Purchase Price:
-                                            </span>
-                                            <span className="font-bold text-gray-900 dark:text-white">
-                                                Rs. {parseFloat(data.price as string).toFixed(2)}
-                                            </span>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Meta Title <span className="text-xs text-gray-500">(max 60)</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="SEO optimized title"
+                                        value={data.meta_title}
+                                        onChange={(e) => setData('meta_title', e.target.value)}
+                                        className="w-full px-4 py-3 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                                        maxLength={60}
+                                    />
+                                    <div className="flex justify-between items-center mt-1">
+                                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                                            {data.meta_title.length}/60 characters
                                         </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-gray-600 dark:text-gray-400">
-                                                Total Sale Price:
-                                            </span>
-                                            <span className="font-bold text-green-600 dark:text-green-400">
-                                                Rs. {parseFloat(data.sale_price as string).toFixed(2)}
-                                            </span>
-                                        </div>
-                                        
-                                        {profitData && (
-                                            <>
-                                                <hr className="my-2 border-gray-300 dark:border-gray-700" />
-                                                <div className="flex justify-between">
-                                                    <span className="text-gray-600 dark:text-gray-400">
-                                                        Profit Per {data.unit}:
-                                                    </span>
-                                                    <span className="font-bold text-purple-600 dark:text-purple-400">
-                                                        Rs. {profitData.profitPerUnit.toFixed(2)}
-                                                    </span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span className="text-gray-600 dark:text-gray-400">
-                                                        Total Profit:
-                                                    </span>
-                                                    <span className="font-bold text-purple-600 dark:text-purple-400">
-                                                        Rs. {profitData.totalProfit.toFixed(2)}
-                                                    </span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span className="text-gray-600 dark:text-gray-400">
-                                                        Profit Margin:
-                                                    </span>
-                                                    <span className="font-bold text-purple-600 dark:text-purple-400">
-                                                        {profitData.profitMargin}%
-                                                    </span>
-                                                </div>
-                                            </>
+                                        {data.meta_title.length >= 55 && (
+                                            <div className="text-xs text-amber-600">Getting long</div>
                                         )}
                                     </div>
                                 </div>
-                            )}
 
-                            {/* SKU & Barcode */}
-                            <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                        SKU
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Meta Description <span className="text-xs text-gray-500">(max 160)</span>
+                                    </label>
+                                    <textarea
+                                        placeholder="Search result description"
+                                        value={data.meta_description}
+                                        onChange={(e) => setData('meta_description', e.target.value)}
+                                        rows={3}
+                                        className="w-full px-4 py-3 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition resize-none"
+                                        maxLength={160}
+                                    />
+                                    <div className="flex justify-between items-center mt-1">
+                                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                                            {data.meta_description.length}/160 characters
+                                        </div>
+                                        {data.meta_description.length >= 150 && (
+                                            <div className="text-xs text-amber-600">Near limit</div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Meta Keywords
                                     </label>
                                     <input
                                         type="text"
-                                        placeholder="Auto-generated"
-                                        value={data.sku}
-                                        onChange={(e) => setData('sku', e.target.value)}
-                                        className="mt-1 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
+                                        placeholder="keyword1, keyword2, keyword3"
+                                        value={data.meta_keywords}
+                                        onChange={(e) => setData('meta_keywords', e.target.value)}
+                                        className="w-full px-4 py-3 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
                                     />
+                                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                        Separate with commas
+                                    </div>
                                 </div>
+
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                        Barcode
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Tags
                                     </label>
                                     <input
                                         type="text"
-                                        placeholder="Product barcode"
-                                        value={data.barcode}
-                                        onChange={(e) => setData('barcode', e.target.value)}
-                                        className="mt-1 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
+                                        placeholder="tag1, tag2, tag3"
+                                        value={data.tags}
+                                        onChange={(e) => setData('tags', e.target.value)}
+                                        className="w-full px-4 py-3 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
                                     />
+                                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                        Product tags for filtering
+                                    </div>
                                 </div>
-                            </div>
 
-                            {/* Stock Quantity & Alert */}
-                            <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                        Stock Quantity
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Schema Markup (JSON-LD)
                                     </label>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        placeholder="0"
-                                        value={data.stock_qty}
-                                        onChange={(e) => setData('stock_qty', e.target.value)}
-                                        className="mt-1 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
+                                    <textarea
+                                        placeholder='{"@context":"https://schema.org"}'
+                                        value={data.schema_markup}
+                                        onChange={(e) => setData('schema_markup', e.target.value)}
+                                        rows={3}
+                                        className="w-full px-4 py-3 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition resize-none font-mono text-sm"
                                     />
+                                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                        For rich search results
+                                    </div>
+                                </div>
+                                {/* Social Image */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Social Media Image</label>
+                                    <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-4 text-center hover:border-blue-500 transition">
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleSocialImageChange}
+                                            className="hidden"
+                                            id="social_image"
+                                        />
+                                        <label htmlFor="social_image" className="cursor-pointer block">
+                                            {socialImagePreview ? (
+                                                <div className="relative">
+                                                    <img
+                                                        src={socialImagePreview}
+                                                        alt="Social Media"
+                                                        className="h-32 w-full object-cover rounded-lg"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setSocialImagePreview(null);
+                                                            setData('social_image', null);
+                                                        }}
+                                                        className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600"
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div className="py-6">
+                                                    <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                                                    <div className="text-sm text-gray-600 dark:text-gray-400">Upload for social sharing</div>
+                                                    <p className="text-xs text-gray-500 mt-1">1200x630px recommended</p>
+                                                </div>
+                                            )}
+                                        </label>
+                                    </div>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                        Stock Alert
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Social Description <span className="text-xs text-gray-500">(max 300)</span>
                                     </label>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        placeholder="5"
-                                        value={data.stock_alert}
-                                        onChange={(e) => setData('stock_alert', e.target.value)}
-                                        className="mt-1 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
+                                    <textarea
+                                        placeholder="Description for social media shares"
+                                        value={data.social_description}
+                                        onChange={(e) => setData('social_description', e.target.value)}
+                                        rows={3}
+                                        className="w-full px-4 py-3 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition resize-none"
+                                        maxLength={300}
                                     />
-                                </div>
-                            </div>
-
-                            {/* Status */}
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="checkbox"
-                                    checked={data.status}
-                                    onChange={(e) => setData('status', e.target.checked)}
-                                    className="h-4 w-4 rounded border-gray-200 text-blue-600 focus:ring-2 dark:border-gray-700"
-                                />
-                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Status (Active)
-                                </label>
-                            </div>
-
-                            {/* Featured */}
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="checkbox"
-                                    checked={data.featured}
-                                    onChange={(e) => setData('featured', e.target.checked)}
-                                    className="h-4 w-4 rounded border-gray-200 text-blue-600 focus:ring-2 dark:border-gray-700"
-                                />
-                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Featured Product
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* CARD 3: SEO & Meta */}
-                    <div className="rounded-lg border border-gray-200 bg-white p-6 shadow dark:border-gray-800 dark:bg-gray-900">
-                        <h3 className="mb-4 border-b border-gray-200 pb-2 text-lg font-semibold text-gray-900 dark:border-gray-800 dark:text-white">
-                            SEO & Meta Information
-                        </h3>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Meta Title
-                                </label>
-                                <input
-                                    type="text"
-                                    maxLength={60}
-                                    placeholder="SEO title"
-                                    value={data.meta_title}
-                                    onChange={(e) =>
-                                        setData('meta_title', e.target.value)
-                                    }
-                                    className="mt-1 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
-                                />
-                                <div className="mt-1 text-right text-xs text-gray-500 dark:text-gray-400">
-                                    {data.meta_title.length}/60
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Meta Description
-                                </label>
-                                <textarea
-                                    maxLength={160}
-                                    placeholder="Search result description"
-                                    value={data.meta_description}
-                                    onChange={(e) =>
-                                        setData(
-                                            'meta_description',
-                                            e.target.value,
-                                        )
-                                    }
-                                    rows={2}
-                                    className="mt-1 w-full resize-none rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
-                                />
-                                <div className="mt-1 text-right text-xs text-gray-500 dark:text-gray-400">
-                                    {data.meta_description.length}/160
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Meta Keywords
-                                </label>
-                                <input
-                                    type="text"
-                                    placeholder="keyword1, keyword2, keyword3"
-                                    value={data.meta_keywords}
-                                    onChange={(e) =>
-                                        setData('meta_keywords', e.target.value)
-                                    }
-                                    className="mt-1 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Tags
-                                </label>
-                                <input
-                                    type="text"
-                                    placeholder="tag1, tag2, tag3"
-                                    value={data.tags}
-                                    onChange={(e) =>
-                                        setData('tags', e.target.value)
-                                    }
-                                    className="mt-1 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Schema Markup (JSON-LD)
-                                </label>
-                                <textarea
-                                    placeholder='{"@context":"https://schema.org",...}'
-                                    value={data.schema_markup}
-                                    onChange={(e) =>
-                                        setData('schema_markup', e.target.value)
-                                    }
-                                    rows={3}
-                                    className="mt-1 w-full resize-none rounded-md border border-gray-200 bg-white px-3 py-2 font-mono text-xs text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Social Description
-                                </label>
-                                <textarea
-                                    maxLength={300}
-                                    placeholder="For social sharing"
-                                    value={data.social_description}
-                                    onChange={(e) =>
-                                        setData(
-                                            'social_description',
-                                            e.target.value,
-                                        )
-                                    }
-                                    rows={2}
-                                    className="mt-1 w-full resize-none rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400"
-                                />
-                                <div className="mt-1 text-right text-xs text-gray-500 dark:text-gray-400">
-                                    {data.social_description.length}/300
+                                    <div className="flex justify-between items-center mt-1">
+                                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                                            {data.social_description.length}/300 characters
+                                        </div>
+                                        {data.social_description.length >= 280 && (
+                                            <div className="text-xs text-amber-600">Long description</div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    {/* Card 4: Images */}
-                    <div className="mb-6 rounded-lg bg-white p-6 shadow dark:bg-gray-800">
-                        <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
-                            Images
-                        </h3>
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                            <div>
-                                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Thumbnail Image
-                                </label>
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(e) =>
-                                        setData(
-                                            'thumbnail',
-                                            e.target.files?.[0] || null,
-                                        )
-                                    }
-                                    className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-                                />
-                                {product?.thumbnail &&
-                                    typeof product.thumbnail === 'string' && (
-                                        <div className="mt-2">
-                                            <p className="mb-1 text-xs text-gray-500 dark:text-gray-400">
-                                                Current:
-                                            </p>
-                                            <img
-                                                src={product.thumbnail}
-                                                alt="Thumbnail"
-                                                className="h-24 w-24 rounded object-cover"
-                                            />
-                                        </div>
-                                    )}
+                        {/* Settings */}
+                        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+                            <div className="flex items-center gap-2 mb-6">
+                                <div className="w-2 h-6 bg-orange-600 rounded-full"></div>
+                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Settings</h3>
                             </div>
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                                    <div>
+                                        <div className="font-medium text-gray-900 dark:text-white">Active Status</div>
+                                        <div className="text-sm text-gray-500 dark:text-gray-400">Show product publicly</div>
+                                    </div>
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={data.status}
+                                            onChange={(e) => setData('status', e.target.checked)}
+                                            className="sr-only peer"
+                                        />
+                                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                    </label>
+                                </div>
 
-                            <div>
-                                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Social Media Image
-                                </label>
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(e) =>
-                                        setData(
-                                            'social_image',
-                                            e.target.files?.[0] || null,
-                                        )
-                                    }
-                                    className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-                                />
-                                {product?.social_image &&
-                                    typeof product.social_image ===
-                                        'string' && (
-                                        <div className="mt-2">
-                                            <p className="mb-1 text-xs text-gray-500 dark:text-gray-400">
-                                                Current:
-                                            </p>
-                                            <img
-                                                src={product.social_image}
-                                                alt="Social Image"
-                                                className="h-24 w-24 rounded object-cover"
-                                            />
-                                        </div>
-                                    )}
+                                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                                    <div>
+                                        <div className="font-medium text-gray-900 dark:text-white">Featured Product</div>
+                                        <div className="text-sm text-gray-500 dark:text-gray-400">Highlight on homepage</div>
+                                    </div>
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={data.featured}
+                                            onChange={(e) => setData('featured', e.target.checked)}
+                                            className="sr-only peer"
+                                        />
+                                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                                    </label>
+                                </div>
+
+                                <div className="mt-4">
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Slug</label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            placeholder="product-name-slug"
+                                            value={data.slug}
+                                            onChange={(e) => setData('slug', e.target.value)}
+                                            className="flex-1 px-4 py-3 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setData('slug', generateSlug(data.name))}
+                                            className="px-4 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg font-medium transition"
+                                        >
+                                            Generate
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
+                        </div>
 
-                            <div className="md:col-span-2">
-                                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Gallery Images
-                                </label>
-                                <input
-                                    type="file"
-                                    multiple
-                                    accept="image/*"
-                                    onChange={(e) =>
-                                        setData(
-                                            'gallery',
-                                            Array.from(e.target.files || []),
-                                        )
-                                    }
-                                    className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-                                />
-                                {Array.isArray(product?.gallery) &&
-                                    product.gallery.length > 0 && (
-                                        <div className="mt-3">
-                                            <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">
-                                                Current Gallery:
-                                            </p>
-                                            <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-                                                {product.gallery.map(
-                                                    (img, idx) => (
-                                                        <div
-                                                            key={idx}
-                                                            className="relative"
-                                                        >
-                                                            <img
-                                                                src={
-                                                                    typeof img ===
-                                                                    'string'
-                                                                        ? img
-                                                                        : URL.createObjectURL(
-                                                                              img,
-                                                                          )
-                                                                }
-                                                                alt={`Gallery ${idx}`}
-                                                                className="h-24 w-full rounded object-cover"
-                                                            />
-                                                        </div>
-                                                    ),
-                                                )}
-                                            </div>
-                                        </div>
+                        {/* Actions */}
+                        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+                            <div className="space-y-3">
+                                <button
+                                    type="submit"
+                                    disabled={processing}
+                                    className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                >
+                                    {processing ? (
+                                        <>
+                                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                            Processing...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Check className="w-5 h-5" />
+                                            {isEdit ? 'Update Product' : 'Create Product'}
+                                        </>
                                     )}
+                                </button>
+
+                                <Link
+                                    href="/admin/products"
+                                    className="block w-full py-3 text-center border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-900 transition"
+                                >
+                                    Cancel
+                                </Link>
                             </div>
                         </div>
                     </div>
-
-                    {/* Submit Buttons */}
-                    <div className="mt-8 flex items-center justify-end gap-2">
-                        <Link
-                            href="/admin/products"
-                            className="rounded-md bg-gray-100 px-4 py-2 text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
-                        >
-                            Cancel
-                        </Link>
-
-                        <button
-                            type="submit"
-                            disabled={processing}
-                            className="rounded-md bg-blue-600 px-6 py-2 font-medium text-white transition-colors hover:bg-blue-700 disabled:bg-blue-400"
-                        >
-                            {processing
-                                ? 'Processing...'
-                                : isEdit
-                                  ? 'Update Product'
-                                  : 'Create Product'}
-                        </button>
-                    </div>
-                </form>
-            </div>
+                </div>
+            </form>
         </div>
     );
 }

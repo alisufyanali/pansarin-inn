@@ -14,7 +14,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 interface AttributeValue {
     id: number;
-    value: string;
+    value: number;
     slug: string;
 }
 
@@ -29,11 +29,11 @@ interface Attribute {
 
 interface Props {
     attributes?:
-        | Attribute[]
-        | {
-              data: Attribute[];
-              total: number;
-          };
+    | Attribute[]
+    | {
+        data: Attribute[];
+        total: number;
+    };
     flash?: {
         success?: string;
         error?: string;
@@ -62,7 +62,6 @@ export default function Index({
     const columns = [
         CommonColumns.id(),
         CommonColumns.name('Attribute Name'),
-        CommonColumns.slug(),
         {
             name: 'Values',
             selector: (row: Attribute) => row.values?.length || 0,
@@ -75,7 +74,7 @@ export default function Index({
                             key={val.id}
                             className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-200"
                         >
-                            {val.value}
+                            {val.value} {val.slug}
                         </span>
                     ))}
                     {row.values?.length > 3 && (
@@ -97,7 +96,6 @@ export default function Index({
     const csvHeaders = [
         { label: 'ID', key: 'id' },
         { label: 'Attribute Name', key: 'name' },
-        { label: 'Slug', key: 'slug' },
         { label: 'Values Count', key: 'values.length' },
         { label: 'Created At', key: 'created_at' },
         { label: 'Updated At', key: 'updated_at' },
@@ -117,11 +115,11 @@ export default function Index({
         avgValues:
             formattedAttributes.data?.length > 0
                 ? Math.round(
-                      (formattedAttributes.data?.reduce(
-                          (sum, a) => sum + (a?.values?.length || 0),
-                          0,
-                      ) || 0) / formattedAttributes.data.length,
-                  )
+                    (formattedAttributes.data?.reduce(
+                        (sum, a) => sum + (a?.values?.length || 0),
+                        0,
+                    ) || 0) / formattedAttributes.data.length,
+                )
                 : 0,
     };
 

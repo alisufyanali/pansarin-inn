@@ -15,7 +15,7 @@ class PayoutController extends Controller
         $affiliate = auth()->user()->affiliate;
 
         // AGAR AFFILIATE NAHI HAI TOH ERROR SE BACHNE KE LIYE REDIRECT KAREIN
-        if (!$affiliate) {
+        if (! $affiliate) {
             return redirect()->route('affiliate.register.view')
                 ->with('error', 'Pehle affiliate register karein.');
         }
@@ -26,7 +26,7 @@ class PayoutController extends Controller
 
         return Inertia::render('Affiliate/Payouts', [
             'payouts' => $payouts,
-            'balance' => $affiliate->balance
+            'balance' => $affiliate->balance,
         ]);
     }
 
@@ -34,10 +34,10 @@ class PayoutController extends Controller
     {
         // Aapki purani validation (Min 1000)
         $request->validate(['amount' => 'required|numeric|min:1000']);
-        
+
         $affiliate = auth()->user()->affiliate;
 
-        if (!$affiliate || $affiliate->balance < $request->amount) {
+        if (! $affiliate || $affiliate->balance < $request->amount) {
             return back()->with('error', 'Not enough balance.');
         }
 
@@ -48,7 +48,7 @@ class PayoutController extends Controller
         PayoutRequest::create([
             'affiliate_id' => $affiliate->id,
             'amount' => $request->amount,
-            'status' => 'pending'
+            'status' => 'pending',
         ]);
 
         return back()->with('success', 'Withdraw request send successfully');

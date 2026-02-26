@@ -7,8 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 class AuditLog extends Model
 {
     protected $fillable = [
-        'user_id','action','module','old_values','new_values',
-        'ip_address','user_agent'
+        'user_id', 'action', 'module', 'old_values', 'new_values',
+        'ip_address', 'user_agent',
     ];
 
     public function user()
@@ -16,4 +16,3 @@ class AuditLog extends Model
         return $this->belongsTo(User::class);
     }
 }
-

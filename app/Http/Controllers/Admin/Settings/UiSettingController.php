@@ -10,8 +10,8 @@ use Illuminate\Support\Facades\Storage;
 
 class UiSettingController extends Controller
 {
-
-    private function updateSettings(Request $request, $keys) {
+    private function updateSettings($request, $keys)
+    {
         foreach ($keys as $key) {
             if ($request->has($key)) {
                 $value = $request->$key;
@@ -39,18 +39,16 @@ class UiSettingController extends Controller
         }
     }
 
-    public function index() {
-        return Inertia::render('Admin/Settings/ui/index', [
-            'settings' => UiSetting::pluck('value', 'type')->all()
+    public function index()
+    {
+
+        return Inertia::render('Admin/Frontend/settings/ui/index', [
+            'settings' => UiSetting::pluck('value', 'type')->all(),
         ]);
     }
 
-    public function updateBrandingUI(Request $request) {
-
-        $request->validate([
-            'home_top_logo' => 'nullable|image|max:2048',
-            'fav_ext' => 'nullable|image|max:1024',
-        ]);
+    public function updateBrandingUI(Request $request)
+    {
 
         $this->updateSettings($request, [
             'header_color',
@@ -63,7 +61,8 @@ class UiSettingController extends Controller
         return redirect()->back()->with('success', 'Brand Settings updated!');
     }
 
-    public function updateHeaderUI(Request $request){
+    public function updateHeaderUI(Request $request)
+    {
 
         $this->updateSettings($request, [
             'header_homepage_status',
@@ -78,7 +77,8 @@ class UiSettingController extends Controller
         return redirect()->back()->with('success', 'Header updated!');
     }
 
-    public function updateHomepageUI(Request $request){
+    public function updateHomepageUI(Request $request)
+    {
 
         $this->updateSettings($request, [
             'featured_show',
@@ -93,7 +93,8 @@ class UiSettingController extends Controller
         return redirect()->back()->with('success', 'Homepage updated!');
     }
 
-    public function updateCategoriesUI(Request $request){
+    public function updateCategoriesUI(Request $request)
+    {
 
         $this->updateSettings($request, [
             'category_slides',
@@ -106,7 +107,8 @@ class UiSettingController extends Controller
         return redirect()->back()->with('success', 'Categories updated!');
     }
 
-    public function updateProductsUI(Request $request){
+    public function updateProductsUI(Request $request)
+    {
 
         $this->updateSettings($request, [
             'no_of_featured_products',
@@ -118,7 +120,8 @@ class UiSettingController extends Controller
         return redirect()->back()->with('success', 'Products Setting updated!');
     }
 
-    public function updateEmailUI(Request $request){
+    public function updateEmailUI(Request $request)
+    {
 
         $this->updateSettings($request, [
             'email_theme_style',
@@ -128,7 +131,8 @@ class UiSettingController extends Controller
         return redirect()->back()->with('success', 'Email Template updated!');
     }
 
-    public function updateMarketingUI(Request $request){
+    public function updateMarketingUI(Request $request)
+    {
 
         $this->updateSettings($request, [
             'whatsapp_number',

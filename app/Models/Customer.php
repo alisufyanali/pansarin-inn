@@ -13,7 +13,7 @@ class Customer extends Model
         'email',
         'address',
         'city_id',
-        'country'
+        'country',
     ];
 
     protected $appends = ['full_name'];
@@ -25,6 +25,6 @@ class Customer extends Model
 
     public function getFullNameAttribute()
     {
-        return trim($this->first_name . ' ' . $this->last_name);
+        return trim($this->first_name.' '.$this->last_name);
     }
 }

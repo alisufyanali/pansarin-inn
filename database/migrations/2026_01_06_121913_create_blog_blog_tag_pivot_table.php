@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('blog_id')->constrained('blogs')->onDelete('cascade');
             $table->foreignId('blog_tag_id')->constrained('blog_tags')->onDelete('cascade');
             $table->timestamps();
-            
+
             // Ensure unique combinations
             $table->unique(['blog_id', 'blog_tag_id']);
         });

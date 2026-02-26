@@ -4,15 +4,14 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Affiliate;
-use App\Models\PayoutRequest;
 use App\Models\AffiliateSetting;
+use App\Models\PayoutRequest;
 use App\Models\Referral;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class AffiliateController extends Controller
 {
-
     public function __construct()
     {
         $this->middleware('permission:view.affiliates')->only('index', 'logs', 'payoutRequests', 'settings');
@@ -24,14 +23,13 @@ class AffiliateController extends Controller
         $this->middleware('permission:block.affiliates')->only('updateStatus');
     }
 
-    
     // 1. Saare Affiliates ki list dikhane ke liye
     public function index()
     {
         $affiliates = Affiliate::with('user')->latest()->get();
-        
+
         return Inertia::render('Admin/Affiliate/AffiliateManager', [
-            'affiliates' => $affiliates
+            'affiliates' => $affiliates,
         ]);
     }
 
@@ -44,7 +42,7 @@ class AffiliateController extends Controller
             ->get();
 
         return Inertia::render('Admin/Affiliate/PendingPayouts', [
-            'payouts' => $payouts
+            'payouts' => $payouts,
         ]);
     }
 
@@ -56,7 +54,7 @@ class AffiliateController extends Controller
             ->get();
 
         return Inertia::render('Admin/Affiliate/ReferralLogs', [
-            'logs' => $logs
+            'logs' => $logs,
         ]);
     }
 
@@ -68,7 +66,7 @@ class AffiliateController extends Controller
         if ($payout->status == 'pending') {
             // Sirf status complete karein, kyunke balance pehle hi kat chuka hai
             $payout->update(['status' => 'completed']);
-            
+
             return back()->with('success', 'Payout marked as paid!');
         }
 
@@ -82,12 +80,12 @@ class AffiliateController extends Controller
 
         if ($payout->status == 'pending') {
             $affiliate = $payout->affiliate;
-            
+
             // Paise wapas affiliate ke balance mein daal dein
             $affiliate->increment('balance', $payout->amount);
-            
+
             $payout->update(['status' => 'rejected']);
-            
+
             return back()->with('success', 'Payout rejected and balance refunded.');
         }
 
@@ -99,7 +97,7 @@ class AffiliateController extends Controller
     {
         $affiliate = Affiliate::findOrFail($id);
         $affiliate->update([
-            'status' => $affiliate->status == 1 ? 0 : 1
+            'status' => $affiliate->status == 1 ? 0 : 1,
         ]);
 
         return back()->with('success', 'Affiliate status updated!');
@@ -109,9 +107,9 @@ class AffiliateController extends Controller
     {
         // Settings ko key-value pair mein convert kar ke bhejein
         $settings = AffiliateSetting::pluck('value', 'key')->all();
-        
+
         return Inertia::render('Admin/Affiliate/SystemSettings', [
-            'settings' => $settings
+            'settings' => $settings,
         ]);
     }
 

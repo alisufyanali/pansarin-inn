@@ -2,13 +2,13 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
+use App\Services\WhatsAppService;
 use Illuminate\Routing\Router;
-
 // Spatie middlewares (alias registration)
+use Illuminate\Support\ServiceProvider;
+use Inertia\Inertia;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
-use Inertia\Inertia;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -18,6 +18,10 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         //
+        $this->app->singleton(WhatsAppService::class, function ($app) {
+            return new WhatsAppService;
+        });
+
     }
 
     /**
@@ -30,11 +34,11 @@ class AppServiceProvider extends ServiceProvider
         $router->aliasMiddleware('permission', PermissionMiddleware::class);
         $router->aliasMiddleware('role', RoleMiddleware::class);
         Inertia::share([
-        'flash' => fn () => [
-            'success' => session('success'),
-            'error'   => session('error'),
-        ],
-    ]);
+            'flash' => fn () => [
+                'success' => session('success'),
+                'error' => session('error'),
+            ],
+        ]);
 
     }
 }

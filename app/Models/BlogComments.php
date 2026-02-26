@@ -47,7 +47,10 @@ class BlogComments extends Model
      */
     public function getRatingStarsAttribute(): string
     {
-        if (!$this->rating) return '';
+        if (! $this->rating) {
+            return '';
+        }
+
         return str_repeat('⭐', $this->rating);
     }
 }

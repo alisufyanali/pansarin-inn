@@ -38,7 +38,7 @@ export default function UserCreate({ roles }: { roles: Role[] }) {
             <div className="p-3">
                 <div className="flex items-center gap-2 mb-4">
                     <Link
-                        href="/users"
+                        href="/admin/users"
                         className="inline-flex items-center justify-center rounded-md bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-white w-10 h-10"
                         title="Back"
                     >
@@ -126,7 +126,7 @@ export default function UserCreate({ roles }: { roles: Role[] }) {
 
                             <div className="flex justify-end items-center gap-2">
                                 <Link
-                                    href="/users"
+                                    href="/admin/users"
                                     className="inline-flex items-center justify-center rounded-md bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-white w-10 h-10"
                                     title="Cancel"
                                     aria-label="Cancel"

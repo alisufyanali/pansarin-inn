@@ -10,14 +10,14 @@ return new class extends Migration
      * Run the migrations.
      */
     public function up()
-{
-    Schema::create('attributes', function (Blueprint $table) {
-        $table->id();
-        $table->string('name');
-        $table->string('slug')->nullable()->index();
-        $table->timestamps();
-    });
-}
+    {
+        Schema::create('attributes', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('slug')->nullable()->index();
+            $table->timestamps();
+        });
+    }
 
     /**
      * Reverse the migrations.
