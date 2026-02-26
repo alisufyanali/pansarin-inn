@@ -11,20 +11,20 @@ use Inertia\Inertia;
 class PageController extends Controller
 {
     public function getPagesData(Request $request)
-    {
-        $query = Page::query();
+{
+    $query = Page::query();
 
-        if ($request->search) {
-            $query->where('title', 'like', "%{$request->search}%");
-        }
-
-        return response()->json($query->latest()->paginate($request->perPage ?? 10));
+    if ($request->search) {
+        $query->where('title', 'like', "%{$request->search}%");
     }
+
+    return response()->json($query->latest()->paginate($request->perPage ?? 10));
+}
 
     public function index()
     {
-        return Inertia::render('Admin/Frontend/Pages/Index', [
-            'pages' => Page::latest()->get(),
+        return Inertia::render('Admin/Pages/Index', [
+            'pages' => Page::latest()->get()
         ]);
     }
 
@@ -54,15 +54,15 @@ class PageController extends Controller
 
     public function edit($id)
     {
-        return Inertia::render('Admin/Frontend/Pages/Edit', [
-            'page' => Page::findOrFail($id),
+        return Inertia::render('Admin/Pages/Edit', [
+            'page' => Page::findOrFail($id)
         ]);
     }
 
     public function update(Request $request, $id)
     {
         $page = Page::findOrFail($id);
-
+        
         $page->update([
             'title' => $request->title,
             'slug' => Str::slug($request->title),
@@ -78,7 +78,6 @@ class PageController extends Controller
     public function destroy($id)
     {
         Page::destroy($id);
-
         return redirect()->back()->with('success', 'Page deleted successfully!');
     }
 }
