@@ -16,7 +16,6 @@ interface Variant {
 }
 
 export default function Show({ variant }: { variant: Variant }) {
-    const canEdit = can('edit.variants');
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Variants', href: '/product-variants' },
@@ -35,15 +34,6 @@ export default function Show({ variant }: { variant: Variant }) {
                     >
                         <ArrowLeft />
                     </Link>
-                    {canEdit && (
-                        <Link
-                            href={`/product-variants/${variant.id}/edit`}
-                            className="inline-flex items-center justify-center rounded-md bg-blue-600 hover:bg-blue-700 text-white w-10 h-10"
-                            title="Edit"
-                        >
-                            <Edit2 />
-                        </Link>
-                    )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

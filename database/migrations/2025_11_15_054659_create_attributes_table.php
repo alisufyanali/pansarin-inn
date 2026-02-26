@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('attributes', function (Blueprint $table) {
             $table->id();
             $table->foreignId('category_id')->constrained('categories')->onDelete('cascade');
-            $table->string('name');
-            $table->string('slug')->nullable()->index();
+            $table->string('name')->index();
+            $table->string('slug')->nullable();
             $table->timestamps();
         });
     }

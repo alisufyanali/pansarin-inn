@@ -41,9 +41,6 @@ const DEFAULT_VARIANTS = {
 };
 
 export default function Index({ variants = DEFAULT_VARIANTS, flash }: Props) {
-  const canCreate = true; // can('create.variants');
-  const canEdit = true; // can('edit.variants');
-  const canDelete = true; // can('delete.variants');
 
   const safeVariants = variants || DEFAULT_VARIANTS;
 
@@ -133,9 +130,7 @@ export default function Index({ variants = DEFAULT_VARIANTS, flash }: Props) {
     CommonColumns.status(),
     CommonColumns.createdAt(false),
     CommonColumns.actions({
-      baseUrl: '/admin/product-variants',
-      canEdit,
-      canDelete,
+      baseUrl: '/admin/product-variants'
     }),
   ];
 
@@ -210,15 +205,7 @@ export default function Index({ variants = DEFAULT_VARIANTS, flash }: Props) {
             </p>
           </div>
 
-          {canCreate && (
-            <Link
-              href="/admin/product-variants/create"
-              className="inline-flex items-center gap-3 px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 dark:from-blue-500 dark:to-indigo-500 dark:hover:from-blue-600 dark:hover:to-indigo-600 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <PlusCircle className="w-5 h-5" />
-              <span>Add New Variant</span>
-            </Link>
-          )}
+         
         </div>
 
         {/* Stats Cards */}

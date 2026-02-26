@@ -17,7 +17,10 @@ return new class extends Migration
             $table->string('sku')->unique();
             $table->json('attributes')->nullable(); // stores attribute_value ids or key-value JSON
             $table->decimal('price', 12, 2)->default(0);
+            $table->decimal('sale_price', 12, 2)->nullable();
+           
             $table->integer('stock')->default(0);
+            $table->integer('stock_alert')->default(5);
             $table->boolean('is_default')->default(false);
             $table->boolean('status')->default(true);
             $table->timestamps();

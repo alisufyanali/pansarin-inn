@@ -28,11 +28,11 @@ return new class extends Migration
             $table->decimal('sale_price_per_unit', 10, 2)->nullable();
             $table->decimal('affiliate_commission', 10, 2)->default(5.00);
 
-            $table->string('name');
+            $table->string('name')->index();
             $table->string('urdu_name')->nullable();
             $table->string('scientific_name')->nullable();
             $table->string('alternative_name')->nullable();
-            $table->string('other_name')->nullable();
+            $table->string('other_name')->nullable()->index();
             $table->string('unit')->nullable();
 
             $table->string('slug')->unique();
@@ -49,6 +49,9 @@ return new class extends Migration
 
             $table->decimal('price', 12, 2)->default(0);
             $table->decimal('sale_price', 12, 2)->nullable();
+            $table->integer('number_of_view')->default(0);
+            $table->text('video')->nullable();
+            $table->text('vendor_featured')->nullable();
 
             // $table->integer('stock_qty')->default(0);
             // $table->integer('stock_alert')->default(5);
@@ -64,6 +67,8 @@ return new class extends Migration
             $table->text('meta_description')->nullable();
             $table->text('meta_keywords')->nullable();
             $table->text('schema_markup')->nullable();
+            // Social Fields
+            $table->string('social_image')->nullable();
             $table->text('social_description')->nullable();
 
             $table->timestamps();

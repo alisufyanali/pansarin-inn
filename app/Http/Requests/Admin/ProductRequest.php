@@ -36,8 +36,6 @@ class ProductRequest extends FormRequest
             'sale_price_per_unit' => 'nullable|numeric|min:0',
             'price' => 'nullable|numeric|min:0',
             'sale_price' => 'nullable|numeric|min:0',
-            'stock_qty' => 'nullable|integer|min:0',
-            'stock_alert' => 'nullable|integer|min:0',
             'status' => 'sometimes|boolean',
             'featured' => 'sometimes|boolean',
             'thumbnail' => 'nullable|image|max:2048',

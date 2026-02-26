@@ -40,7 +40,6 @@ class ProductsSeeder extends Seeder
                 'price' => $price,
                 'sale_price' => $salePrice,
                 'category_id' => $categories->random(),
-                'stock_qty' => rand(0, 200),
                 'status' => $faker->boolean(90), // 90% products will be active
                 'featured' => $faker->boolean(15), // 15% featured
                 'thumbnail' => 'products/default.jpg', // Placeholder image path
