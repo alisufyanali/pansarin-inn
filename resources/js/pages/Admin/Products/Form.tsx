@@ -1,6 +1,6 @@
-import { Link, router, useForm } from '@inertiajs/react';
+import { Link, router, useForm, usePage } from '@inertiajs/react';
 import React, { useEffect, useState } from 'react';
-import { ArrowLeft, Check, Upload, X, Info, Search, Loader2, Zap, Trash2 } from 'lucide-react';
+import { ArrowLeft, Check, Upload, X, Info, Search, Loader2, Zap, Trash2, AlertCircle } from 'lucide-react';
 
 type Category  = { id: number; name: string };
 type AttrValue = { id: number; value: string; slug: string };
@@ -211,6 +211,25 @@ export default function ProductForm({ product, categories, attributes = [], isEd
                 </Link>
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{isEdit ? 'Edit Product' : 'Create New Product'}</h1>
             </div>
+
+            {/* Error Alert */}
+            {Object.keys(errors).length > 0 && (
+                <div className="mb-6 p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+                    <div className="flex items-start gap-3">
+                        <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                            <h3 className="text-sm font-semibold text-red-800 dark:text-red-200 mb-2">
+                                Please fix the following errors:
+                            </h3>
+                            <ul className="text-sm text-red-700 dark:text-red-300 space-y-1 list-disc list-inside">
+                                {Object.entries(errors).map(([key, message]) => (
+                                    <li key={key}>{message}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <form onSubmit={submit} className="space-y-6">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

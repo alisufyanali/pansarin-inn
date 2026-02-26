@@ -90,17 +90,26 @@ class ProductController extends Controller
 
             $validated = $request->validated();
 
-            $quantity             = $validated['quantity'];
-            $purchasePricePerUnit = $validated['purchase_price_per_unit'];
-            $salePricePerUnit     = $validated['sale_price_per_unit'];
+            // Handle variations-based products
+            if (!empty($validated['variations'])) {
+                // For variation-based products, we don't need unit/quantity/price fields
+                // Variations will be stored separately
+            } else {
+                // Handle simple products with unit/quantity/price
+                if (isset($validated['quantity'], $validated['purchase_price_per_unit'], $validated['sale_price_per_unit'])) {
+                    $quantity             = $validated['quantity'];
+                    $purchasePricePerUnit = $validated['purchase_price_per_unit'];
+                    $salePricePerUnit     = $validated['sale_price_per_unit'];
 
-            $validated['price']      = $quantity * $purchasePricePerUnit;
-            $validated['sale_price'] = $quantity * $salePricePerUnit;
+                    $validated['price']      = $quantity * $purchasePricePerUnit;
+                    $validated['sale_price'] = $quantity * $salePricePerUnit;
 
-            if ($salePricePerUnit <= $purchasePricePerUnit) {
-                return back()
-                    ->withInput()
-                    ->withErrors(['sale_price_per_unit' => 'Sale price per unit must be greater than purchase price per unit.']);
+                    if ($salePricePerUnit <= $purchasePricePerUnit) {
+                        return back()
+                            ->withInput()
+                            ->withErrors(['sale_price_per_unit' => 'Sale price per unit must be greater than purchase price per unit.']);
+                    }
+                }
             }
 
             if (empty($validated['sku'])) {
@@ -161,17 +170,26 @@ class ProductController extends Controller
 
             $validated = $request->validated();
 
-            $quantity             = $validated['quantity'];
-            $purchasePricePerUnit = $validated['purchase_price_per_unit'];
-            $salePricePerUnit     = $validated['sale_price_per_unit'];
+            // Handle variations-based products
+            if (!empty($validated['variations'])) {
+                // For variation-based products, we don't need unit/quantity/price fields
+                // Variations will be stored separately
+            } else {
+                // Handle simple products with unit/quantity/price
+                if (isset($validated['quantity'], $validated['purchase_price_per_unit'], $validated['sale_price_per_unit'])) {
+                    $quantity             = $validated['quantity'];
+                    $purchasePricePerUnit = $validated['purchase_price_per_unit'];
+                    $salePricePerUnit     = $validated['sale_price_per_unit'];
 
-            $validated['price']      = $quantity * $purchasePricePerUnit;
-            $validated['sale_price'] = $quantity * $salePricePerUnit;
+                    $validated['price']      = $quantity * $purchasePricePerUnit;
+                    $validated['sale_price'] = $quantity * $salePricePerUnit;
 
-            if ($salePricePerUnit <= $purchasePricePerUnit) {
-                return back()
-                    ->withInput()
-                    ->withErrors(['sale_price_per_unit' => 'Sale price per unit must be greater than purchase price per unit.']);
+                    if ($salePricePerUnit <= $purchasePricePerUnit) {
+                        return back()
+                            ->withInput()
+                            ->withErrors(['sale_price_per_unit' => 'Sale price per unit must be greater than purchase price per unit.']);
+                    }
+                }
             }
 
             $thumbnailFile   = $request->hasFile('thumbnail')    ? $request->file('thumbnail')    : null;

@@ -50,8 +50,8 @@ return new class extends Migration
             $table->decimal('price', 12, 2)->default(0);
             $table->decimal('sale_price', 12, 2)->nullable();
 
-            $table->integer('stock_qty')->default(0);
-            $table->integer('stock_alert')->default(5);
+            // $table->integer('stock_qty')->default(0);
+            // $table->integer('stock_alert')->default(5);
             $table->json('tags')->nullable();
 
             $table->boolean('featured')->default(false);

@@ -3,7 +3,7 @@ import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import AttributeForm from './Form';
 
-type AttributeValue = { id: number; value: string };
+type AttributeValue = { id: number; value: number; slug: string };
 type Attribute = { id: number; name: string; category_id: number; values: AttributeValue[] };
 type Category = { id: number; name: string };
 
