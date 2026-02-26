@@ -246,22 +246,42 @@ class RolePermissionSeeder extends Seeder
         $adminRole = Role::firstOrCreate(['name' => 'admin']);
         $adminRole->syncPermissions(Permission::all());
 
-        // Create admin user if not exists
-        $adminEmail = 'admin@example.com';
-        $adminUser = User::where('email', $adminEmail)->first();
+        // 3. Setup Affiliate Role (Limited)
+        $affiliateRole = Role::firstOrCreate(['name' => 'affiliate']);
+        $affiliateRole->syncPermissions([
+            'view.products',
+            'view.reports',
+            'view.analytics',
+            'view.payout.requests',     // To see their own
+            'view.affiliate.settings',
+            'update.affiliate.settings',
+            'view.blogs',
+            'view.deals'
+        ]);
 
-        if (! $adminUser) {
-            $adminUser = User::create([
+        // 4. Setup Customer Role (Minimal)
+        $customerRole = Role::firstOrCreate(['name' => 'customer']);
+        $customerRole->syncPermissions([
+            'view.products',
+            'view.orders',
+            'create.reviews',
+            'view.reviews',
+            'view.wishlists',
+            'create.wishlists',
+            'create.messages',
+            'view.messages'
+        ]);
+
+        // 5. Create the Super Admin User
+        $adminUser = User::firstOrCreate(
+            ['email' => 'admin@example.com'],
+            [
                 'name' => 'Admin User',
                 'username' => 'admin',
-                'email' => $adminEmail,
                 'password' => Hash::make('password123'),
-            ]);
-        }
-
-        // Assign admin role to admin user
-        if (! $adminUser->hasRole('admin')) {
-            $adminUser->assignRole('admin');
-        }
+                'status' => 1
+            ]
+        );
+        $adminUser->assignRole($adminRole);
     }
 }

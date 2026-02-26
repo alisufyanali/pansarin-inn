@@ -1,18 +1,11 @@
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import { type BreadcrumbItem as BreadcrumbItemType } from '@/types';
+import { Button } from '@/components/ui/button';
 import NotificationBell from "@/components/NotificationBell";
 import { usePage } from '@inertiajs/react';
-import { PageProps } from '@/types';
-import { Button } from '@/components/ui/button';
-import { 
-  Eye, 
-  Trash2, 
-  ExternalLink, 
-  MessageSquare,
-  RotateCcw,
-  MessageCircle
-} from 'lucide-react';
+import { PageProps, BreadcrumbItem as BreadcrumbItemType } from '@/types';
+import { route } from 'ziggy-js';
+import { ExternalLink, RotateCcw, MessageCircle, Globe, Monitor} from 'lucide-react';
 
 export function AppSidebarHeader({
     breadcrumbs = [],
@@ -31,12 +24,23 @@ export function AppSidebarHeader({
             <div className="flex items-center gap-2 ml-auto">
                 <NotificationBell auth={auth} />
 
+                {/* View Settings Website */}
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => window.open(route('index'), '_blank')}
+                    title="check settings Website"
+                    className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800"
+                >
+                    <Monitor className="h-4 w-4" />
+                </Button>
+
                 {/* View Website */}
                 <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => window.open('/home', '_blank')}
-                    title="View Website"
+                    onClick={() => window.open(route('home'), '_blank')}
+                    title="View Public Website"
                     className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800"
                 >
                     <ExternalLink className="h-4 w-4" />
@@ -57,7 +61,7 @@ export function AppSidebarHeader({
                 <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => window.open('/admin/whatsapp/chat', '_blank')}
+                    onClick={() => window.open(route('admin.whatsapp.chat'), '_blank')}
                     title="WhatsApp Chat"
                     className="text-green-600 hover:text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:text-green-300 dark:hover:bg-green-900/20"
                 >

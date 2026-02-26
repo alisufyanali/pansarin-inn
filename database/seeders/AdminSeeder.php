@@ -4,56 +4,67 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Permission;
+use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
 
 class AdminSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1 Roles
-        $roles = ['admin', 'customer', 'affiliate'];
-        foreach ($roles as $role) {
-            Role::firstOrCreate(['name' => $role]);
-        }
-
-        // 2 Permissions
-        $permissions = [
-            'manage users',
-            'manage roles',
-            'manage permissions',
-        ];
-        foreach ($permissions as $p) {
-            Permission::firstOrCreate(['name' => $p]);
-        }
-
-        // Assign permissions to admin role
-        $adminRole = Role::where('name', 'admin')->first();
-        $adminRole->syncPermissions($permissions);
-
-        // 3 Users
+        // 1. Define the 5 specific users
         $usersData = [
-            ['name' => 'Super Admin', 'username' => 'admin', 'email' => 'admin@example.com', 'role' => 'admin'],
-            ['name' => 'John Doe', 'username' => 'customer1', 'email' => 'customer1@example.com', 'role' => 'customer'],
-            ['name' => 'Jane Smith', 'username' => 'customer2', 'email' => 'customer2@example.com', 'role' => 'customer'],
-            ['name' => 'Affiliate One', 'username' => 'affiliate1', 'email' => 'affiliate1@example.com', 'role' => 'affiliate'],
-            ['name' => 'Affiliate Two', 'username' => 'affiliate2', 'email' => 'affiliate2@example.com', 'role' => 'affiliate'],
+            // The Admin
+            [
+                'name'     => 'Super Admin', 
+                'username' => 'admin', 
+                'email'    => 'admin@example.com', 
+                'role'     => 'admin'
+            ],
+            // The 2 Customers
+            [
+                'name'     => 'John Customer', 
+                'username' => 'customer_john', 
+                'email'    => 'customer1@example.com', 
+                'role'     => 'customer'
+            ],
+            [
+                'name'     => 'Sarah Buyer', 
+                'username' => 'customer_sarah', 
+                'email'    => 'customer2@example.com', 
+                'role'     => 'customer'
+            ],
+            // The 2 Affiliates
+            [
+                'name'     => 'Partner Marketer', 
+                'username' => 'affiliate_pro', 
+                'email'    => 'affiliate1@example.com', 
+                'role'     => 'affiliate'
+            ],
+            [
+                'name'     => 'Influencer One', 
+                'username' => 'affiliate_star', 
+                'email'    => 'affiliate2@example.com', 
+                'role'     => 'affiliate'
+            ],
         ];
 
         foreach ($usersData as $data) {
-            $user = User::firstOrCreate(
+            // Create or update the user
+            $user = User::updateOrCreate(
                 ['email' => $data['email']],
                 [
-                    'name' => $data['name'],
+                    'name'     => $data['name'],
                     'username' => $data['username'],
-                    'password' => bcrypt('Password123'),
-                    'status' => 1,
+                    'password' => Hash::make('Password123'), // Secure way to set password
+                    'status'   => 1, // Assuming 1 means active
                 ]
             );
 
+            // Sync the role (clears old roles and adds the new one)
+            // Note: This matches the roles created in RolePermissionSeeder
             $user->syncRoles([$data['role']]);
         }
 
-        $this->command->info('Roles and users seeded successfully!');
+        $this->command->info('Successfully seeded 1 Admin, 2 Customers, and 2 Affiliates.');
     }
 }

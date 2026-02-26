@@ -1,6 +1,7 @@
 import { useForm } from '@inertiajs/react';
 import { Facebook, Instagram, Mail, Phone, Save } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { route } from 'ziggy-js';
 
 export default function ContactTab({ settings }: { settings: any }) {
     const { data, setData, post, errors, processing } = useForm({
@@ -15,7 +16,7 @@ export default function ContactTab({ settings }: { settings: any }) {
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
 
-        post('/admin/settings/general/contact', {
+        post(route('admin.general-settings.updateContact'), {
             preserveScroll: true,
             onSuccess: () => toast.success('Contact & Footer updated!'),
             onError: () => toast.error("Something went wrong!"),
