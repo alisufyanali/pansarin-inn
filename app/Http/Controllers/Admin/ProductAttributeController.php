@@ -32,6 +32,7 @@ class ProductAttributeController extends Controller
     public function index()
     {
         $attributes = $this->attributeRepository->getAll();
+        $attributes->load('category'); // Load category relationship
 
         return Inertia::render('Admin/Attributes/Index', [
             'attributes' => $attributes,
@@ -51,7 +52,11 @@ class ProductAttributeController extends Controller
      */
     public function create()
     {
-        return Inertia::render('Admin/Attributes/Create');
+        $categories = \App\Models\Category::select('id', 'name')->orderBy('name')->get();
+        
+        return Inertia::render('Admin/Attributes/Create', [
+            'categories' => $categories,
+        ]);
     }
 
     /**
@@ -103,9 +108,11 @@ class ProductAttributeController extends Controller
     public function edit(Attribute $attribute)
     {
         $attribute = $this->attributeRepository->find($attribute->id);
+        $categories = \App\Models\Category::select('id', 'name')->orderBy('name')->get();
 
         return Inertia::render('Admin/Attributes/Edit', [
             'attribute' => $attribute->load('values'),
+            'categories' => $categories,
         ]);
     }
 

@@ -8,11 +8,17 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Create', href: '/admin/attributes/create' },
 ];
 
-export default function Create() {
+type Category = { id: number; name: string };
+
+interface CreateProps {
+    categories: Category[];
+}
+
+export default function Create({ categories }: CreateProps) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Create Attribute" />
-            <AttributeForm isEdit={false} />
+            <AttributeForm isEdit={false} categories={categories} />
         </AppLayout>
     );
 }

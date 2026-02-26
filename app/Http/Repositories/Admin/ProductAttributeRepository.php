@@ -8,18 +8,21 @@ class ProductAttributeRepository
 {
     public function getAll()
     {
-        return Attribute::with('values')->latest()->get();
+        return Attribute::with(['values', 'category'])->latest()->get();
     }
 
     public function getAllForDataTable($request)
     {
-        $query = Attribute::with('values')->withCount('values')->latest();
+        $query = Attribute::with(['values', 'category'])->withCount('values')->latest();
 
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('slug', 'like', "%{$search}%");
+                    ->orWhere('slug', 'like', "%{$search}%")
+                    ->orWhereHas('category', function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -33,6 +36,10 @@ class ProductAttributeRepository
                 'id' => $attribute->id,
                 'name' => $attribute->name,
                 'slug' => $attribute->slug,
+                'category' => $attribute->category ? [
+                    'id' => $attribute->category->id,
+                    'name' => $attribute->category->name,
+                ] : null,
                 'values' => $attribute->values,
                 'values_count' => $attribute->values_count,
                 'created_at' => $attribute->created_at,
