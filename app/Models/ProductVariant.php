@@ -15,9 +15,10 @@ class ProductVariant extends Model
         'sku',
         'attributes',
         'price',
-        'stock',
         'is_default',
         'status',
+        'attribute_value_id', 'value', 'additional', 'sale_price', 'stock_alert'
+
     ];
 
     protected $casts = [

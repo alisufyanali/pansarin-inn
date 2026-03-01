@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('customer_id')->constrained('customers')->onDelete('cascade');
             $table->string('order_number')->unique();
+            $table->integer('user_id')->nullable();
 
             // Amounts
             $table->decimal('subtotal', 12, 2)->default(0); // Total before any discounts

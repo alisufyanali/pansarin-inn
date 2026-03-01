@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('value');
             $table->json('attributes')->nullable(); // stores attribute_value ids or key-value JSON
           
+            $table->int('additional')->default(0);
             $table->decimal('price', 12, 2)->default(0);
             $table->decimal('sale_price', 12, 2)->nullable();
             $table->integer('stock_alert')->default(5);

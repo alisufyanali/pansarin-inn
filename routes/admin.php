@@ -69,16 +69,16 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     // Route::delete('/categories/{id}', [CategoryController::class, 'destroy'])->name('categories.destroy');
 
     // Product Management resource Controllers
+    // IMPORTANT: Custom routes must come BEFORE resource routes
+    Route::get('/products/attributes-by-category', [ProductController::class, 'getAttributesByCategory'])
+        ->name('products.attributes-by-category');
+    
     Route::resource('products', ProductController::class);
     Route::get('products-data', [ProductController::class, 'getData'])->name('products.data');
     Route::resource('product-variants', ProductVariantController::class);
     Route::get('product-variants-data', [ProductVariantController::class, 'getData'])->name('product-variants.data');
     Route::resource('attributes', ProductAttributeController::class);
     Route::get('attributes-data', [ProductAttributeController::class, 'getData'])->name('attributes.data');
-
-
-    Route::get('/products/attributes-by-category', [ProductController::class, 'getAttributesByCategory'])
-    ->name('products.attributes-by-category');
 
     Route::resource('deals', ProductsDealController::class);
     Route::get('deals-data', [ProductsDealController::class, 'getData'])->name('products.data');

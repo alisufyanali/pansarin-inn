@@ -354,6 +354,7 @@ export default function ProductForm({ product, categories, attributes = [], isEd
                                                     Sale Price <span className="text-red-400">*</span>
                                                 </th>
                                                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-28">Profit/Loss</th>
+                                                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-28">Additional</th>
                                                 <th className="px-4 py-3 w-12"></th>
                                             </tr>
                                         </thead>
@@ -407,7 +408,7 @@ export default function ProductForm({ product, categories, attributes = [], isEd
                                                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-medium pointer-events-none">Rs</span>
                                                                 <input
                                                                     type="number"
-                                                                    step="0.01"
+                                                                    step="0.1"
                                                                     min="0"
                                                                     placeholder="0.00"
                                                                     value={variation.purchase_price}
@@ -423,7 +424,7 @@ export default function ProductForm({ product, categories, attributes = [], isEd
                                                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-medium pointer-events-none">Rs</span>
                                                                 <input
                                                                     type="number"
-                                                                    step="0.01"
+                                                                    step="0.1"
                                                                     min="0"
                                                                     placeholder="0.00"
                                                                     value={variation.sale_price}
@@ -450,6 +451,19 @@ export default function ProductForm({ product, categories, attributes = [], isEd
                                                             ) : (
                                                                 <span className="text-xs text-gray-300 dark:text-gray-600">—</span>
                                                             )}
+                                                        </td>
+
+                                                         {/* Additional */}
+                                                        <td className="px-4 py-3 align-middle">
+                                                            <input
+                                                                type="number"
+                                                                step="1"
+                                                                min="0"
+                                                                placeholder="0" 
+                                                                className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
+                                                                bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:ring-2
+                                                                 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                                                            />
                                                         </td>
 
                                                         {/* Delete */}

@@ -20,9 +20,6 @@ class Product extends Model
         'other_name',
         'slug',
         'unit',
-        'quantity',
-        'purchase_price_per_unit',
-        'sale_price_per_unit',
         'price',
         'sale_price',
         'sku',
@@ -39,6 +36,11 @@ class Product extends Model
         'social_image',
         'gallery',
         'affiliate_commission',
+        'vendor_id',
+        'number_of_view', 
+        'video', 
+        'vendor_featured',
+        'sort_order'
     ];
 
     protected $casts = [
