@@ -42,15 +42,10 @@ return new class extends Migration
 
             $table->text('short_description')->nullable();
             $table->longText('long_description')->nullable();
-
-            $table->decimal('price', 12, 2)->default(0);
-            $table->decimal('sale_price', 12, 2)->nullable();
+ 
             $table->integer('number_of_view')->default(0);
             $table->text('video')->nullable();
-            $table->text('vendor_featured')->nullable();
-
-            // $table->integer('stock_qty')->default(0);
-            // $table->integer('stock_alert')->default(5);
+            $table->text('vendor_featured')->nullable(); 
             $table->json('tags')->nullable();
 
             $table->boolean('featured')->default(false);

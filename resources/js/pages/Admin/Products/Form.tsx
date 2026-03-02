@@ -353,7 +353,7 @@ export default function ProductForm({ product, categories, attributes = [], isEd
                                                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-40">
                                                     Sale Price <span className="text-red-400">*</span>
                                                 </th>
-                                                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-28">Profit/Loss</th>
+                                                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-28">P&L</th>
                                                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-28">Additional</th>
                                                 <th className="px-4 py-3 w-12"></th>
                                             </tr>
@@ -404,8 +404,6 @@ export default function ProductForm({ product, categories, attributes = [], isEd
 
                                                         {/* Purchase Price */}
                                                         <td className="px-4 py-3 align-middle">
-                                                            <div className="relative">
-                                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-medium pointer-events-none">Rs</span>
                                                                 <input
                                                                     type="number"
                                                                     step="0.1"
@@ -413,15 +411,12 @@ export default function ProductForm({ product, categories, attributes = [], isEd
                                                                     placeholder="0.00"
                                                                     value={variation.purchase_price}
                                                                     onChange={(e) => updateVariation(index, 'purchase_price', e.target.value)}
-                                                                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                                                                    className="w-full pl-1 pr-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
                                                                 />
-                                                            </div>
                                                         </td>
 
                                                         {/* Sale Price */}
                                                         <td className="px-4 py-3 align-middle">
-                                                            <div className="relative">
-                                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-medium pointer-events-none">Rs</span>
                                                                 <input
                                                                     type="number"
                                                                     step="0.1"
@@ -429,13 +424,12 @@ export default function ProductForm({ product, categories, attributes = [], isEd
                                                                     placeholder="0.00"
                                                                     value={variation.sale_price}
                                                                     onChange={(e) => updateVariation(index, 'sale_price', e.target.value)}
-                                                                    className={`w-full pl-9 pr-3 py-2 rounded-lg border text-sm focus:ring-2 outline-none transition bg-white dark:bg-gray-900 text-gray-900 dark:text-white ${
+                                                                    className={`w-full pl-1 pr-3 py-2 rounded-lg border text-sm focus:ring-2 outline-none transition bg-white dark:bg-gray-900 text-gray-900 dark:text-white ${
                                                                         isLoss
                                                                             ? 'border-red-400 focus:ring-red-400 focus:border-red-400'
                                                                             : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500'
                                                                     }`}
                                                                 />
-                                                            </div>
                                                         </td>
 
                                                         {/* Profit / Loss badge */}
@@ -460,7 +454,7 @@ export default function ProductForm({ product, categories, attributes = [], isEd
                                                                 step="1"
                                                                 min="0"
                                                                 placeholder="0" 
-                                                                className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
+                                                                className="w-full px-3 py-3 rounded-lg border border-gray-300 dark:border-gray-600 
                                                                 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:ring-2
                                                                  focus:ring-blue-500 focus:border-blue-500 outline-none transition"
                                                             />

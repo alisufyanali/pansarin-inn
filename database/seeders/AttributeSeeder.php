@@ -60,17 +60,6 @@ class AttributeSeeder extends Seeder
                 );
             }
 
-            // // ── Quantity ──
-            // $herbalQty = Attribute::firstOrCreate(
-            //     ['category_id' => $herbal->id, 'slug' => 'quantity'],
-            //     ['name' => 'Quantity']
-            // );
-            // foreach ($this->quantities() as $q) {
-            //     AttributeValue::firstOrCreate(
-            //         ['attribute_id' => $herbalQty->id, 'value' => $q['value']],
-            //         ['slug' => $q['slug']]
-            //     );
-            // }
         }
 
         // ═══════════════════════════════════════════
@@ -99,17 +88,6 @@ class AttributeSeeder extends Seeder
                 );
             }
 
-            // ── Quantity ──
-            // $oilsQty = Attribute::firstOrCreate(
-            //     ['category_id' => $oils->id, 'slug' => 'quantity'],
-            //     ['name' => 'Quantity']
-            // );
-            // foreach ($this->quantities() as $q) {
-            //     AttributeValue::firstOrCreate(
-            //         ['attribute_id' => $oilsQty->id, 'value' => $q['value']],
-            //         ['slug' => $q['slug']]
-            //     );
-            // }
         }
 
         // ═══════════════════════════════════════════
@@ -135,17 +113,6 @@ class AttributeSeeder extends Seeder
                 );
             }
 
-            // ── Quantity ──
-            // $suppQty = Attribute::firstOrCreate(
-            //     ['category_id' => $supplements->id, 'slug' => 'quantity'],
-            //     ['name' => 'Quantity']
-            // );
-            // foreach ($this->quantities() as $q) {
-            //     AttributeValue::firstOrCreate(
-            //         ['attribute_id' => $suppQty->id, 'value' => $q['value']],
-            //         ['slug' => $q['slug']]
-            //     );
-            // }
         }
 
         // ═══════════════════════════════════════════
@@ -170,18 +137,6 @@ class AttributeSeeder extends Seeder
                     ['slug' => $w['slug']]
                 );
             }
-
-            // ── Quantity ──
-            // $beautyQty = Attribute::firstOrCreate(
-            //     ['category_id' => $beauty->id, 'slug' => 'quantity'],
-            //     ['name' => 'Quantity']
-            // );
-            // foreach ($this->quantities() as $q) {
-            //     AttributeValue::firstOrCreate(
-            //         ['attribute_id' => $beautyQty->id, 'value' => $q['value']],
-            //         ['slug' => $q['slug']]
-            //     );
-            // }
         }
 
         // ═══════════════════════════════════════════

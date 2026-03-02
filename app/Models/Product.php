@@ -10,37 +10,40 @@ class Product extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'name',
+        'vendor_id',
         'category_id',
-        'short_description',
-        'long_description',
+        'quantity',
+        'purchase_price_per_unit',
+        'sale_price_per_unit',
+        'affiliate_commission',
+        'name',
         'urdu_name',
         'scientific_name',
         'alternative_name',
         'other_name',
-        'slug',
         'unit',
-        'price',
-        'sale_price',
+        'slug',
         'sku',
         'barcode',
-        'status',
+        'thumbnail',
+        'gallery',
+        'short_description',
+        'long_description',
+        'price',
+        'sale_price',
+        'number_of_view',
+        'video',
+        'vendor_featured',
+        'tags',
         'featured',
+        'status',
+        'sort_order',
         'meta_title',
         'meta_description',
         'meta_keywords',
-        'tags',
         'schema_markup',
-        'social_description',
-        'thumbnail',
         'social_image',
-        'gallery',
-        'affiliate_commission',
-        'vendor_id',
-        'number_of_view', 
-        'video', 
-        'vendor_featured',
-        'sort_order'
+        'social_description',
     ];
 
     protected $casts = [
@@ -49,7 +52,8 @@ class Product extends Model
         'sale_price_per_unit' => 'decimal:2',
         'price' => 'decimal:2',
         'sale_price' => 'decimal:2',
-        'stock_alert' => 'integer',
+        'number_of_view' => 'integer',
+        'sort_order' => 'integer',
         'status' => 'boolean',
         'featured' => 'boolean',
         'tags' => 'array',
@@ -105,33 +109,6 @@ class Product extends Model
         })->toArray();
     }
 
-    // Computed attributes for profit calculations
-    public function getProfitPerUnitAttribute()
-    {
-        if (! $this->sale_price_per_unit || ! $this->purchase_price_per_unit) {
-            return 0;
-        }
-
-        return $this->sale_price_per_unit - $this->purchase_price_per_unit;
-    }
-
-    public function getTotalProfitAttribute()
-    {
-        if (! $this->quantity) {
-            return 0;
-        }
-
-        return $this->profit_per_unit * $this->quantity;
-    }
-
-    public function getProfitMarginAttribute()
-    {
-        if (! $this->purchase_price_per_unit || $this->purchase_price_per_unit == 0) {
-            return 0;
-        }
-
-        return ($this->profit_per_unit / $this->purchase_price_per_unit) * 100;
-    }
 
     // Scopes
     public function scopeActive($query)
@@ -149,16 +126,6 @@ class Product extends Model
         return $query->whereNotNull('sale_price')
             ->whereColumn('sale_price', '<', 'price')
             ->where('sale_price', '>', 0);
-    }
-
-    public function scopeLowStock($query)
-    {
-        return $query->whereColumn('stock_qty', '<=', 'stock_alert');
-    }
-
-    public function scopeOutOfStock($query)
-    {
-        return $query->where('stock_qty', 0);
     }
 
     // Add to Product model

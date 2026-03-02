@@ -13,16 +13,23 @@ class ProductVariant extends Model
     protected $fillable = [
         'product_id',
         'sku',
+        'attribute_value_id',
+        'value',
         'attributes',
+        'additional',
         'price',
+        'sale_price',
+        'stock_alert',
         'is_default',
         'status',
-        'attribute_value_id', 'value', 'additional', 'sale_price', 'stock_alert'
-
     ];
 
     protected $casts = [
-        'attributes' => 'array', // This will automatically convert JSON to array
+        'attributes' => 'array',
+        'additional' => 'integer',
+        'price' => 'decimal:2',
+        'sale_price' => 'decimal:2',
+        'stock_alert' => 'integer',
         'is_default' => 'boolean',
         'status' => 'boolean',
     ];

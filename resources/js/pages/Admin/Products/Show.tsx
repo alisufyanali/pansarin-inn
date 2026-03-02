@@ -16,6 +16,8 @@ import PageHeader from '@/components/PageHeader';
 
 interface Product {
     id: number;
+    vendor_id?: number;
+    category_id: number;
     name: string;
     urdu_name?: string;
     scientific_name?: string;
@@ -25,10 +27,18 @@ interface Product {
     barcode?: string;
     slug?: string;
     unit?: string;
+    quantity?: number;
+    purchase_price_per_unit?: number;
+    sale_price_per_unit?: number;
+    affiliate_commission?: number;
     short_description?: string;
     long_description?: string;
     price: number;
     sale_price: number | null;
+    number_of_view?: number;
+    video?: string;
+    vendor_featured?: string;
+    sort_order?: number;
     stock_qty?: number;
     stock_alert?: number;
     thumbnail?: string;
@@ -44,6 +54,23 @@ interface Product {
     social_description?: string;
     created_at: string;
     updated_at: string;
+    category?: { id: number; name: string };
+    variants?: ProductVariant[];
+}
+
+interface ProductVariant {
+    id: number;
+    product_id: number;
+    sku: string;
+    attribute_value_id: number;
+    value: string;
+    attributes: Record<string, string>;
+    additional: number;
+    price: number;
+    sale_price?: number;
+    stock_alert: number;
+    is_default: boolean;
+    status: boolean;
 }
 
 export default function Show({ product }: { product: Product }) {
@@ -163,7 +190,40 @@ export default function Show({ product }: { product: Product }) {
                             title="Pricing & Stock"
                             icon={DollarSign}
                         >
-                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                                {product.quantity && (
+                                    <div className="rounded-lg border border-purple-200 bg-gradient-to-br from-purple-50 to-purple-100 p-4 dark:border-purple-800 dark:from-purple-900/20 dark:to-purple-800/20">
+                                        <p className="mb-1 text-sm text-purple-700 dark:text-purple-300">
+                                            Quantity
+                                        </p>
+                                        <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
+                                            {product.quantity} {product.unit || 'units'}
+                                        </p>
+                                    </div>
+                                )}
+
+                                {product.purchase_price_per_unit && (
+                                    <div className="rounded-lg border border-orange-200 bg-gradient-to-br from-orange-50 to-orange-100 p-4 dark:border-orange-800 dark:from-orange-900/20 dark:to-orange-800/20">
+                                        <p className="mb-1 text-sm text-orange-700 dark:text-orange-300">
+                                            Purchase Price/Unit
+                                        </p>
+                                        <p className="text-2xl font-bold text-orange-900 dark:text-orange-100">
+                                            {formatPrice(product.purchase_price_per_unit)}
+                                        </p>
+                                    </div>
+                                )}
+
+                                {product.sale_price_per_unit && (
+                                    <div className="rounded-lg border border-teal-200 bg-gradient-to-br from-teal-50 to-teal-100 p-4 dark:border-teal-800 dark:from-teal-900/20 dark:to-teal-800/20">
+                                        <p className="mb-1 text-sm text-teal-700 dark:text-teal-300">
+                                            Sale Price/Unit
+                                        </p>
+                                        <p className="text-2xl font-bold text-teal-900 dark:text-teal-100">
+                                            {formatPrice(product.sale_price_per_unit)}
+                                        </p>
+                                    </div>
+                                )}
+
                                 <div className="rounded-lg border border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100 p-4 dark:border-blue-800 dark:from-blue-900/20 dark:to-blue-800/20">
                                     <p className="mb-1 text-sm text-blue-700 dark:text-blue-300">
                                         Regular Price
@@ -190,16 +250,80 @@ export default function Show({ product }: { product: Product }) {
                                     </div>
                                 )}
 
-                                <InfoRow
-                                    label="Stock Quantity"
-                                    value={product.stock_qty?.toString()}
-                                />
-                                <InfoRow
-                                    label="Stock Alert"
-                                    value={product.stock_alert?.toString()}
-                                />
+                                {product.affiliate_commission && (
+                                    <div className="rounded-lg border border-pink-200 bg-gradient-to-br from-pink-50 to-pink-100 p-4 dark:border-pink-800 dark:from-pink-900/20 dark:to-pink-800/20">
+                                        <p className="mb-1 text-sm text-pink-700 dark:text-pink-300">
+                                            Affiliate Commission
+                                        </p>
+                                        <p className="text-2xl font-bold text-pink-900 dark:text-pink-100">
+                                            {product.affiliate_commission}%
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         </SectionCard>
+
+                        {/* Product Variants */}
+                        {product.variants && product.variants.length > 0 && (
+                            <SectionCard
+                                title={`Product Variants (${product.variants.length})`}
+                                icon={Package}
+                            >
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-sm">
+                                        <thead className="bg-gray-50 dark:bg-gray-900">
+                                            <tr>
+                                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400">SKU</th>
+                                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400">Variant</th>
+                                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400">Price</th>
+                                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400">Sale Price</th>
+                                                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 dark:text-gray-400">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                                            {product.variants.map((variant) => (
+                                                <tr key={variant.id} className={variant.is_default ? 'bg-blue-50 dark:bg-blue-900/10' : ''}>
+                                                    <td className="px-4 py-3">
+                                                        <code className="rounded bg-gray-100 px-2 py-1 text-xs dark:bg-gray-800">
+                                                            {variant.sku}
+                                                        </code>
+                                                        {variant.is_default && (
+                                                            <span className="ml-2 rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                                                                Default
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        <div className="flex flex-wrap gap-1">
+                                                            {Object.entries(variant.attributes).map(([key, value]) => (
+                                                                <span key={key} className="inline-flex items-center rounded bg-indigo-100 px-2 py-0.5 text-xs text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300">
+                                                                    <span className="text-indigo-400 mr-1">{key}:</span>{value}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-3 font-semibold text-gray-900 dark:text-white">
+                                                        {formatPrice(variant.price)}
+                                                    </td>
+                                                    <td className="px-4 py-3 font-semibold text-green-600 dark:text-green-400">
+                                                        {variant.sale_price ? formatPrice(variant.sale_price) : '-'}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-center">
+                                                        <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                                                            variant.status
+                                                                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                                                                : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                                                        }`}>
+                                                            {variant.status ? 'Active' : 'Inactive'}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </SectionCard>
+                        )}
 
                         {/* Gallery Images */}
                         {product.gallery && product.gallery.length > 0 && (
