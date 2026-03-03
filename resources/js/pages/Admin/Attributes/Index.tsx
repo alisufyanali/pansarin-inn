@@ -22,6 +22,10 @@ interface Attribute {
     id: number;
     name: string;
     slug: string;
+    category?: {
+        id: number;
+        name: string;
+    };
     values: AttributeValue[];
     created_at: string;
     updated_at: string;
@@ -63,6 +67,17 @@ export default function Index({
         CommonColumns.id(),
         CommonColumns.name('Attribute Name'),
         {
+            name: 'Category',
+            selector: (row: Attribute) => row.category?.name || 'N/A',
+            sortable: true,
+            sortField: 'category.name',
+            cell: (row: Attribute) => (
+                <span className="inline-flex items-center rounded-full bg-indigo-100 px-3 py-1 text-xs font-medium text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-200">
+                    {row.category?.name || 'N/A'}
+                </span>
+            ),
+        },
+        {
             name: 'Values',
             selector: (row: Attribute) => row.values?.length || 0,
             sortable: true,
@@ -96,6 +111,7 @@ export default function Index({
     const csvHeaders = [
         { label: 'ID', key: 'id' },
         { label: 'Attribute Name', key: 'name' },
+        { label: 'Category', key: 'category.name' },
         { label: 'Values Count', key: 'values.length' },
         { label: 'Created At', key: 'created_at' },
         { label: 'Updated At', key: 'updated_at' },
@@ -190,7 +206,7 @@ export default function Index({
                         fetchUrl="/admin/attributes-data"
                         columns={columns}
                         csvHeaders={csvHeaders}
-                        searchableKeys={['name', 'slug', 'values.value']}
+                        searchableKeys={['name', 'slug', 'category.name', 'values.value']}
                     />
                 </div>
             </div>

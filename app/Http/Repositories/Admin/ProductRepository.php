@@ -16,7 +16,7 @@ class ProductRepository
     public function getAllForDataTable($request)
     {
         $query = Product::with('category:id,name')
-            ->select('id', 'name', 'sku', 'price', 'sale_price', 'purchase_price_per_unit', 'sale_price_per_unit', 'quantity', 'unit', 'status', 'featured', 'category_id', 'stock_qty', 'created_at', 'updated_at');
+            ->select('id', 'name', 'sku', 'price', 'sale_price', 'purchase_price_per_unit', 'sale_price_per_unit', 'quantity', 'unit', 'status', 'featured', 'category_id',  'created_at', 'updated_at');
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -58,7 +58,6 @@ class ProductRepository
                 'status' => $product->status,
                 'featured' => $product->featured,
                 'category_id' => $product->category_id,
-                'stock_qty' => $product->stock_qty,
                 'category' => $product->category,
                 'created_at' => $product->created_at,
                 'updated_at' => $product->updated_at,

@@ -1,7 +1,7 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { PlusCircle, Users, MapPin, Phone, Mail } from 'lucide-react';
+import { PlusCircle, Users, MapPin, Phone, Mail, Wallet } from 'lucide-react';
 import { useEffect } from 'react';
 import DataTableWrapper from '@/components/DataTableWrapper';
 import { CommonColumns } from '@/components/TableColumns';
@@ -21,6 +21,8 @@ interface Customer {
   address: string | null;
   city_id: number | null;
   country: string | null;
+  wallet_balance?: string | number;
+  group_name?: string;
   city?: {
     id: number;
     name: string;
@@ -32,6 +34,8 @@ interface Stats {
   total: number;
   withEmail: number;
   cities: number;
+  active_customers: number;
+  total_wallet_balance: number;
   countries: number;
 }
 
@@ -120,6 +124,28 @@ export default function Index({ stats, flash }: Props) {
         </span>
       ),
     },
+    {
+    name: 'Group',
+    selector: (row: Customer) => row.group_name ?? 'General',
+    sortable: true,
+    cell: (row: Customer) => (
+      <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+        {row.group_name || 'General'}
+      </span>
+    ),
+  },
+  {
+    name: 'Wallet',
+    selector: (row: Customer) => row.wallet_balance ?? 0,
+    sortable: true,
+    cell: (row: Customer) => (
+      <div className="flex flex-col">
+        <span className="font-bold text-emerald-600 dark:text-emerald-400">
+          Rs. {row.wallet_balance || '0.00'}
+        </span>
+      </div>
+    ),
+  },
     CommonColumns.createdAt(true),
     CommonColumns.actions({
       baseUrl: '/admin/customers',
@@ -138,6 +164,8 @@ export default function Index({ stats, flash }: Props) {
     { label: 'City', key: 'city.name' },
     { label: 'Country', key: 'country' },
     { label: 'Created At', key: 'created_at' },
+    { label: 'Wallet Balance', key: 'wallet_balance' },
+    { label: 'Customer Group', key: 'group_name' },
   ];
 
   useEffect(() => {
@@ -175,19 +203,19 @@ export default function Index({ stats, flash }: Props) {
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard title="Total Customers" value={stats.total} color="blue" icon={Users} />
-          <StatCard title="With Email" value={stats.withEmail} color="emerald" icon={Mail} />
-          <StatCard title="Cities" value={stats.cities} color="purple" icon={MapPin} />
-          <StatCard title="Countries" value={stats.countries} color="amber" icon={MapPin} />
+          <StatCard title="Wallet Liabilities" value={`Rs. ${stats.total_wallet_balance.toLocaleString()}`} color="emerald" icon={Wallet} />
+          <StatCard title="Active Users" value={stats.active_customers} color="purple" icon={Users} />
+          <StatCard title="Total Cities" value={stats.cities} color="amber" icon={MapPin} />
         </div>
 
         {/* Data Table */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
           <DataTableWrapper
-            fetchUrl="/admin/customers-data"
-            columns={columns}
-            csvHeaders={csvHeaders}
-            searchableKeys={['first_name', 'last_name', 'phone', 'email', 'address', 'city.name', 'country']}
-          />
+  fetchUrl="/admin/customers-data"
+  columns={columns}
+  csvHeaders={csvHeaders}
+  searchableKeys={['first_name', 'last_name', 'phone', 'email', 'address', 'city.name', 'country']}
+/>
         </div>
       </div>
     </AppLayout>

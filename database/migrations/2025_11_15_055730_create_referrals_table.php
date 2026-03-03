@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('affiliate_id')->constrained()->onDelete('cascade');
-            $table->foreignId('order_id')->constrained()->onDelete('cascade');
+            $table->foreignId('order_id')->nullable()->constrained()->onDelete('cascade');
             $table->foreignId('customer_id')->nullable()->references('id')->on('users')->nullOnDelete();
 
             $table->decimal('order_amount', 10, 2);

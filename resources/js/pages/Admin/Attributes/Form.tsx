@@ -3,18 +3,22 @@ import { useForm } from '@inertiajs/react';
 import { ArrowLeft, Check, Plus, X } from 'lucide-react';
 import { Link } from '@inertiajs/react';
 
+type Category = { id: number; name: string };
+
 interface AttributeFormProps {
-    attribute?: { id: number; name: string; values: Array<{ id: number; value: number; slug: string }> };
+    attribute?: { id: number; name: string; category_id?: number; values: Array<{ id: number; value: number; slug: string }> };
+    categories: Category[];
     isEdit?: boolean;
 }
 
-export default function AttributeForm({ attribute, isEdit = false }: AttributeFormProps) {
+export default function AttributeForm({ attribute, categories, isEdit = false }: AttributeFormProps) {
     const [values, setValues] = useState<Array<{ value: string; slug: string }>>(
         attribute?.values?.map(v => ({ value: v.value.toString(), slug: v.slug })) || [{ value: '', slug: '' }]
     );
     
     const { data, setData, post, put, processing, errors } = useForm({
         name: attribute?.name || '',
+        category_id: attribute?.category_id || '',
         values: attribute?.values?.map(v => ({ value: v.value.toString(), slug: v.slug })) || [{ value: '', slug: '' }],
     });
 
@@ -44,6 +48,11 @@ export default function AttributeForm({ attribute, isEdit = false }: AttributeFo
             alert('Write Attribute Name');
             return;
         }
+
+        if (!data.category_id) {
+            alert('Select a Category');
+            return;
+        }
         
         if (values.every(v => !v.value.trim())) {
             alert('Add at least one attribute value');
@@ -55,11 +64,13 @@ export default function AttributeForm({ attribute, isEdit = false }: AttributeFo
         if (isEdit && attribute?.id) {
             put(`/admin/attributes/${attribute.id}`, {
                 name: data.name,
+                category_id: data.category_id,
                 values: filledValues,
             } as any);
         } else {
             post('/admin/attributes', {
                 name: data.name,
+                category_id: data.category_id,
                 values: filledValues,
             } as any);
         }
@@ -107,6 +118,25 @@ export default function AttributeForm({ attribute, isEdit = false }: AttributeFo
                             className="w-full px-3 py-2 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                         />
                         {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                            Category *
+                        </label>
+                        <select
+                            value={data.category_id}
+                            onChange={(e) => setData('category_id', e.target.value)}
+                            className="w-full px-3 py-2 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                        >
+                            <option value="">Select Category</option>
+                            {categories.map((cat) => (
+                                <option key={cat.id} value={cat.id}>
+                                    {cat.name}
+                                </option>
+                            ))}
+                        </select>
+                        {errors.category_id && <p className="text-red-500 text-xs mt-1">{errors.category_id}</p>}
                     </div>
 
                     <div>

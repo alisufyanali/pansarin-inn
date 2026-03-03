@@ -1,15 +1,26 @@
-<?php
+<?php 
 
 namespace Database\Seeders;
 
+use App\Models\User;
 use App\Models\Customer;
+use App\Models\CustomerGroup;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class CustomerSeeder extends Seeder
 {
     public function run()
     {
-        $customers = [
+        // 1. Default Customer Group
+        $defaultGroup = CustomerGroup::firstOrCreate(
+            ['name' => 'General'],
+            ['discount_percentage' => 0, 'is_default' => true]
+        );
+
+        // 2. Tamam 5 Customers ka data
+        $customersData = [
             [
                 'first_name' => 'Nazar',
                 'last_name' => 'Khan',
@@ -47,20 +58,45 @@ class CustomerSeeder extends Seeder
             ],
         ];
 
-        foreach ($customers as $customer) {
-            Customer::updateOrCreate(
-                ['email' => $customer['email']], // Email check karega taake duplicate na ho
+        foreach ($customersData as $data) {
+            // User Create/Update
+            $user = User::updateOrCreate(
+                ['email' => $data['email']],
                 [
-                    'first_name' => $customer['first_name'],
-                    'last_name' => $customer['last_name'],
-                    'phone' => $customer['phone'],
-                    'address' => $customer['address'],
-                    'created_at' => now(),
-                    'updated_at' => now(),
+                    'name' => $data['first_name'] . ' ' . $data['last_name'],
+                    'username' => Str::slug($data['first_name'] . $data['last_name']) . rand(10, 99),
+                    'phone' => $data['phone'],
+                    'password' => Hash::make('password123'),
+                    'status' => 1,
                 ]
             );
+
+            // Spatie Role Assign
+            $user->assignRole('customer');
+
+            // Customer Profile Create/Update
+            $customer = Customer::updateOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'customer_group_id' => $defaultGroup->id,
+                    'first_name' => $data['first_name'],
+                    'last_name' => $data['last_name'],
+                    'email' => $data['email'],
+                    'phone' => $data['phone'],
+                    'address' => $data['address'],
+                    'status' => 'active',
+                ]
+            );
+
+            // Wallet & Points (Har customer ke liye alag banega)
+            if (!$customer->wallet) {
+                $customer->wallet()->create(['balance' => 0]);
+            }
+            if (!$customer->loyaltyPoints) {
+                $customer->loyaltyPoints()->create(['balance' => 0]);
+            }
         }
 
-        $this->command->info('5 Customers added successfully!');
+        $this->command->info('Success: 5 Customers, Users, Wallets, and Points added!');
     }
 }

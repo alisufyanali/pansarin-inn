@@ -17,6 +17,7 @@ class ProductAttributeRequest extends FormRequest
 
         return [
             'name' => 'required|string|max:255|unique:attributes,name,'.$id,
+            'category_id' => 'required|exists:categories,id',
             'values' => 'required|array|min:1',
             'values.*.value' => 'required|numeric',
             'values.*.slug' => 'required|string|max:255',
@@ -28,6 +29,8 @@ class ProductAttributeRequest extends FormRequest
         return [
             'name.required' => 'Attribute name is required.',
             'name.unique' => 'This attribute name already exists.',
+            'category_id.required' => 'Category is required.',
+            'category_id.exists' => 'Selected category does not exist.',
             'values.required' => 'At least one attribute value is required.',
             'values.min' => 'At least one attribute value is required.',
             'values.*.value.required' => 'Value field cannot be empty.',

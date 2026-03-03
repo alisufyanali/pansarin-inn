@@ -7,7 +7,7 @@ use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Api\FrontendController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/index', [FrontendController::class, 'index']);
+// Route::get('/index', [FrontendController::class, 'index']);
 
 // Route::middleware(['auth'])->prefix('admin/pages')->name('admin.')->group(function () {
 //     Route::resource('business-settings', BusinessSettingController::class)->only(['index', 'store']);
@@ -51,3 +51,15 @@ Route::middleware(['auth'])->prefix('admin/settings/business')->name('admin.busi
     Route::post('/gateways', [BusinessSettingController::class, 'updateGateways'])->name('updateGateways');
     Route::post('/advanced', [BusinessSettingController::class, 'updateAdvanced'])->name('updateAdvanced');
 });
+
+
+// Temporary Routes
+Route::get('/index', [FrontendController::class, 'index'])->name('frontend.home');
+
+// 1. All Products (localhost:8000/frontend/products)
+Route::get('/frontend/products', [FrontendController::class, 'products'])
+    ->name('frontend.products');
+
+// 2. Single Product (localhost:8000/frontend/products/slug)
+Route::get('/frontend/products/{slug}', [FrontendController::class, 'productDetail'])
+    ->name('frontend.product.detail');

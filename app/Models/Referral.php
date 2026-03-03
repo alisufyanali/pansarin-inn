@@ -11,7 +11,11 @@ class Referral extends Model
         'order_amount', 'commission_amount', 'status', 'referral_type', 'commission_rate_snapshot',
     ];
 
-    public function affiliate() { return $this->belongsTo(Affiliate::class); }
-    public function order() { return $this->belongsTo(Order::class); }
-    public function customer_user() { return $this->belongsTo(User::class, 'customer_id'); }
+    public function affiliate() {
+    return $this->belongsTo(User::class, 'affiliate_id');
+    }
+
+    public function customer() {
+        return $this->belongsTo(User::class, 'customer_id');
+    }
 }

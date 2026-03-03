@@ -13,11 +13,15 @@ return new class extends Migration
     {
         Schema::create('product_variants', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
             $table->string('sku')->unique();
+            $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
+            $table->foreignId('attribute_value_id')->constrained('attribute_values')->onDelete('cascade');
+            $table->string('value');
             $table->json('attributes')->nullable(); // stores attribute_value ids or key-value JSON
+          
             $table->decimal('price', 12, 2)->default(0);
-            $table->integer('stock')->default(0);
+            $table->decimal('sale_price', 12, 2)->nullable();
+            $table->integer('stock_alert')->default(5);
             $table->boolean('is_default')->default(false);
             $table->boolean('status')->default(true);
             $table->timestamps();

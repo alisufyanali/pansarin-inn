@@ -29,9 +29,6 @@ class OrderController extends Controller
         $this->middleware('permission:view.orders')->only(['index', 'show', 'getData']);
     }
 
-    /**
-     * Display a listing of the resource.
-     */
     public function index(Request $request)
     {
         try {
@@ -48,9 +45,6 @@ class OrderController extends Controller
         }
     }
 
-    /**
-     * Get DataTable data
-     */
     public function getData(Request $request)
     {
         try {
@@ -68,9 +62,6 @@ class OrderController extends Controller
         }
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         try {
@@ -88,19 +79,10 @@ class OrderController extends Controller
         }
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(OrderRequest $request, AffiliateService $affiliateService)
     {
         try {
             $order = $this->orderRepository->store($request->validated());
-
-            // Affiliate Commission Calculate
-            $affiliateService->recordReferral($order);
-            if ($order->status === 'delivered') {
-                $affiliateService->finalizeCommission($order);
-            }
 
             // Dispatch email job
             SendOrderConfirmationEmail::dispatch($order);
@@ -117,9 +99,6 @@ class OrderController extends Controller
         }
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(string $id)
     {
         try {
@@ -135,9 +114,6 @@ class OrderController extends Controller
         }
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(string $id)
     {
         try {
@@ -158,9 +134,6 @@ class OrderController extends Controller
         }
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(OrderRequest $request, string $id, AffiliateService $affiliateService)
     {
         try {
@@ -177,9 +150,6 @@ class OrderController extends Controller
         }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(string $id)
     {
         try {
@@ -196,32 +166,21 @@ class OrderController extends Controller
         }
     }
 
-    /**
-     * Update order status
-     */
     public function updateStatus(Request $request, string $id, AffiliateService $affiliateService)
     {
         try {
-            $validated = $request->validate([
-                'status' => 'required|in:pending,processing,shipped,delivered,cancelled,refunded',
-            ]);
+        $order = $this->orderRepository->update($id, $request->validated());
+        $affiliateService->updateReferral($order);
 
-            $order = $this->orderRepository->updateStatus($id, $validated['status']);
-
-            // Ye check karega ke agar delivered hai to balance barhaye, cancelled hai to reject kare
-            $affiliateService->finalizeCommission($order);
-
-            return back()->with('success', 'Order status updated successfully!');
+        return to_route('admin.orders.index')
+            ->with('success', 'Order successfully updated and commission processed!');
+            
         } catch (\Exception $e) {
-            Log::error('Failed to update order status: '.$e->getMessage());
-
-            return back()->with('error', 'Failed to update order status: '.$e->getMessage());
+            Log::error('Failed to update order: '.$e->getMessage());
+            return back()->with('error', 'Failed to update order: '.$e->getMessage());
         }
     }
 
-    /**
-     * Update payment status
-     */
     public function updatePaymentStatus(Request $request, string $id)
     {
         try {
