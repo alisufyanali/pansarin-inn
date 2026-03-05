@@ -71,24 +71,7 @@ export default function Index({ stats, flash }: Props) {
           {row.category?.name || '-'}
         </span>
       ),
-    },
-    {
-      name: 'Price',
-      selector: (row: Product) => row.price,
-      sortable: true,
-      cell: (row: Product) => (
-        <div className="flex flex-col">
-          <span className="font-semibold text-gray-900 dark:text-gray-100">
-            Rs. {parseFloat(row.price as any).toFixed(2)}
-          </span>
-          {row.sale_price && (
-    <span className="text-xs text-green-600">
-        Sale: Rs. {parseFloat(row.sale_price as any).toFixed(2)}
-    </span>
-)}
-        </div>
-      ),
-    },
+    }, 
     CommonColumns.status(),
     {
       name: 'Featured',
@@ -120,8 +103,6 @@ export default function Index({ stats, flash }: Props) {
     { label: 'SKU', key: 'sku' },
     { label: 'Category', key: 'category.name' },
     { label: 'Vendor', key: 'vendor.shop_name' },
-    { label: 'Price', key: 'price' },
-    { label: 'Sale Price', key: 'sale_price' },
     { label: 'Status', key: 'status' },
     { label: 'Featured', key: 'featured' },
     { label: 'Created At', key: 'created_at' },

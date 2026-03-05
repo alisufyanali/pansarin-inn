@@ -100,7 +100,33 @@ class ProductRepository
             $data['gallery'] = $galleryPaths;
         }
 
-        return Product::create($data);
+        // Extract variants before creating product
+        $variants = $data['variations'] ?? [];
+        unset($data['variations']);
+        unset($data['selected_attributes']);
+
+        $product = Product::create($data);
+
+        // Create variants if provided
+        if (!empty($variants)) {
+            foreach ($variants as $index => $variant) {
+                \App\Models\ProductVariant::create([
+                    'product_id' => $product->id,
+                    'sku' => $product->sku . '-V' . str_pad($index + 1, 2, '0', STR_PAD_LEFT),
+                    'attribute_value_id' => 1, // Will be updated if needed
+                    'value' => $variant['combination'] ?? '',
+                    'attributes' => $variant['attributes'] ?? [],
+                    'additional' => 0,
+                    'price' => $variant['sale_price'] ?? 0,
+                    'sale_price' => null,
+                    'stock_alert' => 5,
+                    'is_default' => ($index === 0),
+                    'status' => true,
+                ]);
+            }
+        }
+
+        return $product;
     }
 
     public function update($id, array $data, $thumbnailFile = null, $socialImageFile = null, $galleryFiles = [])
@@ -152,7 +178,35 @@ class ProductRepository
             unset($data['gallery']);
         }
 
+        // Extract variants before updating product
+        $variants = $data['variations'] ?? [];
+        unset($data['variations']);
+        unset($data['selected_attributes']);
+
         $product->update($data);
+
+        // Update variants if provided
+        if (!empty($variants)) {
+            // Delete existing variants
+            $product->variants()->delete();
+
+            // Create new variants
+            foreach ($variants as $index => $variant) {
+                \App\Models\ProductVariant::create([
+                    'product_id' => $product->id,
+                    'sku' => $product->sku . '-V' . str_pad($index + 1, 2, '0', STR_PAD_LEFT),
+                    'attribute_value_id' => 0,
+                    'value' => $variant['combination'] ?? '',
+                    'attributes' => $variant['attributes'] ?? [],
+                    'additional' => 0,
+                    'price' => $variant['sale_price'] ?? 0,
+                    'sale_price' => null,
+                    'stock_alert' => 5,
+                    'is_default' => ($index === 0),
+                    'status' => true,
+                ]);
+            }
+        }
 
         return $product;
     }
