@@ -2,44 +2,61 @@ import { Link, router, useForm } from '@inertiajs/react';
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, Check, Upload, X, Search, Loader2, Zap, Trash2, AlertCircle } from 'lucide-react';
 
-// ─── Types ───────────────────────────────────────────────────────────────────
-type Category = { id: number; name: string };
+// ─── Types ────────────────────────────────────────────────────────────────────
+type Category  = { id: number; name: string };
 type AttrValue = { id: number; value: string; slug: string };
 type Attribute = { id: number; name: string; slug: string; category_id: number; values: AttrValue[] };
-type Variation = { combination: string; attributes: Record<string, string>; qty: string; purchase_price: string; sale_price: string };
+type Variation = {
+    combination: string; attributes: Record<string, string>;
+    purchase_price: string; sale_price: string;
+    stock_alert: string; additional: string;          // ← NEW
+};
 
 export type ProductFormData = {
+    // Basic
     name: string; category_id: string | number; sub_category_id: string | number;
-    short_description: string; long_description: string; urdu_name: string; scientific_name: string;
-    slug: string; sku: string; barcode: string; stock_qty: string | number; stock_alert: string | number;
-    status: boolean; featured: boolean; meta_title: string; meta_description: string;
-    meta_keywords: string; tags: string; schema_markup: string; social_description: string;
-    thumbnail: File | string | null; social_image: File | string | null;
-    gallery: File[] | string[]; selected_attributes: Record<number, number[]>; variations: Variation[];
+    urdu_name: string; scientific_name: string; alternative_name: string; other_name: string;
+    unit: string; slug: string; sku: string; barcode: string;
+    short_description: string; long_description: string;
+    // Pricing/Stock (product level)
+    stock_qty: string | number; stock_alert: string | number;
+    affiliate_commission: string | number;            // ← NEW
+    sort_order: string | number;                      // ← NEW
+    // Media
+    video: string;                                    // ← NEW
+    thumbnail: File | string | null; social_image: File | string | null; gallery: File[] | string[];
+    // Flags
+    status: boolean; featured: boolean;
+    // SEO
+    meta_title: string; meta_description: string; meta_keywords: string;
+    schema_markup: string; social_description: string; tags: string;
+    // Variants
+    selected_attributes: Record<number, number[]>; variations: Variation[];
 };
 
 interface ProductFormProps {
     product?: any; categories: Category[]; attributes?: Attribute[]; isEdit?: boolean;
 }
 
-// ─── CSS Variables ────────────────────────────────────────────────────────────
+// ─── CSS ─────────────────────────────────────────────────────────────────────
 const cx = {
-    input: "w-full px-4 py-3 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm",
+    input:    "w-full px-4 py-3 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm",
     inputErr: "w-full px-4 py-2 rounded-lg border text-sm focus:ring-2 outline-none transition bg-white dark:bg-gray-900 text-gray-900 dark:text-white border-red-400 focus:ring-red-400",
-    card: "bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6",
-    label: "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2",
-    thCell: "text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider",
-    tdCell: "px-4 py-3 align-middle",
-    dash: "border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-4 text-center hover:border-blue-500 transition",
-    toggle: "w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all",
+    inputSm:  "w-full px-3 py-2 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm",
+    card:     "bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6",
+    label:    "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2",
+    thCell:   "text-left px-3 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider",
+    tdCell:   "px-3 py-2 align-middle",
+    dash:     "border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-4 text-center hover:border-blue-500 transition",
+    toggle:   "w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all",
 };
 
-// ─── Reusable Components ──────────────────────────────────────────────────────
+// ─── Reusable ─────────────────────────────────────────────────────────────────
 const Card = ({ color, title, icon, children }: { color: string; title: string; icon?: React.ReactNode; children: React.ReactNode }) => (
     <div className={cx.card}>
         <div className="flex items-center gap-2 mb-5">
-            <div className={`w-2 h-6 ${color} rounded-full`} />
-            {icon}{<h3 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>}
+            <div className={`w-2 h-6 ${color} rounded-full`} />{icon}
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>
         </div>
         {children}
     </div>
@@ -89,30 +106,49 @@ const CharCount = ({ val, max, warn }: { val: string; max: number; warn?: number
 function cartesian(arrays: AttrValue[][]): AttrValue[][] {
     return arrays.reduce<AttrValue[][]>((acc, curr) => acc.flatMap((c) => curr.map((v) => [...c, v])), [[]]);
 }
-const toSlug = (s: string) => s.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
+const toSlug  = (s: string) => s.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
 const readFile = (f: File, cb: (r: string) => void) => { const r = new FileReader(); r.onloadend = () => cb(r.result as string); r.readAsDataURL(f); };
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+// ─── Main ─────────────────────────────────────────────────────────────────────
 export default function ProductForm({ product, categories, attributes = [], isEdit = false }: ProductFormProps) {
-    const [thumbPrev, setThumbPrev] = useState<string | null>(product?.thumbnail || null);
-    const [socialPrev, setSocialPrev] = useState<string | null>(product?.social_image || null);
-    const [galleryPrev, setGalleryPrev] = useState<string[]>(Array.isArray(product?.gallery) ? product.gallery : []);
-    const [catAttrs, setCatAttrs] = useState<Attribute[]>([]);
+    const [thumbPrev,    setThumbPrev]    = useState<string | null>(product?.thumbnail    || null);
+    const [socialPrev,   setSocialPrev]   = useState<string | null>(product?.social_image || null);
+    const [galleryPrev,  setGalleryPrev]  = useState<string[]>(Array.isArray(product?.gallery) ? product.gallery : []);
+    const [catAttrs,     setCatAttrs]     = useState<Attribute[]>([]);
     const [loadingAttrs, setLoadingAttrs] = useState(false);
 
     const { data, setData, errors, post, processing } = useForm<ProductFormData>({
-        name: product?.name || '', category_id: product?.category_id || '', sub_category_id: product?.sub_category_id || '',
-        short_description: product?.short_description || '', long_description: product?.long_description || '',
-        urdu_name: product?.urdu_name || '', scientific_name: product?.scientific_name || '',
-        slug: product?.slug || '', sku: product?.sku || '', barcode: product?.barcode || '',
-        stock_qty: product?.stock_qty || '', stock_alert: product?.stock_alert || '',
-        status: product?.status ?? true, featured: product?.featured ?? false,
-        meta_title: product?.meta_title || '', meta_description: product?.meta_description || '',
-        meta_keywords: product?.meta_keywords || '',
-        tags: product?.tags ? (Array.isArray(product.tags) ? product.tags.join(', ') : product.tags) : '',
-        schema_markup: product?.schema_markup || '', social_description: product?.social_description || '',
-        thumbnail: product?.thumbnail || null, social_image: product?.social_image || null,
-        gallery: product?.gallery || [], selected_attributes: product?.selected_attributes || {}, variations: product?.variations || [],
+        name:                 product?.name                 || '',
+        category_id:          product?.category_id          || '',
+        sub_category_id:      product?.sub_category_id      || '',
+        urdu_name:            product?.urdu_name            || '',
+        scientific_name:      product?.scientific_name      || '',
+        alternative_name:     product?.alternative_name     || '',
+        other_name:           product?.other_name           || '',
+        unit:                 product?.unit                 || '',
+        slug:                 product?.slug                 || '',
+        sku:                  product?.sku                  || '',
+        barcode:              product?.barcode              || '',
+        short_description:    product?.short_description    || '',
+        long_description:     product?.long_description     || '',
+        stock_qty:            product?.stock_qty            || '',
+        stock_alert:          product?.stock_alert          || '',
+        affiliate_commission: product?.affiliate_commission ?? 5,
+        sort_order:           product?.sort_order           ?? 0,
+        video:                product?.video                || '',
+        thumbnail:            product?.thumbnail            || null,
+        social_image:         product?.social_image         || null,
+        gallery:              product?.gallery              || [],
+        status:               product?.status  ?? true,
+        featured:             product?.featured ?? false,
+        meta_title:           product?.meta_title           || '',
+        meta_description:     product?.meta_description     || '',
+        meta_keywords:        product?.meta_keywords        || '',
+        schema_markup:        product?.schema_markup        || '',
+        social_description:   product?.social_description   || '',
+        tags:                 product?.tags ? (Array.isArray(product.tags) ? product.tags.join(', ') : product.tags) : '',
+        selected_attributes:  product?.selected_attributes  || {},
+        variations:           product?.variations           || [],
     });
 
     // Load attributes on category change
@@ -129,12 +165,12 @@ export default function ProductForm({ product, categories, attributes = [], isEd
         setData('selected_attributes', {}); setData('variations', []);
     }, [data.category_id]);
 
-    const toggleVal = (attrId: number, valId: number) => {
+    const toggleVal  = (attrId: number, valId: number) => {
         const curr = data.selected_attributes[attrId] || [];
         setData('selected_attributes', { ...data.selected_attributes, [attrId]: curr.includes(valId) ? curr.filter((i) => i !== valId) : [...curr, valId] });
         setData('variations', []);
     };
-    const isChecked = (attrId: number, valId: number) => (data.selected_attributes[attrId] || []).includes(valId);
+    const isChecked  = (attrId: number, valId: number) => (data.selected_attributes[attrId] || []).includes(valId);
 
     const generateVariations = () => {
         const groups = catAttrs.flatMap((attr) => {
@@ -143,9 +179,12 @@ export default function ProductForm({ product, categories, attributes = [], isEd
         });
         if (!groups.length) return;
         setData('variations', cartesian(groups.map((g) => g.values)).map((combo) => ({
-            combination: combo.map((v) => v.value).join(' / '),
-            attributes: Object.fromEntries(combo.map((v, i) => [groups[i].attrName, v.value])),
-            qty: '', purchase_price: '', sale_price: '',
+            combination:    combo.map((v) => v.value).join(' / '),
+            attributes:     Object.fromEntries(combo.map((v, i) => [groups[i].attrName, v.value])),
+            purchase_price: '',
+            sale_price:     '',
+            stock_alert:    '5',   // default
+            additional:     '0',   // default
         })));
     };
 
@@ -155,14 +194,12 @@ export default function ProductForm({ product, categories, attributes = [], isEd
     const removeVar = (i: number) => { const v = [...data.variations]; v.splice(i, 1); setData('variations', v); };
     const hasSelected = Object.values(data.selected_attributes).some((v) => v.length > 0);
 
-    // Image handlers
     const handleGallery = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
         const prev: string[] = [];
         setData('gallery', files);
         files.forEach((f) => readFile(f, (r) => { prev.push(r); if (prev.length === files.length) setGalleryPrev([...prev]); }));
     };
-    
     const removeGalleryItem = (i: number) => {
         const p = [...galleryPrev]; p.splice(i, 1); setGalleryPrev(p);
         const g = [...(data.gallery as File[])]; g.splice(i, 1); setData('gallery', g);
@@ -170,12 +207,15 @@ export default function ProductForm({ product, categories, attributes = [], isEd
 
     function submit(e: React.FormEvent) {
         e.preventDefault();
-        if (!data.name) { alert('Product Name is required!'); return; }
-        if (!data.category_id) { alert('Category is required!'); return; }
+        if (!data.name)        { alert('Product Name is required!'); return; }
+        if (!data.category_id) { alert('Category is required!');     return; }
         const submitData = { ...data, tags: data.tags.split(',').map((t) => t.trim()).filter(Boolean) };
         if (isEdit && product?.id) router.post(`/admin/products/${product.id}`, { ...submitData, _method: 'PUT' }, { forceFormData: true });
         else post('/admin/products', { forceFormData: true });
     }
+
+    // Variation table headers
+    const varHeaders = ['#', 'Combination', 'Purchase Rs *', 'Sale Rs *', 'P&L', 'Stock Alert', '+ Price', ''];
 
     return (
         <div className="p-4 max-w-7xl mx-auto">
@@ -201,7 +241,7 @@ export default function ProductForm({ product, categories, attributes = [], isEd
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-2 space-y-6">
 
-                        {/* Basic Info */}
+                        {/* ── Basic Info ── */}
                         <Card color="bg-blue-600" title="Basic Information">
                             <div className="space-y-4">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -215,16 +255,26 @@ export default function ProductForm({ product, categories, attributes = [], isEd
                                         </select>
                                     </Field>
                                 </div>
+
+                                {/* 4-col name grid */}
                                 <div className="grid grid-cols-2 gap-4">
                                     <Field label="Urdu Name"><input type="text" placeholder="اردو نام" value={data.urdu_name} onChange={(e) => setData('urdu_name', e.target.value)} className={cx.input} /></Field>
                                     <Field label="Scientific Name"><input type="text" placeholder="Curcuma longa" value={data.scientific_name} onChange={(e) => setData('scientific_name', e.target.value)} className={cx.input} /></Field>
+                                    <Field label="Alternative Name"><input type="text" placeholder="Alternative name" value={data.alternative_name} onChange={(e) => setData('alternative_name', e.target.value)} className={cx.input} /></Field>
+                                    <Field label="Other Name"><input type="text" placeholder="Other / local name" value={data.other_name} onChange={(e) => setData('other_name', e.target.value)} className={cx.input} /></Field>
                                 </div>
+
                                 <Field label="Short Description"><textarea value={data.short_description} onChange={(e) => setData('short_description', e.target.value)} rows={2} className={cx.input + " resize-none"} /></Field>
                                 <Field label="Long Description"><textarea value={data.long_description} onChange={(e) => setData('long_description', e.target.value)} rows={4} className={cx.input + " resize-none"} /></Field>
+
+                                {/* Video URL */}
+                                <Field label="Video URL" hint="(YouTube / Vimeo)">
+                                    <input type="url" placeholder="https://youtube.com/watch?v=..." value={data.video} onChange={(e) => setData('video', e.target.value)} className={cx.input} />
+                                </Field>
                             </div>
                         </Card>
 
-                        {/* Step 1: Attributes */}
+                        {/* ── Step 1: Attributes ── */}
                         {data.category_id && (
                             <Card color="bg-indigo-600" title="Step 1 — Select Variations">
                                 {loadingAttrs ? (
@@ -263,7 +313,7 @@ export default function ProductForm({ product, categories, attributes = [], isEd
                                                     className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-sm font-semibold rounded-lg shadow-sm">
                                                     <Zap className="w-4 h-4" /> Generate Variations
                                                 </button>
-                                                <p className="text-xs text-gray-400 mt-2">All selected values ka Cartesian combination banega</p>
+                                                <p className="text-xs text-gray-400 mt-2">Cartesian combination of all selected values</p>
                                             </div>
                                         )}
                                     </div>
@@ -271,28 +321,33 @@ export default function ProductForm({ product, categories, attributes = [], isEd
                             </Card>
                         )}
 
-                        {/* Step 2: Variations Table */}
+                        {/* ── Step 2: Variations Table ── */}
                         {data.variations.length > 0 && (
                             <Card color="bg-green-600" title="Step 2 — Variations Pricing">
                                 <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-                                    <table className="w-full text-sm border-collapse">
+                                    <table className="w-full text-sm border-collapse min-w-[800px]">
                                         <thead>
                                             <tr className="bg-gray-50 dark:bg-gray-900/70 border-b border-gray-200 dark:border-gray-700">
-                                                {['#', 'Combination', 'Purchase Price *', 'Sale Price *', 'P&L', 'Qty', ''].map((h, i) => (
-                                                    <th key={i} className={cx.thCell}>{h}</th>
-                                                ))}
+                                                {varHeaders.map((h, i) => <th key={i} className={cx.thCell}>{h}</th>)}
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-100 dark:divide-gray-700/60">
                                             {data.variations.map((v, i) => {
-                                                const pp = parseFloat(v.purchase_price) || 0;
-                                                const sp = parseFloat(v.sale_price) || 0;
+                                                const pp     = parseFloat(v.purchase_price) || 0;
+                                                const sp     = parseFloat(v.sale_price)     || 0;
                                                 const profit = pp > 0 && sp > 0 ? sp - pp : null;
                                                 const isLoss = profit !== null && profit <= 0;
-                                                const rowCls = isLoss ? 'bg-red-50/60 dark:bg-red-900/10' : profit && profit > 0 ? 'bg-green-50/40 dark:bg-green-900/5' : 'bg-white dark:bg-gray-800';
+                                                const rowCls = isLoss
+                                                    ? 'bg-red-50/60 dark:bg-red-900/10'
+                                                    : profit && profit > 0
+                                                        ? 'bg-green-50/40 dark:bg-green-900/5'
+                                                        : 'bg-white dark:bg-gray-800';
                                                 return (
                                                     <tr key={i} className={`transition-colors ${rowCls}`}>
-                                                        <td className={`${cx.tdCell} text-xs text-gray-400 font-mono`}>{i + 1}</td>
+                                                        {/* # */}
+                                                        <td className={`${cx.tdCell} text-xs text-gray-400 font-mono w-8`}>{i + 1}</td>
+
+                                                        {/* Combination badges */}
                                                         <td className={cx.tdCell}>
                                                             <div className="flex flex-wrap gap-1">
                                                                 {Object.entries(v.attributes).map(([k, val]) => (
@@ -302,23 +357,39 @@ export default function ProductForm({ product, categories, attributes = [], isEd
                                                                 ))}
                                                             </div>
                                                         </td>
-                                                        <td className={cx.tdCell}>
-                                                            <input type="number" step="0.1" min="0" placeholder="0.00" value={v.purchase_price} onChange={(e) => updateVar(i, 'purchase_price', e.target.value)} className={cx.input} />
+
+                                                        {/* Purchase Price */}
+                                                        <td className={`${cx.tdCell} w-28`}>
+                                                            <input type="number" step="0.1" min="0" placeholder="0.00" value={v.purchase_price} onChange={(e) => updateVar(i, 'purchase_price', e.target.value)} className={cx.inputSm} />
                                                         </td>
-                                                        <td className={cx.tdCell}>
-                                                            <input type="number" step="0.1" min="0" placeholder="0.00" value={v.sale_price} onChange={(e) => updateVar(i, 'sale_price', e.target.value)} className={isLoss ? cx.inputErr : cx.input} />
+
+                                                        {/* Sale Price */}
+                                                        <td className={`${cx.tdCell} w-28`}>
+                                                            <input type="number" step="0.1" min="0" placeholder="0.00" value={v.sale_price} onChange={(e) => updateVar(i, 'sale_price', e.target.value)}
+                                                                className={`${cx.inputSm} ${isLoss ? 'border-red-400 focus:ring-red-400' : ''}`} />
                                                         </td>
-                                                        <td className={cx.tdCell}>
+
+                                                        {/* P&L */}
+                                                        <td className={`${cx.tdCell} w-24`}>
                                                             {profit !== null ? (
-                                                                <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full ${isLoss ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
-                                                                    {isLoss ? '▼' : '▲'} Rs {Math.abs(profit).toFixed(2)}
+                                                                <span className={`inline-flex items-center gap-0.5 text-xs font-semibold px-2 py-1 rounded-full ${isLoss ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
+                                                                    {isLoss ? '▼' : '▲'} {Math.abs(profit).toFixed(0)}
                                                                 </span>
                                                             ) : <span className="text-xs text-gray-300">—</span>}
                                                         </td>
-                                                        <td className={cx.tdCell}>
-                                                            <input type="number" step="1" min="0" placeholder="0" value={v.qty} onChange={(e) => updateVar(i, 'qty', e.target.value)} className={cx.input} />
+
+                                                        {/* Stock Alert */}
+                                                        <td className={`${cx.tdCell} w-24`}>
+                                                            <input type="number" step="1" min="0" placeholder="5" value={v.stock_alert} onChange={(e) => updateVar(i, 'stock_alert', e.target.value)} className={cx.inputSm} />
                                                         </td>
-                                                        <td className={`${cx.tdCell} text-center`}>
+
+                                                        {/* Additional Price ← NEW */}
+                                                        <td className={`${cx.tdCell} w-24`}>
+                                                            <input type="number" step="0.1" min="0" placeholder="0" value={v.additional} onChange={(e) => updateVar(i, 'additional', e.target.value)} className={cx.inputSm} />
+                                                        </td>
+
+                                                        {/* Delete */}
+                                                        <td className={`${cx.tdCell} text-center w-10`}>
                                                             <button type="button" onClick={() => removeVar(i)} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
                                                                 <Trash2 className="w-4 h-4" />
                                                             </button>
@@ -329,14 +400,22 @@ export default function ProductForm({ product, categories, attributes = [], isEd
                                         </tbody>
                                     </table>
                                 </div>
+
+                                {/* Footer */}
                                 <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between text-sm text-gray-500">
-                                    <span>{data.variations.filter(v => v.qty && v.purchase_price && v.sale_price).length} of {data.variations.length} filled</span>
+                                    <span>{data.variations.filter(v => v.purchase_price && v.sale_price).length} of {data.variations.length} filled</span>
                                     <button type="button" onClick={generateVariations} className="text-xs text-indigo-600 flex items-center gap-1"><Zap className="w-3 h-3" /> Regenerate</button>
+                                </div>
+
+                                {/* Column legend */}
+                                <div className="mt-3 flex flex-wrap gap-3 text-xs text-gray-400">
+                                    <span>🔔 <strong>Stock Alert</strong> — low stock threshold</span>
+                                    <span>➕ <strong>+ Price</strong> — extra charge for this variant</span>
                                 </div>
                             </Card>
                         )}
 
-                        {/* Images */}
+                        {/* ── Images ── */}
                         <Card color="bg-purple-600" title="Images">
                             <div className="space-y-5">
                                 <Field label="Thumbnail Image">
@@ -366,8 +445,9 @@ export default function ProductForm({ product, categories, attributes = [], isEd
                         </Card>
                     </div>
 
-                    {/* ── Sidebar ── */}
+                    {/* ══ Sidebar ══════════════════════════════════════════════ */}
                     <div className="space-y-6">
+
                         {/* SEO */}
                         <Card color="bg-yellow-500" title="SEO Settings" icon={<Search className="w-4 h-4 text-yellow-500" />}>
                             <div className="space-y-4">
@@ -396,16 +476,39 @@ export default function ProductForm({ product, categories, attributes = [], isEd
                         {/* Settings */}
                         <Card color="bg-orange-500" title="Settings">
                             <div className="space-y-4">
+                                {/* Toggles */}
                                 {[
-                                    { label: 'Active Status', sub: 'Show product publicly', key: 'status' as const, color: 'peer-checked:bg-blue-600' },
-                                    { label: 'Featured', sub: 'Show on homepage', key: 'featured' as const, color: 'peer-checked:bg-green-600' },
+                                    { label: 'Active Status', sub: 'Show product publicly', key: 'status'   as const, color: 'peer-checked:bg-blue-600'  },
+                                    { label: 'Featured',      sub: 'Show on homepage',      key: 'featured' as const, color: 'peer-checked:bg-green-600' },
                                 ].map(({ label, sub, key, color }) => (
                                     <div key={key} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
                                         <div><div className="text-sm font-medium text-gray-900 dark:text-white">{label}</div><div className="text-xs text-gray-400">{sub}</div></div>
                                         <Toggle checked={data[key] as boolean} onChange={(v) => setData(key, v)} color={color} />
                                     </div>
                                 ))}
-                                <Field label="SKU"><input type="text" placeholder="Auto-generated" value={data.sku} onChange={(e) => setData('sku', e.target.value)} className={cx.input} /></Field>
+
+                                {/* Unit */}
+                                <Field label="Unit" hint="(gm, ml, piece...)">
+                                    <input type="text" placeholder="e.g. gm" value={data.unit} onChange={(e) => setData('unit', e.target.value)} className={cx.input} />
+                                </Field>
+
+                                {/* SKU + Barcode */}
+                                <div className="grid grid-cols-2 gap-3">
+                                    <Field label="SKU"><input type="text" placeholder="Auto-generated" value={data.sku} onChange={(e) => setData('sku', e.target.value)} className={cx.input} /></Field>
+                                    <Field label="Barcode"><input type="text" placeholder="Barcode" value={data.barcode} onChange={(e) => setData('barcode', e.target.value)} className={cx.input} /></Field>
+                                </div>
+
+                                {/* Affiliate + Sort Order */}
+                                <div className="grid grid-cols-2 gap-3">
+                                    <Field label="Affiliate %" hint="(commission)">
+                                        <input type="number" step="0.01" min="0" max="100" placeholder="5.00" value={data.affiliate_commission} onChange={(e) => setData('affiliate_commission', e.target.value)} className={cx.input} />
+                                    </Field>
+                                    <Field label="Sort Order">
+                                        <input type="number" step="1" min="0" placeholder="0" value={data.sort_order} onChange={(e) => setData('sort_order', e.target.value)} className={cx.input} />
+                                    </Field>
+                                </div>
+
+                                {/* Slug */}
                                 <Field label="Slug">
                                     <div className="flex gap-2">
                                         <input type="text" placeholder="product-slug" value={data.slug} onChange={(e) => setData('slug', e.target.value)} className={cx.input} />

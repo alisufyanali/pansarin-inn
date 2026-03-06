@@ -71,4 +71,12 @@ class ProductVariant extends Model
     {
         return $this->stock > 0;
     }
+
+
+    public function stock(): HasOne
+    {
+        return $this->hasOne(ProductStock::class);
+    }
+
+
 }
