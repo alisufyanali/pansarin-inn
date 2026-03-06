@@ -111,9 +111,20 @@ const readFile = (f: File, cb: (r: string) => void) => { const r = new FileReade
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function ProductForm({ product, categories, attributes = [], isEdit = false }: ProductFormProps) {
-    const [thumbPrev,    setThumbPrev]    = useState<string | null>(product?.thumbnail    || null);
-    const [socialPrev,   setSocialPrev]   = useState<string | null>(product?.social_image || null);
-    const [galleryPrev,  setGalleryPrev]  = useState<string[]>(Array.isArray(product?.gallery) ? product.gallery : []);
+    // ── Normalize storage path to URL ──
+    const toUrl = (path: any): string | null => {
+        if (!path || path instanceof File) return null;
+        if (typeof path === 'string' && (path.startsWith('http') || path.startsWith('/storage') || path.startsWith('blob'))) return path;
+        return `/storage/${path}`;
+    };
+
+    const [thumbPrev,    setThumbPrev]    = useState<string | null>(toUrl(product?.thumbnail));
+    const [socialPrev,   setSocialPrev]   = useState<string | null>(toUrl(product?.social_image));
+    const [galleryPrev,  setGalleryPrev]  = useState<string[]>(
+        Array.isArray(product?.gallery)
+            ? product.gallery.map((g: any) => toUrl(g)).filter(Boolean) as string[]
+            : []
+    );
     const [catAttrs,     setCatAttrs]     = useState<Attribute[]>([]);
     const [loadingAttrs, setLoadingAttrs] = useState(false);
 
@@ -209,9 +220,19 @@ export default function ProductForm({ product, categories, attributes = [], isEd
         e.preventDefault();
         if (!data.name)        { alert('Product Name is required!'); return; }
         if (!data.category_id) { alert('Category is required!');     return; }
-        const submitData = { ...data, tags: data.tags.split(',').map((t) => t.trim()).filter(Boolean) };
-        if (isEdit && product?.id) router.post(`/admin/products/${product.id}`, { ...submitData, _method: 'PUT' }, { forceFormData: true });
-        else post('/admin/products', { forceFormData: true });
+
+        const tags         = data.tags.split(',').map((t) => t.trim()).filter(Boolean);
+        const thumbnail    = data.thumbnail    instanceof File ? data.thumbnail    : null;
+        const social_image = data.social_image instanceof File ? data.social_image : null;
+        const gallery      = (data.gallery as any[]).filter((f) => f instanceof File);
+
+        const submitData = { ...data, tags, thumbnail, social_image, gallery };
+
+        if (isEdit && product?.id) {
+            router.post(`/admin/products/${product.id}`, { ...submitData, _method: 'PUT' }, { forceFormData: true });
+        } else {
+            post('/admin/products', { forceFormData: true });
+        }
     }
 
     // Variation table headers
