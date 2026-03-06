@@ -191,65 +191,6 @@ export default function Show({ product }: { product: Product }) {
                             icon={DollarSign}
                         >
                             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                                {product.quantity && (
-                                    <div className="rounded-lg border border-purple-200 bg-gradient-to-br from-purple-50 to-purple-100 p-4 dark:border-purple-800 dark:from-purple-900/20 dark:to-purple-800/20">
-                                        <p className="mb-1 text-sm text-purple-700 dark:text-purple-300">
-                                            Quantity
-                                        </p>
-                                        <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
-                                            {product.quantity} {product.unit || 'units'}
-                                        </p>
-                                    </div>
-                                )}
-
-                                {product.purchase_price_per_unit && (
-                                    <div className="rounded-lg border border-orange-200 bg-gradient-to-br from-orange-50 to-orange-100 p-4 dark:border-orange-800 dark:from-orange-900/20 dark:to-orange-800/20">
-                                        <p className="mb-1 text-sm text-orange-700 dark:text-orange-300">
-                                            Purchase Price/Unit
-                                        </p>
-                                        <p className="text-2xl font-bold text-orange-900 dark:text-orange-100">
-                                            {formatPrice(product.purchase_price_per_unit)}
-                                        </p>
-                                    </div>
-                                )}
-
-                                {product.sale_price_per_unit && (
-                                    <div className="rounded-lg border border-teal-200 bg-gradient-to-br from-teal-50 to-teal-100 p-4 dark:border-teal-800 dark:from-teal-900/20 dark:to-teal-800/20">
-                                        <p className="mb-1 text-sm text-teal-700 dark:text-teal-300">
-                                            Sale Price/Unit
-                                        </p>
-                                        <p className="text-2xl font-bold text-teal-900 dark:text-teal-100">
-                                            {formatPrice(product.sale_price_per_unit)}
-                                        </p>
-                                    </div>
-                                )}
-
-                                <div className="rounded-lg border border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100 p-4 dark:border-blue-800 dark:from-blue-900/20 dark:to-blue-800/20">
-                                    <p className="mb-1 text-sm text-blue-700 dark:text-blue-300">
-                                        Regular Price
-                                    </p>
-                                    <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
-                                        {formatPrice(product.price)}
-                                    </p>
-                                </div>
-
-                                {product.sale_price && (
-                                    <div className="rounded-lg border border-green-200 bg-gradient-to-br from-green-50 to-green-100 p-4 dark:border-green-800 dark:from-green-900/20 dark:to-green-800/20">
-                                        <p className="mb-1 text-sm text-green-700 dark:text-green-300">
-                                            Sale Price
-                                        </p>
-                                        <p className="text-2xl font-bold text-green-900 dark:text-green-100">
-                                            {formatPrice(product.sale_price)}
-                                        </p>
-                                        {product.price &&
-                                            product.sale_price && (
-                                                <p className="mt-1 text-xs text-green-600 dark:text-green-400">
-                                                    Save {Math.round(((product.price - product.sale_price) / product.price) * 100)}%
-                                                </p>
-                                            )}
-                                    </div>
-                                )}
-
                                 {product.affiliate_commission && (
                                     <div className="rounded-lg border border-pink-200 bg-gradient-to-br from-pink-50 to-pink-100 p-4 dark:border-pink-800 dark:from-pink-900/20 dark:to-pink-800/20">
                                         <p className="mb-1 text-sm text-pink-700 dark:text-pink-300">
