@@ -11,96 +11,128 @@ class Inventory extends Model
 
     protected $fillable = [
         'product_id',
-        'quantity',
-        'unit', // Add this
+        'product_variant_id',
         'type',
+        'quantity',
+        'cost_price',
         'reference',
+        'source',
         'note',
-        'performed_by',
     ];
 
     protected $casts = [
-        'quantity' => 'float',
+        'quantity'   => 'float',
+        'cost_price' => 'float',
     ];
 
-    // Relationships
+    // ── Relationships ──────────────────────────────────────────────
+
     public function product()
     {
         return $this->belongsTo(Product::class);
     }
 
-    public function performer()
+    public function variant()
     {
-        return $this->belongsTo(User::class, 'performed_by');
-    }
-
-    // Events
-    protected static function booted()
-    {
-        static::created(function ($inventory) {
-            $inventory->updateProductStock();
-        });
-
-        static::created(function ($inventory) {
-            $inventory->updateProductStock();
-        });
-
-        static::updated(function ($inventory) {
-            $inventory->updateProductStock();
-        });
-
-        static::deleted(function ($inventory) {
-            $inventory->updateProductStock(true);
-        });
-    }
-
-    // Product stock ko sync karne ka method
-    public function updateProductStock($isDeleted = false)
-    {
-        $product = $this->product;
-        if (! $product) {
-            return;
-        }
-
-        // Direct Database se sum nikalen taake purana data bhi count ho
-        $totalStock = \App\Models\Inventory::where('product_id', $this->product_id)->sum('quantity');
-
-        // Product update karein
-        $product->stock_qty = $totalStock;
-        $product->save();
-
-        $this->checkLowStock($product);
-
-        $product = $this->product;
-        if ($product) {
-            // Saari entries ka sum nikal kar product stock update karein
-            $totalStock = Inventory::where('product_id', $this->product_id)->sum('quantity');
-            $product->update(['stock_qty' => $totalStock]);
-        }
-    }
-
-    //  Low stock notification trigger
-    protected function checkLowStock($product)
-    {
-        $threshold = $product->stock_alert ?? 10;
-
-        if ($product->stock_qty <= $threshold && $product->stock_qty > 0) {
-            // Trigger notification
-            event(new \App\Events\LowStockAlert($product));
-        }
-    }
-
-    //  Scope for low stock products
-    public function scopeLowStock($query)
-    {
-        return $query->whereHas('product', function ($q) {
-            $q->whereColumn('stock_qty', '<=', 'stock_alert');
-        });
-    }
-
-
-    public function variant() {
         return $this->belongsTo(ProductVariant::class, 'product_variant_id');
     }
 
+    // ── Events ────────────────────────────────────────────────────
+
+    protected static function booted()
+    {
+        // After create — stock add karo
+        static::created(function (Inventory $inventory) {
+            $inventory->syncStock();
+        });
+
+        // After update — diff apply karo
+        static::updated(function (Inventory $inventory) {
+            $old = $inventory->getOriginal('quantity');
+            $new = $inventory->quantity;
+            $diff = $new - $old;
+            if ($diff != 0) {
+                $inventory->adjustStock($diff);
+            }
+        });
+
+        // After delete — reverse karo
+        static::deleted(function (Inventory $inventory) {
+            $inventory->adjustStock(-$inventory->quantity);
+        });
+    }
+
+    // ── Stock Sync Methods ────────────────────────────────────────
+
+    /**
+     * Naya inventory entry create hone pe product_stocks update karo
+     */
+    private function syncStock(): void
+    {
+        $this->adjustStock($this->quantity);
+    }
+
+    /**
+     * Stock mein delta apply karo — SQLite safe
+     */
+    private function adjustStock(float $delta): void
+    {
+        if ($delta == 0) return;
+
+        $stock = ProductStock::where('product_id', $this->product_id)
+            ->when(
+                $this->product_variant_id,
+                fn ($q) => $q->where('product_variant_id', $this->product_variant_id),
+                fn ($q) => $q->whereNull('product_variant_id')
+            )
+            ->first();
+
+        if ($stock) {
+            $stock->update(['quantity' => $stock->quantity + $delta]);
+        } else {
+            ProductStock::create([
+                'product_id'         => $this->product_id,
+                'product_variant_id' => $this->product_variant_id,
+                'quantity'           => $delta,
+            ]);
+        }
+
+        $this->checkLowStock();
+    }
+
+    /**
+     * Low stock event trigger
+     */
+    private function checkLowStock(): void
+    {
+        $stock = ProductStock::where('product_id', $this->product_id)
+            ->where(function ($q) {
+                $this->product_variant_id
+                    ? $q->where('product_variant_id', $this->product_variant_id)
+                    : $q->whereNull('product_variant_id');
+            })
+            ->value('quantity') ?? 0;
+
+        $threshold = 10; // default — product mein stock_alert column nahi
+
+        if ($stock <= $threshold && $stock > 0) {
+            try {
+                event(new \App\Events\LowStockAlert($this->product));
+            } catch (\Throwable $e) {
+                // Event class nahi bani toh silently skip
+            }
+        }
+    }
+
+    // ── Scopes ────────────────────────────────────────────────────
+
+    public function scopeStockIn($query)
+    {
+        return $query->whereIn('type', ['in', 'return']);
+    }
+
+    public function scopeStockOut($query)
+    {
+        return $query->whereIn('type', ['out', 'adjustment']);
+    }
 }

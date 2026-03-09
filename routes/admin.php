@@ -136,9 +136,12 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('blogscomments-data', [BlogsCommentsController::class, 'getData'])->name('blogscomments.data');
 
     // Inventory Management
-    Route::resource('inventory', InventoryController::class);
+    // IMPORTANT: Custom routes BEFORE resource()
+    Route::get('inventory/bulk-create', [InventoryController::class, 'bulkCreate'])->name('inventory.bulk-create');
+    Route::post('inventory/bulk-store', [InventoryController::class, 'bulkStore'])->name('inventory.bulk-store');
     Route::get('inventory-data', [InventoryController::class, 'getData'])->name('inventory.data');
     Route::get('low-stock-products', [InventoryController::class, 'getLowStockProducts'])->name('inventory.low-stock');
+    Route::resource('inventory', InventoryController::class);
 
     // Notification routes
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');

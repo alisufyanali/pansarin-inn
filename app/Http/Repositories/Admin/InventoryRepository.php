@@ -138,8 +138,7 @@ class InventoryRepository
                 'note'               => $data['note'] ?? null,
             ]);
 
-            // Update product_stocks snapshot
-            $this->updateStock($data['product_id'], $data['product_variant_id'] ?? null, $isNegative ? -$qty : $qty);
+            // product_stocks — Model events handle karte hain (Inventory::booted)
 
             return $inventory;
         });
@@ -175,10 +174,7 @@ class InventoryRepository
                 'note'       => $data['note']       ?? null,
             ]);
 
-            // Adjust stock snapshot by diff
-            if ($diff !== 0.0) {
-                $this->updateStock($inventory->product_id, $inventory->product_variant_id, $diff);
-            }
+            // product_stocks — Model events handle karte hain (Inventory::booted)
 
             return $inventory;
         });
@@ -190,12 +186,7 @@ class InventoryRepository
         return DB::transaction(function () use ($id) {
             $inventory = $this->find($id);
 
-            // Reverse the stock effect
-            $this->updateStock(
-                $inventory->product_id,
-                $inventory->product_variant_id,
-                -$inventory->quantity  // reverse: negate the original signed qty
-            );
+            // product_stocks — Model deleted event reverse karega automatically
 
             return $inventory->delete();
         });
@@ -263,25 +254,6 @@ class InventoryRepository
             });
     }
 
-    // ── Helpers ───────────────────────────────────────────────────
-    private function getCurrentStock(int $productId, ?int $variantId): float
-    {
-        return (float) ProductStock::where('product_id', $productId)
-            ->when($variantId, fn ($q) => $q->where('product_variant_id', $variantId),
-                               fn ($q) => $q->whereNull('product_variant_id'))
-            ->value('quantity') ?? 0;
-    }
-
-    private function updateStock(int $productId, ?int $variantId, float $delta): void
-    {
-        ProductStock::updateOrCreate(
-            [
-                'product_id'         => $productId,
-                'product_variant_id' => $variantId,
-            ],
-            ['quantity' => DB::raw("quantity + {$delta}")]
-        );
-    }
 
     private function defaultSource(string $type): string
     {
@@ -292,5 +264,34 @@ class InventoryRepository
             'return'     => 'return',
             default      => 'manual',
         };
+    }
+
+    // ── Bulk Store ────────────────────────────────────────────────
+
+    public function bulkStore(array $data): void
+    {
+        DB::transaction(function () use ($data) {
+            foreach ($data['variants'] as $row) {
+                $qty = (float) $row['quantity'];
+                if ($qty <= 0) continue;
+
+                Inventory::create([
+                    'product_id'         => $data['product_id'],
+                    'product_variant_id' => $row['variant_id'] ?? null,
+                    'type'               => $data['type'],
+                    'quantity'           => $this->signedQty($data['type'], $qty),
+                    'cost_price'         => $data['cost_price'] ?? null,
+                    'reference'          => $data['reference'] ?? null,
+                    'source'             => $data['source'] ?? $this->defaultSource($data['type']),
+                    'note'               => $data['note'] ?? null,
+                ]);
+                // product_stocks — Model booted event handle karega automatically
+            }
+        });
+    }
+
+    private function signedQty(string $type, float $qty): float
+    {
+        return in_array($type, ['out', 'adjustment']) ? -abs($qty) : abs($qty);
     }
 }

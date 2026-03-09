@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Repositories\Admin\InventoryRepository;
 use App\Http\Requests\Admin\InventoryRequest;
+use App\Http\Requests\Admin\BulkInventoryRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
@@ -122,6 +123,27 @@ class InventoryController extends Controller
         } catch (\Exception $e) {
             Log::error('Inventory destroy: ' . $e->getMessage());
             return back()->with('error', 'Failed to delete entry.');
+        }
+    }
+
+    // ── Bulk Entry ────────────────────────────────────────────────
+
+    public function bulkCreate()
+    {
+        $products = $this->inventoryRepository->getProductsForForm();
+        return Inertia::render('Admin/Inventory/BulkCreate', [
+            'products' => $products,
+        ]);
+    }
+
+    public function bulkStore(BulkInventoryRequest $request)
+    {
+        try {
+            $this->inventoryRepository->bulkStore($request->validated());
+            return to_route('admin.inventory.index')->with('success', 'Bulk stock entry saved!');
+        } catch (\Exception $e) {
+            Log::error('Inventory bulkStore: ' . $e->getMessage());
+            return back()->with('error', 'Failed: ' . $e->getMessage());
         }
     }
 }
