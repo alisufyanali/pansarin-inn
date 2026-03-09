@@ -26,20 +26,21 @@ class Order extends Model
         'payment_method',
         'payment_status',
         'payment_date',
-        'user_id'
+        'user_id',
     ];
 
     protected $casts = [
-        'subtotal' => 'float',
+        'subtotal'         => 'float',
         'product_discount' => 'float',
         'invoice_discount' => 'float',
         'shipping_charges' => 'float',
-        'tax' => 'float',
-        'grand_total' => 'float',
-        'payment_date' => 'date',
+        'tax'              => 'float',
+        'grand_total'      => 'float',
+        'payment_date'     => 'date',
     ];
 
-    // Relationships
+    // ── Relationships ─────────────────────────────────────────────
+
     public function customer()
     {
         return $this->belongsTo(Customer::class);
@@ -50,97 +51,99 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
-    // Generate unique order number
-    public static function generateOrderNumber()
+    public function sale()
     {
-        $prefix = 'ORD-';
-        $date = date('Ymd');
-        $random = strtoupper(substr(uniqid(), -4));
-
-        return $prefix.$date.'-'.$random;
+        return $this->hasOne(Sale::class);
     }
 
-    // Calculate totals
-    public function calculateTotals()
+    // ── Helpers ───────────────────────────────────────────────────
+
+    public static function generateOrderNumber(): string
     {
-        $this->subtotal = $this->items->sum('subtotal');
+        return 'ORD-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -4));
+    }
+
+    public function calculateTotals(): void
+    {
+        $this->subtotal         = $this->items->sum('subtotal');
         $this->product_discount = $this->items->sum('discount');
-
-        // Grand Total = Subtotal - Product Discount - Invoice Discount + Shipping + Tax
-        $this->grand_total = $this->subtotal
-                           - $this->product_discount
-                           - $this->invoice_discount
-                           + $this->shipping_charges
-                           + $this->tax;
-
+        $this->grand_total      = $this->subtotal
+                                - $this->product_discount
+                                - $this->invoice_discount
+                                + $this->shipping_charges
+                                + $this->tax;
         $this->save();
     }
 
-    // Status badge color
-    public function getStatusColorAttribute()
+    public function hasSale(): bool
+    {
+        return $this->sale()->exists();
+    }
+
+    // ── Accessors ─────────────────────────────────────────────────
+
+    public function getStatusColorAttribute(): string
     {
         return match ($this->status) {
-            'pending' => 'yellow',
+            'pending'    => 'yellow',
             'processing' => 'blue',
-            'shipped' => 'purple',
-            'delivered' => 'green',
-            'cancelled' => 'red',
-            'refunded' => 'gray',
-            default => 'gray'
+            'shipped'    => 'purple',
+            'delivered'  => 'green',
+            'cancelled'  => 'red',
+            'refunded'   => 'gray',
+            default      => 'gray',
         };
     }
 
-    // Payment status badge color
-    public function getPaymentStatusColorAttribute()
+    public function getPaymentStatusColorAttribute(): string
     {
         return match ($this->payment_status) {
-            'paid' => 'green',
-            'unpaid' => 'red',
+            'paid'           => 'green',
+            'unpaid'         => 'red',
             'partially_paid' => 'yellow',
-            'refunded' => 'gray',
-            default => 'gray'
+            'refunded'       => 'gray',
+            default          => 'gray',
         };
-
     }
 
-    protected static function booted()
+    // ── Events ────────────────────────────────────────────────────
+
+    protected static function booted(): void
     {
-        static::updated(function ($order) {
-            // Jab order status 'processing' ya 'delivered' ho jaye
+        static::updated(function (Order $order) {
             if ($order->wasChanged('status') && $order->status === 'delivered') {
                 $order->reduceStock();
             }
         });
     }
 
-    public function reduceStock()
+    // ── Stock Reduction on Delivery ───────────────────────────────
+
+    public function reduceStock(): void
     {
+        // Items fresh load karo (booted mein cached ho sakta hai)
+        $this->loadMissing('items');
+
         foreach ($this->items as $item) {
+            // Already stock out hua hai? Skip karo
+            $alreadyDone = \App\Models\Inventory::where('product_id', $item->product_id)
+                ->where('product_variant_id', $item->product_variant_id)
+                ->where('reference', 'Order #' . $this->order_number)
+                ->where('type', 'out')
+                ->exists();
+
+            if ($alreadyDone) continue;
+
             \App\Models\Inventory::create([
-                'product_id' => $item->product_id,
-                'quantity' => -abs($item->quantity), // Negative quantity for Stock Out
-                'type' => 'out',
-                'reference' => 'Order #'.$this->order_number,
-                'unit' => $item->product->unit ?? 'pcs',
-                'performed_by' => auth()->id() ?? 1, // System or Admin ID
-                'note' => 'Auto stock out via Order Placement',
+                'product_id'         => $item->product_id,
+                'product_variant_id' => $item->product_variant_id ?? null,
+                'type'               => 'out',
+                'quantity'           => -abs($item->quantity), // Model event handle karega stock
+                'cost_price'         => null,
+                'reference'          => 'Order #' . $this->order_number,
+                'source'             => 'sale',
+                'note'               => 'Auto stock out — Order delivered',
             ]);
         }
-    }
-
-    /**
-     * Get the sale associated with the order
-     */
-    public function sale()
-    {
-        return $this->hasOne(Sale::class);
-    }
-
-    /**
-     * Check if order has a sale
-     */
-    public function hasSale()
-    {
-        return $this->sale()->exists();
     }
 }
