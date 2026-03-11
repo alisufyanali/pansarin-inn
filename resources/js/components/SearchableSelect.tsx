@@ -7,7 +7,6 @@ const getRoute = (name: string) => {
   if (typeof window !== 'undefined' && (window as any).route) {
     return (window as any).route(name);
   }
-  // Fallback URLs
   const routes: Record<string, string> = {
     'customers.search': '/admin/customers/search',
     'products.search': '/admin/products/search',
@@ -15,7 +14,7 @@ const getRoute = (name: string) => {
   return routes[name] || '';
 };
 
-// ===== CUSTOMER SELECT COMPONENT WITH API =====
+// ===== CUSTOMER SELECT COMPONENT =====
 type Customer = { 
   id: number; 
   first_name: string; 
@@ -30,7 +29,7 @@ interface SearchableCustomerSelectProps {
   onChange: (customerId: string | number) => void;
   error?: string;
   required?: boolean;
-  useApi?: boolean; // Enable API search
+  useApi?: boolean;
 }
 
 export function SearchableCustomerSelect({ 
@@ -49,40 +48,36 @@ export function SearchableCustomerSelect({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Get selected customer
-  const selectedCustomer = customers.find(c => c.id === Number(value));
+  // Always search in both initialCustomers and fetched customers for selected
+  const selectedCustomer = 
+    initialCustomers.find(c => c.id === Number(value)) ||
+    customers.find(c => c.id === Number(value));
 
-  // API search with debounce
   useEffect(() => {
     if (!useApi || !search || search.length < 2) {
-      if (!useApi) {
-        // Client-side filtering
-        const filtered = initialCustomers.filter(customer => {
-          const searchLower = search.toLowerCase();
-          return (
-            customer.first_name.toLowerCase().includes(searchLower) ||
-            customer.last_name.toLowerCase().includes(searchLower) ||
-            customer.phone.includes(search) ||
-            (customer.email && customer.email.toLowerCase().includes(searchLower))
-          );
-        });
+      if (!useApi || !search) {
+        const filtered = search
+          ? initialCustomers.filter(customer => {
+              const s = search.toLowerCase();
+              return (
+                customer.first_name.toLowerCase().includes(s) ||
+                customer.last_name.toLowerCase().includes(s) ||
+                customer.phone.includes(search) ||
+                (customer.email && customer.email.toLowerCase().includes(s))
+              );
+            })
+          : initialCustomers;
         setCustomers(filtered);
       }
       return;
     }
 
-    // Clear previous timeout
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
 
-    // Debounce API call
     searchTimeoutRef.current = setTimeout(async () => {
       setLoading(true);
       try {
-        const response = await axios.get(getRoute('customers.search'), {
-          params: { q: search }
-        });
+        const response = await axios.get(getRoute('customers.search'), { params: { q: search } });
         setCustomers(response.data);
       } catch (error) {
         console.error('Customer search error:', error);
@@ -92,37 +87,25 @@ export function SearchableCustomerSelect({
       }
     }, 300);
 
-    return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-    };
+    return () => { if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current); };
   }, [search, useApi, initialCustomers]);
 
-  // Load initial customers when dropdown opens
   useEffect(() => {
-    if (isOpen && !search) {
-      setCustomers(initialCustomers);
-    }
+    if (isOpen && !search) setCustomers(initialCustomers);
   }, [isOpen, initialCustomers]);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Focus search input when dropdown opens
   useEffect(() => {
-    if (isOpen && searchInputRef.current) {
-      searchInputRef.current.focus();
-    }
+    if (isOpen && searchInputRef.current) searchInputRef.current.focus();
   }, [isOpen]);
 
   const handleSelect = (customer: Customer) => {
@@ -143,7 +126,6 @@ export function SearchableCustomerSelect({
         Client {required && <span className="text-red-500">*</span>}
       </label>
       
-      {/* Selected Value Display */}
       <div
         onClick={() => setIsOpen(!isOpen)}
         className={`w-full px-3 py-2 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border ${
@@ -158,10 +140,7 @@ export function SearchableCustomerSelect({
         </span>
         <div className="flex items-center gap-2">
           {selectedCustomer && (
-            <X 
-              className="w-4 h-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" 
-              onClick={handleClear}
-            />
+            <X className="w-4 h-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" onClick={handleClear} />
           )}
           <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
         </div>
@@ -169,10 +148,8 @@ export function SearchableCustomerSelect({
 
       {error && <div className="text-red-500 text-xs mt-1">{error}</div>}
 
-      {/* Dropdown */}
       {isOpen && (
         <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-80 overflow-hidden">
-          {/* Search Input */}
           <div className="p-2 border-b border-gray-200 dark:border-gray-700">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -184,21 +161,16 @@ export function SearchableCustomerSelect({
                 placeholder="Search by name, phone, or email..."
                 className="w-full pl-9 pr-3 py-2 text-sm rounded-md bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
               />
-              {loading && (
-                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 animate-spin" />
-              )}
+              {loading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 animate-spin" />}
             </div>
           </div>
 
-          {/* Options List */}
           <div className="max-h-64 overflow-y-auto">
             {loading ? (
-              <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 text-center">
-                Searching...
-              </div>
+              <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 text-center">Searching...</div>
             ) : customers.length === 0 ? (
               <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 text-center">
-                {search ? 'No customers found' : 'Start typing to search'}
+                {search ? 'No customers found' : 'No customers available'}
               </div>
             ) : (
               customers.map((customer) => (
@@ -209,23 +181,17 @@ export function SearchableCustomerSelect({
                     customer.id === Number(value) ? 'bg-blue-100 dark:bg-blue-900/30' : ''
                   }`}
                 >
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                      {customer.first_name} {customer.last_name}
-                    </span>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-xs text-gray-600 dark:text-gray-400">
-                        {customer.phone}
-                      </span>
-                      {customer.email && (
-                        <>
-                          <span className="text-xs text-gray-400">•</span>
-                          <span className="text-xs text-gray-600 dark:text-gray-400">
-                            {customer.email}
-                          </span>
-                        </>
-                      )}
-                    </div>
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                    {customer.first_name} {customer.last_name}
+                  </span>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-xs text-gray-600 dark:text-gray-400">{customer.phone}</span>
+                    {customer.email && (
+                      <>
+                        <span className="text-xs text-gray-400">•</span>
+                        <span className="text-xs text-gray-600 dark:text-gray-400">{customer.email}</span>
+                      </>
+                    )}
                   </div>
                 </div>
               ))
@@ -237,7 +203,7 @@ export function SearchableCustomerSelect({
   );
 }
 
-// ===== PRODUCT SELECT COMPONENT WITH API =====
+// ===== PRODUCT SELECT COMPONENT =====
 type Product = { 
   id: number; 
   name: string; 
@@ -269,43 +235,66 @@ export function SearchableProductSelect({
   const [search, setSearch] = useState('');
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [loading, setLoading] = useState(false);
+  // FIX: fixed positioning coords
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Get selected product
-  const selectedProduct = products.find(p => p.id === Number(value)) || 
-                         initialProducts.find(p => p.id === Number(value));
+  const selectedProduct = 
+    initialProducts.find(p => p.id === Number(value)) ||
+    products.find(p => p.id === Number(value));
 
-  // API search with debounce
+  // Calculate fixed position from button rect
+  const openDropdown = () => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const dropdownHeight = 320;
+      // Open upward if not enough space below
+      if (spaceBelow < dropdownHeight && rect.top > dropdownHeight) {
+        setDropdownStyle({
+          position: 'fixed',
+          bottom: window.innerHeight - rect.top + 4,
+          left: rect.left,
+          width: Math.max(rect.width, 350),
+          zIndex: 9999,
+        });
+      } else {
+        setDropdownStyle({
+          position: 'fixed',
+          top: rect.bottom + 4,
+          left: rect.left,
+          width: Math.max(rect.width, 350),
+          zIndex: 9999,
+        });
+      }
+    }
+    setIsOpen(true);
+    setSearch('');
+  };
+
   useEffect(() => {
     if (!useApi || !search || search.length < 2) {
-      if (!useApi) {
-        // Client-side filtering
-        const filtered = initialProducts.filter(product => {
-          const searchLower = search.toLowerCase();
-          return (
-            product.name.toLowerCase().includes(searchLower) ||
-            product.sku.toLowerCase().includes(searchLower)
-          );
-        });
+      if (!useApi || !search) {
+        const filtered = search
+          ? initialProducts.filter(p => {
+              const s = search.toLowerCase();
+              return p.name.toLowerCase().includes(s) || p.sku.toLowerCase().includes(s);
+            })
+          : initialProducts;
         setProducts(filtered);
       }
       return;
     }
 
-    // Clear previous timeout
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
 
-    // Debounce API call
     searchTimeoutRef.current = setTimeout(async () => {
       setLoading(true);
       try {
-        const response = await axios.get(getRoute('products.search'), {
-          params: { q: search }
-        });
+        const response = await axios.get(getRoute('products.search'), { params: { q: search } });
         setProducts(response.data);
       } catch (error) {
         console.error('Product search error:', error);
@@ -315,38 +304,37 @@ export function SearchableProductSelect({
       }
     }, 300);
 
-    return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-    };
+    return () => { if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current); };
   }, [search, useApi, initialProducts]);
 
-  // Load initial products when dropdown opens
   useEffect(() => {
-    if (isOpen && !search) {
-      setProducts(initialProducts);
-    }
+    if (isOpen && !search) setProducts(initialProducts);
   }, [isOpen, initialProducts]);
 
-  // Close dropdown when clicking outside
+  // Close on outside click — check both button and floating dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (
+        buttonRef.current && !buttonRef.current.contains(target) &&
+        dropdownRef.current && !dropdownRef.current.contains(target)
+      ) {
         setIsOpen(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    // Also close on scroll so dropdown doesn't float away
+    const handleScroll = () => setIsOpen(false);
+    window.addEventListener('scroll', handleScroll, true);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('scroll', handleScroll, true);
+    };
   }, []);
 
-  // Focus search input when dropdown opens
   useEffect(() => {
     if (isOpen && searchInputRef.current) {
-      setTimeout(() => {
-        searchInputRef.current?.focus();
-      }, 0);
+      setTimeout(() => searchInputRef.current?.focus(), 0);
     }
   }, [isOpen]);
 
@@ -362,30 +350,22 @@ export function SearchableProductSelect({
     setSearch('');
   };
 
-  const handleOpen = () => {
-    setIsOpen(!isOpen);
-    setSearch('');
-  };
-
   return (
-    <div className="relative" ref={dropdownRef}>
-      {/* Selected Value Display */}
+    <div className="relative">
       <button
+        ref={buttonRef}
         type="button"
-        onClick={handleOpen}
+        onClick={() => isOpen ? setIsOpen(false) : openDropdown()}
         className={`w-full px-2 py-1 text-xs rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border ${
           error ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
         } cursor-pointer flex items-center justify-between hover:border-blue-500 dark:hover:border-blue-400 transition-colors text-left`}
       >
-        <span className={selectedProduct ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400 dark:text-gray-500'}>
+        <span className={selectedProduct ? 'text-gray-900 dark:text-gray-100 truncate' : 'text-gray-400 dark:text-gray-500'}>
           {selectedProduct ? selectedProduct.name : placeholder}
         </span>
-        <div className="flex items-center gap-1 flex-shrink-0">
+        <div className="flex items-center gap-1 flex-shrink-0 ml-1">
           {selectedProduct && (
-            <X 
-              className="w-3 h-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" 
-              onClick={handleClear}
-            />
+            <X className="w-3 h-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" onClick={handleClear} />
           )}
           <ChevronDown className={`w-3 h-3 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
         </div>
@@ -393,10 +373,13 @@ export function SearchableProductSelect({
 
       {error && <div className="text-red-500 text-xs mt-1">{error}</div>}
 
-      {/* Dropdown */}
+      {/* FIX: Render outside table via fixed position — not clipped by overflow */}
       {isOpen && (
-        <div className="absolute z-[100] w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-xl max-h-80 overflow-hidden left-0 min-w-[350px]">
-          {/* Search Input */}
+        <div
+          ref={dropdownRef}
+          style={dropdownStyle}
+          className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-2xl max-h-80 overflow-hidden"
+        >
           <div className="p-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
             <div className="relative">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
@@ -409,21 +392,16 @@ export function SearchableProductSelect({
                 className="w-full pl-7 pr-7 py-1.5 text-xs rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
                 onClick={(e) => e.stopPropagation()}
               />
-              {loading && (
-                <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 animate-spin" />
-              )}
+              {loading && <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 animate-spin" />}
             </div>
           </div>
 
-          {/* Options List */}
           <div className="max-h-60 overflow-y-auto">
             {loading ? (
-              <div className="px-3 py-3 text-xs text-gray-500 dark:text-gray-400 text-center">
-                Searching...
-              </div>
+              <div className="px-3 py-3 text-xs text-gray-500 dark:text-gray-400 text-center">Searching...</div>
             ) : products.length === 0 ? (
               <div className="px-3 py-3 text-xs text-gray-500 dark:text-gray-400 text-center">
-                {search ? `No products found for "${search}"` : 'Start typing to search'}
+                {search ? `No products found for "${search}"` : 'No products available'}
               </div>
             ) : (
               products.map((product) => (
@@ -435,23 +413,15 @@ export function SearchableProductSelect({
                     product.id === Number(value) ? 'bg-blue-100 dark:bg-blue-900/30' : ''
                   }`}
                 >
-                  <div className="flex flex-col">
-                    <span className="text-xs font-medium text-gray-900 dark:text-gray-100">
-                      {product.name}
+                  <span className="text-xs font-medium text-gray-900 dark:text-gray-100">{product.name}</span>
+                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                    <span className="text-xs text-gray-600 dark:text-gray-400">SKU: {product.sku}</span>
+                    <span className="text-xs text-gray-400">•</span>
+                    <span className="text-xs text-gray-600 dark:text-gray-400">PKR {Number(product.price).toFixed(2)}</span>
+                    <span className="text-xs text-gray-400">•</span>
+                    <span className={`text-xs ${product.stock > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                      Stock: {product.stock}
                     </span>
-                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                      <span className="text-xs text-gray-600 dark:text-gray-400">
-                        SKU: {product.sku}
-                      </span>
-                      <span className="text-xs text-gray-400">•</span>
-                      <span className="text-xs text-gray-600 dark:text-gray-400">
-                        PKR {Number(product.price).toFixed(2)}
-                      </span>
-                      <span className="text-xs text-gray-400">•</span>
-                      <span className={`text-xs ${product.stock > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                        Stock: {product.stock}
-                      </span>
-                    </div>
                   </div>
                 </button>
               ))
