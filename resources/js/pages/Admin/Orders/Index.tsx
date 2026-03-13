@@ -1,7 +1,7 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { PlusCircle, ShoppingCart, Clock, TrendingUp, CheckCircle, DollarSign } from 'lucide-react';
+import { PlusCircle, ShoppingCart, Clock, TrendingUp, CheckCircle, DollarSign, ShoppingBag } from 'lucide-react';
 import { useEffect } from 'react';
 import DataTableWrapper from '@/components/DataTableWrapper';
 import { CommonColumns } from '@/components/TableColumns';
@@ -135,13 +135,28 @@ export default function Index({ stats, flash }: Props) {
                 </div>
             ),
         },
-        CommonColumns.createdAt(true),
+        CommonColumns.createdAt(false),
         CommonColumns.actions({
             baseUrl: '/admin/orders',
             canEdit: true,
             canDelete: true,
             showView: true,
         }),
+        {
+            name: 'Sale',
+            cell: (row: Order) => (
+                <Link
+                    href={`/admin/sales/create-from-order/${row.id}`}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition whitespace-nowrap"
+                    title="Create Sale from this Order"
+                >
+                    <ShoppingBag className="w-3.5 h-3.5" />
+                    Sale
+                </Link>
+            ),
+            width: '90px',
+            ignoreRowClick: true,
+        },
     ];
 
     const csvHeaders = [

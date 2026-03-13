@@ -5,235 +5,204 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Repositories\Admin\SaleRepository;
 use App\Http\Requests\Admin\SaleRequest;
-use App\Jobs\SendSaleConfirmationEmail;
-use App\Jobs\SendSaleWhatsAppNotification;
 use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
-use Yajra\DataTables\Facades\DataTables;
 
 class SaleController extends Controller
 {
-    protected $saleRepository;
-
-    public function __construct(SaleRepository $saleRepository)
+    public function __construct(protected SaleRepository $saleRepository)
     {
-        $this->saleRepository = $saleRepository;
         // $this->middleware('permission:create.sales')->only(['create', 'store']);
         // $this->middleware('permission:edit.sales')->only(['edit', 'update']);
         // $this->middleware('permission:delete.sales')->only(['destroy']);
         // $this->middleware('permission:view.sales')->only(['index', 'show', 'getData']);
     }
 
-    /**
-     * Display a listing of the resource.
-     */
     public function index(Request $request)
     {
-        try {
-            $stats = $this->saleRepository->getStats();
-
-            return Inertia::render('Admin/Sales/Index', [
-                'userRole' => $request->user()->role ?? 'admin',
-                'stats' => $stats,
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Failed to load sales index: '.$e->getMessage());
-
-            return back()->with('error', 'Failed to load sales');
-        }
+        return Inertia::render('Admin/Sales/Index', [
+            'stats' => $this->saleRepository->getStats(),
+        ]);
     }
 
-    /**
-     * Get DataTable data
-     */
     public function getData(Request $request)
     {
         try {
             $query = $this->saleRepository->getAllForDataTable($request);
+            $sales = $query->paginate($request->get('perPage', 10));
 
-            return DataTables::of($query)
-                ->addColumn('customer_name', function ($sale) {
-                    return $sale->customer ? $sale->customer->full_name : null;
-                })
-                ->make(true);
-        } catch (\Exception $e) {
-            Log::error('Failed to get sales data: '.$e->getMessage());
-
-            return response()->json(['error' => 'Failed to load data'], 500);
-        }
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        try {
-            return Inertia::render('Admin/Sales/Create', [
-                'orders' => Order::with(['customer'])
-                    ->whereDoesntHave('sale') // Only orders without sales
-                    ->where('status', 'delivered') // Only delivered orders
-                    ->orderBy('id', 'desc')
-                    ->get(['id', 'order_number', 'customer_id', 'grand_total']),
-                'customers' => Customer::orderBy('first_name')->get(['id', 'first_name', 'last_name', 'phone', 'email']),
-                'products' => Product::with(['variants:id,product_id,name,price,stock'])
-                    ->where('status', 'active')
-                    ->orderBy('name')
-                    ->get(['id', 'name', 'sku', 'price', 'stock']),
+            return response()->json([
+                'data'         => $sales->map(fn ($s) => [
+                    'id'              => $s->id,
+                    'sale_code'       => $s->sale_code,
+                    'grand_total'     => (float) ($s->grand_total ?? 0),
+                    'subtotal'        => (float) ($s->subtotal ?? 0),
+                    'delivery_status' => $s->delivery_status,
+                    'payment_status'  => $s->payment_status,
+                    'payment_type'    => $s->payment_type,
+                    'created_at'      => $s->created_at,
+                    'customer'        => $s->customer ? [
+                        'id'         => $s->customer->id,
+                        'first_name' => $s->customer->first_name,
+                        'last_name'  => $s->customer->last_name,
+                        'phone'      => $s->customer->phone,
+                    ] : null,
+                    'order'           => $s->order ? [
+                        'id'           => $s->order->id,
+                        'order_number' => $s->order->order_number,
+                    ] : null,
+                ]),
+                'total'        => $sales->total(),
+                'per_page'     => $sales->perPage(),
+                'current_page' => $sales->currentPage(),
+                'last_page'    => $sales->lastPage(),
             ]);
         } catch (\Exception $e) {
-            Log::error('Failed to load sale create form: '.$e->getMessage());
-
-            return back()->with('error', 'Failed to load form');
+            Log::error('Sales getData: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to load data', 'data' => [], 'total' => 0], 500);
         }
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    // Create sale — direct (bina order ke)
+    public function create()
+    {
+        return Inertia::render('Admin/Sales/Create', [
+            'customers' => Customer::orderBy('first_name')->get(['id', 'first_name', 'last_name', 'phone', 'email']),
+            'products'  => $this->saleRepository->getProductsForForm(),
+            'order'     => null,
+        ]);
+    }
+
+    // Create sale — order se (Orders Index ka button)
+    public function createFromOrder(string $orderId)
+    {
+        try {
+            $order = Order::with(['customer', 'items.product', 'items.variant'])->findOrFail($orderId);
+
+            return Inertia::render('Admin/Sales/Create', [
+                'customers' => Customer::orderBy('first_name')->get(['id', 'first_name', 'last_name', 'phone', 'email']),
+                'products'  => $this->saleRepository->getProductsForForm(),
+                'order'     => [
+                    'id'              => $order->id,
+                    'order_number'    => $order->order_number,
+                    'customer_id'     => $order->customer_id,
+                    'shipping_address'=> $order->shipping_address,
+                    'billing_address' => $order->billing_address,
+                    'shipping_method' => $order->shipping_method,
+                    'shipping_charges'=> $order->shipping_charges,
+                    'invoice_discount'=> $order->invoice_discount,
+                    'grand_total'     => $order->grand_total,
+                    'customer'        => $order->customer ? [
+                        'id'         => $order->customer->id,
+                        'first_name' => $order->customer->first_name,
+                        'last_name'  => $order->customer->last_name,
+                        'phone'      => $order->customer->phone,
+                        'email'      => $order->customer->email,
+                    ] : null,
+                    'items' => $order->items->map(fn ($item) => [
+                        'product_id'         => $item->product_id,
+                        'product_variant_id' => $item->product_variant_id,
+                        'quantity'           => $item->quantity,
+                        'price'              => $item->price,
+                        'discount'           => $item->discount,
+                        'subtotal'           => $item->subtotal,
+                        'product_name'       => $item->meta['product_name'] ?? $item->product?->name,
+                        'variant_name'       => $item->meta['variant_name'] ?? $item->variant?->value,
+                        'sku'                => $item->meta['sku'] ?? $item->product?->sku,
+                    ]),
+                ],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Sale createFromOrder: ' . $e->getMessage());
+            return redirect()->route('admin.orders.index')->with('error', 'Order not found');
+        }
+    }
+
     public function store(SaleRequest $request)
     {
         try {
-            $sale = $this->saleRepository->store($request->validated());
-
-            // Dispatch email job
-            SendSaleConfirmationEmail::dispatch($sale);
-
-            // Send WhatsApp notification
-            SendSaleWhatsAppNotification::dispatch($sale);
-
-            return to_route('admin.sales.index')
-                ->with('success', 'Sale successfully created! Confirmation email and WhatsApp notification will be sent shortly.');
+            $this->saleRepository->store($request->validated());
+            return to_route('admin.sales.index')->with('success', 'Sale created successfully!');
         } catch (\Exception $e) {
-            Log::error('Failed to create sale: '.$e->getMessage());
-
-            return back()->with('error', 'Failed to create sale: '.$e->getMessage());
+            Log::error('Sale store: ' . $e->getMessage());
+            return back()->with('error', $e->getMessage());
         }
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(string $id)
     {
         try {
-            $sale = $this->saleRepository->find($id);
-
             return Inertia::render('Admin/Sales/Show', [
-                'sale' => $sale,
+                'sale' => $this->saleRepository->find($id),
             ]);
         } catch (\Exception $e) {
-            Log::error('Failed to load sale: '.$e->getMessage());
-
-            return back()->with('error', 'Sale not found');
+            return redirect()->route('admin.sales.index')->with('error', 'Sale not found');
         }
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(string $id)
     {
         try {
-            $sale = $this->saleRepository->find($id);
-
             return Inertia::render('Admin/Sales/Edit', [
-                'sale' => $sale,
-                'orders' => Order::with(['customer'])
-                    ->orderBy('id', 'desc')
-                    ->get(['id', 'order_number', 'customer_id', 'grand_total']),
+                'sale'      => $this->saleRepository->find($id),
                 'customers' => Customer::orderBy('first_name')->get(['id', 'first_name', 'last_name', 'phone', 'email']),
-                'products' => Product::with(['variants:id,product_id,name,price,stock'])
-                    ->where('status', 'active')
-                    ->orderBy('name')
-                    ->get(['id', 'name', 'sku', 'price', 'stock']),
+                'products'  => $this->saleRepository->getProductsForForm(),
             ]);
         } catch (\Exception $e) {
-            Log::error('Failed to load sale edit form: '.$e->getMessage());
-
-            return back()->with('error', 'Failed to load sale');
+            return redirect()->route('admin.sales.index')->with('error', 'Sale not found');
         }
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(SaleRequest $request, string $id)
     {
         try {
             $this->saleRepository->update($id, $request->validated());
-
-            return to_route('admin.sales.index')
-                ->with('success', 'Sale successfully updated!');
+            return to_route('admin.sales.index')->with('success', 'Sale updated!');
         } catch (\Exception $e) {
-            Log::error('Failed to update sale: '.$e->getMessage());
-
-            return back()->with('error', 'Failed to update sale: '.$e->getMessage());
+            Log::error('Sale update: ' . $e->getMessage());
+            return back()->with('error', $e->getMessage());
         }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(string $id)
     {
         try {
             $this->saleRepository->delete($id);
-
-            return redirect()->route('admin.sales.index')
-                ->with('success', 'Sale successfully deleted!');
-
+            return to_route('admin.sales.index')->with('success', 'Sale deleted!');
         } catch (\Exception $e) {
-            Log::error('Failed to delete sale: '.$e->getMessage());
-
-            return redirect()->route('admin.sales.index')
-                ->with('error', 'Failed to delete sale: '.$e->getMessage());
+            return back()->with('error', 'Failed to delete sale');
         }
     }
 
-    /**
-     * Update delivery status
-     */
     public function updateDeliveryStatus(Request $request, string $id)
     {
         try {
             $validated = $request->validate([
-                'delivery_status' => 'required|in:pending,processing,shipped,delivered,cancelled,returned',
+                'delivery_status'   => 'required|in:pending,processing,shipped,delivered,cancelled,returned',
                 'delivery_datetime' => 'nullable|date',
             ]);
-
             $this->saleRepository->updateDeliveryStatus($id, $validated);
-
-            return back()->with('success', 'Delivery status updated successfully!');
+            return back()->with('success', 'Delivery status updated!');
         } catch (\Exception $e) {
-            Log::error('Failed to update delivery status: '.$e->getMessage());
-
-            return back()->with('error', 'Failed to update delivery status: '.$e->getMessage());
+            return back()->with('error', $e->getMessage());
         }
     }
 
-    /**
-     * Update payment status
-     */
     public function updatePaymentStatus(Request $request, string $id)
     {
         try {
             $validated = $request->validate([
-                'payment_status' => 'required|in:unpaid,paid,partially_paid,refunded',
+                'payment_status'    => 'required|in:unpaid,paid,partially_paid,refunded',
                 'payment_timestamp' => 'nullable|date',
             ]);
-
             $this->saleRepository->updatePaymentStatus($id, $validated);
-
-            return back()->with('success', 'Payment status updated successfully!');
+            return back()->with('success', 'Payment status updated!');
         } catch (\Exception $e) {
-            Log::error('Failed to update payment status: '.$e->getMessage());
-
-            return back()->with('error', 'Failed to update payment status: '.$e->getMessage());
+            return back()->with('error', $e->getMessage());
         }
     }
 }
