@@ -1,7 +1,7 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/react';
-import { PlusCircle, Package2, Layers } from 'lucide-react';
+import { Head } from '@inertiajs/react';
+import { Package2, Layers } from 'lucide-react';
 import { useEffect } from 'react';
 import DataTableWrapper from '@/components/DataTableWrapper';
 import { CommonColumns, CodeBadge } from '@/components/TableColumns';
@@ -25,9 +25,13 @@ interface Variant {
 }
 
 interface Props {
-  variants?: {
-    data: Variant[];
+  stats?: {
     total: number;
+    active: number;
+    inactive: number;
+    in_stock: number;
+    out_of_stock: number;
+    default: number;
   };
   flash?: {
     success?: string;
@@ -35,14 +39,18 @@ interface Props {
   };
 }
 
-const DEFAULT_VARIANTS = {
-  data: [],
+const DEFAULT_STATS = {
   total: 0,
+  active: 0,
+  inactive: 0,
+  in_stock: 0,
+  out_of_stock: 0,
+  default: 0,
 };
 
-export default function Index({ variants = DEFAULT_VARIANTS, flash }: Props) {
+export default function Index({ stats: backendStats = DEFAULT_STATS, flash }: Props) {
 
-  const safeVariants = variants || DEFAULT_VARIANTS;
+  const safeStats = backendStats || DEFAULT_STATS;
 
   // Define columns
   const columns = [
@@ -145,12 +153,12 @@ export default function Index({ variants = DEFAULT_VARIANTS, flash }: Props) {
     { label: 'Created At', key: 'created_at' },
   ];
 
-  // Calculate stats
+  // Use stats from backend
   const stats = {
-    total: safeVariants.total || 0,
-    active: safeVariants.data?.filter(v => v?.status).length || 0,
-    inStock: safeVariants.data?.filter(v => v?.stock > 0).length || 0,
-    default: safeVariants.data?.filter(v => v?.is_default).length || 0,
+    total: safeStats.total || 0,
+    active: safeStats.active || 0,
+    inStock: safeStats.in_stock || 0,
+    default: safeStats.default || 0,
   };
 
   useEffect(() => {

@@ -20,7 +20,7 @@ class ProductVariantRepository
      */
     public function getAllForDataTable($request)
     {
-        $query = ProductVariant::with('product')->latest();
+        $query = ProductVariant::with(['product', 'stock'])->latest();
 
         // Search handling
         if ($request->has('search') && $request->search !== '') {
@@ -64,9 +64,14 @@ class ProductVariantRepository
 
         if ($request->has('stock_status') && $request->stock_status !== '') {
             if ($request->stock_status === 'in_stock') {
-                $query->where('stock', '>', 0);
+                $query->whereHas('stock', function ($q) {
+                    $q->where('quantity', '>', 0);
+                });
             } elseif ($request->stock_status === 'out_of_stock') {
-                $query->where('stock', '<=', 0);
+                $query->whereDoesntHave('stock')
+                    ->orWhereHas('stock', function ($q) {
+                        $q->where('quantity', '<=', 0);
+                    });
             }
         }
 
@@ -143,8 +148,14 @@ class ProductVariantRepository
             'total' => ProductVariant::count(),
             'active' => ProductVariant::where('status', true)->count(),
             'inactive' => ProductVariant::where('status', false)->count(),
-            'in_stock' => ProductVariant::where('stock', '>', 0)->count(),
-            'out_of_stock' => ProductVariant::where('stock', '<=', 0)->count(),
+            'in_stock' => ProductVariant::whereHas('stock', function ($query) {
+                $query->where('quantity', '>', 0);
+            })->count(),
+            'out_of_stock' => ProductVariant::whereDoesntHave('stock')
+                ->orWhereHas('stock', function ($query) {
+                    $query->where('quantity', '<=', 0);
+                })->count(),
+            'default' => ProductVariant::where('is_default', true)->count(),
         ];
     }
 }
