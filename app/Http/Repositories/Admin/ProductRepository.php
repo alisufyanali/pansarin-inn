@@ -39,25 +39,25 @@ class ProductRepository
 
         return response()->json([
             'data'         => $products->map(fn ($p) => [
-                'id'                    => $p->id,
-                'name'                  => $p->name,
-                'sku'                   => $p->sku,
-                'price'                 => $p->price,
-                'sale_price'            => $p->sale_price,
+                'id'                      => $p->id,
+                'name'                    => $p->name,
+                'sku'                     => $p->sku,
+                'price'                   => $p->price,
+                'sale_price'              => $p->sale_price,
                 'purchase_price_per_unit' => $p->purchase_price_per_unit,
-                'sale_price_per_unit'   => $p->sale_price_per_unit,
-                'quantity'              => $p->quantity,
-                'unit'                  => $p->unit,
-                'status'                => $p->status,
-                'featured'              => $p->featured,
-                'category_id'           => $p->category_id,
-                'category'              => $p->category,
-                // ── Thumbnail URL for index table ──
-                'thumbnail_url'         => $p->thumbnail
-                                            ? Storage::disk('public')->url($p->thumbnail)
-                                            : null,
-                'created_at'            => $p->created_at,
-                'updated_at'            => $p->updated_at,
+                'sale_price_per_unit'     => $p->sale_price_per_unit,
+                'quantity'                => $p->quantity,
+                'unit'                    => $p->unit,
+                'status'                  => $p->status,
+                'featured'                => $p->featured,
+                'category_id'             => $p->category_id,
+                'category'                => $p->category,
+                // ── Thumbnail: simple asset() — no finfo needed ──
+                'thumbnail_url'           => $p->thumbnail
+                                                ? asset('storage/' . $p->thumbnail)
+                                                : null,
+                'created_at'              => $p->created_at,
+                'updated_at'              => $p->updated_at,
             ]),
             'total'        => $products->total(),
             'per_page'     => $products->perPage(),
@@ -71,7 +71,6 @@ class ProductRepository
         return Product::findOrFail($id);
     }
 
-    // ── Generate folder path: products/{id}-{slug} ──
     private function productFolder(int $id, string $name): string
     {
         $slug = Str::slug($name);
@@ -84,16 +83,12 @@ class ProductRepository
             $data['slug'] = $this->generateUniqueSlug($data['name']);
         }
 
-        // ── Store product first to get ID ──
         $variants = $data['variations'] ?? [];
         unset($data['variations'], $data['selected_attributes']);
 
-        // Temporarily store without images to get ID
         $product = Product::create($data);
+        $folder  = $this->productFolder($product->id, $product->name);
 
-        $folder = $this->productFolder($product->id, $product->name);
-
-        // ── Now store images with correct folder ──
         if ($thumbnailFile) {
             $product->thumbnail = $thumbnailFile->store($folder, 'public');
             $product->save();
@@ -113,7 +108,6 @@ class ProductRepository
             $product->save();
         }
 
-        // ── Create variants ──
         if (!empty($variants)) {
             foreach ($variants as $index => $variant) {
                 ProductVariant::create([
@@ -140,11 +134,10 @@ class ProductRepository
         $product = $this->find($id);
         $folder  = $this->productFolder($product->id, $data['name'] ?? $product->name);
 
-        if ($data['name'] !== $product->name && empty($data['slug'])) {
+        if (isset($data['name']) && $data['name'] !== $product->name && empty($data['slug'])) {
             $data['slug'] = $this->generateUniqueSlug($data['name'], $product->id);
         }
 
-        // ── Thumbnail ──
         if ($thumbnailFile) {
             if ($product->thumbnail) Storage::disk('public')->delete($product->thumbnail);
             $data['thumbnail'] = $thumbnailFile->store($folder, 'public');
@@ -152,7 +145,6 @@ class ProductRepository
             unset($data['thumbnail']);
         }
 
-        // ── Social Image ──
         if ($socialImageFile) {
             if ($product->social_image) Storage::disk('public')->delete($product->social_image);
             $data['social_image'] = $socialImageFile->store("{$folder}/social", 'public');
@@ -160,7 +152,6 @@ class ProductRepository
             unset($data['social_image']);
         }
 
-        // ── Gallery ──
         if (!empty($galleryFiles)) {
             if ($product->gallery && is_array($product->gallery)) {
                 foreach ($product->gallery as $old) Storage::disk('public')->delete($old);
@@ -179,7 +170,6 @@ class ProductRepository
 
         $product->update($data);
 
-        // ── Re-create variants ──
         if (!empty($variants)) {
             $product->variants()->delete();
             foreach ($variants as $index => $variant) {
@@ -205,11 +195,8 @@ class ProductRepository
     public function delete($id)
     {
         $product = $this->find($id);
-
-        // ── Delete entire product folder ──
-        $folder = $this->productFolder($product->id, $product->name);
+        $folder  = $this->productFolder($product->id, $product->name);
         Storage::disk('public')->deleteDirectory($folder);
-
         return $product->delete();
     }
 
