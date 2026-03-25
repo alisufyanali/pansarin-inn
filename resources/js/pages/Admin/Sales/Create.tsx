@@ -1,35 +1,29 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
-import SaleForm from './Form';
+import SaleForm from './SaleForm';
 
-const breadcrumbs: BreadcrumbItem[] = [
-  { title: 'Sales', href: '/admin/sales' },
-  { title: 'Create', href: '/admin/sales/create' },
-];
-
-type Customer = { id: number; first_name: string; last_name: string; phone: string; email: string | null };
-type Order = { id: number; order_number: string; customer_id: number; grand_total: number };
-type Product = { 
-  id: number; 
-  name: string; 
-  sku: string; 
-  price: number; 
-  stock: number;
-  variants?: Array<{ id: number; name: string; price: number; stock: number }>;
-};
-
-interface CreateProps {
-  orders: Order[];
-  customers: Customer[];
-  products: Product[];
+interface Props {
+    customers: any[];
+    products: any[];
+    order: any | null;
 }
 
-export default function Create({ orders, customers, products }: CreateProps) {
-  return (
-    <AppLayout breadcrumbs={breadcrumbs}>
-      <Head title="Create Sale" />
-      <SaleForm orders={orders} customers={customers} products={products} isEdit={false} />
-    </AppLayout>
-  );
+export default function Create({ customers, products, order }: Props) {
+    const breadcrumbs: BreadcrumbItem[] = [
+        { title: 'Sales', href: '/admin/sales' },
+        { title: order ? `Create from #${order.order_number}` : 'Create Sale', href: '#' },
+    ];
+
+    return (
+        <AppLayout breadcrumbs={breadcrumbs}>
+            <Head title={order ? `Sale from ${order.order_number}` : 'Create Sale'} />
+            <SaleForm
+                customers={customers}
+                products={products}
+                order={order}
+                isEdit={false}
+            />
+        </AppLayout>
+    );
 }

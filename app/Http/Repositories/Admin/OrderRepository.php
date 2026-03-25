@@ -4,259 +4,210 @@ namespace App\Http\Repositories\Admin;
 
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\ProductStock;
 use App\Models\ProductVariant;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class OrderRepository
 {
-    /**
-     * Get all orders
-     */
-    public function getAll()
-    {
-        return Order::with('customer')->latest()->get();
-    }
-
-    /**
-     * Get all orders for DataTable
-     */
+    // ── DataTable ─────────────────────────────────────────────────
     public function getAllForDataTable($request)
     {
         $query = Order::with(['customer'])->latest();
 
-        // Search handling
-        if ($request->has('search') && $request->search !== '') {
-            if (is_string($request->search)) {
-                $search = $request->search;
-                $query->where(function ($q) use ($search) {
-                    $q->where('order_number', 'like', "%{$search}%")
-                        ->orWhere('status', 'like', "%{$search}%")
-                        ->orWhere('payment_status', 'like', "%{$search}%")
-                        ->orWhereHas('customer', function ($q) use ($search) {
-                            $q->where('first_name', 'like', "%{$search}%")
-                                ->orWhere('last_name', 'like', "%{$search}%")
-                                ->orWhere('phone', 'like', "%{$search}%");
-                        });
-                });
-            } elseif (is_array($request->search) && isset($request->search['value'])) {
-                $search = $request->search['value'];
-                if (! empty($search)) {
-                    $query->where(function ($q) use ($search) {
-                        $q->where('order_number', 'like', "%{$search}%")
-                            ->orWhere('status', 'like', "%{$search}%")
-                            ->orWhere('payment_status', 'like', "%{$search}%")
-                            ->orWhereHas('customer', function ($q) use ($search) {
-                                $q->where('first_name', 'like', "%{$search}%")
-                                    ->orWhere('last_name', 'like', "%{$search}%")
-                                    ->orWhere('phone', 'like', "%{$search}%");
-                            });
-                    });
-                }
-            }
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('order_number', 'like', "%{$search}%")
+                  ->orWhereHas('customer', fn ($q) =>
+                      $q->where('first_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%")
+                  );
+            });
         }
 
-        // Filters
-        if ($request->has('status') && $request->status !== '') {
-            $query->where('status', $request->status);
-        }
-
-        if ($request->has('payment_status') && $request->payment_status !== '') {
-            $query->where('payment_status', $request->payment_status);
-        }
+        if ($request->filled('status'))         $query->where('status', $request->status);
+        if ($request->filled('payment_status')) $query->where('payment_status', $request->payment_status);
 
         return $query;
     }
 
-    /**
-     * Find order by ID
-     */
+    // ── Find ──────────────────────────────────────────────────────
     public function find($id)
     {
-        return Order::with(['customer', 'items.product', 'items.variant'])->findOrFail($id);
+        $order = Order::with(['customer', 'items.product', 'items.variant'])->findOrFail($id);
+
+        // Format items for frontend
+        $order->items->transform(function ($item) {
+            $item->product_name  = $item->meta['product_name'] ?? $item->product?->name;
+            $item->variant_label = $item->meta['variant_name'] ?? $item->variant?->value;
+            return $item;
+        });
+
+        return $order;
     }
 
-    /**
-     * Create new order
-     */
-    public function store(array $data)
+    // ── Store ─────────────────────────────────────────────────────
+    public function store(array $data): Order
     {
-        DB::beginTransaction();
-        try {
-            // Create order
+        return DB::transaction(function () use ($data) {
             $order = Order::create([
-                'customer_id' => $data['customer_id'],
-                'order_number' => Order::generateOrderNumber(),
+                'customer_id'      => $data['customer_id'],
+                'order_number'     => Order::generateOrderNumber(),
                 'invoice_discount' => $data['invoice_discount'] ?? 0,
                 'shipping_charges' => $data['shipping_charges'] ?? 0,
-                'tax' => $data['tax'] ?? 0,
-                'status' => $data['status'],
-                'payment_status' => $data['payment_status'],
-                'payment_method' => $data['payment_method'] ?? null,
-                'payment_date' => $data['payment_date'] ?? null,
-                'shipping_method' => $data['shipping_method'] ?? null,
+                'tax'              => $data['tax'] ?? 0,
+                'status'           => $data['status'],
+                'payment_status'   => $data['payment_status'],
+                'payment_method'   => $data['payment_method'] ?? null,
+                'payment_date'     => $data['payment_date'] ?? null,
+                'shipping_method'  => $data['shipping_method'] ?? null,
                 'shipping_address' => $data['shipping_address'] ?? null,
-                'billing_address' => $data['billing_address'] ?? null,
-                'order_note' => $data['order_note'] ?? null,
+                'billing_address'  => $data['billing_address'] ?? null,
+                'order_note'       => $data['order_note'] ?? null,
+                'user_id'          => auth()->id(),
             ]);
 
-            // Create order items
-            foreach ($data['items'] as $item) {
-                $product = Product::find($item['product_id']);
-                $variant = isset($item['product_variant_id']) ? ProductVariant::find($item['product_variant_id']) : null;
-
-                $subtotal = ($item['price'] * $item['quantity']) - ($item['discount'] ?? 0);
-
-                $order->items()->create([
-                    'product_id' => $item['product_id'],
-                    'product_variant_id' => $item['product_variant_id'] ?? null,
-                    'quantity' => $item['quantity'],
-                    'price' => $item['price'],
-                    'discount' => $item['discount'] ?? 0,
-                    'subtotal' => $subtotal,
-                    'meta' => [
-                        'product_name' => $product->name,
-                        'sku' => $product->sku,
-                        'variant_name' => $variant?->name ?? null,
-                    ],
-                ]);
-            }
-
-            // Calculate totals
+            $this->syncItems($order, $data['items']);
             $order->calculateTotals();
 
-            DB::commit();
-
             return $order;
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Failed to create order: '.$e->getMessage());
-            throw $e;
-        }
+        });
     }
 
-    /**
-     * Update order
-     */
-    public function update($id, array $data)
+    // ── Update ────────────────────────────────────────────────────
+    public function update($id, array $data): Order
     {
-        DB::beginTransaction();
-        try {
+        return DB::transaction(function () use ($id, $data) {
             $order = Order::findOrFail($id);
 
-            // Update order
             $order->update([
-                'customer_id' => $data['customer_id'],
+                'customer_id'      => $data['customer_id'],
                 'invoice_discount' => $data['invoice_discount'] ?? 0,
                 'shipping_charges' => $data['shipping_charges'] ?? 0,
-                'tax' => $data['tax'] ?? 0,
-                'status' => $data['status'],
-                'payment_status' => $data['payment_status'],
-                'payment_method' => $data['payment_method'] ?? null,
-                'payment_date' => $data['payment_date'] ?? null,
-                'shipping_method' => $data['shipping_method'] ?? null,
+                'tax'              => $data['tax'] ?? 0,
+                'status'           => $data['status'],
+                'payment_status'   => $data['payment_status'],
+                'payment_method'   => $data['payment_method'] ?? null,
+                'payment_date'     => $data['payment_date'] ?? null,
+                'shipping_method'  => $data['shipping_method'] ?? null,
                 'shipping_address' => $data['shipping_address'] ?? null,
-                'billing_address' => $data['billing_address'] ?? null,
-                'order_note' => $data['order_note'] ?? null,
+                'billing_address'  => $data['billing_address'] ?? null,
+                'order_note'       => $data['order_note'] ?? null,
             ]);
 
-            // Delete old items
             $order->items()->delete();
-
-            // Create new items
-            foreach ($data['items'] as $item) {
-                $product = Product::find($item['product_id']);
-                $variant = isset($item['product_variant_id']) ? ProductVariant::find($item['product_variant_id']) : null;
-
-                $subtotal = ($item['price'] * $item['quantity']) - ($item['discount'] ?? 0);
-
-                $order->items()->create([
-                    'product_id' => $item['product_id'],
-                    'product_variant_id' => $item['product_variant_id'] ?? null,
-                    'quantity' => $item['quantity'],
-                    'price' => $item['price'],
-                    'discount' => $item['discount'] ?? 0,
-                    'subtotal' => $subtotal,
-                    'meta' => [
-                        'product_name' => $product->name,
-                        'sku' => $product->sku,
-                        'variant_name' => $variant?->name ?? null,
-                    ],
-                ]);
-            }
-
-            // Recalculate totals
+            $this->syncItems($order, $data['items']);
+            $order->load('items');
             $order->calculateTotals();
 
-            DB::commit();
-
             return $order;
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Failed to update order: '.$e->getMessage());
-            throw $e;
-        }
+        });
     }
 
-    /**
-     * Delete order
-     */
-    public function delete($id)
+    // ── Delete ────────────────────────────────────────────────────
+    public function delete($id): bool
     {
-        try {
-            return Order::destroy($id);
-        } catch (\Exception $e) {
-            Log::error('Failed to delete order: '.$e->getMessage());
-            throw $e;
-        }
-    }
-
-    /**
-     * Update order status
-     */
-    public function updateStatus($id, $status)
-    {
-        try {
+        return DB::transaction(function () use ($id) {
             $order = Order::findOrFail($id);
-            $order->update(['status' => $status]);
-
-            return $order->fresh();
-        } catch (\Exception $e) {
-            Log::error('Failed to update order status: '.$e->getMessage());
-            throw $e;
-        }
+            $order->items()->delete();
+            return $order->delete();
+        });
     }
 
-    /**
-     * Update payment status
-     */
-    public function updatePaymentStatus($id, array $data)
+    // ── Status Updates ────────────────────────────────────────────
+    public function updateStatus($id, string $status): Order
     {
-        try {
-            $order = Order::findOrFail($id);
-            $order->update([
-                'payment_status' => $data['payment_status'],
-                'payment_date' => $data['payment_date'] ?? now(),
-            ]);
-
-            return $order;
-        } catch (\Exception $e) {
-            Log::error('Failed to update payment status: '.$e->getMessage());
-            throw $e;
-        }
+        $order = Order::findOrFail($id);
+        $order->update(['status' => $status]);
+        return $order->fresh();
     }
 
-    /**
-     * Get stats
-     */
-    public function getStats()
+    public function updatePaymentStatus($id, array $data): Order
+    {
+        $order = Order::findOrFail($id);
+        $order->update([
+            'payment_status' => $data['payment_status'],
+            'payment_date'   => $data['payment_date'] ?? now(),
+        ]);
+        return $order;
+    }
+
+    // ── Stats ─────────────────────────────────────────────────────
+    public function getStats(): array
     {
         return [
-            'total' => Order::count(),
-            'pending' => Order::where('status', 'pending')->count(),
-            'processing' => Order::where('status', 'processing')->count(),
-            'delivered' => Order::where('status', 'delivered')->count(),
+            'total'        => Order::count(),
+            'pending'      => Order::where('status', 'pending')->count(),
+            'processing'   => Order::where('status', 'processing')->count(),
+            'delivered'    => Order::where('status', 'delivered')->count(),
             'totalRevenue' => Order::where('payment_status', 'paid')->sum('grand_total'),
         ];
+    }
+
+    // ── Products for Form ─────────────────────────────────────────
+    public function getProductsForForm(): \Illuminate\Support\Collection
+    {
+        return Product::with('variants')
+            ->where('status', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'sku', 'unit'])
+            ->map(function ($p) {
+                return [
+                    'id'       => $p->id,
+                    'name'     => $p->name,
+                    'sku'      => $p->sku,
+                    'unit'     => $p->unit,
+                    'price'    => 0, // sale_price from variant
+                    'stock'    => ProductStock::where('product_id', $p->id)
+                                     ->whereNull('product_variant_id')
+                                     ->value('quantity') ?? 0,
+                    'variants' => $p->variants->map(fn ($v) => [
+                        'id'    => $v->id,
+                        'name'  => collect($v->attributes ?? [])->values()->join(' / ') ?: $v->value,
+                        'sku'   => $v->sku,
+                        'price' => $v->sale_price ?? $v->price ?? 0,
+                        'stock' => ProductStock::where('product_id', $p->id)
+                                       ->where('product_variant_id', $v->id)
+                                       ->value('quantity') ?? 0,
+                    ]),
+                ];
+            });
+    }
+
+    // ── Private Helpers ───────────────────────────────────────────
+    private function syncItems(Order $order, array $items): void
+    {
+        foreach ($items as $item) {
+            if (empty($item['product_id'])) continue;
+
+            $product = Product::find($item['product_id']);
+            $variant = !empty($item['product_variant_id'])
+                ? ProductVariant::find($item['product_variant_id'])
+                : null;
+
+            $qty      = (int) $item['quantity'];
+            $price    = (float) $item['price'];
+            $discount = (float) ($item['discount'] ?? 0);
+            $subtotal = ($price * $qty) - $discount;
+
+            $order->items()->create([
+                'product_id'         => $item['product_id'],
+                'product_variant_id' => $item['product_variant_id'] ?? null,
+                'quantity'           => $qty,
+                'price'              => $price,
+                'discount'           => $discount,
+                'subtotal'           => $subtotal,
+                'meta'               => [
+                    'product_name' => $product?->name,
+                    'sku'          => $product?->sku,
+                    'variant_name' => $variant
+                        ? collect($variant->attributes ?? [])->values()->join(' / ') ?: $variant->value
+                        : null,
+                ],
+            ]);
+        }
     }
 }

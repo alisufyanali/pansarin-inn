@@ -69,16 +69,16 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     // Route::delete('/categories/{id}', [CategoryController::class, 'destroy'])->name('categories.destroy');
 
     // Product Management resource Controllers
+    // IMPORTANT: Custom routes must come BEFORE resource routes
+    Route::get('/products/attributes-by-category', [ProductController::class, 'getAttributesByCategory'])
+        ->name('products.attributes-by-category');
+    
     Route::resource('products', ProductController::class);
     Route::get('products-data', [ProductController::class, 'getData'])->name('products.data');
     Route::resource('product-variants', ProductVariantController::class);
     Route::get('product-variants-data', [ProductVariantController::class, 'getData'])->name('product-variants.data');
     Route::resource('attributes', ProductAttributeController::class);
     Route::get('attributes-data', [ProductAttributeController::class, 'getData'])->name('attributes.data');
-
-
-    Route::get('/products/attributes-by-category', [ProductController::class, 'getAttributesByCategory'])
-    ->name('products.attributes-by-category');
 
     Route::resource('deals', ProductsDealController::class);
     Route::get('deals-data', [ProductsDealController::class, 'getData'])->name('products.data');
@@ -136,9 +136,12 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('blogscomments-data', [BlogsCommentsController::class, 'getData'])->name('blogscomments.data');
 
     // Inventory Management
-    Route::resource('inventory', InventoryController::class);
+    // IMPORTANT: Custom routes BEFORE resource()
+    Route::get('inventory/bulk-create', [InventoryController::class, 'bulkCreate'])->name('inventory.bulk-create');
+    Route::post('inventory/bulk-store', [InventoryController::class, 'bulkStore'])->name('inventory.bulk-store');
     Route::get('inventory-data', [InventoryController::class, 'getData'])->name('inventory.data');
     Route::get('low-stock-products', [InventoryController::class, 'getLowStockProducts'])->name('inventory.low-stock');
+    Route::resource('inventory', InventoryController::class);
 
     // Notification routes
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
@@ -166,11 +169,18 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         Route::post('/send', [WhatsAppController::class, 'sendMessage'])->name('send');
     });
 
+
+    Route::get('sales/create-from-order/{order}', [SaleController::class, 'createFromOrder'])->name('sales.create-from-order');
+    Route::get('sales-data', [SaleController::class, 'getData'])->name('sales.data');
+    Route::patch('sales/{sale}/delivery-status', [SaleController::class, 'updateDeliveryStatus'])->name('sales.delivery-status');
+    Route::patch('sales/{sale}/payment-status', [SaleController::class, 'updatePaymentStatus'])->name('sales.payment-status');
+
+
     // Sales CRUD
     Route::resource('sales', SaleController::class);
 
     // Sales DataTable endpoint
-    Route::get('sales-data', [SaleController::class, 'getData'])->name('sales.data');
+    // Route::get('sales-data', [SaleController::class, 'getData'])->name('sales.data');
 
     // Update delivery status
     Route::patch('sales/{sale}/delivery-status', [SaleController::class, 'updateDeliveryStatus'])

@@ -23,9 +23,6 @@ return new class extends Migration
                 ->constrained('categories')
                 ->cascadeOnDelete();
 
-            $table->decimal('quantity', 10, 2)->nullable()->after('unit');
-            $table->decimal('purchase_price_per_unit', 10, 2)->nullable();
-            $table->decimal('sale_price_per_unit', 10, 2)->nullable();
             $table->decimal('affiliate_commission', 10, 2)->default(5.00);
 
             $table->string('name')->index();
@@ -42,19 +39,13 @@ return new class extends Migration
 
             $table->string('thumbnail')->nullable();
             $table->json('gallery')->nullable();
-            $table->string('social_image')->nullable();
 
             $table->text('short_description')->nullable();
             $table->longText('long_description')->nullable();
-
-            $table->decimal('price', 12, 2)->default(0);
-            $table->decimal('sale_price', 12, 2)->nullable();
+ 
             $table->integer('number_of_view')->default(0);
             $table->text('video')->nullable();
-            $table->text('vendor_featured')->nullable();
-
-            // $table->integer('stock_qty')->default(0);
-            // $table->integer('stock_alert')->default(5);
+            $table->text('vendor_featured')->nullable(); 
             $table->json('tags')->nullable();
 
             $table->boolean('featured')->default(false);

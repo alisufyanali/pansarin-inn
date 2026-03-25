@@ -138,6 +138,7 @@ class ProductController extends Controller
     public function show(string $id)
     {
         $product = $this->productRepository->find($id);
+        $product->load(['category', 'variants']);
 
         return Inertia::render('Admin/Products/Show', [
             'product' => $product,

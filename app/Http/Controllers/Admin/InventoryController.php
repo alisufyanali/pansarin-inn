@@ -5,37 +5,26 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Repositories\Admin\InventoryRepository;
 use App\Http\Requests\Admin\InventoryRequest;
+use App\Http\Requests\Admin\BulkInventoryRequest;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class InventoryController extends Controller
 {
-    protected $inventoryRepository;
-
-    public function __construct(InventoryRepository $inventoryRepository)
+    public function __construct(protected InventoryRepository $inventoryRepository)
     {
-        $this->inventoryRepository = $inventoryRepository;
         $this->middleware('permission:view.inventory')->only(['index', 'getData', 'show']);
         $this->middleware('permission:create.inventory')->only(['create', 'store']);
         $this->middleware('permission:edit.inventory')->only(['edit', 'update']);
         $this->middleware('permission:delete.inventory')->only(['destroy']);
     }
 
-    public function index(Request $request)
+    public function index()
     {
-        try {
-            $stats = $this->inventoryRepository->getStats();
-
-            return Inertia::render('Admin/Inventory/Index', [
-                'stats' => $stats,
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Inventory index error: '.$e->getMessage());
-
-            return back()->with('error', 'Failed to load inventory.');
-        }
+        return Inertia::render('Admin/Inventory/Index', [
+            'stats' => $this->inventoryRepository->getStats(),
+        ]);
     }
 
     public function getData(Request $request)
@@ -43,51 +32,26 @@ class InventoryController extends Controller
         try {
             return $this->inventoryRepository->getAllForDataTable($request);
         } catch (\Exception $e) {
-            Log::error('Inventory getData error: '.$e->getMessage());
-
-            return response()->json([
-                'error' => 'Failed to load inventory data',
-                'message' => $e->getMessage(),
-                'data' => [],
-                'total' => 0,
-            ], 500);
+            Log::error('Inventory getData: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to load data', 'data' => [], 'total' => 0], 500);
         }
     }
 
     public function create()
     {
-        try {
-            $products = $this->inventoryRepository->getProductsForForm();
-
-            return Inertia::render('Admin/Inventory/Create', [
-                'products' => $products,
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Inventory create error: '.$e->getMessage());
-
-            return redirect()->route('admin.inventory.index')
-                ->with('error', 'Failed to load create form.');
-        }
+        return Inertia::render('Admin/Inventory/Create', [
+            'products' => $this->inventoryRepository->getProductsForForm(),
+        ]);
     }
 
     public function store(InventoryRequest $request)
     {
         try {
-            $validated = $request->validated();
-
-            $this->inventoryRepository->store($validated, Auth::id());
-
-            return to_route('admin.inventory.index')->with('success', 'Stock updated!');
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return back()
-                ->withErrors($e->errors())
-                ->withInput();
+            $this->inventoryRepository->store($request->validated());
+            return to_route('admin.inventory.index')->with('success', 'Stock entry added!');
         } catch (\Exception $e) {
-            Log::error('Inventory creation error: '.$e->getMessage());
-
-            return back()
-                ->withInput()
-                ->with('error', $e->getMessage());
+            Log::error('Inventory store: ' . $e->getMessage());
+            return back()->withInput()->with('error', $e->getMessage());
         }
     }
 
@@ -96,14 +60,22 @@ class InventoryController extends Controller
         try {
             $inventory = $this->inventoryRepository->find($id);
 
+            // Get current stock from product_stocks
+            $stockQuery = \App\Models\ProductStock::where('product_id', $inventory->product_id);
+            if ($inventory->product_variant_id) {
+                $stockQuery->where('product_variant_id', $inventory->product_variant_id);
+            } else {
+                $stockQuery->whereNull('product_variant_id');
+            }
+            $currentStock = $stockQuery->value('quantity') ?? 0;
+
             return Inertia::render('Admin/Inventory/Show', [
-                'inventory' => $inventory,
+                'inventory'     => $inventory,
+                'current_stock' => $currentStock,
             ]);
         } catch (\Exception $e) {
-            Log::error('Inventory show error: '.$e->getMessage());
-
-            return redirect()->route('admin.inventory.index')
-                ->with('error', 'Failed to load inventory entry.');
+            Log::error('Inventory show: ' . $e->getMessage());
+            return redirect()->route('admin.inventory.index')->with('error', 'Entry not found.');
         }
     }
 
@@ -111,47 +83,35 @@ class InventoryController extends Controller
     {
         try {
             $inventory = $this->inventoryRepository->find($id);
-            $products = $this->inventoryRepository->getProductsForForm();
 
             return Inertia::render('Admin/Inventory/Edit', [
                 'inventory' => [
-                    'id' => $inventory->id,
-                    'product_id' => $inventory->product_id,
-                    'quantity' => abs($inventory->quantity),
-                    'unit' => $inventory->unit,
-                    'type' => $inventory->type,
-                    'reference' => $inventory->reference,
-                    'note' => $inventory->note,
+                    'id'                 => $inventory->id,
+                    'product_id'         => $inventory->product_id,
+                    'product_variant_id' => $inventory->product_variant_id,
+                    'quantity'           => abs($inventory->quantity),
+                    'type'               => $inventory->type,
+                    'cost_price'         => $inventory->cost_price,
+                    'reference'          => $inventory->reference,
+                    'source'             => $inventory->source,
+                    'note'               => $inventory->note,
                 ],
-                'products' => $products,
+                'products' => $this->inventoryRepository->getProductsForForm(),
             ]);
         } catch (\Exception $e) {
-            Log::error('Inventory edit error: '.$e->getMessage());
-
-            return redirect()->route('admin.inventory.index')
-                ->with('error', 'Failed to load inventory entry.');
+            Log::error('Inventory edit: ' . $e->getMessage());
+            return redirect()->route('admin.inventory.index')->with('error', 'Entry not found.');
         }
     }
 
     public function update(InventoryRequest $request, string $id)
     {
         try {
-            $validated = $request->validated();
-
-            $this->inventoryRepository->update($id, $validated);
-
-            return to_route('admin.inventory.index')
-                ->with('success', 'Inventory entry successfully updated!');
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return back()
-                ->withErrors($e->errors())
-                ->withInput();
+            $this->inventoryRepository->update($id, $request->validated());
+            return to_route('admin.inventory.index')->with('success', 'Inventory entry updated!');
         } catch (\Exception $e) {
-            Log::error('Inventory update error: '.$e->getMessage());
-
-            return back()
-                ->withInput()
-                ->with('error', $e->getMessage());
+            Log::error('Inventory update: ' . $e->getMessage());
+            return back()->withInput()->with('error', $e->getMessage());
         }
     }
 
@@ -159,14 +119,31 @@ class InventoryController extends Controller
     {
         try {
             $this->inventoryRepository->delete($id);
-
-            return to_route('admin.inventory.index')
-                ->with('success', 'Inventory entry successfully deleted!');
+            return to_route('admin.inventory.index')->with('success', 'Entry deleted!');
         } catch (\Exception $e) {
-            Log::error('Inventory destroy error: '.$e->getMessage());
+            Log::error('Inventory destroy: ' . $e->getMessage());
+            return back()->with('error', 'Failed to delete entry.');
+        }
+    }
 
-            return back()
-                ->with('error', 'Failed to delete inventory entry.');
+    // ── Bulk Entry ────────────────────────────────────────────────
+
+    public function bulkCreate()
+    {
+        $products = $this->inventoryRepository->getProductsForForm();
+        return Inertia::render('Admin/Inventory/BulkCreate', [
+            'products' => $products,
+        ]);
+    }
+
+    public function bulkStore(BulkInventoryRequest $request)
+    {
+        try {
+            $this->inventoryRepository->bulkStore($request->validated());
+            return to_route('admin.inventory.index')->with('success', 'Bulk stock entry saved!');
+        } catch (\Exception $e) {
+            Log::error('Inventory bulkStore: ' . $e->getMessage());
+            return back()->with('error', 'Failed: ' . $e->getMessage());
         }
     }
 }

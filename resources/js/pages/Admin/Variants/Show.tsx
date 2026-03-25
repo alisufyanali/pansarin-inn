@@ -28,7 +28,7 @@ export default function Show({ variant }: { variant: Variant }) {
             <div className="p-3">
                 <div className="flex items-center gap-2 mb-4">
                     <Link
-                        href="/product-variants"
+                        href="/admin/product-variants"
                         className="inline-flex items-center justify-center rounded-md bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-white w-10 h-10"
                         title="Back"
                     >

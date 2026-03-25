@@ -1,25 +1,54 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import ProductForm, { type ProductFormData } from './Form';
 
-const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Products', href: '/Products' },
-    { title: 'Edit', href: '#' },
-];
-
-type Category = { id: number; name: string };
-type Attribute = { id: number; name: string; slug: string; values: any[] };
+type Category  = { id: number; name: string };
+type Attribute = { id: number; name: string; slug: string; category_id: number; values: any[] };
 
 interface Product extends ProductFormData {
     id: number;
 }
 
-export default function Edit({ product, categories, attributes }: { product: Product; categories: Category[]; attributes: Attribute[] }) {
+interface Props {
+    product:    Product;
+    categories: Category[];
+    attributes: Attribute[];
+}
+
+export default function Edit({ product, categories, attributes }: Props) {
+    const breadcrumbs: BreadcrumbItem[] = [
+        { title: 'Products',          href: '/admin/products' },
+        { title: `Edit: ${product.name}`, href: '#' },
+    ];
+
+    // ── Normalize thumbnail/gallery for edit ──────────────────────
+    // Convert storage paths to full URLs so preview works
+    const normalizedProduct = {
+        ...product,
+        thumbnail:    typeof product.thumbnail === 'string'
+            ? (product.thumbnail.startsWith('http') ? product.thumbnail : `/storage/${product.thumbnail}`)
+            : null,
+        social_image: typeof product.social_image === 'string'
+            ? (product.social_image.startsWith('http') ? product.social_image : `/storage/${product.social_image}`)
+            : null,
+        gallery: Array.isArray(product.gallery)
+            ? product.gallery.map((g: any) =>
+                typeof g === 'string' && !g.startsWith('http') ? `/storage/${g}` : g
+              )
+            : [],
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title={`Edit ${product.name}`} />
-            <ProductForm product={product} categories={categories} attributes={attributes} isEdit={true} />
+            <Head title={`Edit: ${product.name}`} />
+            {/* errors Inertia se usePage() ke zariye ProductForm ko milte hain automatically */}
+            <ProductForm
+                product={normalizedProduct}
+                categories={categories}
+                attributes={attributes}
+                isEdit={true}
+            />
         </AppLayout>
     );
 }

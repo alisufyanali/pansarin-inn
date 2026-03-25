@@ -275,12 +275,9 @@ class WhatsAppController extends Controller
                 ->get($mediaUrl)
                 ->body();
 
-            // Determine extension
-            $contentType = Http::withToken($accessToken)
-                ->get($mediaUrl)
-                ->header('Content-Type');
-
-            $ext = explode('/', $contentType)[1] ?? 'bin';
+            // Determine extension from type
+            $extMap = ['image' => 'jpg', 'document' => 'pdf', 'audio' => 'ogg'];
+            $ext = $extMap[$type] ?? 'bin';
             $fileName = 'media_'.time().'.'.$ext;
 
             // Save file

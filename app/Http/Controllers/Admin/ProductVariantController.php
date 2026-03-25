@@ -58,8 +58,12 @@ class ProductVariantController extends Controller
                 ->addColumn('is_default_text', function ($variant) {
                     return $variant->is_default ? 'Yes' : 'No';
                 })
+                ->addColumn('stock', function ($variant) {
+                    return $variant->stock ? $variant->stock->quantity : 0;
+                })
                 ->addColumn('stock_status', function ($variant) {
-                    return $variant->stock > 0 ? 'In Stock' : 'Out of Stock';
+                    $quantity = $variant->stock ? $variant->stock->quantity : 0;
+                    return $quantity > 0 ? 'In Stock' : 'Out of Stock';
                 })
                 ->make(true);
         } catch (\Exception $e) {
