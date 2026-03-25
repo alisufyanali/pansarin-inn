@@ -5,17 +5,24 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Repositories\Admin\CustomerRepository;
 use App\Http\Requests\Admin\CustomerRequest;
+use App\Models\Customer;
+use App\Models\Country;
+use App\Models\State;
 use App\Models\City;
+use App\Models\CustomerGroup;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class CustomerController extends Controller
 {
     protected $customerRepository;
 
-    public function __construct(CustomerRepository $customerRepository)
-    {
+    public function __construct(CustomerRepository $customerRepository) {
         $this->customerRepository = $customerRepository;
         $this->middleware('permission:create.customers')->only(['create', 'store']);
         $this->middleware('permission:edit.customers')->only(['edit', 'update']);
@@ -23,11 +30,7 @@ class CustomerController extends Controller
         $this->middleware('permission:view.customers')->only(['index', 'show', 'getData']);
     }
 
-    /**
-     * Display a listing of the resource.
-     */
-    public function index(Request $request)
-    {
+    public function index(Request $request) {
         try {
             $stats = $this->customerRepository->getStats();
 
@@ -42,11 +45,7 @@ class CustomerController extends Controller
         }
     }
 
-    /**
-     * Get DataTable data
-     */
-    public function getData(Request $request)
-    {
+    public function getData(Request $request) {
         try {
             return $this->customerRepository->getAllForDataTable($request);
         } catch (\Exception $e) {
@@ -61,52 +60,32 @@ class CustomerController extends Controller
         }
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        try {
-            return Inertia::render('Admin/Customers/Create', [
-                'cities' => City::orderBy('name')->get(['id', 'name']),
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Customer create error: '.$e->getMessage());
-
-            return redirect()->route('admin.customers.index')
-                ->with('error', 'Failed to load create form.');
-        }
+    public function create() {
+        return Inertia::render('Admin/Customers/Create', [
+            'countries'  => Country::all(['id', 'name']),
+            'states'     => State::all(['id', 'name', 'country_id']),
+            'cities'     => City::all(['id', 'name', 'state_id']),
+            'groups'     => CustomerGroup::all(['id', 'name']),
+            'affiliates' => User::role('affiliate')->get(['id', 'name']), 
+        ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(CustomerRequest $request)
-    {
-        try {
-            $validated = $request->validated();
+    public function store(CustomerRequest $request) {
+        $validated = $request->validated();
 
+        try {
             $this->customerRepository->store($validated);
-
-            return to_route('admin.customers.index')->with('success', 'Customer successfully created!');
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return back()
-                ->withErrors($e->errors())
-                ->withInput();
+            return to_route('admin.customers.index')->with('success', 'Customer created!');
         } catch (\Exception $e) {
-            Log::error('Customer creation error: '.$e->getMessage());
-
-            return back()
-                ->withInput()
-                ->with('error', 'Failed to create customer.');
+            dd([
+                'error_message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
         }
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
+    public function show(string $id) {
         try {
             $customer = $this->customerRepository->find($id);
 
@@ -121,73 +100,58 @@ class CustomerController extends Controller
         }
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
+    public function edit(Customer $customer) {
+        $customer->load('user');
+
+        return Inertia::render('Admin/Customers/Edit', [
+        'customer'   => $customer,
+        'countries'  => Country::all(['id', 'name']),
+        'states'     => State::where('country_id', $customer->city?->state?->country_id)->get(['id', 'name', 'country_id']), 
+        'cities'     => City::where('state_id', $customer->city?->state_id)->get(['id', 'name', 'state_id']),
+        'groups'     => CustomerGroup::all(['id', 'name']),
+        'affiliates' => User::role('affiliate')->get(['id', 'name']),
+        ]);
+    }
+
+    public function update(CustomerRequest $request, Customer $customer) {
         try {
-            $customer = $this->customerRepository->find($id);
-
-            return Inertia::render('Admin/Customers/Edit', [
-                'customer' => $customer,
-                'cities' => City::orderBy('name')->get(['id', 'name']),
-            ]);
+            $this->customerRepository->update($customer, $request->validated());
+            return to_route('admin.customers.index')->with('success', 'Customer updated successfully!');
         } catch (\Exception $e) {
-            Log::error('Customer edit error: '.$e->getMessage());
-
-            return redirect()->route('admin.customers.index')
-                ->with('error', 'Failed to load customer.');
+            \Log::error('Customer update error: ' . $e->getMessage());
+            return back()->with('error', 'Failed to update customer.');
         }
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(CustomerRequest $request, string $id)
-    {
+    // public function destroy(string $id) {
+    //     try {
+    //         $this->customerRepository->delete($id);
+
+    //         return redirect()->route('admin.customers.index')
+    //             ->with('success', 'Customer successfully deleted!');
+    //     } catch (\Exception $e) {
+    //         Log::error('Customer deletion error: '.$e->getMessage());
+
+    //         return redirect()->route('admin.customers.index')
+    //             ->with('error', 'Failed to delete customer.');
+    //     }
+    // }
+
+    public function destroy(Customer $customer) {
         try {
-            $validated = $request->validated();
-
-            $this->customerRepository->update($id, $validated);
-
-            return to_route('admin.customers.index')->with('success', 'Customer successfully updated!');
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return back()
-                ->withErrors($e->errors())
-                ->withInput();
-        } catch (\Exception $e) {
-            Log::error('Customer update error: '.$e->getMessage());
-
-            return back()
-                ->withInput()
-                ->with('error', 'Failed to update customer.');
-        }
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        try {
-            $this->customerRepository->delete($id);
+            // Ab yahan poora object pass ho raha hai
+            $this->customerRepository->delete($customer);
 
             return redirect()->route('admin.customers.index')
                 ->with('success', 'Customer successfully deleted!');
         } catch (\Exception $e) {
             Log::error('Customer deletion error: '.$e->getMessage());
-
             return redirect()->route('admin.customers.index')
                 ->with('error', 'Failed to delete customer.');
         }
     }
 
-    /**
-     * Search customers (for live search in orders)
-     */
-    public function search(Request $request)
-    {
+    public function search(Request $request) {
         try {
             $search = $request->get('q', '');
             $customers = $this->customerRepository->search($search);
@@ -200,11 +164,7 @@ class CustomerController extends Controller
         }
     }
 
-    /**
-     * Bulk delete customers
-     */
-    public function bulkDelete(Request $request)
-    {
+    public function bulkDelete(Request $request) {
         try {
             $request->validate([
                 'ids' => 'required|array',

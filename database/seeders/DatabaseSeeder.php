@@ -18,7 +18,7 @@ class DatabaseSeeder extends Seeder
             BusinessSettingSeeder::class,
             CategorySeeder::class,
             AttributeSeeder::class,
-            CitySeeder::class,
+            LocationSeeder::class,
             ContactSeeder::class,
             CustomerSeeder::class,
             GeneralSettingSeeder::class,

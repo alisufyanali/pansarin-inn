@@ -7,9 +7,6 @@ use Illuminate\Validation\Rule;
 
 class CustomerRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return true;
@@ -22,7 +19,9 @@ class CustomerRequest extends FormRequest
      */
     public function rules(): array
     {
-        $customerId = $this->route('customer') ? $this->route('customer') : null;
+        $customer = $this->route('customer');
+        $userId = $customer ? $customer->user_id : null;
+        $customerId = $customer ? $customer->id : null;
 
         return [
             'first_name' => 'required|string|max:100',
@@ -34,14 +33,16 @@ class CustomerRequest extends FormRequest
                 Rule::unique('customers', 'phone')->ignore($customerId),
             ],
             'email' => [
-                'nullable',
+                'required',
                 'email',
                 'max:255',
-                Rule::unique('customers', 'email')->ignore($customerId),
+                Rule::unique('users', 'email')->ignore($userId),
             ],
             'address' => 'nullable|string|max:255',
-            'city_id' => 'nullable|exists:cities,id',
-            'country' => 'nullable|string|max:100',
+            'city_id' => 'required|exists:cities,id',
+            'customer_group_id' => 'nullable|exists:customer_groups,id',
+            'status' => 'required|in:active,inactive',
+            'referred_by' => 'nullable|exists:users,id',
         ];
     }
 

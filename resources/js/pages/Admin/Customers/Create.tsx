@@ -8,13 +8,30 @@ const breadcrumbs: BreadcrumbItem[] = [
   { title: 'Create', href: '/admin/customers/create' },
 ];
 
-type City = { id: number; name: string };
+// Types ko update karein taake TypeScript error na de
+interface LocationItem { id: number; name: string; country_id?: number; state_id?: number; }
+interface SimpleItem { id: number; name: string; }
 
-export default function Create({ cities }: { cities: City[] }) {
+interface CreateProps {
+  countries: LocationItem[];
+  states: LocationItem[];
+  cities: LocationItem[];
+  groups: SimpleItem[];
+  affiliates: SimpleItem[];
+}
+
+export default function Create({ countries, states, cities, groups, affiliates }: CreateProps) {
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="Create Customer" />
-      <CustomerForm cities={cities} isEdit={false} />
+      <CustomerForm 
+        countries={countries}
+        states={states}
+        cities={cities}
+        groups={groups}
+        affiliates={affiliates}
+        isEdit={false} 
+      />
     </AppLayout>
   );
 }
