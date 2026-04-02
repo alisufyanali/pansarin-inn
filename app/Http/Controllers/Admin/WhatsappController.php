@@ -150,6 +150,39 @@ class WhatsAppController extends Controller
     }
 
     /**
+     * Add a new phone number to chat list
+     */
+    public function addNumber(Request $request)
+    {
+        $request->validate([
+            'phone' => 'required|string|min:7|max:20',
+        ]);
+
+        $cleanPhone = preg_replace('/\D+/', '', $request->phone);
+
+        // Check if number already exists
+        $exists = WhatsappMessageLog::where('phone', $cleanPhone)->exists()
+            || WhatsappMessage::where('from_number', $cleanPhone)->exists();
+
+        if ($exists) {
+            return response()->json(['success' => false, 'message' => 'Number already exists.'], 409);
+        }
+
+        // Create a placeholder log entry so the number appears in the chat list
+        WhatsappMessageLog::create([
+            'phone'            => $cleanPhone,
+            'customer_name'    => 'Manual',
+            'order_id'         => 'Manual-'.mt_rand(1000, 9999),
+            'order_total'      => 0,
+            'delivery_address' => '',
+            'messages'         => '',
+            'api_response'     => json_encode([]),
+        ]);
+
+        return response()->json(['success' => true, 'phone' => $cleanPhone]);
+    }
+
+    /**
      * Send message
      */
     public function sendMessage(Request $request)
@@ -175,7 +208,11 @@ class WhatsAppController extends Controller
                 'api_response' => json_encode($response),
             ]);
 
-            // Return JSON response for AJAX/Inertia
+            // If Inertia request, redirect back with success
+            if (request()->header('X-Inertia')) {
+                return back()->with('success', 'Message sent successfully.');
+            }
+
             return response()->json([
                 'success' => true,
                 'response' => $response,
