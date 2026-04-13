@@ -189,6 +189,8 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::patch('sales/{sale}/payment-status', [SaleController::class, 'updatePaymentStatus'])->name('sales.payment-status');
     Route::post('sales/bulk-payment-status', [SaleController::class, 'bulkUpdatePaymentStatus'])->name('sales.bulk-payment-status');
     Route::post('sales/bulk-delivery-status', [SaleController::class, 'bulkUpdateDeliveryStatus'])->name('sales.bulk-delivery-status');
+    Route::post('sales/bulk-review-email', [SaleController::class, 'bulkSendReviewEmail'])->name('sales.bulk-review-email');
+    Route::post('sales/bulk-review-whatsapp', [SaleController::class, 'bulkSendReviewWhatsApp'])->name('sales.bulk-review-whatsapp');
 
     // Sales CRUD
     Route::resource('sales', SaleController::class);

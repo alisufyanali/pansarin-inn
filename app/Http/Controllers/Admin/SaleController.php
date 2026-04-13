@@ -245,4 +245,40 @@ class SaleController extends Controller
             return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
+
+    public function bulkSendReviewEmail(Request $request)
+    {
+        try {
+            $request->validate(['ids' => 'required|array', 'ids.*' => 'exists:sales,id']);
+            $sales = \App\Models\Sale::with('customer')->whereIn('id', $request->ids)->get();
+            $sent = 0;
+            foreach ($sales as $sale) {
+                if ($sale->customer?->email) {
+                    \App\Jobs\SendSaleReviewEmail::dispatch($sale);
+                    $sent++;
+                }
+            }
+            return response()->json(['success' => true, 'sent' => $sent]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function bulkSendReviewWhatsApp(Request $request)
+    {
+        try {
+            $request->validate(['ids' => 'required|array', 'ids.*' => 'exists:sales,id']);
+            $sales = \App\Models\Sale::with('customer')->whereIn('id', $request->ids)->get();
+            $sent = 0;
+            foreach ($sales as $sale) {
+                if ($sale->customer?->phone) {
+                    \App\Jobs\SendSaleReviewWhatsApp::dispatch($sale);
+                    $sent++;
+                }
+            }
+            return response()->json(['success' => true, 'sent' => $sent]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
 }

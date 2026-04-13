@@ -1,7 +1,7 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { PlusCircle, ShoppingBag, Clock, TrendingUp, CheckCircle, DollarSign, Printer, CreditCard, Truck } from 'lucide-react';
+import { PlusCircle, ShoppingBag, Clock, TrendingUp, CheckCircle, DollarSign, Printer, CreditCard, Truck, Star, MessageCircle, Mail } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
 import DataTableWrapper from '@/components/DataTableWrapper';
 import { CommonColumns } from '@/components/TableColumns';
@@ -254,6 +254,20 @@ export default function Index({ stats, flash }: Props) {
         } catch { toast.error('Failed to update delivery status.'); }
     }
 
+    async function handleReviewEmail() {
+        try {
+            const res = await axios.post('/admin/sales/bulk-review-email', { ids: [...selectedIds] });
+            toast.success(`Review email sent to ${res.data.sent} customer(s).`);
+        } catch { toast.error('Failed to send review emails.'); }
+    }
+
+    async function handleReviewWhatsApp() {
+        try {
+            const res = await axios.post('/admin/sales/bulk-review-whatsapp', { ids: [...selectedIds] });
+            toast.success(`Review WhatsApp sent to ${res.data.sent} customer(s).`);
+        } catch { toast.error('Failed to send WhatsApp messages.'); }
+    }
+
     const columns = [
         {
             name: (
@@ -433,6 +447,26 @@ export default function Index({ stats, flash }: Props) {
                                         </div>
                                     )}
                                 </div>
+
+                                {/* Review buttons */}
+                                <button
+                                    onClick={handleReviewWhatsApp}
+                                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-xl font-semibold transition-all shadow-md"
+                                    title="Send review request via WhatsApp"
+                                >
+                                    <MessageCircle className="w-4 h-4" />
+                                    <Star className="w-3.5 h-3.5" />
+                                    Review WA
+                                </button>
+                                <button
+                                    onClick={handleReviewEmail}
+                                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-xl font-semibold transition-all shadow-md"
+                                    title="Send review request via Email"
+                                >
+                                    <Mail className="w-4 h-4" />
+                                    <Star className="w-3.5 h-3.5" />
+                                    Review Email
+                                </button>
                             </>
                         )}
                         <Link
