@@ -66,7 +66,7 @@ class OrderController extends Controller
     public function create()
     {
         return Inertia::render('Admin/Orders/Create', [
-            'customers' => Customer::orderBy('first_name')->get(['id', 'first_name', 'last_name', 'phone', 'email']),
+            'customers' => Customer::orderBy('first_name')->get(['id', 'first_name', 'last_name', 'phone', 'email', 'address', 'address2', 'city_id']),
             'products'  => $this->orderRepository->getProductsForForm(),
             'cities'    => City::orderBy('province')->orderBy('name')->get(['id', 'name', 'province']),
         ]);
@@ -99,7 +99,7 @@ class OrderController extends Controller
         try {
             return Inertia::render('Admin/Orders/Edit', [
                 'order'     => $this->orderRepository->find($id),
-                'customers' => Customer::orderBy('first_name')->get(['id', 'first_name', 'last_name', 'phone', 'email']),
+                'customers' => Customer::orderBy('first_name')->get(['id', 'first_name', 'last_name', 'phone', 'email', 'address', 'address2', 'city_id']),
                 'products'  => $this->orderRepository->getProductsForForm(),
                 'cities'    => City::orderBy('province')->orderBy('name')->get(['id', 'name', 'province']),
             ]);

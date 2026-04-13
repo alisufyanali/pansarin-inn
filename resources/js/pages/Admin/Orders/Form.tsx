@@ -5,7 +5,16 @@ import { Link } from '@inertiajs/react';
 import { SearchableCustomerSelect, SearchableProductSelect } from '@/components/SearchableSelect';
 import CityDropdown, { type CityOption } from '@/components/CityDropdown';
 
-type Customer = { id: number; first_name: string; last_name: string; phone: string; email: string | null };
+type Customer = { 
+  id: number; 
+  first_name: string; 
+  last_name: string; 
+  phone: string; 
+  email: string | null;
+  address: string | null;
+  address2: string | null;
+  city_id: number | null;
+};
 type Variant = { id: number; name: string; price: number; stock: number };
 type Product = { 
   id: number; 
@@ -105,6 +114,14 @@ export default function OrderForm({
     if (data.customer_id) {
       const customer = customers.find(c => c.id === Number(data.customer_id));
       setSelectedCustomer(customer || null);
+      if (customer) {
+        setData(prev => ({
+          ...prev,
+          shipping_address: customer.address || '',
+          billing_address:  customer.address2 || '',
+          city_id:          customer.city_id ?? '',
+        }));
+      }
     } else {
       setSelectedCustomer(null);
     }
