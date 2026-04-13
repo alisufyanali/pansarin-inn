@@ -49,6 +49,7 @@ export type OrderFormData = {
   shipping_address: string;
   billing_address: string;
   order_note: string;
+  courier_weight: string | number;
 };
 
 interface OrderFormProps {
@@ -81,6 +82,7 @@ export default function OrderForm({
     shipping_address: order?.shipping_address || '',
     billing_address: order?.billing_address || '',
     order_note: order?.order_note || '',
+    courier_weight: order?.courier_weight || '',
   });
 
   // FIX: selectedProducts ko properly initialize karo agar edit mode mein hain
@@ -342,11 +344,63 @@ export default function OrderForm({
                         className="w-full px-3 py-2 text-sm rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
                       >
                         <option value="">Select One</option>
-                        <option value="Standard">Standard</option>
-                        <option value="Express">Express</option>
-                        <option value="Same Day">Same Day</option>
+                        <option value="leopard">Leopard Courier</option>
+                        <option value="cc">Call Courier</option>
+                        <option value="pp">Pakistan Post</option>
+                        <option value="px">PostEx</option>
+                        <option value="movex">Movex</option>
                       </select>
                       {errors.shipping_method && <p className="text-red-500 text-xs mt-1">{errors.shipping_method}</p>}
+
+                      {/* Conditional weight field */}
+                      {data.shipping_method === 'leopard' && (
+                        <div className="mt-2">
+                          <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Leopard Weight (kg)</label>
+                          <input
+                            type="number" min="0" step="0.5"
+                            value={data.courier_weight}
+                            onChange={e => setData('courier_weight', e.target.value)}
+                            className="w-full px-3 py-2 text-sm rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
+                            placeholder="0.5"
+                          />
+                        </div>
+                      )}
+                      {data.shipping_method === 'cc' && (
+                        <div className="mt-2">
+                          <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Call Courier Weight</label>
+                          <input
+                            type="text"
+                            value={data.courier_weight}
+                            onChange={e => setData('courier_weight', e.target.value)}
+                            className="w-full px-3 py-2 text-sm rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
+                            placeholder="e.g. 500g"
+                          />
+                        </div>
+                      )}
+                      {data.shipping_method === 'px' && (
+                        <div className="mt-2">
+                          <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">PostEx Weight (kg)</label>
+                          <input
+                            type="number" min="0" step="0.5"
+                            value={data.courier_weight}
+                            onChange={e => setData('courier_weight', e.target.value)}
+                            className="w-full px-3 py-2 text-sm rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
+                            placeholder="0.5"
+                          />
+                        </div>
+                      )}
+                      {data.shipping_method === 'movex' && (
+                        <div className="mt-2">
+                          <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Movex Weight (kg)</label>
+                          <input
+                            type="number" min="0" step="0.5"
+                            value={data.courier_weight}
+                            onChange={e => setData('courier_weight', e.target.value)}
+                            className="w-full px-3 py-2 text-sm rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
+                            placeholder="0.5"
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
