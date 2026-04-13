@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Repositories\Admin\OrderRepository;
 use App\Http\Requests\Admin\OrderRequest;
 use App\Models\Customer;
+use App\Models\City;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -67,6 +68,7 @@ class OrderController extends Controller
         return Inertia::render('Admin/Orders/Create', [
             'customers' => Customer::orderBy('first_name')->get(['id', 'first_name', 'last_name', 'phone', 'email']),
             'products'  => $this->orderRepository->getProductsForForm(),
+            'cities'    => City::orderBy('province')->orderBy('name')->get(['id', 'name', 'province']),
         ]);
     }
 
@@ -99,6 +101,7 @@ class OrderController extends Controller
                 'order'     => $this->orderRepository->find($id),
                 'customers' => Customer::orderBy('first_name')->get(['id', 'first_name', 'last_name', 'phone', 'email']),
                 'products'  => $this->orderRepository->getProductsForForm(),
+                'cities'    => City::orderBy('province')->orderBy('name')->get(['id', 'name', 'province']),
             ]);
         } catch (\Exception $e) {
             return redirect()->route('admin.orders.index')->with('error', 'Order not found');

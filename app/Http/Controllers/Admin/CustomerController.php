@@ -68,7 +68,7 @@ class CustomerController extends Controller
     {
         try {
             return Inertia::render('Admin/Customers/Create', [
-                'cities' => City::orderBy('name')->get(['id', 'name']),
+                'cities' => City::orderBy('province')->orderBy('name')->get(['id', 'name', 'province']),
             ]);
         } catch (\Exception $e) {
             Log::error('Customer create error: '.$e->getMessage());
@@ -131,7 +131,7 @@ class CustomerController extends Controller
 
             return Inertia::render('Admin/Customers/Edit', [
                 'customer' => $customer,
-                'cities' => City::orderBy('name')->get(['id', 'name']),
+                'cities' => City::orderBy('province')->orderBy('name')->get(['id', 'name', 'province']),
             ]);
         } catch (\Exception $e) {
             Log::error('Customer edit error: '.$e->getMessage());

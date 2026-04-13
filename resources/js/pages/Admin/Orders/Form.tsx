@@ -3,6 +3,7 @@ import { useForm } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from '@inertiajs/react';
 import { SearchableCustomerSelect, SearchableProductSelect } from '@/components/SearchableSelect';
+import CityDropdown, { type CityOption } from '@/components/CityDropdown';
 
 type Customer = { id: number; first_name: string; last_name: string; phone: string; email: string | null };
 type Variant = { id: number; name: string; price: number; stock: number };
@@ -14,7 +15,7 @@ type Product = {
   stock: number;
   variants?: Variant[];
 };
-type City = { id: number; name: string };
+type City = CityOption;
 
 type OrderItem = {
   product_id: number | string;
@@ -26,6 +27,7 @@ type OrderItem = {
 
 export type OrderFormData = {
   customer_id: string | number;
+  city_id: string | number;
   items: OrderItem[];
   invoice_discount: string | number;
   shipping_charges: string | number;
@@ -57,6 +59,7 @@ export default function OrderForm({
 }: OrderFormProps) {
   const { data, setData, errors, post, put, processing } = useForm<OrderFormData>({
     customer_id: order?.customer_id || '',
+    city_id: order?.city_id || '',
     items: order?.items || [{ product_id: '', product_variant_id: '', quantity: 1, price: 0, discount: 0 }],
     invoice_discount: order?.invoice_discount || 0,
     shipping_charges: order?.shipping_charges || 0,
@@ -347,13 +350,13 @@ export default function OrderForm({
                     {errors.shipping_address && <p className="text-red-500 text-xs mt-1">{errors.shipping_address}</p>}
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">City</label>
-                    <select className="w-full px-3 py-2 text-sm rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none">
-                      <option value="">Select One</option>
-                      {cities.map((city) => (
-                        <option key={city.id} value={city.id}>{city.name}</option>
-                      ))}
-                    </select>
+                    <CityDropdown
+                      cities={cities}
+                      value={data.city_id ?? ''}
+                      onChange={val => setData('city_id', val)}
+                      error={errors.city_id}
+                      label="City"
+                    />
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Address 2</label>

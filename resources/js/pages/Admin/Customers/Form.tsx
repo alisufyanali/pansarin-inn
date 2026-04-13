@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useForm } from '@inertiajs/react';
 import { ArrowLeft, User, Phone, Mail, MapPin, Save } from 'lucide-react';
 import { Link } from '@inertiajs/react';
+import CityDropdown, { type CityOption } from '@/components/CityDropdown';
 
-type City = { id: number; name: string };
+type City = CityOption;
 
 export type CustomerFormData = {
   first_name: string;
@@ -159,19 +160,13 @@ export default function CustomerForm({ customer, cities = [], isEdit = false }: 
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">City</label>
-                <select
+                <CityDropdown
+                  cities={cities}
                   value={data.city_id}
-                  onChange={(e) => setData('city_id', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                >
-                  <option value="">Select city</option>
-                  {cities.map((city) => (
-                    <option key={city.id} value={city.id}>
-                      {city.name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={val => setData('city_id', val)}
+                  error={errors.city_id}
+                  label="City"
+                />
               </div>
 
               <div>
@@ -207,6 +202,10 @@ export default function CustomerForm({ customer, cities = [], isEdit = false }: 
           </button>
         </div>
       </form>
+
+      <br /> <br />
+      <br /> <br />
+     
     </div>
   );
 }
