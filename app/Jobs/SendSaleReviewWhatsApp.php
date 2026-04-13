@@ -3,9 +3,10 @@
 namespace App\Jobs;
 
 use App\Models\Sale;
+use App\Models\WhatsappMessageLog;
 use App\Services\WhatsAppService;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Queue\ShouldQueue; 
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
@@ -34,7 +35,18 @@ class SendSaleReviewWhatsApp implements ShouldQueue
             . "{$link}\n\n"
             . "JazakAllah Khair 🙏";
 
-        $whatsapp->sendTextMessage($customer->phone, $message);
+        $response = $whatsapp->sendTextMessage($customer->phone, $message);
+
+        // Save to WhatsApp message log so it appears in chat UI
+        \App\Models\WhatsappMessageLog::create([
+            'phone'            => preg_replace('/\D+/', '', $customer->phone),
+            'customer_name'    => $customer->full_name ?? $customer->first_name,
+            'order_id'         => $code,
+            'order_total'      => $this->sale->grand_total,
+            'delivery_address' => $this->sale->shipping_address ?? '',
+            'messages'         => $message,
+            'api_response'     => json_encode($response),
+        ]);
 
         Log::info('Review WhatsApp sent', ['sale_id' => $this->sale->id]);
     }
