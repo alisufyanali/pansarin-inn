@@ -12,6 +12,7 @@ export type CustomerFormData = {
   phone: string;
   email: string;
   address: string;
+  address2: string;
   city_id: string | number;
   country: string;
 };
@@ -29,6 +30,7 @@ export default function CustomerForm({ customer, cities = [], isEdit = false }: 
     phone: customer?.phone || '',
     email: customer?.email || '',
     address: customer?.address || '',
+    address2: customer?.address2 || '',
     city_id: customer?.city_id || '',
     country: customer?.country || '',
   });
@@ -148,14 +150,27 @@ export default function CustomerForm({ customer, cities = [], isEdit = false }: 
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Address</label>
+              <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Address 1</label>
               <textarea
                 placeholder="Street address, apartment, suite, etc."
                 value={data.address}
                 onChange={e => setData('address', e.target.value)}
-                rows={3}
+                rows={2}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 resize-none"
               />
+              {errors.address && <p className="text-red-500 dark:text-red-400 text-sm mt-1">{errors.address}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Address 2 <span className="text-gray-400 text-xs">(optional)</span></label>
+              <textarea
+                placeholder="Landmark, area, additional info..."
+                value={data.address2}
+                onChange={e => setData('address2', e.target.value)}
+                rows={2}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 resize-none"
+              />
+              {errors.address2 && <p className="text-red-500 dark:text-red-400 text-sm mt-1">{errors.address2}</p>}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
