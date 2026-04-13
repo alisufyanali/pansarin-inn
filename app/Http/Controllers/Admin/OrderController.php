@@ -136,6 +136,54 @@ class OrderController extends Controller
         }
     }
 
+    public function bulkSendEmail(Request $request)
+    {
+        try {
+            $request->validate(['ids' => 'required|array', 'ids.*' => 'exists:orders,id']);
+
+            $orders = \App\Models\Order::with(['customer', 'items.product'])
+                ->whereIn('id', $request->ids)
+                ->get();
+
+            $sent = 0;
+            foreach ($orders as $order) {
+                if ($order->customer?->email) {
+                    \App\Jobs\SendOrderConfirmationEmail::dispatch($order);
+                    $sent++;
+                }
+            }
+
+            return response()->json(['success' => true, 'sent' => $sent]);
+        } catch (\Exception $e) {
+            Log::error('Bulk email error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function bulkSendWhatsApp(Request $request)
+    {
+        try {
+            $request->validate(['ids' => 'required|array', 'ids.*' => 'exists:orders,id']);
+
+            $orders = \App\Models\Order::with(['customer', 'items.product'])
+                ->whereIn('id', $request->ids)
+                ->get();
+
+            $sent = 0;
+            foreach ($orders as $order) {
+                if ($order->customer?->phone) {
+                    \App\Jobs\SendOrderWhatsAppNotification::dispatch($order);
+                    $sent++;
+                }
+            }
+
+            return response()->json(['success' => true, 'sent' => $sent]);
+        } catch (\Exception $e) {
+            Log::error('Bulk WhatsApp error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
     public function updateStatus(Request $request, string $id)
     {
         try {

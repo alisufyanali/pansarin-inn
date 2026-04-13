@@ -97,6 +97,8 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('orders-data', [OrderController::class, 'getData'])->name('orders.data');
     Route::post('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
     Route::post('orders/{order}/payment', [OrderController::class, 'updatePaymentStatus'])->name('orders.updatePayment');
+    Route::post('orders/bulk-send-email', [OrderController::class, 'bulkSendEmail'])->name('orders.bulk-email');
+    Route::post('orders/bulk-send-whatsapp', [OrderController::class, 'bulkSendWhatsApp'])->name('orders.bulk-whatsapp');
 
     /*
     |--------------------------------------------------------------------------

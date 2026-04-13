@@ -1,12 +1,13 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { PlusCircle, ShoppingCart, Clock, TrendingUp, CheckCircle, DollarSign, ShoppingBag, Printer } from 'lucide-react';
+import { PlusCircle, ShoppingCart, Clock, TrendingUp, CheckCircle, DollarSign, ShoppingBag, Printer, Mail, MessageCircle } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
 import DataTableWrapper from '@/components/DataTableWrapper';
 import { CommonColumns } from '@/components/TableColumns';
 import StatCard from '@/components/StatCard';
 import toast from 'react-hot-toast';
+import axios from 'axios';
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Orders', href: '/admin/orders' },
@@ -170,6 +171,26 @@ export default function Index({ stats, flash }: Props) {
         printWindow.document.close();
     }
 
+    async function handleBulkEmail() {
+        if (selectedIds.size === 0) { toast.error('Please select at least one order.'); return; }
+        try {
+            const res = await axios.post('/admin/orders/bulk-send-email', { ids: [...selectedIds] });
+            toast.success(`Email queued for ${res.data.sent} order(s).`);
+        } catch {
+            toast.error('Failed to send emails.');
+        }
+    }
+
+    async function handleBulkWhatsApp() {
+        if (selectedIds.size === 0) { toast.error('Please select at least one order.'); return; }
+        try {
+            const res = await axios.post('/admin/orders/bulk-send-whatsapp', { ids: [...selectedIds] });
+            toast.success(`WhatsApp queued for ${res.data.sent} order(s).`);
+        } catch {
+            toast.error('Failed to send WhatsApp messages.');
+        }
+    }
+
     const columns = [
         {
             name: (
@@ -296,15 +317,31 @@ export default function Index({ stats, flash }: Props) {
                             Manage customer orders and track deliveries
                         </p>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-wrap">
                         {selectedIds.size > 0 && (
-                            <button
-                                onClick={handlePrint}
-                                className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-800 hover:bg-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 text-white rounded-xl font-semibold transition-all shadow-md"
-                            >
-                                <Printer className="w-4 h-4" />
-                                Print ({selectedIds.size})
-                            </button>
+                            <>
+                                <button
+                                    onClick={handlePrint}
+                                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-800 hover:bg-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 text-white rounded-xl font-semibold transition-all shadow-md"
+                                >
+                                    <Printer className="w-4 h-4" />
+                                    Print ({selectedIds.size})
+                                </button>
+                                <button
+                                    onClick={handleBulkEmail}
+                                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-all shadow-md"
+                                >
+                                    <Mail className="w-4 h-4" />
+                                    Email ({selectedIds.size})
+                                </button>
+                                <button
+                                    onClick={handleBulkWhatsApp}
+                                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold transition-all shadow-md"
+                                >
+                                    <MessageCircle className="w-4 h-4" />
+                                    WhatsApp ({selectedIds.size})
+                                </button>
+                            </>
                         )}
                         <Link
                             href="/admin/orders/create"
