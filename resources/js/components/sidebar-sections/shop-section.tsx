@@ -6,14 +6,16 @@ interface ShopSectionProps {
     hasAnyCustomerPerm: boolean;
     hasAnyOrderPerm: boolean;
     hasAnySalePerm: boolean;
+    hasAnyCitiesPerm: boolean;
 }
 
 export function ShopSection({
     hasAnyCustomerPerm,
     hasAnyOrderPerm,
     hasAnySalePerm,
+    hasAnyCitiesPerm,
 }: ShopSectionProps): NavItem | null {
-    if (!hasAnyCustomerPerm && !hasAnyOrderPerm && !hasAnySalePerm) {
+    if (!hasAnyCustomerPerm && !hasAnyOrderPerm && !hasAnySalePerm && !hasAnyCitiesPerm) {
         return null;
     }
 
@@ -56,6 +58,14 @@ export function ShopSection({
             title: 'Order Reviews',
             href: '/admin/orderReviews',
             icon: Star,
+        });
+    }
+
+    if (hasAnyCitiesPerm) {
+        shopSubmenu.push({
+            title: 'Cities',
+            href: '/admin/cities',
+            icon: User,
         });
     }
 

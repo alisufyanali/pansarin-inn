@@ -23,6 +23,7 @@ use App\Http\Controllers\Admin\ProductsReviewsController;
 use App\Http\Controllers\Admin\ProductVariantController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SaleController;
+use App\Http\Controllers\Admin\CityController;
 use App\Http\Controllers\Admin\WhatsAppController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -113,6 +114,15 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::resource('coupons', CouponController::class);
     Route::get('coupons-data', [CouponController::class, 'getData'])->name('coupons.data');
     Route::post('coupons/{coupon}/toggle', [CouponController::class, 'toggleStatus'])->name('coupons.toggle');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cities
+    |--------------------------------------------------------------------------
+    */
+    Route::resource('cities', CityController::class);
+    Route::get('cities-data', [CityController::class, 'getData'])->name('cities.data');
+    Route::post('cities/bulk-delete', [CityController::class, 'bulkDelete'])->name('cities.bulk-delete');
 
     /*
     |--------------------------------------------------------------------------

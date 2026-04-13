@@ -65,6 +65,15 @@ export function usePermissionChecks() {
     const canViewSale = can('view.sales');
     const hasAnySalePerm = canCreateSale || canEditSale || canDeleteSale || canViewSale;
 
+    // cities
+    const canCreateCities = can('create.cities');
+    const canEditCities = can('edit.cities');
+    const canDeleteCities = can('delete.cities');
+    const canViewCities = can('view.cities');
+    const hasAnyCitiesPerm = canCreateCities || canEditCities || canDeleteCities || canViewCities;
+
+
+
     // Permissions
     const canCreatePermission = can('create.permissions');
     const canEditPermission = can('edit.permissions');
@@ -114,6 +123,7 @@ export function usePermissionChecks() {
         hasAnyCustomerPerm,
         hasAnyOrderPerm,
         hasAnySalePerm,
+        hasAnyCitiesPerm,
         hasAnyPermissionPerm,
         hasAnyVendorPerm,
         hasAnyContactMsgPerm,
