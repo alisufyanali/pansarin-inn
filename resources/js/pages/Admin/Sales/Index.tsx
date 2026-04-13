@@ -92,90 +92,110 @@ export default function Index({ stats, flash }: Props) {
         const selected = allRows.filter(r => selectedIds.has(r.id));
         if (selected.length === 0) { toast.error('Please select at least one sale.'); return; }
 
+        // SVG icons as inline strings
+        const phoneIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:4px;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.18 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6.29 6.29l.96-.96a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`;
+        const mailIcon  = `<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:4px;"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>`;
+        const pinIcon   = `<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:4px;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>`;
+        const cityIcon  = `<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:4px;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`;
+
         const invoices = selected.map(sale => {
             const items = sale.items ?? [];
+            const date  = new Date(sale.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
             const itemRows = items.map((item, i) => `
-                <tr>
-                    <td style="border:1px solid #ddd;padding:5px 8px;text-align:center;">${i + 1}</td>
-                    <td style="border:1px solid #ddd;padding:5px 8px;">${item.product_name}</td>
-                    <td style="border:1px solid #ddd;padding:5px 8px;text-align:center;">${item.variant_name ?? '—'}</td>
-                    <td style="border:1px solid #ddd;padding:5px 8px;text-align:center;">${item.quantity}</td>
-                    <td style="border:1px solid #ddd;padding:5px 8px;text-align:right;">Rs${Number(item.price).toLocaleString()}</td>
-                    <td style="border:1px solid #ddd;padding:5px 8px;text-align:right;">Rs${Number(item.subtotal).toLocaleString()}</td>
+                <tr style="background:${i % 2 === 0 ? '#ffffff' : '#f0fdf4'};">
+                    <td style="padding:7px 10px;border-bottom:1px solid #e8f5e9;text-align:center;color:#9ca3af;font-size:11px;">${i + 1}</td>
+                    <td style="padding:7px 10px;border-bottom:1px solid #e8f5e9;font-weight:500;color:#1a1a1a;">${item.product_name}</td>
+                    <td style="padding:7px 10px;border-bottom:1px solid #e8f5e9;text-align:center;color:#6b7280;font-size:11px;">${item.variant_name ?? '—'}</td>
+                    <td style="padding:7px 10px;border-bottom:1px solid #e8f5e9;text-align:center;font-weight:600;">${item.quantity}</td>
+                    <td style="padding:7px 10px;border-bottom:1px solid #e8f5e9;text-align:right;color:#374151;">Rs ${Number(item.price).toLocaleString()}</td>
+                    <td style="padding:7px 10px;border-bottom:1px solid #e8f5e9;text-align:right;font-weight:700;color:#166534;">Rs ${Number(item.subtotal).toLocaleString()}</td>
                 </tr>
             `).join('');
 
-            const date = new Date(sale.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-
             return `
-            <div style="break-inside:avoid;border:1px solid #ccc;border-radius:6px;padding:16px;margin-bottom:12px;font-family:Arial,sans-serif;font-size:12px;">
-                <!-- Header -->
-                <table style="width:100%;margin-bottom:10px;">
-                    <tr>
-                        <td style="vertical-align:middle;">
-                            <img src="/logo.png" style="height:48px;object-fit:contain;" onerror="this.style.display='none'" />
-                        </td>
-                        <td style="text-align:right;vertical-align:middle;font-size:11px;line-height:1.7;">
-                            <strong>Guest Id: ${sale.sale_code}</strong><br/>
-                            <strong>Invoice No: ${sale.order?.order_number ?? sale.sale_code}</strong><br/>
-                            <strong>Date: ${date}</strong>
-                        </td>
-                    </tr>
-                </table>
+            <div style="break-inside:avoid;margin-bottom:16px;border-radius:10px;overflow:hidden;border:1px solid #d1fae5;font-family:'Segoe UI',Arial,sans-serif;font-size:12px;background:#fff;box-shadow:0 2px 8px rgba(45,106,79,0.08);">
 
-                <hr style="border:none;border-top:1px solid #ddd;margin:8px 0;"/>
+                <!-- Top accent bar -->
+                <div style="height:5px;background:linear-gradient(90deg,#1b4332,#2d6a4f,#52b788,#95d5b2);"></div>
+
+                <!-- Header -->
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 20px 12px;background:linear-gradient(135deg,#f0fdf4,#ffffff);">
+                    <div>
+                        <img src="/logo.png" style="height:46px;object-fit:contain;" onerror="this.style.display='none'" />
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-size:18px;font-weight:800;color:#1b4332;letter-spacing:2px;text-transform:uppercase;">Invoice</div>
+                        <div style="font-size:11px;color:#6b7280;margin-top:3px;">
+                            <span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:20px;font-weight:600;">${sale.order?.order_number ?? sale.sale_code}</span>
+                        </div>
+                        <div style="font-size:11px;color:#9ca3af;margin-top:4px;">${date}</div>
+                    </div>
+                </div>
+
+                <div style="height:1px;background:linear-gradient(90deg,transparent,#d1fae5,transparent);margin:0 20px;"></div>
 
                 <!-- Client Info -->
-                <table style="width:100%;margin-bottom:10px;border-collapse:collapse;">
-                    <tr>
-                        <td style="width:48%;vertical-align:top;padding-right:8px;">
-                            <div style="border:1px solid #ddd;padding:8px;border-radius:4px;">
-                                <div style="font-weight:700;font-size:11px;margin-bottom:6px;color:#555;">Client Information</div>
-                                <table style="font-size:11px;width:100%;border-collapse:collapse;">
-                                    <tr><td style="color:#888;padding:2px 6px 2px 0;width:80px;">First Name</td><td style="font-weight:600;">${sale.customer?.first_name ?? ''}</td></tr>
-                                    <tr><td style="color:#888;padding:2px 6px 2px 0;">Last Name</td><td style="font-weight:600;">${sale.customer?.last_name ?? ''}</td></tr>
-                                    <tr><td style="color:#888;padding:2px 6px 2px 0;">Phone</td><td style="font-weight:600;">${sale.customer?.phone ?? ''}</td></tr>
-                                </table>
-                            </div>
-                        </td>
-                        <td style="width:4%;"></td>
-                        <td style="width:48%;vertical-align:top;">
-                            <div style="border:1px solid #ddd;padding:8px;border-radius:4px;">
-                                <div style="font-weight:700;font-size:11px;margin-bottom:6px;color:#555;">Client Information</div>
-                                <table style="font-size:11px;width:100%;border-collapse:collapse;">
-                                    <tr><td style="color:#888;padding:2px 6px 2px 0;width:60px;">Address</td><td style="font-weight:600;">${sale.customer?.address ?? ''}</td></tr>
-                                    <tr><td style="color:#888;padding:2px 6px 2px 0;">Phone</td><td style="font-weight:600;">${sale.customer?.phone ?? ''}</td></tr>
-                                    <tr><td style="color:#888;padding:2px 6px 2px 0;">E-mail</td><td style="font-weight:600;">${sale.customer?.email ?? ''}</td></tr>
-                                </table>
-                            </div>
-                        </td>
-                    </tr>
-                </table>
+                <div style="display:flex;gap:12px;padding:12px 20px;">
+                    <div style="flex:1;background:#f8fffe;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;">
+                        <div style="font-size:9px;font-weight:800;color:#2d6a4f;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;border-bottom:1px solid #d1fae5;padding-bottom:4px;">Bill To</div>
+                        <div style="font-size:13px;font-weight:700;color:#1a1a1a;margin-bottom:5px;">${sale.customer?.first_name ?? ''} ${sale.customer?.last_name ?? ''}</div>
+                        <div style="color:#555;font-size:11px;line-height:1.9;">
+                            <div>${phoneIcon}${sale.customer?.phone ?? '—'}</div>
+                            ${sale.customer?.email ? `<div>${mailIcon}${sale.customer.email}</div>` : ''}
+                        </div>
+                    </div>
+                    <div style="flex:1;background:#f8f8ff;border:1px solid #c7d2fe;border-radius:8px;padding:10px 14px;">
+                        <div style="font-size:9px;font-weight:800;color:#4338ca;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;border-bottom:1px solid #e0e7ff;padding-bottom:4px;">Ship To</div>
+                        <div style="color:#555;font-size:11px;line-height:1.9;">
+                            ${sale.customer?.address
+                                ? `<div>${pinIcon}${sale.customer.address}</div>`
+                                : '<div style="color:#aaa;font-style:italic;">No address provided</div>'}
+                            ${sale.city?.name ? `<div>${cityIcon}${sale.city.name}</div>` : ''}
+                            <div>${phoneIcon}${sale.customer?.phone ?? '—'}</div>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Items Table -->
-                <table style="width:100%;border-collapse:collapse;margin-bottom:8px;font-size:11px;">
-                    <thead>
-                        <tr style="background:#f3f4f6;">
-                            <th style="border:1px solid #ddd;padding:6px;text-align:center;width:30px;">No</th>
-                            <th style="border:1px solid #ddd;padding:6px;text-align:left;">Item</th>
-                            <th style="border:1px solid #ddd;padding:6px;text-align:center;width:100px;">Options</th>
-                            <th style="border:1px solid #ddd;padding:6px;text-align:center;width:60px;">Qty</th>
-                            <th style="border:1px solid #ddd;padding:6px;text-align:right;width:80px;">Unit Cost</th>
-                            <th style="border:1px solid #ddd;padding:6px;text-align:right;width:80px;">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>${itemRows || '<tr><td colspan="6" style="text-align:center;padding:10px;color:#aaa;">No items</td></tr>'}</tbody>
-                </table>
+                <div style="padding:0 20px 14px;">
+                    <table style="width:100%;border-collapse:collapse;font-size:11px;border-radius:8px;overflow:hidden;border:1px solid #d1fae5;">
+                        <thead>
+                            <tr style="background:linear-gradient(90deg,#1b4332,#2d6a4f);color:#fff;">
+                                <th style="padding:9px 10px;text-align:center;width:32px;font-weight:600;">#</th>
+                                <th style="padding:9px 10px;text-align:left;font-weight:600;">Item</th>
+                                <th style="padding:9px 10px;text-align:center;width:110px;font-weight:600;">Options</th>
+                                <th style="padding:9px 10px;text-align:center;width:50px;font-weight:600;">Qty</th>
+                                <th style="padding:9px 10px;text-align:right;width:85px;font-weight:600;">Unit Price</th>
+                                <th style="padding:9px 10px;text-align:right;width:85px;font-weight:600;">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>${itemRows || '<tr><td colspan="6" style="text-align:center;padding:14px;color:#aaa;font-style:italic;">No items found</td></tr>'}</tbody>
+                    </table>
+                </div>
 
-                <!-- Totals -->
-                <table style="width:260px;margin-left:auto;font-size:11px;border-collapse:collapse;">
-                    <tr><td style="padding:3px 8px;color:#555;">Sub Total Amount</td><td style="padding:3px 8px;text-align:right;">Rs${Number(sale.subtotal).toLocaleString()}.00</td></tr>
-                    <tr><td style="padding:3px 8px;color:#555;">Shipping</td><td style="padding:3px 8px;text-align:right;">Rs${Number(sale.shipping_charges).toLocaleString()}.00</td></tr>
-                    <tr style="border-top:2px solid #333;">
-                        <td style="padding:5px 8px;font-weight:700;font-size:12px;">Grand Total</td>
-                        <td style="padding:5px 8px;text-align:right;font-weight:700;font-size:12px;">Rs${Number(sale.grand_total).toLocaleString()}.00</td>
-                    </tr>
-                </table>
+                <!-- Totals + Footer -->
+                <div style="display:flex;justify-content:space-between;align-items:flex-end;padding:0 20px 16px;gap:12px;">
+                    <div style="font-size:10px;color:#9ca3af;font-style:italic;max-width:200px;line-height:1.6;">
+                        Thank you for your order!<br/>
+                        For queries contact: pansariinn@gmail.com
+                    </div>
+                    <div style="min-width:210px;border-radius:8px;overflow:hidden;border:1px solid #d1fae5;">
+                        <div style="display:flex;justify-content:space-between;padding:6px 12px;background:#f0fdf4;font-size:11px;border-bottom:1px solid #d1fae5;">
+                            <span style="color:#6b7280;">Subtotal</span>
+                            <span style="font-weight:500;">Rs ${Number(sale.subtotal).toLocaleString()}</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;padding:6px 12px;background:#f0fdf4;font-size:11px;border-bottom:1px solid #d1fae5;">
+                            <span style="color:#6b7280;">Shipping</span>
+                            <span style="font-weight:500;">Rs ${Number(sale.shipping_charges).toLocaleString()}</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;padding:9px 12px;background:linear-gradient(90deg,#1b4332,#2d6a4f);color:#fff;">
+                            <span style="font-weight:700;font-size:12px;">Grand Total</span>
+                            <span style="font-weight:800;font-size:13px;">Rs ${Number(sale.grand_total).toLocaleString()}</span>
+                        </div>
+                    </div>
+                </div>
+
             </div>
             `;
         }).join('');
@@ -183,13 +203,13 @@ export default function Index({ stats, flash }: Props) {
         const win = window.open('', '_blank');
         if (!win) return;
         win.document.write(`
-            <!DOCTYPE html><html><head><title>Sales Invoices</title>
+            <!DOCTYPE html><html><head><title>Invoices</title>
             <style>
-                * { box-sizing: border-box; }
-                body { margin: 12px; padding: 0; background: #fff; }
+                * { box-sizing:border-box; margin:0; padding:0; }
+                body { background:#fff; padding:10px; font-family:'Segoe UI',Arial,sans-serif; }
                 @media print {
-                    body { margin: 6mm; }
-                    @page { margin: 8mm; size: A4; }
+                    body { padding:0; }
+                    @page { margin:8mm; size:A4; }
                 }
             </style>
             </head><body>
