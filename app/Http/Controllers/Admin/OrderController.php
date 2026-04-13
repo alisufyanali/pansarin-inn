@@ -51,6 +51,13 @@ class OrderController extends Controller
                         'last_name'  => $o->customer->last_name,
                         'phone'      => $o->customer->phone,
                     ] : null,
+                    'city'           => $o->city ? ['name' => $o->city->name] : null,
+                    'items'          => $o->items->map(fn ($item) => [
+                        'product_name' => $item->meta['product_name'] ?? $item->product?->name ?? '—',
+                        'variant_name' => $item->meta['variant_name'] ?? null,
+                        'quantity'     => $item->quantity,
+                        'price'        => (float) $item->price,
+                    ]),
                 ]),
                 'total'        => $orders->total(),
                 'per_page'     => $orders->perPage(),

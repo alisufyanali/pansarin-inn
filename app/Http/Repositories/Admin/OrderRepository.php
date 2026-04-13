@@ -14,7 +14,11 @@ class OrderRepository
     // ── DataTable ─────────────────────────────────────────────────
     public function getAllForDataTable($request)
     {
-        $query = Order::with(['customer'])->latest();
+        $query = Order::with([
+            'customer',
+            'city:id,name',
+            'items',
+        ])->latest();
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -55,6 +59,7 @@ class OrderRepository
         return DB::transaction(function () use ($data) {
             $order = Order::create([
                 'customer_id'      => $data['customer_id'],
+                'city_id'          => $data['city_id'] ?? null,
                 'order_number'     => Order::generateOrderNumber(),
                 'invoice_discount' => $data['invoice_discount'] ?? 0,
                 'shipping_charges' => $data['shipping_charges'] ?? 0,
@@ -85,6 +90,7 @@ class OrderRepository
 
             $order->update([
                 'customer_id'      => $data['customer_id'],
+                'city_id'          => $data['city_id'] ?? null,
                 'invoice_discount' => $data['invoice_discount'] ?? 0,
                 'shipping_charges' => $data['shipping_charges'] ?? 0,
                 'tax'              => $data['tax'] ?? 0,

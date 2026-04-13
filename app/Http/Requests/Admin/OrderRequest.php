@@ -12,6 +12,7 @@ class OrderRequest extends FormRequest
     {
         return [
             'customer_id'           => 'required|exists:customers,id',
+            'city_id'               => 'nullable|exists:cities,id',
             'items'                 => 'required|array|min:1',
             'items.*.product_id'    => 'required|exists:products,id',
             'items.*.product_variant_id' => 'nullable|exists:product_variants,id',
