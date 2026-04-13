@@ -26,6 +26,7 @@ interface DataTableWrapperProps {
   additionalFilters?: AdditionalFilter[];
   searchableKeys?: string[];
   onDataLoaded?: (rows: any[]) => void;
+  refreshRef?: React.MutableRefObject<(() => void) | null>;
 }
 
 interface ApiResponse {
@@ -47,6 +48,7 @@ export default function DataTableWrapper({
   additionalFilters = [],
   searchableKeys = DEFAULT_SEARCH_KEYS,
   onDataLoaded,
+  refreshRef,
 }: DataTableWrapperProps) {
   // State
   const [data, setData] = useState<any[]>([]);
@@ -311,6 +313,7 @@ export default function DataTableWrapper({
   // Initial load and cleanup
   useEffect(() => {
     reloadData(1, perPage);
+    if (refreshRef) refreshRef.current = () => reloadData(1, perPage);
 
     return () => {
       if (abortControllerRef.current) {

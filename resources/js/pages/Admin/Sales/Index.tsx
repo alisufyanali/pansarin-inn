@@ -1,12 +1,13 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { PlusCircle, ShoppingBag, Clock, TrendingUp, CheckCircle, DollarSign, Printer } from 'lucide-react';
+import { PlusCircle, ShoppingBag, Clock, TrendingUp, CheckCircle, DollarSign, Printer, CreditCard, Truck } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
 import DataTableWrapper from '@/components/DataTableWrapper';
 import { CommonColumns } from '@/components/TableColumns';
 import StatCard from '@/components/StatCard';
 import toast from 'react-hot-toast';
+import axios from 'axios';
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Sales', href: '/admin/sales' },
@@ -68,11 +69,26 @@ const PAYMENT_COLORS: Record<string, string> = {
 export default function Index({ stats, flash }: Props) {
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
     const [allRows, setAllRows] = useState<Sale[]>([]);
+    const [paymentDropdown, setPaymentDropdown] = useState(false);
+    const [deliveryDropdown, setDeliveryDropdown] = useState(false);
+    const paymentRef = useRef<HTMLDivElement>(null);
+    const deliveryRef = useRef<HTMLDivElement>(null);
+    const tableRefresh = useRef<(() => void) | null>(null);
 
     useEffect(() => {
         if (flash?.success) toast.success(flash.success);
         if (flash?.error)   toast.error(flash.error);
     }, [flash]);
+
+    // Close dropdowns on outside click
+    useEffect(() => {
+        function handler(e: MouseEvent) {
+            if (paymentRef.current && !paymentRef.current.contains(e.target as Node)) setPaymentDropdown(false);
+            if (deliveryRef.current && !deliveryRef.current.contains(e.target as Node)) setDeliveryDropdown(false);
+        }
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
 
     const allSelected = allRows.length > 0 && allRows.every(r => selectedIds.has(r.id));
 
@@ -220,6 +236,24 @@ export default function Index({ stats, flash }: Props) {
         win.document.close();
     }
 
+    async function handleBulkPayment(status: string) {
+        try {
+            await axios.post('/admin/sales/bulk-payment-status', { ids: [...selectedIds], payment_status: status });
+            toast.success(`Payment status updated to "${status}" for ${selectedIds.size} sale(s).`);
+            setPaymentDropdown(false);
+            tableRefresh.current?.();
+        } catch { toast.error('Failed to update payment status.'); }
+    }
+
+    async function handleBulkDelivery(status: string) {
+        try {
+            await axios.post('/admin/sales/bulk-delivery-status', { ids: [...selectedIds], delivery_status: status });
+            toast.success(`Delivery status updated to "${status}" for ${selectedIds.size} sale(s).`);
+            setDeliveryDropdown(false);
+            tableRefresh.current?.();
+        } catch { toast.error('Failed to update delivery status.'); }
+    }
+
     const columns = [
         {
             name: (
@@ -325,13 +359,81 @@ export default function Index({ stats, flash }: Props) {
                     </div>
                     <div className="flex items-center gap-3 flex-wrap">
                         {selectedIds.size > 0 && (
-                            <button
-                                onClick={handlePrint}
-                                className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-800 hover:bg-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 text-white rounded-xl font-semibold transition-all shadow-md"
-                            >
-                                <Printer className="w-4 h-4" />
-                                Print Invoice ({selectedIds.size})
-                            </button>
+                            <>
+                                <button
+                                    onClick={handlePrint}
+                                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-800 hover:bg-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 text-white rounded-xl font-semibold transition-all shadow-md"
+                                >
+                                    <Printer className="w-4 h-4" />
+                                    Print ({selectedIds.size})
+                                </button>
+
+                                {/* Payment Status Dropdown */}
+                                <div className="relative" ref={paymentRef}>
+                                    <button
+                                        onClick={() => { setPaymentDropdown(o => !o); setDeliveryDropdown(false); }}
+                                        className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-all shadow-md"
+                                    >
+                                        <CreditCard className="w-4 h-4" />
+                                        Payment ({selectedIds.size})
+                                    </button>
+                                    {paymentDropdown && (
+                                        <div className="absolute top-full mt-2 left-0 z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl min-w-[180px] overflow-hidden">
+                                            <div className="px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
+                                                Set Payment Status
+                                            </div>
+                                            {[
+                                                { value: 'paid',           label: 'Paid',           color: 'text-green-600' },
+                                                { value: 'unpaid',         label: 'Unpaid',         color: 'text-red-600' },
+                                                { value: 'partially_paid', label: 'Partially Paid', color: 'text-yellow-600' },
+                                                { value: 'refunded',       label: 'Refunded',       color: 'text-gray-600' },
+                                            ].map(opt => (
+                                                <button
+                                                    key={opt.value}
+                                                    onClick={() => handleBulkPayment(opt.value)}
+                                                    className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium ${opt.color}`}
+                                                >
+                                                    {opt.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Delivery Status Dropdown */}
+                                <div className="relative" ref={deliveryRef}>
+                                    <button
+                                        onClick={() => { setDeliveryDropdown(o => !o); setPaymentDropdown(false); }}
+                                        className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold transition-all shadow-md"
+                                    >
+                                        <Truck className="w-4 h-4" />
+                                        Delivery ({selectedIds.size})
+                                    </button>
+                                    {deliveryDropdown && (
+                                        <div className="absolute top-full mt-2 left-0 z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl min-w-[180px] overflow-hidden">
+                                            <div className="px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
+                                                Set Delivery Status
+                                            </div>
+                                            {[
+                                                { value: 'pending',    label: 'Pending',    color: 'text-yellow-600' },
+                                                { value: 'processing', label: 'Processing', color: 'text-blue-600' },
+                                                { value: 'shipped',    label: 'Shipped',    color: 'text-purple-600' },
+                                                { value: 'delivered',  label: 'Delivered',  color: 'text-green-600' },
+                                                { value: 'cancelled',  label: 'Cancelled',  color: 'text-red-600' },
+                                                { value: 'returned',   label: 'Returned',   color: 'text-gray-600' },
+                                            ].map(opt => (
+                                                <button
+                                                    key={opt.value}
+                                                    onClick={() => handleBulkDelivery(opt.value)}
+                                                    className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium ${opt.color}`}
+                                                >
+                                                    {opt.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </>
                         )}
                         <Link
                             href="/admin/sales/create"
@@ -359,6 +461,7 @@ export default function Index({ stats, flash }: Props) {
                         columns={columns}
                         csvHeaders={csvHeaders}
                         searchableKeys={['sale_code', 'customer.first_name', 'customer.phone', 'delivery_status']}
+                        refreshRef={tableRefresh}
                         onDataLoaded={(rows: Sale[]) => {
                             setAllRows(rows);
                             setSelectedIds(new Set());

@@ -213,4 +213,36 @@ class SaleController extends Controller
             return back()->with('error', $e->getMessage());
         }
     }
+
+    public function bulkUpdatePaymentStatus(Request $request)
+    {
+        try {
+            $request->validate([
+                'ids'            => 'required|array',
+                'ids.*'          => 'exists:sales,id',
+                'payment_status' => 'required|in:unpaid,paid,partially_paid,refunded',
+            ]);
+            \App\Models\Sale::whereIn('id', $request->ids)
+                ->update(['payment_status' => $request->payment_status]);
+            return response()->json(['success' => true, 'count' => count($request->ids)]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function bulkUpdateDeliveryStatus(Request $request)
+    {
+        try {
+            $request->validate([
+                'ids'             => 'required|array',
+                'ids.*'           => 'exists:sales,id',
+                'delivery_status' => 'required|in:pending,processing,shipped,delivered,cancelled,returned',
+            ]);
+            \App\Models\Sale::whereIn('id', $request->ids)
+                ->update(['delivery_status' => $request->delivery_status]);
+            return response()->json(['success' => true, 'count' => count($request->ids)]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
 }
