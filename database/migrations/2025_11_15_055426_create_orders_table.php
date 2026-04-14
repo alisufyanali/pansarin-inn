@@ -14,16 +14,17 @@ return new class extends Migration
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
             $table->foreignId('customer_id')->constrained('customers')->onDelete('cascade');
+            $table->unsignedBigInteger('city_id')->nullable();
             $table->string('order_number')->unique();
             $table->integer('user_id')->nullable();
 
             // Amounts
-            $table->decimal('subtotal', 12, 2)->default(0); // Total before any discounts
-            $table->decimal('product_discount', 12, 2)->default(0); // Discount on products
-            $table->decimal('invoice_discount', 12, 2)->default(0); // Overall invoice discount
+            $table->decimal('subtotal', 12, 2)->default(0);
+            $table->decimal('product_discount', 12, 2)->default(0);
+            $table->decimal('invoice_discount', 12, 2)->default(0);
             $table->decimal('shipping_charges', 12, 2)->default(0);
             $table->decimal('tax', 12, 2)->default(0);
-            $table->decimal('grand_total', 12, 2)->default(0); // Final amount
+            $table->decimal('grand_total', 12, 2)->default(0);
 
             // Order Details
             $table->enum('status', ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'])->default('pending');
@@ -32,7 +33,9 @@ return new class extends Migration
             // Shipping & Billing
             $table->text('shipping_address')->nullable();
             $table->text('billing_address')->nullable();
-            $table->string('shipping_method')->nullable(); // e.g., Standard, Express, etc.
+            $table->string('shipping_method')->nullable();
+            $table->string('courier_weight')->nullable();
+            $table->string('shipping_response')->nullable();
 
             // Payment
             $table->string('payment_method')->nullable();
@@ -46,6 +49,8 @@ return new class extends Migration
             $table->index('order_number');
             $table->index(['customer_id', 'status']);
             $table->index('payment_status');
+
+            $table->foreign('city_id')->references('id')->on('cities')->onDelete('set null');
         });
     }
 
