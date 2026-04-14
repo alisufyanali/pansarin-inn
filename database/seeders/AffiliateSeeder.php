@@ -12,17 +12,18 @@ class AffiliateSeeder extends Seeder
 {
     public function run(): void
     {
-        // Affiliate settings
-        AffiliateSetting::firstOrCreate(
-            ['id' => 1],
-            [
-                'commission_rate'     => 5.00,
-                'min_payout'          => 500,
-                'cookie_days'         => 30,
-                'is_active'           => true,
-                'terms_and_conditions'=> 'Standard affiliate terms apply.',
-            ]
-        );
+        // Affiliate settings (key-value format)
+        $settings = [
+            ['key' => 'commission_rate',      'value' => '5.00'],
+            ['key' => 'min_payout',           'value' => '500'],
+            ['key' => 'cookie_days',          'value' => '30'],
+            ['key' => 'is_active',            'value' => '1'],
+            ['key' => 'terms_and_conditions', 'value' => 'Standard affiliate terms apply.'],
+        ];
+
+        foreach ($settings as $setting) {
+            AffiliateSetting::firstOrCreate(['key' => $setting['key']], $setting);
+        }
 
         // Create affiliates for existing users
         $users = User::take(3)->get();
@@ -30,16 +31,9 @@ class AffiliateSeeder extends Seeder
             Affiliate::firstOrCreate(
                 ['user_id' => $user->id],
                 [
-                    'affiliate_code'         => strtoupper(Str::random(8)),
-                    'commission_rate'        => 5.00,
-                    'balance'                => rand(0, 2000),
-                    'payment_method'         => 'bank',
-                    'payment_account_title'  => $user->name,
-                    'payment_iban_details'   => 'PK00XXXX0000000000000000',
-                    'status'                 => 'active',
-                    'total_earnings'         => rand(0, 5000),
-                    'total_clicks'           => rand(10, 500),
-                    'total_conversions'      => rand(1, 50),
+                    'affiliate_code' => strtoupper(Str::random(8)),
+                    'commission_rate' => 5.00,
+                    'status'         => 'active',
                 ]
             );
         }

@@ -15,7 +15,7 @@ class DealSeeder extends Seeder
                 'title'               => 'Buy 2 Get 1 Free',
                 'slug'                => 'buy-2-get-1-free',
                 'description'         => 'Buy any 2 herbal products and get 1 free!',
-                'deal_type'           => 'bogo',
+                'deal_type'           => 'buy_x_get_y',
                 'discount_value'      => 0,
                 'min_quantity'        => 2,
                 'free_quantity'       => 1,

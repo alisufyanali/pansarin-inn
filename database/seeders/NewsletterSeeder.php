@@ -10,16 +10,16 @@ class NewsletterSeeder extends Seeder
     public function run(): void
     {
         $subscribers = [
-            ['email' => 'ali.hassan@gmail.com',    'is_verified' => true,  'is_active' => true],
-            ['email' => 'sara.ahmed@yahoo.com',     'is_verified' => true,  'is_active' => true],
-            ['email' => 'usman.khan@hotmail.com',   'is_verified' => true,  'is_active' => true],
-            ['email' => 'fatima.malik@gmail.com',   'is_verified' => true,  'is_active' => true],
-            ['email' => 'bilal.raza@gmail.com',     'is_verified' => false, 'is_active' => false],
-            ['email' => 'ayesha.s@gmail.com',       'is_verified' => true,  'is_active' => true],
-            ['email' => 'hamza.tariq@yahoo.com',    'is_verified' => true,  'is_active' => true],
-            ['email' => 'zainab.noor@gmail.com',    'is_verified' => false, 'is_active' => false],
-            ['email' => 'kamran.sheikh@gmail.com',  'is_verified' => true,  'is_active' => true],
-            ['email' => 'nadia.iqbal@hotmail.com',  'is_verified' => true,  'is_active' => true],
+            ['email' => 'ali.hassan@gmail.com',    'name' => 'Ali Hassan',     'status' => 'active',        'verified_at' => now()],
+            ['email' => 'sara.ahmed@yahoo.com',     'name' => 'Sara Ahmed',     'status' => 'active',        'verified_at' => now()],
+            ['email' => 'usman.khan@hotmail.com',   'name' => 'Usman Khan',     'status' => 'active',        'verified_at' => now()],
+            ['email' => 'fatima.malik@gmail.com',   'name' => 'Fatima Malik',   'status' => 'active',        'verified_at' => now()],
+            ['email' => 'bilal.raza@gmail.com',     'name' => 'Bilal Raza',     'status' => 'unsubscribed',  'verified_at' => null],
+            ['email' => 'ayesha.s@gmail.com',       'name' => 'Ayesha S',       'status' => 'active',        'verified_at' => now()],
+            ['email' => 'hamza.tariq@yahoo.com',    'name' => 'Hamza Tariq',    'status' => 'active',        'verified_at' => now()],
+            ['email' => 'zainab.noor@gmail.com',    'name' => 'Zainab Noor',    'status' => 'unsubscribed',  'verified_at' => null],
+            ['email' => 'kamran.sheikh@gmail.com',  'name' => 'Kamran Sheikh',  'status' => 'active',        'verified_at' => now()],
+            ['email' => 'nadia.iqbal@hotmail.com',  'name' => 'Nadia Iqbal',    'status' => 'active',        'verified_at' => now()],
         ];
 
         foreach ($subscribers as $sub) {

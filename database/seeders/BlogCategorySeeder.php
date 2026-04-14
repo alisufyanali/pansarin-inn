@@ -4,28 +4,24 @@ namespace Database\Seeders;
 
 use App\Models\BlogCategory;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 
 class BlogCategorySeeder extends Seeder
 {
     public function run(): void
     {
         $categories = [
-            'Herbal Remedies',
-            'Health Tips',
-            'Nutrition',
-            'Natural Skincare',
-            'Ayurvedic Medicine',
-            'Digestive Health',
-            'Immunity Boosters',
-            'Weight Management',
+            ['name' => 'Herbal Remedies',    'slug' => 'herbal-remedies'],
+            ['name' => 'Health Tips',        'slug' => 'health-tips'],
+            ['name' => 'Nutrition',          'slug' => 'nutrition'],
+            ['name' => 'Natural Skincare',   'slug' => 'natural-skincare'],
+            ['name' => 'Ayurvedic Medicine', 'slug' => 'ayurvedic-medicine'],
+            ['name' => 'Digestive Health',   'slug' => 'digestive-health'],
+            ['name' => 'Immunity Boosters',  'slug' => 'immunity-boosters'],
+            ['name' => 'Weight Management',  'slug' => 'weight-management'],
         ];
 
-        foreach ($categories as $name) {
-            BlogCategory::firstOrCreate(
-                ['slug' => Str::slug($name)],
-                ['name' => $name, 'slug' => Str::slug($name), 'status' => true]
-            );
+        foreach ($categories as $cat) {
+            BlogCategory::firstOrCreate(['slug' => $cat['slug']], $cat);
         }
 
         $this->command->info('Blog categories seeded successfully!');
