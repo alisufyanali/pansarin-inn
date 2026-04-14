@@ -5,7 +5,6 @@ use App\Http\Controllers\Admin\BlogController;
 // Controllers
 use App\Http\Controllers\Admin\BlogsCommentsController;
 use App\Http\Controllers\Admin\BlogTagController;
-use App\Http\Controllers\Admin\BlogTagsController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ContactController;
 use App\Http\Controllers\Admin\CouponController;
@@ -136,12 +135,11 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
 
     Route::resource('blogtags', BlogTagController::class);
     Route::get('blogtags-data', [BlogTagController::class, 'getData'])->name('blogtags.data');
-    Route::get('blogtags-active', [BlogTagsController::class, 'getActiveTags'])->name('blogstags.active');
+    Route::get('blogtags-active', [BlogTagController::class, 'getActiveTags'])->name('blogtags.active');
 
     Route::post('blogs/{blog}', [BlogController::class, 'update'])->middleware('permission:edit.blogs');
     Route::resource('blogs', BlogController::class);
     Route::get('blogs-data', [BlogController::class, 'getData'])->name('blogs.data');
-    Route::post('blogs/{blog}/update', [BlogController::class, 'update']);
 
     // Blogs Comments Routes
     Route::resource('blogscomments', BlogsCommentsController::class);

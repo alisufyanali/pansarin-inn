@@ -14,7 +14,7 @@ class BlogCommentsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'blog_id' => 'nullable|exists:blogs,id',
+            'blog_id'  => 'required|exists:blogs,id',
             'comments' => 'required|string|min:3|max:1000',
             'review' => 'nullable|string|max:2000',
             'rating' => 'nullable|integer|min:1|max:5',
