@@ -24,11 +24,16 @@ class DatabaseSeeder extends Seeder
             ProductsSeeder::class,
             OrderSeeder::class,
             SaleSeeder::class,
-
+            CouponSeeder::class,
+            NewsletterSeeder::class,
+            BlogCategorySeeder::class,
+            BlogSeeder::class,
+            ProductReviewSeeder::class,
+            DealSeeder::class,
+            AffiliateSeeder::class,
             UiSettingSeeder::class,
             WhatsAppMediaSeeder::class,
             WhatsAppSeeder::class,
-
         ]);
     }
 }
