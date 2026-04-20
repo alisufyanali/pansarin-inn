@@ -3,7 +3,7 @@
 namespace App\Http\Repositories\Admin;
 
 use App\Models\Category;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class CategoryRepository
 {
@@ -89,11 +89,11 @@ class CategoryRepository
         $data['slug'] = str()->slug($data['name']);
 
         if ($imageFile) {
-            $data['image'] = $imageFile->store('categories', 'public');
+            $data['image'] = $this->moveUploadedFile($imageFile, 'categories');
         }
 
         if ($socialImageFile) {
-            $data['social_image'] = $socialImageFile->store('categories/social', 'public');
+            $data['social_image'] = $this->moveUploadedFile($socialImageFile, 'categories/social');
         }
 
         return Category::create($data);
@@ -110,9 +110,9 @@ class CategoryRepository
         // Handle main image
         if ($imageFile) {
             if ($category->image) {
-                Storage::disk('public')->delete($category->image);
+                $this->deleteUploadedFile($category->image);
             }
-            $data['image'] = $imageFile->store('categories', 'public');
+            $data['image'] = $this->moveUploadedFile($imageFile, 'categories');
         } else {
             // Don't update image field if no new image provided
             unset($data['image']);
@@ -121,9 +121,9 @@ class CategoryRepository
         // Handle social image
         if ($socialImageFile) {
             if ($category->social_image) {
-                Storage::disk('public')->delete($category->social_image);
+                $this->deleteUploadedFile($category->social_image);
             }
-            $data['social_image'] = $socialImageFile->store('categories/social', 'public');
+            $data['social_image'] = $this->moveUploadedFile($socialImageFile, 'categories/social');
         } else {
             // Don't update social_image field if no new image provided
             unset($data['social_image']);
@@ -139,11 +139,11 @@ class CategoryRepository
         $category = $this->find($id);
 
         if ($category->image) {
-            Storage::disk('public')->delete($category->image);
+            $this->deleteUploadedFile($category->image);
         }
 
         if ($category->social_image) {
-            Storage::disk('public')->delete($category->social_image);
+            $this->deleteUploadedFile($category->social_image);
         }
 
         return $category->delete();
@@ -157,5 +157,36 @@ class CategoryRepository
             'withParent' => Category::whereNotNull('parent_id')->count(),
             'topLevel' => Category::whereNull('parent_id')->count(),
         ];
+    }
+
+    /**
+     * Move an uploaded file to public/storage/{folder} without using Flysystem.
+     * Returns the relative path stored in the database (e.g. "categories/abc123.jpg").
+     */
+    private function moveUploadedFile($file, string $folder): string
+    {
+        $extension = $file->getClientOriginalExtension();
+        $filename  = Str::uuid() . '.' . $extension;
+        $directory = public_path('storage/' . $folder);
+
+        if (!is_dir($directory)) {
+            mkdir($directory, 0755, true);
+        }
+
+        $file->move($directory, $filename);
+
+        return $folder . '/' . $filename;
+    }
+
+    /**
+     * Delete a file that was stored via moveUploadedFile().
+     */
+    private function deleteUploadedFile(string $relativePath): void
+    {
+        $fullPath = public_path('storage/' . $relativePath);
+
+        if (file_exists($fullPath)) {
+            unlink($fullPath);
+        }
     }
 }

@@ -6,7 +6,7 @@ import BlogCategoryForm, { type BlogCategoryFormData } from './Form';
 type BlogCategory = { id: number; name: string };
 
 interface Props {
-  blogCategory: BlogCategoryFormData & { id: number };
+  blogCategory: BlogCategoryFormData & { id: number; social_image?: string };
   parents: BlogCategory[];
 }
 

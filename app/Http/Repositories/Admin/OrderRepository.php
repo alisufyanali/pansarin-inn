@@ -172,23 +172,35 @@ class OrderRepository
             ->orderBy('name')
             ->get(['id', 'name', 'sku', 'unit'])
             ->map(function ($p) {
+                $hasVariants = $p->variants->isNotEmpty();
+
+                // Base stock: if product has variants, sum all variant stocks
+                // otherwise read the null-variant stock row
+                if ($hasVariants) {
+                    $baseStock = ProductStock::where('product_id', $p->id)
+                        ->whereNotNull('product_variant_id')
+                        ->sum('quantity');
+                } else {
+                    $baseStock = ProductStock::where('product_id', $p->id)
+                        ->whereNull('product_variant_id')
+                        ->value('quantity') ?? 0;
+                }
+
                 return [
                     'id'       => $p->id,
                     'name'     => $p->name,
                     'sku'      => $p->sku,
                     'unit'     => $p->unit,
-                    'price'    => 0, // sale_price from variant
-                    'stock'    => ProductStock::where('product_id', $p->id)
-                                     ->whereNull('product_variant_id')
-                                     ->value('quantity') ?? 0,
+                    'price'    => 0,
+                    'stock'    => (int) $baseStock,
                     'variants' => $p->variants->map(fn ($v) => [
                         'id'    => $v->id,
                         'name'  => collect($v->attributes ?? [])->values()->join(' / ') ?: $v->value,
                         'sku'   => $v->sku,
                         'price' => $v->sale_price ?? $v->price ?? 0,
-                        'stock' => ProductStock::where('product_id', $p->id)
+                        'stock' => (int) (ProductStock::where('product_id', $p->id)
                                        ->where('product_variant_id', $v->id)
-                                       ->value('quantity') ?? 0,
+                                       ->value('quantity') ?? 0),
                     ]),
                 ];
             });

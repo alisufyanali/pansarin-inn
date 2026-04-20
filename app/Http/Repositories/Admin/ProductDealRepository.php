@@ -3,7 +3,6 @@
 namespace App\Http\Repositories\Admin;
 
 use App\Models\Deal;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class ProductDealRepository
@@ -58,7 +57,8 @@ class ProductDealRepository
         }
 
         if ($imageFile) {
-            $data['image'] = $imageFile->store('deals', 'public');
+            $slug = $data['slug'] ?: Str::slug($data['title']);
+            $data['image'] = $this->moveUploadedFile($imageFile, 'deals', $slug);
         }
 
         $products = $data['products'] ?? [];
@@ -91,9 +91,12 @@ class ProductDealRepository
 
         if ($imageFile) {
             if ($deal->image) {
-                Storage::disk('public')->delete($deal->image);
+                $this->deleteUploadedFile($deal->image);
             }
-            $data['image'] = $imageFile->store('deals', 'public');
+            $slug = $data['slug'] ?? $deal->slug;
+            $data['image'] = $this->moveUploadedFile($imageFile, 'deals', $slug);
+        } else {
+            unset($data['image']);
         }
 
         $products = $data['products'] ?? [];
@@ -121,7 +124,7 @@ class ProductDealRepository
         $deal = $this->find($id);
 
         if ($deal->image) {
-            Storage::disk('public')->delete($deal->image);
+            $this->deleteUploadedFile($deal->image);
         }
 
         // Detach all products
@@ -186,5 +189,35 @@ class ProductDealRepository
         }
 
         return $slug;
+    }
+
+    /**
+     * Move uploaded file to public/storage/{folder}/{slug}.{ext}
+     */
+    private function moveUploadedFile($file, string $folder, string $slug): string
+    {
+        $extension = $file->getClientOriginalExtension();
+        $filename  = Str::slug($slug) . '.' . $extension;
+        $directory = public_path('storage/' . $folder);
+
+        if (!is_dir($directory)) {
+            mkdir($directory, 0755, true);
+        }
+
+        $file->move($directory, $filename);
+
+        return $folder . '/' . $filename;
+    }
+
+    /**
+     * Delete a file stored via moveUploadedFile()
+     */
+    private function deleteUploadedFile(string $relativePath): void
+    {
+        $fullPath = public_path('storage/' . $relativePath);
+
+        if (file_exists($fullPath)) {
+            unlink($fullPath);
+        }
     }
 }

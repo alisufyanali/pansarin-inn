@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\BlogCategoryController;
+use App\Http\Controllers\Admin\WishlistController;
 use App\Http\Controllers\Admin\BlogController;
 // Controllers
 use App\Http\Controllers\Admin\BlogsCommentsController;
@@ -92,6 +93,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     | Orders
     |--------------------------------------------------------------------------
     */
+    Route::get('orders/track', [OrderController::class, 'track'])->name('orders.track');
     Route::resource('orders', OrderController::class);
     Route::get('orders-data', [OrderController::class, 'getData'])->name('orders.data');
     Route::post('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
@@ -227,5 +229,15 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
 
     Route::post('contacts/bulk-update-status', [ContactController::class, 'bulkUpdateStatus'])
         ->name('contacts.bulk-update-status');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Wishlists
+    |--------------------------------------------------------------------------
+    */
+    Route::get('wishlist/variants-by-product', [WishlistController::class, 'getVariantsByProduct'])->name('wishlist.variants-by-product');
+    Route::post('wishlist/bulk-delete', [WishlistController::class, 'bulkDelete'])->name('wishlist.bulk-delete');
+    Route::get('wishlist-data', [WishlistController::class, 'getData'])->name('wishlist.data');
+    Route::resource('wishlist', WishlistController::class)->except(['edit', 'update']);
 
 });

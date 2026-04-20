@@ -20,7 +20,7 @@ export type BlogCategoryFormData = {
 };
 
 interface BlogCategoryFormProps {
-  blogCategory?: BlogCategoryFormData & { id?: number };
+  blogCategory?: BlogCategoryFormData & { id?: number; social_image?: string };
   parents: BlogCategory[];
   isEdit?: boolean;
 }
@@ -129,12 +129,25 @@ export default function BlogCategoryForm({ blogCategory, parents, isEdit = false
               <div className="space-y-4">
                 <div>
                   <label className={labelClass}>Social Image</label>
+                  {isEdit && blogCategory?.social_image && (
+                    <div className="mb-2">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Current image:</p>
+                      <img
+                        src={`/storage/${blogCategory.social_image}`}
+                        alt="Current social image"
+                        className="h-24 rounded-lg border border-gray-200 dark:border-gray-700 object-cover"
+                      />
+                    </div>
+                  )}
                   <input
                     type="file"
                     accept="image/*"
                     onChange={e => setData('social_image', e.target.files?.[0] || null)}
                     className={inputClass(errors.social_image)}
                   />
+                  {isEdit && (
+                    <p className={subTextClass}>Leave empty to keep the current image.</p>
+                  )}
                   <FieldError message={errors.social_image} />
                 </div>
 

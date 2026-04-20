@@ -7,6 +7,7 @@ use App\Http\Repositories\Admin\ProductReviewRepository;
 use App\Http\Requests\Admin\ProductReviewRequest;
 use App\Models\Product;
 use App\Models\Review;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
@@ -47,25 +48,12 @@ class ProductsReviewsController extends Controller
 
     public function create()
     {
-        $products = Product::where('status', 1)
-            ->orWhere('status', true)
-            ->orderBy('name')
-            ->get(['id', 'name', 'thumbnail']);
-
-        if ($products->count() === 0) {
-            $products = Product::orderBy('name')->get(['id', 'name', 'thumbnail']);
-        }
-
-        $formattedProducts = $products->map(function ($product) {
-            return [
-                'id' => $product->id,
-                'name' => $product->name,
-                'image' => $product->thumbnail ? asset('storage/'.$product->thumbnail) : null,
-            ];
-        });
+        $products = $this->getFormattedProducts();
+        $users    = User::orderBy('name')->get(['id', 'name', 'email']);
 
         return Inertia::render('Admin/ProductsReviews/Create', [
-            'products' => $formattedProducts->values(),
+            'products' => $products,
+            'users'    => $users,
         ]);
     }
 
@@ -94,32 +82,15 @@ class ProductsReviewsController extends Controller
 
     public function edit(Review $review)
     {
-        $review->load('product:id,name,thumbnail');
+        $review->load('product:id,name,thumbnail', 'user:id,name,email');
 
-        if ($review->product && $review->product->thumbnail) {
-            $review->product->image = asset('storage/'.$review->product->thumbnail);
-        }
-
-        $products = Product::where('status', 1)
-            ->orWhere('status', true)
-            ->orderBy('name')
-            ->get(['id', 'name', 'thumbnail']);
-
-        if ($products->count() === 0) {
-            $products = Product::orderBy('name')->get(['id', 'name', 'thumbnail']);
-        }
-
-        $formattedProducts = $products->map(function ($product) {
-            return [
-                'id' => $product->id,
-                'name' => $product->name,
-                'image' => $product->thumbnail ? asset('storage/'.$product->thumbnail) : null,
-            ];
-        });
+        $products = $this->getFormattedProducts();
+        $users    = User::orderBy('name')->get(['id', 'name', 'email']);
 
         return Inertia::render('Admin/ProductsReviews/Edit', [
-            'review' => $review,
-            'products' => $formattedProducts->values(),
+            'review'   => $review,
+            'products' => $products,
+            'users'    => $users,
         ]);
     }
 
@@ -190,5 +161,22 @@ class ProductsReviewsController extends Controller
 
             return back()->with('error', 'Failed to delete reviews.');
         }
+    }
+
+    private function getFormattedProducts()
+    {
+        $products = Product::where('status', true)->orderBy('name')->get(['id', 'name', 'thumbnail']);
+        if ($products->isEmpty()) {
+            $products = Product::orderBy('name')->get(['id', 'name', 'thumbnail']);
+        }
+
+        return $products->map(function ($product) {
+            $imagePath = $product->thumbnail ? public_path('storage/'.$product->thumbnail) : null;
+            return [
+                'id'    => $product->id,
+                'name'  => $product->name,
+                'image' => ($imagePath && file_exists($imagePath)) ? asset('storage/'.$product->thumbnail) : null,
+            ];
+        })->values();
     }
 }

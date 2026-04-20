@@ -466,6 +466,15 @@ export default function OrderForm({
                               onChange={(id) => handleProductChange(index, String(id))}
                               required
                             />
+                            {/* Stock badge for selected product (no variant) */}
+                            {item.product_id && !item.product_variant_id && selectedProducts[index] && (
+                              <p className={`text-xs mt-0.5 font-medium ${
+                                selectedProducts[index].stock > 10 ? 'text-green-600' :
+                                selectedProducts[index].stock > 0  ? 'text-yellow-600' : 'text-red-600'
+                              }`}>
+                                Stock: {selectedProducts[index].stock}
+                              </p>
+                            )}
                             {getItemError(index, 'product_id') && (
                               <p className="text-red-500 text-xs mt-1">{getItemError(index, 'product_id')}</p>
                             )}
@@ -475,23 +484,40 @@ export default function OrderForm({
                           <td className="px-3 py-2">
                             <select
                               value={item.product_variant_id}
-                              onChange={(e) => handleVariantChange(index, e.target.value)}
+                              onChange={(e) => {
+                                const variantId = e.target.value;
+                                const product = selectedProducts[index];
+                                if (variantId && product) {
+                                  const variant = product.variants?.find(v => v.id === Number(variantId));
+                                  if (variant && variant.stock <= 0) {
+                                    alert(`Variant "${variant.name}" is out of stock. Please add stock first.`);
+                                    return;
+                                  }
+                                }
+                                handleVariantChange(index, variantId);
+                              }}
                               className="w-full px-2 py-1 text-xs rounded bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 focus:ring-1 focus:ring-blue-500 outline-none disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:text-gray-400"
                               disabled={!selectedProducts[index]?.variants?.length}
                             >
                               <option value="">None</option>
                               {selectedProducts[index]?.variants?.map((variant) => (
-                                <option key={variant.id} value={variant.id}>
-                                  {variant.name}
+                                <option key={variant.id} value={variant.id}
+                                  disabled={variant.stock <= 0}
+                                  style={variant.stock <= 0 ? { color: '#ef4444' } : {}}>
+                                  {variant.name} — Stock: {variant.stock}{variant.stock <= 0 ? ' ⚠ Out' : ''}
                                 </option>
                               ))}
                             </select>
-                            {/* FIX: Selected variant ka naam show karo */}
-                            {item.product_variant_id && selectedProducts[index]?.variants && (
-                              <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5">
-                                {selectedProducts[index].variants?.find(v => v.id === Number(item.product_variant_id))?.name}
-                              </p>
-                            )}
+                            {/* Stock badge for selected variant */}
+                            {item.product_variant_id && selectedProducts[index]?.variants && (() => {
+                              const v = selectedProducts[index].variants?.find(v => v.id === Number(item.product_variant_id));
+                              if (!v) return null;
+                              return (
+                                <p className={`text-xs mt-0.5 font-medium ${v.stock > 10 ? 'text-green-600' : v.stock > 0 ? 'text-yellow-600' : 'text-red-600'}`}>
+                                  Stock: {v.stock}
+                                </p>
+                              );
+                            })()}
                             {getItemError(index, 'product_variant_id') && (
                               <p className="text-red-500 text-xs mt-1">{getItemError(index, 'product_variant_id')}</p>
                             )}

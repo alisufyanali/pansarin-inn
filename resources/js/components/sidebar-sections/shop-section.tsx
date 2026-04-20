@@ -1,5 +1,5 @@
 // components/sidebar-sections/shop-section.tsx
-import { ShoppingCart, User, DollarSign, TicketPercent, Star, Package } from 'lucide-react';
+import { ShoppingCart, User, DollarSign, TicketPercent, Star, Package, MapPin } from 'lucide-react';
 import { type NavItem } from '@/types';
 
 interface ShopSectionProps {
@@ -34,6 +34,12 @@ export function ShopSection({
             title: 'Orders',
             href: '/admin/orders',
             icon: ShoppingCart,
+        });
+
+        shopSubmenu.push({
+            title: 'Track Orders',
+            href: '/admin/orders/track',
+            icon: MapPin,
         });
     }
 

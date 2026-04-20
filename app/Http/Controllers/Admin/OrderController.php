@@ -210,4 +210,72 @@ class OrderController extends Controller
             return back()->with('error', $e->getMessage());
         }
     }
+
+    public function track(Request $request)
+    {
+        $order    = null;
+        $error    = null;
+        $searched = $request->filled('order_number');
+
+        if ($searched) {
+            $found = \App\Models\Order::with([
+                'customer:id,first_name,last_name,email,phone',
+                'city:id,name',
+                'items.product:id,name',
+                'items.variant:id,sku,value,attributes',
+            ])->where('order_number', $request->order_number)->first();
+
+            if (!$found) {
+                $error = "No order found with number \"{$request->order_number}\".";
+            } else {
+                $order = [
+                    'id'               => $found->id,
+                    'order_number'     => $found->order_number,
+                    'status'           => $found->status,
+                    'payment_status'   => $found->payment_status,
+                    'payment_method'   => $found->payment_method,
+                    'subtotal'         => (float) $found->subtotal,
+                    'shipping_charges' => (float) $found->shipping_charges,
+                    'product_discount' => (float) $found->product_discount,
+                    'invoice_discount' => (float) $found->invoice_discount,
+                    'tax'              => (float) $found->tax,
+                    'grand_total'      => (float) $found->grand_total,
+                    'order_note'       => $found->order_note,
+                    'shipping_address' => $found->shipping_address,
+                    'shipping_method'  => $found->shipping_method,
+                    'created_at'       => $found->created_at,
+                    'customer'         => $found->customer ? [
+                        'id'    => $found->customer->id,
+                        'name'  => trim(($found->customer->first_name ?? '').' '.($found->customer->last_name ?? '')),
+                        'email' => $found->customer->email,
+                        'phone' => $found->customer->phone,
+                    ] : null,
+                    'city'  => $found->city ? ['id' => $found->city->id, 'name' => $found->city->name] : null,
+                    'items' => $found->items->map(function ($item) {
+                        $variantLabel = null;
+                        if ($item->variant) {
+                            $attrs = $item->variant->attributes;
+                            $variantLabel = (!empty($attrs) && is_array($attrs))
+                                ? implode(' / ', array_values($attrs))
+                                : ($item->variant->value ?: $item->variant->sku);
+                        }
+                        return [
+                            'id'            => $item->id,
+                            'product_name'  => $item->product?->name ?? 'Unknown Product',
+                            'variant_label' => $variantLabel,
+                            'quantity'      => $item->quantity,
+                            'unit_price'    => (float) $item->unit_price,
+                            'subtotal'      => (float) $item->subtotal,
+                        ];
+                    })->values(),
+                ];
+            }
+        }
+
+        return Inertia::render('Admin/Orders/Track', [
+            'order'    => $order,
+            'error'    => $error,
+            'searched' => $searched,
+        ]);
+    }
 }
