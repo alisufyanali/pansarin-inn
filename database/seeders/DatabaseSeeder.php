@@ -31,6 +31,7 @@ class DatabaseSeeder extends Seeder
             ProductReviewSeeder::class,
             DealSeeder::class,
             AffiliateSeeder::class,
+            SlideSeeder::class,
             UiSettingSeeder::class,
             WhatsAppMediaSeeder::class,
             WhatsAppSeeder::class,

@@ -26,6 +26,7 @@ use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SaleController;
 use App\Http\Controllers\Admin\CityController;
 use App\Http\Controllers\Admin\WhatsAppController;
+use App\Http\Controllers\Admin\SlideController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -178,6 +179,11 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
 
     Route::resource('newsletters', NewsletterController::class);
     Route::get('newsletters-data', [NewsletterController::class, 'getData'])->name('newsletters.data');
+
+    // Slides
+    Route::resource('slides', SlideController::class);
+    Route::get('slides-data', [SlideController::class, 'getData'])->name('slides.data');
+    Route::patch('slides/{slide}/toggle', [SlideController::class, 'toggleStatus'])->name('slides.toggle');
 
     // WhatsApp Chat Routes
     Route::prefix('whatsapp')->name('whatsapp.')->group(function () {
