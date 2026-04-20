@@ -62,7 +62,7 @@ export function ShopSection({
     if (hasAnySalePerm) {
         shopSubmenu.push({
             title: 'Order Reviews',
-            href: '/admin/orderReviews',
+            href: '/admin/order-reviews',
             icon: Star,
         });
     }

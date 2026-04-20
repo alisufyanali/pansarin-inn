@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\NewsletterController;
 use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\OrderReviewController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\ProductAttributeController;
 use App\Http\Controllers\Admin\ProductController;
@@ -100,6 +101,11 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::post('orders/{order}/payment', [OrderController::class, 'updatePaymentStatus'])->name('orders.updatePayment');
     Route::post('orders/bulk-send-email', [OrderController::class, 'bulkSendEmail'])->name('orders.bulk-email');
     Route::post('orders/bulk-send-whatsapp', [OrderController::class, 'bulkSendWhatsApp'])->name('orders.bulk-whatsapp');
+
+    // Order Reviews
+    Route::resource('order-reviews', OrderReviewController::class);
+    Route::get('order-reviews-data', [OrderReviewController::class, 'getData'])->name('order-reviews.data');
+    Route::patch('order-reviews/{review}/status', [OrderReviewController::class, 'updateStatus'])->name('order-reviews.status');
 
     /*
     |--------------------------------------------------------------------------
