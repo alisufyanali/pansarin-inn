@@ -47,7 +47,7 @@ export default function UiSettings({ settings }: { settings: any }) {
             <select
                 value={data[field as keyof typeof data]}
                 onChange={e => setData(field as any, e.target.value)}
-                className="rounded-lg border-gray-300 dark:bg-gray-800 dark:border-gray-700 text-sm focus:ring-indigo-500"
+                className="rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full"
             >
                 {options.map(opt => (
                     <option key={opt} value={opt}>{opt.toUpperCase()}</option>
@@ -103,11 +103,11 @@ export default function UiSettings({ settings }: { settings: any }) {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     <div>
                                         <label className="block text-sm font-medium mb-2">Header Color Name (e.g. green-2)</label>
-                                        <input type="text" value={data.header_color} onChange={e => setData('header_color', e.target.value)} className="w-full rounded-xl border-gray-300 dark:bg-gray-800" />
+                                        <input type="text" value={data.header_color} onChange={e => setData('header_color', e.target.value)} className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium mb-2">Marquee Text</label>
-                                        <textarea value={data.marquee_text} onChange={e => setData('marquee_text', e.target.value)} className="w-full rounded-xl border-gray-300 dark:bg-gray-800" rows={3} />
+                                        <textarea value={data.marquee_text} onChange={e => setData('marquee_text', e.target.value)} className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" rows={3} />
                                     </div>
                                 </div>
                             </div>

@@ -55,7 +55,7 @@ export default function GeneralSettings({ settings }: Props) {
                                 type="text"
                                 value={data.system_name}
                                 onChange={e => setData('system_name', e.target.value)}
-                                className="w-full rounded-xl border-gray-200 dark:border-gray-700 dark:bg-gray-800 focus:ring-blue-500"
+                                className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 placeholder="Pansari Inn"
                             />
                         </div>
@@ -70,7 +70,7 @@ export default function GeneralSettings({ settings }: Props) {
                                     type="email"
                                     value={data.system_email}
                                     onChange={e => setData('system_email', e.target.value)}
-                                    className="w-full rounded-xl border-gray-200 dark:border-gray-700 dark:bg-gray-800"
+                                    className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 />
                             </div>
                             <div>
@@ -81,7 +81,7 @@ export default function GeneralSettings({ settings }: Props) {
                                     type="text"
                                     value={data.phone}
                                     onChange={e => setData('phone', e.target.value)}
-                                    className="w-full rounded-xl border-gray-200 dark:border-gray-700 dark:bg-gray-800"
+                                    className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 />
                             </div>
                         </div>
@@ -94,7 +94,7 @@ export default function GeneralSettings({ settings }: Props) {
                             <textarea
                                 value={data.address}
                                 onChange={e => setData('address', e.target.value)}
-                                className="w-full rounded-xl border-gray-200 dark:border-gray-700 dark:bg-gray-800"
+                                className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                                 rows={3}
                             />
                         </div>
@@ -108,7 +108,7 @@ export default function GeneralSettings({ settings }: Props) {
                                 type="text"
                                 value={data.footer_text}
                                 onChange={e => setData('footer_text', e.target.value)}
-                                className="w-full rounded-xl border-gray-200 dark:border-gray-700 dark:bg-gray-800"
+                                className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </div>
                     </div>
