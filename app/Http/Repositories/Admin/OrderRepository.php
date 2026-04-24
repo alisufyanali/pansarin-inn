@@ -115,6 +115,20 @@ class OrderRepository
                 'order_note'       => $data['order_note'] ?? null,
             ]);
 
+            // Purane items ka stock wapas karo (reverse inventory)
+            $order->load('items');
+            foreach ($order->items as $oldItem) {
+                \App\Models\Inventory::create([
+                    'product_id'         => $oldItem->product_id,
+                    'product_variant_id' => $oldItem->product_variant_id,
+                    'type'               => 'in',
+                    'quantity'           => $oldItem->quantity,
+                    'source'             => 'order_edit',
+                    'reference'          => $order->order_number,
+                    'note'               => 'Order edit reversal #' . $order->order_number,
+                ]);
+            }
+
             $order->items()->delete();
             $this->syncItems($order, $data['items']);
             $order->load('items');
@@ -128,7 +142,21 @@ class OrderRepository
     public function delete($id): bool
     {
         return DB::transaction(function () use ($id) {
-            $order = Order::findOrFail($id);
+            $order = Order::with('items')->findOrFail($id);
+
+            // Stock wapas karo
+            foreach ($order->items as $item) {
+                \App\Models\Inventory::create([
+                    'product_id'         => $item->product_id,
+                    'product_variant_id' => $item->product_variant_id,
+                    'type'               => 'in',
+                    'quantity'           => $item->quantity,
+                    'source'             => 'order_delete',
+                    'reference'          => $order->order_number,
+                    'note'               => 'Order deleted #' . $order->order_number,
+                ]);
+            }
+
             $order->items()->delete();
             return $order->delete();
         });
@@ -242,6 +270,17 @@ class OrderRepository
                         ? collect($variant->attributes ?? [])->values()->join(' / ') ?: $variant->value
                         : null,
                 ],
+            ]);
+
+            // Stock deduct karo — Inventory entry create karo (booted event stock update karega)
+            \App\Models\Inventory::create([
+                'product_id'         => $item['product_id'],
+                'product_variant_id' => $item['product_variant_id'] ?? null,
+                'type'               => 'out',
+                'quantity'           => -$qty,
+                'source'             => 'order',
+                'reference'          => $order->order_number,
+                'note'               => 'Order #' . $order->order_number,
             ]);
         }
     }
