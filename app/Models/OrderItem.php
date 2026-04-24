@@ -12,17 +12,19 @@ class OrderItem extends Model
         'product_variant_id',
         'quantity',
         'price',
+        'cost_price',
         'discount',
         'subtotal',
         'meta',
     ];
 
     protected $casts = [
-        'quantity' => 'int',
-        'price' => 'float',
-        'discount' => 'float',
-        'subtotal' => 'float',
-        'meta' => 'array',
+        'quantity'   => 'int',
+        'price'      => 'float',
+        'cost_price' => 'float',
+        'discount'   => 'float',
+        'subtotal'   => 'float',
+        'meta'       => 'array',
     ];
 
     // Relationships

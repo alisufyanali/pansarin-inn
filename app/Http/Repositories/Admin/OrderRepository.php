@@ -256,11 +256,20 @@ class OrderRepository
             $discount = (float) ($item['discount'] ?? 0);
             $subtotal = ($price * $qty) - $discount;
 
+            // Cost price: variant ka purchase price ya product ka purchase_price_per_unit
+            $costPrice = 0;
+            if ($variant && isset($variant->purchase_price)) {
+                $costPrice = (float) $variant->purchase_price;
+            } elseif ($product) {
+                $costPrice = (float) ($product->purchase_price_per_unit ?? 0);
+            }
+
             $order->items()->create([
                 'product_id'         => $item['product_id'],
                 'product_variant_id' => $item['product_variant_id'] ?? null,
                 'quantity'           => $qty,
                 'price'              => $price,
+                'cost_price'         => $costPrice,
                 'discount'           => $discount,
                 'subtotal'           => $subtotal,
                 'meta'               => [
@@ -269,6 +278,7 @@ class OrderRepository
                     'variant_name' => $variant
                         ? collect($variant->attributes ?? [])->values()->join(' / ') ?: $variant->value
                         : null,
+                    'cost_price'   => $costPrice,
                 ],
             ]);
 
