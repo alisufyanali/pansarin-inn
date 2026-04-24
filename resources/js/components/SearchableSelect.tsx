@@ -220,6 +220,7 @@ interface SearchableProductSelectProps {
   required?: boolean;
   placeholder?: string;
   useApi?: boolean;
+  allowOutOfStock?: boolean;
 }
 
 export function SearchableProductSelect({ 
@@ -229,7 +230,8 @@ export function SearchableProductSelect({
   error,
   required = false,
   placeholder = 'Product name',
-  useApi = true
+  useApi = true,
+  allowOutOfStock = false,
 }: SearchableProductSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -411,14 +413,14 @@ export function SearchableProductSelect({
                     type="button"
                     key={product.id}
                     onClick={() => {
-                      if (outOfStock) {
+                      if (outOfStock && !allowOutOfStock) {
                         alert(`"${product.name}" is out of stock. Please add stock first before adding to an order.`);
                         return;
                       }
                       handleSelect(product);
                     }}
                     className={`w-full text-left px-3 py-2 transition-colors ${
-                      outOfStock
+                      outOfStock && !allowOutOfStock
                         ? 'opacity-60 cursor-not-allowed bg-red-50 dark:bg-red-900/10'
                         : `cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 ${product.id === Number(value) ? 'bg-blue-100 dark:bg-blue-900/30' : ''}`
                     }`}

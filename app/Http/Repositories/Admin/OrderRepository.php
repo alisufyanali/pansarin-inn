@@ -167,23 +167,29 @@ class OrderRepository
     // ── Products for Form ─────────────────────────────────────────
     public function getProductsForForm(): \Illuminate\Support\Collection
     {
-        return Product::with('variants')
+        return Product::with(['variants'])
             ->where('status', true)
             ->orderBy('name')
-            ->get(['id', 'name', 'sku', 'unit'])
+            ->get(['id', 'name', 'sku', 'unit', 'price', 'sale_price', 'quantity'])
             ->map(function ($p) {
                 $hasVariants = $p->variants->isNotEmpty();
 
-                // Base stock: if product has variants, sum all variant stocks
-                // otherwise read the null-variant stock row
                 if ($hasVariants) {
                     $baseStock = ProductStock::where('product_id', $p->id)
                         ->whereNotNull('product_variant_id')
                         ->sum('quantity');
                 } else {
-                    $baseStock = ProductStock::where('product_id', $p->id)
+                    // product_stocks se try karo, nahi mila to products.quantity fallback
+                    $stockRecord = ProductStock::where('product_id', $p->id)
                         ->whereNull('product_variant_id')
-                        ->value('quantity') ?? 0;
+                        ->first();
+
+                    if ($stockRecord) {
+                        $baseStock = $stockRecord->quantity;
+                    } else {
+                        // Fallback: products table ki quantity use karo
+                        $baseStock = (float) ($p->quantity ?? 0);
+                    }
                 }
 
                 return [
@@ -191,7 +197,7 @@ class OrderRepository
                     'name'     => $p->name,
                     'sku'      => $p->sku,
                     'unit'     => $p->unit,
-                    'price'    => 0,
+                    'price'    => (float) ($p->sale_price ?: $p->price ?: 0),
                     'stock'    => (int) $baseStock,
                     'variants' => $p->variants->map(fn ($v) => [
                         'id'    => $v->id,

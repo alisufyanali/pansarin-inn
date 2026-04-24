@@ -483,6 +483,7 @@ export default function OrderForm({
                               value={item.product_id}
                               onChange={(id) => handleProductChange(index, String(id))}
                               required
+                              allowOutOfStock={true}
                             />
                             {/* Stock badge for selected product (no variant) */}
                             {item.product_id && !item.product_variant_id && selectedProducts[index] && (
