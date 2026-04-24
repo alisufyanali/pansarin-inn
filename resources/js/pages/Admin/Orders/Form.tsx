@@ -117,17 +117,18 @@ export default function OrderForm({
       const customer = customers.find(c => c.id === Number(data.customer_id));
       setSelectedCustomer(customer || null);
       if (customer) {
-        setData(prev => ({
-          ...prev,
-          shipping_address: customer.address || '',
-          billing_address:  customer.address2 || '',
-          city_id:          customer.city_id ?? '',
-        }));
+        const city = cities.find(c => c.id === Number(customer.city_id));
+        setData('shipping_address', customer.address || '');
+        setData('billing_address', customer.address2 || '');
+        setData('city_id', customer.city_id ?? '');
+        if (city?.shipping_charges != null) {
+          setData('shipping_charges', Number(city.shipping_charges));
+        }
       }
     } else {
       setSelectedCustomer(null);
     }
-  }, [data.customer_id, customers]);
+  }, [data.customer_id, customers, cities]);
 
   function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -424,10 +425,27 @@ export default function OrderForm({
                     <CityDropdown
                       cities={cities}
                       value={data.city_id ?? ''}
-                      onChange={val => setData('city_id', val)}
+                      onChange={val => {
+                        const city = cities.find(c => String(c.id) === String(val));
+                        console.log('City selected:', city);
+                        console.log('shipping_charges:', city?.shipping_charges);
+                        setData('city_id', val);
+                        if (city?.shipping_charges != null) {
+                          setData('shipping_charges', Number(city.shipping_charges));
+                        }
+                      }}
                       error={errors.city_id}
                       label="City"
                     />
+                    {data.city_id && (() => {
+                      const city = cities.find(c => String(c.id) === String(data.city_id));
+                      if (!city?.shipping_charges) return null;
+                      return (
+                        <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                          Shipping: Rs. {Number(city.shipping_charges).toFixed(0)} (auto-set)
+                        </p>
+                      );
+                    })()}
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Address 2</label>
@@ -639,7 +657,7 @@ export default function OrderForm({
                         <input
                           type="number"
                           step="0.01"
-                          value={data.shipping_charges}
+                          value={Number(data.shipping_charges)}
                           onChange={e => setData('shipping_charges', e.target.value)}
                           className="w-24 px-2 py-1 text-xs rounded bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 focus:ring-1 focus:ring-blue-500 outline-none text-right"
                         />

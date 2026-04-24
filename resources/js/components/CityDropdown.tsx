@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { Search, ChevronDown, X } from 'lucide-react';
 
-export type CityOption = { id: number; name: string; province: string };
+export type CityOption = { id: number; name: string; province: string; shipping_charges?: number };
 
 const provinceLabel: Record<string, string> = {
     sindh: 'Sindh',
