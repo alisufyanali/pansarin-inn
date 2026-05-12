@@ -84,7 +84,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('attributes-data', [ProductAttributeController::class, 'getData'])->name('attributes.data');
 
     Route::resource('deals', ProductsDealController::class);
-    Route::get('deals-data', [ProductsDealController::class, 'getData'])->name('products.data');
+    Route::get('deals-data', [ProductsDealController::class, 'getData'])->name('deals.data');
 
     Route::resource('reviews', ProductsReviewsController::class);
     Route::get('reviews-data', [ProductsReviewsController::class, 'getData'])->name('reviews.data');

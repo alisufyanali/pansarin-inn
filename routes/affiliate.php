@@ -16,7 +16,7 @@ Route::middleware(['auth', 'verified'])->prefix('affiliates')->group(function ()
 
     // Registration
     Route::get('/registration', function () {
-        return Inertia::render('Affiliates/Registration');
+        return Inertia::render('Affiliate/Registration');
     })->name('affiliate.register.view');
 
     Route::post('/register', [AffiliateController::class, 'store'])->name('affiliate.store');
