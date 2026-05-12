@@ -16,10 +16,19 @@ class SaleController extends Controller
 {
     public function __construct(protected SaleRepository $saleRepository)
     {
-        // $this->middleware('permission:create.sales')->only(['create', 'store']);
-        // $this->middleware('permission:edit.sales')->only(['edit', 'update']);
-        // $this->middleware('permission:delete.sales')->only(['destroy']);
-        // $this->middleware('permission:view.sales')->only(['index', 'show', 'getData']);
+        $this->middleware('permission:create.sales')->only(['create', 'store', 'createFromOrder']);
+        $this->middleware('permission:edit.sales')->only([
+            'edit',
+            'update',
+            'updateDeliveryStatus',
+            'updatePaymentStatus',
+            'bulkUpdatePaymentStatus',
+            'bulkUpdateDeliveryStatus',
+            'bulkSendReviewEmail',
+            'bulkSendReviewWhatsApp',
+        ]);
+        $this->middleware('permission:delete.sales')->only(['destroy']);
+        $this->middleware('permission:view.sales')->only(['index', 'show', 'getData']);
     }
 
     public function index(Request $request)
