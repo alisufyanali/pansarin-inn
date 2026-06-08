@@ -1,8 +1,8 @@
+import React, { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link, useForm } from '@inertiajs/react';
-import { Edit2, Mail, Phone, User, MessageSquare, Send } from 'lucide-react';
-import { useState } from 'react';
+import { Head, useForm } from '@inertiajs/react';
+import { Edit2, Mail, User, MessageSquare, Send } from 'lucide-react';
 import InfoRow from '@/components/InfoRow';
 import SectionCard from '@/components/SectionCard';
 import PageHeader, { ActionButton } from '@/components/PageHeader';
@@ -36,9 +36,13 @@ interface ShowProps {
 
 export default function Show({ contact }: ShowProps) {
   const [showReplyForm, setShowReplyForm] = useState(false);
-  
+
   const { data, setData, post, processing, errors } = useForm({
     admin_reply: '',
+  });
+
+  const { setData: setStatusData, patch: patchStatus } = useForm({
+    status: contact.status,
   });
 
   const breadcrumbs: BreadcrumbItem[] = [
@@ -66,8 +70,8 @@ export default function Show({ contact }: ShowProps) {
   };
 
   const updateStatus = (status: string) => {
-    const statusForm = useForm({ status });
-    statusForm.patch(`/admin/contacts/${contact.id}/status`, {
+    setStatusData('status', status);
+    patchStatus(`/admin/contacts/${contact.id}/status`, {
       onSuccess: () => window.location.reload(),
     });
   };
@@ -89,23 +93,19 @@ export default function Show({ contact }: ShowProps) {
               <SectionCard title="Contact Information" icon={User}>
                 <div className="space-y-4">
                   <InfoRow label="Name" value={contact.name} />
-                  <InfoRow 
-                    label="Email" 
-                    value={
-                      <a href={`mailto:${contact.email}`} className="text-blue-600 hover:underline dark:text-blue-400">
-                        {contact.email}
-                      </a>
-                    } 
-                  />
+                  <div className="flex justify-between items-start gap-4">
+                    <span className="text-sm text-gray-500 dark:text-gray-400">Email</span>
+                    <a href={`mailto:${contact.email}`} className="text-sm text-blue-600 hover:underline dark:text-blue-400">
+                      {contact.email}
+                    </a>
+                  </div>
                   {contact.phone && (
-                    <InfoRow 
-                      label="Phone" 
-                      value={
-                        <a href={`tel:${contact.phone}`} className="text-blue-600 hover:underline dark:text-blue-400">
-                          {contact.phone}
-                        </a>
-                      } 
-                    />
+                    <div className="flex justify-between items-start gap-4">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">Phone</span>
+                      <a href={`tel:${contact.phone}`} className="text-sm text-blue-600 hover:underline dark:text-blue-400">
+                        {contact.phone}
+                      </a>
+                    </div>
                   )}
                   {contact.ip_address && (
                     <InfoRow label="IP Address" value={contact.ip_address} mono />

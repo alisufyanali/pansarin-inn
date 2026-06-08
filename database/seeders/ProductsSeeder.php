@@ -59,7 +59,7 @@ class ProductsSeeder extends Seeder
 
                         // Powder is slightly more expensive
                         if ($form->value === 'Powder') {
-                            $basePrice += 20;
+                            $basePrice += 100;
                         }
 
                         ProductVariant::create([
