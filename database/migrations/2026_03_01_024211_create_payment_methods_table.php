@@ -9,14 +9,17 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('payment_methods', function (Blueprint $table) {
-            $table->id();
-            $table->morphs('owner'); 
-            $table->string('provider');
-            $table->string('account_name');
-            $table->string('account_number');
-            $table->string('iban_number')->nullable();
-            $table->boolean('is_primary')->default(false);
-            $table->timestamps();
+        $table->id();
+        $table->foreignId('affiliate_id')->constrained()->onDelete('cascade');
+        
+        $table->string('type'); // e.g., 'bank', 'easypaisa', 'jazzcash'
+        $table->string('title'); // Account Title
+        $table->string('account_number'); // Account or IBAN Number
+        $table->string('bank_name')->nullable(); 
+        $table->string('branch_code')->nullable();
+        $table->boolean('is_default')->default(false); // Default payout method
+        $table->softDeletes();
+        $table->timestamps();
         });
     }
 

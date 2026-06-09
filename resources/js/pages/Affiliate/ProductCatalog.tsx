@@ -68,12 +68,12 @@ export default function ProductCatalog({ products, affiliateCode, commissionRate
                                 <div className="space-y-3">
                                     <div className="flex justify-between items-center text-sm text-gray-500">
                                         <span>Retail Price</span>
-                                        <span className="font-semibold text-gray-900 dark:text-gray-200">${product.sale_price}</span>
+                                        <span className="font-semibold text-gray-900 dark:text-gray-200">Rs.{product.sale_price}</span>
                                     </div>
                                     <div className="p-4 bg-blue-50 dark:bg-blue-900/10 rounded-2xl border border-blue-100 dark:border-blue-800/50">
                                         <div className="text-[10px] uppercase tracking-widest text-blue-600 dark:text-blue-400 font-bold mb-1">Your Earning</div>
                                         <div className="text-2xl font-black text-blue-700 dark:text-blue-500">
-                                            ${product.commission_amount.toFixed(2)}
+                                            Rs.{product.commission_amount.toFixed(2)}
                                         </div>
                                     </div>
                                 </div>

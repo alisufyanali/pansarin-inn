@@ -49,7 +49,7 @@ export default function Dashboard({ products, affiliateCode, referrals, stats }:
                     <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-8 rounded-[2rem] text-white shadow-xl relative overflow-hidden group">
                         <div className="relative z-10">
                             <p className="text-blue-100 text-sm font-medium">Available Earnings</p>
-                            <h2 className="text-5xl font-black mt-2">${stats.total_earnings}</h2>
+                            <h2 className="text-5xl font-black mt-2">Rs.{stats.total_earnings}</h2>
                             <div className="mt-4 inline-flex items-center gap-2 bg-white/20 px-3 py-1 rounded-full text-xs">
                                 <TrendingUp size={14} /> Total Profit
                             </div>
@@ -116,7 +116,7 @@ export default function Dashboard({ products, affiliateCode, referrals, stats }:
                                             {ref.created_at}
                                         </td>
                                         <td className="px-8 py-5 font-black text-green-600">
-                                            ${ref.total_commission}
+                                            Rs.{ref.total_commission}
                                         </td>
                                         <td className="px-8 py-5 text-right">
                                             <Link 
@@ -159,11 +159,11 @@ export default function Dashboard({ products, affiliateCode, referrals, stats }:
                                     <div className="mt-6 space-y-3">
                                         <div className="flex justify-between items-center text-sm">
                                             <span className="text-gray-400 uppercase tracking-tighter font-semibold">Price</span>
-                                            <span className="font-bold dark:text-gray-200">${product.sale_price}</span>
+                                            <span className="font-bold dark:text-gray-200">Rs.{product.sale_price}</span>
                                         </div>
                                         <div className="flex justify-between items-center p-3 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-100 dark:border-green-900/30">
                                             <span className="text-green-700 dark:text-green-400 text-xs font-bold uppercase">You Earn</span>
-                                            <span className="font-black text-green-600 text-lg">${product.commission_amount.toFixed(2)}</span>
+                                            <span className="font-black text-green-600 text-lg">Rs.{product.commission_amount.toFixed(2)}</span>
                                         </div>
                                     </div>
 

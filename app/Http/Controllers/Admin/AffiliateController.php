@@ -33,18 +33,18 @@ class AffiliateController extends Controller
         ]);
     }
 
-    // 2. Payout Requests ki list
-    public function payoutRequests()
-    {
-        $payouts = PayoutRequest::with('affiliate.user')
-            ->where('status', 'pending')
-            ->latest()
-            ->get();
+    // // 2. Payout Requests ki list
+    // public function payoutRequests()
+    // {
+    //     $payouts = PayoutRequest::with('affiliate.user')
+    //         ->where('status', 'pending')
+    //         ->latest()
+    //         ->get();
 
-        return Inertia::render('Admin/Affiliate/PendingPayouts', [
-            'payouts' => $payouts,
-        ]);
-    }
+    //     return Inertia::render('Admin/Affiliate/PendingPayouts', [
+    //         'payouts' => $payouts,
+    //     ]);
+    // }
 
     // 3. Referral Logs (Sales History)
     public function logs()
@@ -58,39 +58,39 @@ class AffiliateController extends Controller
         ]);
     }
 
-    // 4. Payout Approve karne ka logic
-    public function approvePayout($id)
-    {
-        $payout = PayoutRequest::findOrFail($id);
+    // // 4. Payout Approve karne ka logic
+    // public function approvePayout($id)
+    // {
+    //     $payout = PayoutRequest::findOrFail($id);
 
-        if ($payout->status == 'pending') {
-            // Sirf status complete karein, kyunke balance pehle hi kat chuka hai
-            $payout->update(['status' => 'completed']);
+    //     if ($payout->status == 'pending') {
+    //         // Sirf status complete karein, kyunke balance pehle hi kat chuka hai
+    //         $payout->update(['status' => 'completed']);
 
-            return back()->with('success', 'Payout marked as paid!');
-        }
+    //         return back()->with('success', 'Payout marked as paid!');
+    //     }
 
-        return back()->with('error', 'Request pehle hi process ho chuki hai.');
-    }
+    //     return back()->with('error', 'Request pehle hi process ho chuki hai.');
+    // }
 
-    // Ek naya function Reject ke liye bhi hona chahiye
-    public function rejectPayout($id)
-    {
-        $payout = PayoutRequest::findOrFail($id);
+    // // Ek naya function Reject ke liye bhi hona chahiye
+    // public function rejectPayout($id)
+    // {
+    //     $payout = PayoutRequest::findOrFail($id);
 
-        if ($payout->status == 'pending') {
-            $affiliate = $payout->affiliate;
+    //     if ($payout->status == 'pending') {
+    //         $affiliate = $payout->affiliate;
 
-            // Paise wapas affiliate ke balance mein daal dein
-            $affiliate->increment('balance', $payout->amount);
+    //         // Paise wapas affiliate ke balance mein daal dein
+    //         $affiliate->increment('balance', $payout->amount);
 
-            $payout->update(['status' => 'rejected']);
+    //         $payout->update(['status' => 'rejected']);
 
-            return back()->with('success', 'Payout rejected and balance refunded.');
-        }
+    //         return back()->with('success', 'Payout rejected and balance refunded.');
+    //     }
 
-        return back()->with('error', 'Invalid action.');
-    }
+    //     return back()->with('error', 'Invalid action.');
+    // }
 
     // 5. Affiliate ka status toggle (Active/Block)
     public function updateStatus($id)

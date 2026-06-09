@@ -15,9 +15,10 @@ export const AffiliateSection = ({ isAdmin }: AffiliateSectionProps): NavItem =>
             { title: 'Payout Requests', href: route('admin.affiliate.payouts'), icon: CreditCard },
             { title: 'Referral Logs', href: route('admin.affiliate.logs'), icon: ClipboardList },
             { title: 'System Settings', href: route('admin.affiliate.settings'), icon: Settings2 }, 
-
+            
             { title: 'My Dashboard', href: route('affiliate.dashboard'), icon: LayoutDashboard },
             { title: 'Product Catalog', href: route('affiliate.products'), icon: ShoppingBag },
+            { title: 'My Payouts', href: route('affiliate.payouts.index'), icon: CreditCard },
             { title: 'Join Program', href: route('affiliate.join.page'), icon: UserPlus }
         );
     } else {
@@ -25,7 +26,8 @@ export const AffiliateSection = ({ isAdmin }: AffiliateSectionProps): NavItem =>
         children.push(
             { title: 'My Dashboard', href: route('affiliate.dashboard'), icon: LayoutDashboard },
             { title: 'Product Catalog', href: route('affiliate.products'), icon: ShoppingBag },
-            { title: 'Join/Register', href: route('affiliate.join.page'), icon: UserPlus }
+            { title: 'My Payouts', href: route('affiliate.payouts.index'), icon: CreditCard },
+            { title: 'Join Program', href: route('affiliate.join.page'), icon: UserPlus }
         );
     }
 

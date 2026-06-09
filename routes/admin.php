@@ -167,6 +167,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         Route::get('/phone-numbers', [WhatsAppController::class, 'getPhoneNumbers'])->name('phone-numbers');
         Route::get('/messages/{phone}', [WhatsAppController::class, 'getMessages'])->name('messages');
         Route::post('/send', [WhatsAppController::class, 'sendMessage'])->name('send');
+        Route::post('/add-number', [WhatsAppController::class, 'addNumber'])->name('add-number');
     });
 
 

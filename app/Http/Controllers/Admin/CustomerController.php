@@ -123,20 +123,6 @@ class CustomerController extends Controller
         }
     }
 
-    // public function destroy(string $id) {
-    //     try {
-    //         $this->customerRepository->delete($id);
-
-    //         return redirect()->route('admin.customers.index')
-    //             ->with('success', 'Customer successfully deleted!');
-    //     } catch (\Exception $e) {
-    //         Log::error('Customer deletion error: '.$e->getMessage());
-
-    //         return redirect()->route('admin.customers.index')
-    //             ->with('error', 'Failed to delete customer.');
-    //     }
-    // }
-
     public function destroy(Customer $customer) {
         try {
             // Ab yahan poora object pass ho raha hai
