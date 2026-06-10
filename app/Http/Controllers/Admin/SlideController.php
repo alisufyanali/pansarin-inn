@@ -11,7 +11,13 @@ use Inertia\Inertia;
 
 class SlideController extends Controller
 {
-    public function __construct(protected SlideRepository $repo) {}
+    public function __construct(protected SlideRepository $repo)
+    {
+        $this->middleware('permission:view.slides')->only(['index', 'getData', 'show']);
+        $this->middleware('permission:create.slides')->only(['create', 'store']);
+        $this->middleware('permission:edit.slides')->only(['edit', 'update', 'toggleStatus']);
+        $this->middleware('permission:delete.slides')->only(['destroy']);
+    }
 
     public function index(Request $request)
     {

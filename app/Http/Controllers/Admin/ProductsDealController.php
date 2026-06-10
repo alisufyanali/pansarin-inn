@@ -18,6 +18,10 @@ class ProductsDealController extends Controller
     public function __construct(ProductDealRepository $dealRepository)
     {
         $this->dealRepository = $dealRepository;
+        $this->middleware('permission:view.deals')->only(['index', 'getData', 'show']);
+        $this->middleware('permission:create.deals')->only(['create', 'store']);
+        $this->middleware('permission:edit.deals')->only(['edit', 'update', 'toggleStatus', 'duplicate']);
+        $this->middleware('permission:delete.deals')->only(['destroy']);
     }
 
     public function index()

@@ -18,8 +18,7 @@ Route::get('/privacy_policy', function () {
 Route::match(['get', 'post'], '/whatsapp/webhook', [WhatsAppController::class, 'webhook'])->name('whatsapp.webhook');
 
 // TODO: Add Spatie permission `run-maintenance` to the database, assign to admin roles, then use:
-// Route::middleware(['auth', 'can:run-maintenance'])->group(function () {
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'permission:run-maintenance'])->group(function () {
     Route::get('/clear-cache', function () {
         try {
             Artisan::call('cache:clear');

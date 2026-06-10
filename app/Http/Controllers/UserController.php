@@ -17,6 +17,7 @@ class UserController extends Controller
 {
     public function __construct() {
         // Permissions check
+        $this->middleware('permission:view.users')->only(['index', 'getData', 'show']);
         $this->middleware('permission:create.users')->only(['create', 'store']);
         $this->middleware('permission:edit.users')->only(['edit', 'update']);
         $this->middleware('permission:delete.users')->only(['destroy']);

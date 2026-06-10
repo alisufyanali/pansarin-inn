@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Route;
 //     Route::get('admin/pages-data', [PageController::class, 'getPagesData'])->name('admin.pages.data');
 // });
 
-Route::middleware(['auth'])->prefix('admin/settings/ui')->name('admin.ui-settings.')->group(function () {
+Route::middleware(['auth', 'verified', 'permission:edit.settings'])->prefix('admin/settings/ui')->name('admin.ui-settings.')->group(function () {
     Route::get('/', [UiSettingController::class, 'index'])->name('index');
     Route::Post('/branding',[UiSettingController::class, 'updateBrandingUI'])->name('updateBrandingUI');
     Route::Post('/header',[UiSettingController::class, 'updateHeaderUI'])->name('updateHeaderUI');
@@ -27,7 +27,7 @@ Route::middleware(['auth'])->prefix('admin/settings/ui')->name('admin.ui-setting
 
 });
 
-Route::middleware(['auth'])->prefix('admin/settings/general')->name('admin.general-settings.')->group(function () {
+Route::middleware(['auth', 'verified', 'permission:edit.settings'])->prefix('admin/settings/general')->name('admin.general-settings.')->group(function () {
     Route::get('/', [GeneralSettingController::class, 'index'])->name('index');
     Route::post('/system', [GeneralSettingController::class, 'updateSystem'])->name('updateSystem');
     Route::post('/contact', [GeneralSettingController::class, 'updateContact'])->name('updateContact');
@@ -41,7 +41,7 @@ Route::middleware(['auth'])->prefix('admin/settings/general')->name('admin.gener
     Route::post('/advanced', [GeneralSettingController::class, 'updateAdvanced'])->name('updateAdvanced');
 });
 
-Route::middleware(['auth'])->prefix('admin/settings/business')->name('admin.business-settings.')->group(function () {
+Route::middleware(['auth', 'verified', 'permission:edit.settings'])->prefix('admin/settings/business')->name('admin.business-settings.')->group(function () {
     Route::get('/', [BusinessSettingController::class, 'index'])->name('index');
     Route::post('/payments', [BusinessSettingController::class, 'updatePayments'])->name('updatePayments');
     Route::post('/currency', [BusinessSettingController::class, 'updateCurrency'])->name('updateCurrency');

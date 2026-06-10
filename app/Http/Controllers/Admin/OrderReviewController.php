@@ -13,7 +13,13 @@ use Inertia\Inertia;
 
 class OrderReviewController extends Controller
 {
-    public function __construct(protected OrderReviewRepository $repo) {}
+    public function __construct(protected OrderReviewRepository $repo)
+    {
+        $this->middleware('permission:view.order-reviews')->only(['index', 'getData', 'show']);
+        $this->middleware('permission:create.order-reviews')->only(['create', 'store']);
+        $this->middleware('permission:edit.order-reviews')->only(['edit', 'update', 'updateStatus']);
+        $this->middleware('permission:delete.order-reviews')->only(['destroy']);
+    }
 
     public function index(Request $request)
     {

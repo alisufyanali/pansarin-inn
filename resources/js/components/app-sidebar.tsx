@@ -3,16 +3,14 @@ import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { can } from '@/lib/can';
-// import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
 import { LayoutGrid } from 'lucide-react';
@@ -28,101 +26,109 @@ import { AffiliateSection } from '@/components/sidebar-sections/affiliate-sectio
 import AppLogo from './app-logo';
 
 export function AppSidebar() {
-  const permissions = usePermissionChecks();
+    const permissions = usePermissionChecks();
 
-  const mainNavItems: NavItem[] = [
-    {
-      title: 'Dashboard',
-      // href: "/admin/dashboard",
-      href: route('admin.dashboard'),
-      icon: LayoutGrid,
-    },
-  ];
+    const mainNavItems: NavItem[] = [
+        {
+            title: 'Dashboard',
+            href: route('admin.dashboard'),
+            icon: LayoutGrid,
+        },
+    ];
 
-  // Add Blog Section
-  const blogSection = BlogSection();
-  if (blogSection) {
-    mainNavItems.push(blogSection);
-  }
+    // Blog Section — fully permission-gated
+    const blogSection = BlogSection({
+        hasAnyBlogPerm: permissions.hasAnyBlogPerm,
+        hasAnyBlogCategoryPerm: permissions.hasAnyBlogCategoryPerm,
+        hasAnyBlogCommentPerm: permissions.hasAnyBlogCommentPerm,
+        hasAnyBlogTagPerm: permissions.hasAnyBlogTagPerm,
+    });
+    if (blogSection) {
+        mainNavItems.push(blogSection);
+    }
 
-  // Add Products Section
-  const productsSection = ProductsSection({
-    hasAnyProductPerm: permissions.hasAnyProductPerm,
-    hasAnyCategoryPerm: permissions.hasAnyCategoryPerm,
-    hasAnyVariantPerm: permissions.hasAnyVariantPerm,
-    hasAnyAttributePerm: permissions.hasAnyAttributePerm,
-  });
-  if (productsSection) {
-    mainNavItems.push(productsSection);
-  }
+    // Products Section — fully permission-gated
+    const productsSection = ProductsSection({
+        hasAnyProductPerm: permissions.hasAnyProductPerm,
+        hasAnyCategoryPerm: permissions.hasAnyCategoryPerm,
+        hasAnyVariantPerm: permissions.hasAnyVariantPerm,
+        hasAnyAttributePerm: permissions.hasAnyAttributePerm,
+        hasAnyDealPerm: permissions.hasAnyDealPerm,
+        hasAnyInventoryPerm: permissions.hasAnyInventoryPerm,
+        hasAnyWishlistPerm: permissions.hasAnyWishlistPerm,
+        hasAnyReviewPerm: permissions.hasAnyReviewPerm,
+    });
+    if (productsSection) {
+        mainNavItems.push(productsSection);
+    }
 
-  // Add Shop Section
-  const shopSection = ShopSection({
-    hasAnyCustomerPerm: permissions.hasAnyCustomerPerm || true,
-    hasAnyOrderPerm: permissions.hasAnyOrderPerm || true,
-    hasAnySalePerm: permissions.hasAnySalePerm || true,
-    hasAnyCitiesPerm: permissions.hasAnyCitiesPerm || true,
-  });
-  if (shopSection) {
-    mainNavItems.push(shopSection);
-  }
+    // Shop Section — fully permission-gated (no more || true)
+    const shopSection = ShopSection({
+        hasAnyCustomerPerm: permissions.hasAnyCustomerPerm,
+        hasAnyOrderPerm: permissions.hasAnyOrderPerm,
+        hasAnySalePerm: permissions.hasAnySalePerm,
+        hasAnyCitiesPerm: permissions.hasAnyCitiesPerm,
+        hasAnyCouponPerm: permissions.hasAnyCouponPerm,
+        hasAnyOrderReviewPerm: permissions.hasAnyOrderReviewPerm,
+    });
+    if (shopSection) {
+        mainNavItems.push(shopSection);
+    }
 
-  // Add Messaging Section
-  const messagingSection = MessagingSection({
-    hasAnyContactMsg: permissions.hasAnyContactMsgPerm || true, // Temporary true - baad mein permission se replace karna
-    hasAnyNewsletter: permissions.hasAnyNewsletterPerm || true,
-    hasAnyWhatsapp: permissions.hasAnyWhatsappPerm || true,
-  });
-  if (messagingSection) {
-    mainNavItems.push(messagingSection);
-  }
+    // Messaging Section — fully permission-gated (no more || true)
+    const messagingSection = MessagingSection({
+        hasAnyContactMsg: permissions.hasAnyContactMsgPerm,
+        hasAnyNewsletter: permissions.hasAnyNewsletterPerm,
+        hasAnyWhatsapp: permissions.hasAnyWhatsappPerm,
+    });
+    if (messagingSection) {
+        mainNavItems.push(messagingSection);
+    }
 
-  // Add User Management Section
-  const userManagementSection = UserManagementSection({
-    hasAnyUserPerm: permissions.hasAnyUserPerm,
-    hasAnyRolePerm: permissions.hasAnyRolePerm,
-    hasAnyPermissionPerm: permissions.hasAnyPermissionPerm|| true,
-    hasAnyVendorPerm: permissions.hasAnyVendorPerm|| true,
-  });
-  if (userManagementSection) {
-    mainNavItems.push(userManagementSection);
-  }
+    // User Management Section — fully permission-gated (no more || true)
+    const userManagementSection = UserManagementSection({
+        hasAnyUserPerm: permissions.hasAnyUserPerm,
+        hasAnyRolePerm: permissions.hasAnyRolePerm,
+        hasAnyPermissionPerm: permissions.hasAnyPermissionPerm,
+        hasAnyVendorPerm: permissions.hasAnyVendorPerm,
+    });
+    if (userManagementSection) {
+        mainNavItems.push(userManagementSection);
+    }
 
-  // Add Affiliate Section
-  const affiliateSection = AffiliateSection({ 
-    isAdmin: permissions.hasAnyUserPerm 
-  });
+    // Affiliate Section — shown only if user has affiliate permissions
+    const affiliateSection = AffiliateSection({
+        isAdmin: permissions.hasAnyAffiliatePerm || permissions.hasAnyUserPerm,
+    });
+    if (affiliateSection) {
+        mainNavItems.push(affiliateSection);
+    }
 
-  if (affiliateSection) {
-    mainNavItems.push(affiliateSection);
-  }
+    // Footer: Settings — shown only if user has settings permissions
+    const footerNavItems = SettingsSections();
 
-  // Get Footer Items (Settings)
-  const footerNavItems = SettingsSections();
+    return (
+        <Sidebar collapsible="icon" variant="inset">
+            <SidebarHeader>
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton size="lg" asChild>
+                            <Link href={route('admin.dashboard')} prefetch>
+                                <AppLogo />
+                            </Link>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                </SidebarMenu>
+            </SidebarHeader>
 
-  return (
-    <Sidebar collapsible="icon" variant="inset">
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-              {/* <Link href={dashboard()} prefetch> */}
-              <Link href={route('admin.dashboard')} prefetch>
-                <AppLogo />
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader>
+            <SidebarContent>
+                <NavMain items={mainNavItems} />
+            </SidebarContent>
 
-      <SidebarContent>
-        <NavMain items={mainNavItems} />
-      </SidebarContent>
-
-      <SidebarFooter>
-        <NavFooter items={footerNavItems} className="mt-auto" />
-        <NavUser />
-      </SidebarFooter>
-    </Sidebar>
-  );
+            <SidebarFooter>
+                <NavFooter items={footerNavItems} className="mt-auto" />
+                <NavUser />
+            </SidebarFooter>
+        </Sidebar>
+    );
 }

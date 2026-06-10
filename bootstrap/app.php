@@ -26,5 +26,26 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\HttpException $e, $request) {
+            if ($e->getStatusCode() === 403 && $request->header('X-Inertia')) {
+                return \Inertia\Inertia::render('errors/403')
+                    ->toResponse($request)
+                    ->setStatusCode(403);
+            }
+            if ($e->getStatusCode() === 403) {
+                return \Inertia\Inertia::render('errors/403')
+                    ->toResponse($request)
+                    ->setStatusCode(403);
+            }
+        });
+        $exceptions->render(function (\Spatie\Permission\Exceptions\UnauthorizedException $e, $request) {
+            if ($request->header('X-Inertia')) {
+                return \Inertia\Inertia::render('errors/403')
+                    ->toResponse($request)
+                    ->setStatusCode(403);
+            }
+            return \Inertia\Inertia::render('errors/403')
+                ->toResponse($request)
+                ->setStatusCode(403);
+        });
     })->create();

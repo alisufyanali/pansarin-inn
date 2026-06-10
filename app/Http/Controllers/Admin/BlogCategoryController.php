@@ -16,6 +16,7 @@ class BlogCategoryController extends Controller
     {
         $this->blogCategoryRepo = $blogCategoryRepo;
 
+        $this->middleware('permission:view.blog-categories')->only(['index', 'getData', 'show']);
         $this->middleware('permission:create.blog-categories')->only(['create', 'store']);
         $this->middleware('permission:edit.blog-categories')->only(['edit', 'update']);
         $this->middleware('permission:delete.blog-categories')->only(['destroy']);

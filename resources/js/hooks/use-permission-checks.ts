@@ -44,6 +44,13 @@ export function usePermissionChecks() {
     const canViewRole = can('view.roles');
     const hasAnyRolePerm = canCreateRole || canEditRole || canDeleteRole || canViewRole;
 
+    // Permissions
+    const canCreatePermission = can('create.permissions');
+    const canEditPermission = can('edit.permissions');
+    const canDeletePermission = can('delete.permissions');
+    const canViewPermission = can('view.permissions');
+    const hasAnyPermissionPerm = canCreatePermission || canEditPermission || canDeletePermission || canViewPermission;
+
     // Customers
     const canCreateCustomer = can('create.customers');
     const canEditCustomer = can('edit.customers');
@@ -65,82 +72,183 @@ export function usePermissionChecks() {
     const canViewSale = can('view.sales');
     const hasAnySalePerm = canCreateSale || canEditSale || canDeleteSale || canViewSale;
 
-    // cities
+    // Coupons
+    const canViewCoupon = can('view.coupons');
+    const canCreateCoupon = can('create.coupons');
+    const canEditCoupon = can('edit.coupons');
+    const canDeleteCoupon = can('delete.coupons');
+    const hasAnyCouponPerm = canViewCoupon || canCreateCoupon || canEditCoupon || canDeleteCoupon;
+
+    // Cities
     const canCreateCities = can('create.cities');
     const canEditCities = can('edit.cities');
     const canDeleteCities = can('delete.cities');
     const canViewCities = can('view.cities');
     const hasAnyCitiesPerm = canCreateCities || canEditCities || canDeleteCities || canViewCities;
 
+    // Deals
+    const canViewDeal = can('view.deals');
+    const canCreateDeal = can('create.deals');
+    const canEditDeal = can('edit.deals');
+    const canDeleteDeal = can('delete.deals');
+    const hasAnyDealPerm = canViewDeal || canCreateDeal || canEditDeal || canDeleteDeal;
 
+    // Inventory
+    const canViewInventory = can('view.inventory');
+    const canCreateInventory = can('create.inventory');
+    const canEditInventory = can('edit.inventory');
+    const canDeleteInventory = can('delete.inventory');
+    const hasAnyInventoryPerm = canViewInventory || canCreateInventory || canEditInventory || canDeleteInventory;
 
-    // Permissions
-    const canCreatePermission = can('create.permissions');
-    const canEditPermission = can('edit.permissions');
-    const canDeletePermission = can('delete.permissions');
-    const canViewPermission = can('view.permissions');
-    const hasAnyPermissionPerm = canCreatePermission || canEditPermission || canDeletePermission || canViewPermission;
+    // Wishlists
+    const canViewWishlist = can('view.wishlists');
+    const canCreateWishlist = can('create.wishlists');
+    const canDeleteWishlist = can('delete.wishlists');
+    const hasAnyWishlistPerm = canViewWishlist || canCreateWishlist || canDeleteWishlist;
+
+    // Blogs
+    const canViewBlog = can('view.blogs');
+    const canCreateBlog = can('create.blogs');
+    const canEditBlog = can('edit.blogs');
+    const canDeleteBlog = can('delete.blogs');
+    const hasAnyBlogPerm = canViewBlog || canCreateBlog || canEditBlog || canDeleteBlog;
+
+    // Blog Categories
+    const canViewBlogCategory = can('view.blog-categories');
+    const hasAnyBlogCategoryPerm = canViewBlogCategory || can('create.blog-categories') || can('edit.blog-categories') || can('delete.blog-categories');
+
+    // Blog Comments
+    const canViewBlogComment = can('view.blogcomments');
+    const hasAnyBlogCommentPerm = canViewBlogComment || can('create.blogcomments') || can('edit.blogcomments') || can('delete.blogcomments');
+
+    // Blog Tags
+    const canViewBlogTag = can('view.blogtags');
+    const hasAnyBlogTagPerm = canViewBlogTag || can('create.blogtags') || can('edit.blogtags') || can('delete.blogtags');
+
+    // Order Reviews
+    const canViewOrderReview = can('view.order-reviews');
+    const hasAnyOrderReviewPerm = canViewOrderReview || can('create.order-reviews') || can('edit.order-reviews') || can('delete.order-reviews');
+
+    // Reviews (Product)
+    const canViewReview = can('view.reviews');
+    const hasAnyReviewPerm = canViewReview || can('create.reviews') || can('edit.reviews') || can('delete.reviews');
+
+    // Slides
+    const canViewSlide = can('view.slides');
+    const hasAnySlidePerm = canViewSlide || can('create.slides') || can('edit.slides') || can('delete.slides');
+
+    // Newsletters — fixed permission name (was 'view.Newsletters', should be 'view.newsletters')
+    const canViewNewsletter = can('view.newsletters');
+    const hasAnyNewsletterPerm = canViewNewsletter || can('create.newsletters') || can('edit.newsletters') || can('delete.newsletters');
+
+    // Contacts — fixed permission name (was 'view.ContactMsgs', should be 'view.contacts')
+    const canViewContact = can('view.contacts');
+    const hasAnyContactMsgPerm = canViewContact || can('create.contacts') || can('edit.contacts') || can('delete.contacts');
+
+    // WhatsApp — fixed permission name (was 'view.Whatsapps', should be 'view.whatsapp')
+    const canViewWhatsapp = can('view.whatsapp');
+    const canSendWhatsapp = can('send.whatsapp');
+    const hasAnyWhatsappPerm = canViewWhatsapp || canSendWhatsapp;
+
+    // Notifications
+    const canViewNotification = can('view.notifications');
+    const hasAnyNotificationPerm = canViewNotification || can('delete.notifications');
+
+    // Settings
+    const canViewSettings = can('view.settings');
+    const canEditSettings = can('edit.settings');
+    const hasAnySettingsPerm = canViewSettings || canEditSettings;
+
+    // Affiliates
+    const canViewAffiliate = can('view.affiliates');
+    const canManageAffiliate = can('manage.affiliates');
+    const hasAnyAffiliatePerm = canViewAffiliate || canManageAffiliate || can('create.affiliates') || can('edit.affiliates');
+
+    // Payout requests
+    const canViewPayout = can('view.payout.requests');
+    const canApprovePayout = can('approve.payout.requests');
+    const hasAnyPayoutPerm = canViewPayout || canApprovePayout;
 
     // Vendors
-    const canCreateVendor =  can('create.vendors');
+    const canCreateVendor = can('create.vendors');
     const canEditVendor = can('edit.vendors');
     const canDeleteVendor = can('delete.vendors');
     const canViewVendor = can('view.vendors');
     const hasAnyVendorPerm = canCreateVendor || canEditVendor || canDeleteVendor || canViewVendor;
 
-
-    // Mesageing
-    const canCreateContactMsg =  can('create.ContactMsgs');
-    const canEditContactMsg = can('edit.ContactMsgs');
-    const canDeleteContactMsg = can('delete.ContactMsgs');
-    const canViewContactMsg = can('view.ContactMsgs');
-    const hasAnyContactMsgPerm = canCreateContactMsg || canEditContactMsg || canDeleteContactMsg || canViewContactMsg;
-
-    // Newsletter
-    const canCreateNewsletter =  can('create.Newsletters');
-    const canEditNewsletter = can('edit.Newsletters');
-    const canDeleteNewsletter = can('delete.Newsletters');
-    const canViewNewsletter = can('view.Newsletters');
-    const hasAnyNewsletterPerm = canCreateNewsletter || canEditNewsletter || canDeleteNewsletter || canViewNewsletter;
-
-    // Whatsapp
-    const canCreateWhatsapp =  can('create.Whatsapps');
-    const canEditWhatsapp = can('edit.Whatsapps');
-    const canDeleteWhatsapp = can('delete.Whatsapps');
-    const canViewWhatsapp = can('view.Whatsapps');
-    const hasAnyWhatsappPerm = canCreateWhatsapp || canEditWhatsapp || canDeleteWhatsapp || canViewWhatsapp;
-
-
-
+    // Frontend Content
+    const canViewFrontend = can('view.frontend');
+    const hasAnyFrontendPerm = canViewFrontend || can('create.frontend') || can('edit.frontend') || can('delete.frontend');
 
     return {
+        // Aggregate flags
         hasAnyProductPerm,
         hasAnyCategoryPerm,
         hasAnyVariantPerm,
         hasAnyAttributePerm,
         hasAnyUserPerm,
         hasAnyRolePerm,
+        hasAnyPermissionPerm,
         hasAnyCustomerPerm,
         hasAnyOrderPerm,
         hasAnySalePerm,
+        hasAnyCouponPerm,
         hasAnyCitiesPerm,
-        hasAnyPermissionPerm,
-        hasAnyVendorPerm,
-        hasAnyContactMsgPerm,
+        hasAnyDealPerm,
+        hasAnyInventoryPerm,
+        hasAnyWishlistPerm,
+        hasAnyBlogPerm,
+        hasAnyBlogCategoryPerm,
+        hasAnyBlogCommentPerm,
+        hasAnyBlogTagPerm,
+        hasAnyOrderReviewPerm,
+        hasAnyReviewPerm,
+        hasAnySlidePerm,
         hasAnyNewsletterPerm,
+        hasAnyContactMsgPerm,
         hasAnyWhatsappPerm,
-        // Individual permissions agar zaroori hon to
+        hasAnyNotificationPerm,
+        hasAnySettingsPerm,
+        hasAnyAffiliatePerm,
+        hasAnyPayoutPerm,
+        hasAnyVendorPerm,
+        hasAnyFrontendPerm,
+
+        // Individual view permissions
         canViewProduct,
         canViewCategory,
         canViewVariant,
         canViewAttribute,
         canViewUser,
         canViewRole,
+        canViewPermission,
         canViewCustomer,
         canViewOrder,
         canViewSale,
-        canViewPermission,
+        canViewCoupon,
+        canViewCities,
+        canViewDeal,
+        canViewInventory,
+        canViewWishlist,
+        canViewBlog,
+        canViewBlogCategory,
+        canViewBlogComment,
+        canViewBlogTag,
+        canViewOrderReview,
+        canViewReview,
+        canViewSlide,
+        canViewNewsletter,
+        canViewContact,
+        canViewWhatsapp,
+        canSendWhatsapp,
+        canViewNotification,
+        canViewSettings,
+        canEditSettings,
+        canViewAffiliate,
+        canManageAffiliate,
+        canViewPayout,
+        canApprovePayout,
         canViewVendor,
-
+        canViewFrontend,
     };
 }

@@ -9,6 +9,16 @@ use Inertia\Inertia;
 
 class GeneralSettingController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:view.settings')->only(['index']);
+        $this->middleware('permission:edit.settings')->only([
+            'updateSystem', 'updateContact', 'updateSeo', 'updateAuth',
+            'updateEcommerce', 'updateEmail', 'updateSecurity',
+            'updateIntegrations', 'updateLegal', 'updateAdvanced',
+        ]);
+    }
+
     private function updateSettings($request, $keys) {
         foreach ($keys as $key) {
             GeneralSetting::updateOrCreate(

@@ -18,6 +18,9 @@ class WishlistController extends Controller
     public function __construct(WishlistRepository $wishlistRepository)
     {
         $this->wishlistRepository = $wishlistRepository;
+        $this->middleware('permission:view.wishlists')->only(['index', 'getData', 'show', 'getVariantsByProduct']);
+        $this->middleware('permission:create.wishlists')->only(['create', 'store']);
+        $this->middleware('permission:delete.wishlists')->only(['destroy', 'bulkDelete']);
     }
 
     public function index()

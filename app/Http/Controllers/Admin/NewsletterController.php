@@ -17,9 +17,10 @@ class NewsletterController extends Controller
     public function __construct(NewsletterRepository $newsletterRepository)
     {
         $this->newsletterRepository = $newsletterRepository;
-        // $this->middleware('permission:create.newsletters')->only(['create', 'store']);
-        // $this->middleware('permission:edit.newsletters')->only(['edit', 'update']);
-        // $this->middleware('permission:delete.newsletters')->only(['destroy']);
+        $this->middleware('permission:view.newsletters')->only(['index', 'getData', 'show']);
+        $this->middleware('permission:create.newsletters')->only(['create', 'store']);
+        $this->middleware('permission:edit.newsletters')->only(['edit', 'update', 'updateStatus']);
+        $this->middleware('permission:delete.newsletters')->only(['destroy', 'bulkDelete']);
     }
 
     /**

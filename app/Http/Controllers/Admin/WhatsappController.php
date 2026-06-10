@@ -21,6 +21,8 @@ class WhatsAppController extends Controller
     public function __construct(WhatsAppService $whatsappService)
     {
         $this->whatsappService = $whatsappService;
+        $this->middleware('permission:view.whatsapp')->only(['index', 'getPhoneNumbers', 'getMessages']);
+        $this->middleware('permission:send.whatsapp')->only(['sendMessage', 'addNumber']);
     }
 
     /**

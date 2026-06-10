@@ -1,5 +1,5 @@
 // components/sidebar-sections/shop-section.tsx
-import { ShoppingCart, User, DollarSign, TicketPercent, Star, Package, MapPin } from 'lucide-react';
+import { ShoppingCart, User, DollarSign, TicketPercent, Star, MapPin } from 'lucide-react';
 import { type NavItem } from '@/types';
 
 interface ShopSectionProps {
@@ -7,6 +7,8 @@ interface ShopSectionProps {
     hasAnyOrderPerm: boolean;
     hasAnySalePerm: boolean;
     hasAnyCitiesPerm: boolean;
+    hasAnyCouponPerm: boolean;
+    hasAnyOrderReviewPerm: boolean;
 }
 
 export function ShopSection({
@@ -14,8 +16,17 @@ export function ShopSection({
     hasAnyOrderPerm,
     hasAnySalePerm,
     hasAnyCitiesPerm,
+    hasAnyCouponPerm,
+    hasAnyOrderReviewPerm,
 }: ShopSectionProps): NavItem | null {
-    if (!hasAnyCustomerPerm && !hasAnyOrderPerm && !hasAnySalePerm && !hasAnyCitiesPerm) {
+    if (
+        !hasAnyCustomerPerm &&
+        !hasAnyOrderPerm &&
+        !hasAnySalePerm &&
+        !hasAnyCitiesPerm &&
+        !hasAnyCouponPerm &&
+        !hasAnyOrderReviewPerm
+    ) {
         return null;
     }
 
@@ -35,7 +46,6 @@ export function ShopSection({
             href: '/admin/orders',
             icon: ShoppingCart,
         });
-
         shopSubmenu.push({
             title: 'Track Orders',
             href: '/admin/orders/track',
@@ -51,7 +61,7 @@ export function ShopSection({
         });
     }
 
-    if (hasAnySalePerm) {
+    if (hasAnyCouponPerm) {
         shopSubmenu.push({
             title: 'Coupons',
             href: '/admin/coupons',
@@ -59,7 +69,7 @@ export function ShopSection({
         });
     }
 
-    if (hasAnySalePerm) {
+    if (hasAnyOrderReviewPerm) {
         shopSubmenu.push({
             title: 'Order Reviews',
             href: '/admin/order-reviews',

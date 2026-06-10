@@ -8,6 +8,12 @@ use Inertia\Inertia;
 
 class NotificationController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:view.notifications')->only(['index', 'unread']);
+        $this->middleware('permission:delete.notifications')->only(['destroy']);
+    }
+
     // Get all notifications
     public function index(Request $request)
     {

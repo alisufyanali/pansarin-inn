@@ -1,5 +1,5 @@
 // components/sidebar-sections/messaging-section.tsx
-import { MessageSquare, Mail, Phone, MessageCircle, Bell } from 'lucide-react';
+import { MessageSquare, Mail, MessageCircle, Bell } from 'lucide-react';
 import { type NavItem } from '@/types';
 
 interface MessagingSectionProps {
@@ -23,7 +23,7 @@ export function MessagingSection({
         messagingSubmenu.push({
             title: 'Contact Messages',
             href: '/admin/contacts',
-            icon: MessageSquare, // Contact messages ke liye
+            icon: MessageSquare,
         });
     }
 
@@ -31,22 +31,22 @@ export function MessagingSection({
         messagingSubmenu.push({
             title: 'Newsletter',
             href: '/admin/newsletters',
-            icon: Mail, // Newsletter ke liye
+            icon: Mail,
         });
     }
 
     if (hasAnyWhatsapp) {
         messagingSubmenu.push({
             title: 'WhatsApp',
-            href: '/admin/whatsapp',
-            icon: MessageCircle, // WhatsApp ke liye
+            href: '/admin/whatsapp/chat',
+            icon: MessageCircle,
         });
     }
 
     return {
         title: 'Messaging',
         href: '#',
-        icon: Bell, // Ya MessageSquare
+        icon: Bell,
         children: messagingSubmenu,
     };
 }

@@ -13,6 +13,14 @@ class RoleController extends Controller
     /**
      * Organize permissions by category
      */
+    public function __construct()
+    {
+        $this->middleware('permission:view.roles')->only(['index', 'getData', 'show']);
+        $this->middleware('permission:create.roles')->only(['create', 'store']);
+        $this->middleware('permission:edit.roles')->only(['edit', 'update']);
+        $this->middleware('permission:delete.roles')->only(['destroy']);
+    }
+
     private function getOrganizedPermissions()
     {
         $permissions = Permission::all(['id', 'name']);

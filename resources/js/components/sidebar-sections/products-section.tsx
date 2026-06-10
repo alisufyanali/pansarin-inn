@@ -1,15 +1,13 @@
 // components/sidebar-sections/products-section.tsx
-import { 
-  Package, 
-  Tag, 
-  Layers, 
-  Palette, 
-  Percent, 
-  Star, 
-  Warehouse,
-  Heart,
-  Box,
-  BarChart
+import {
+    Package,
+    Tag,
+    Layers,
+    Palette,
+    Percent,
+    Star,
+    Warehouse,
+    Heart,
 } from 'lucide-react';
 import { type NavItem } from '@/types';
 
@@ -18,6 +16,10 @@ interface ProductsSectionProps {
     hasAnyCategoryPerm: boolean;
     hasAnyVariantPerm: boolean;
     hasAnyAttributePerm: boolean;
+    hasAnyDealPerm: boolean;
+    hasAnyInventoryPerm: boolean;
+    hasAnyWishlistPerm: boolean;
+    hasAnyReviewPerm: boolean;
 }
 
 export function ProductsSection({
@@ -25,8 +27,21 @@ export function ProductsSection({
     hasAnyCategoryPerm,
     hasAnyVariantPerm,
     hasAnyAttributePerm,
+    hasAnyDealPerm,
+    hasAnyInventoryPerm,
+    hasAnyWishlistPerm,
+    hasAnyReviewPerm,
 }: ProductsSectionProps): NavItem | null {
-    if (!hasAnyProductPerm && !hasAnyCategoryPerm && !hasAnyVariantPerm && !hasAnyAttributePerm) {
+    if (
+        !hasAnyProductPerm &&
+        !hasAnyCategoryPerm &&
+        !hasAnyVariantPerm &&
+        !hasAnyAttributePerm &&
+        !hasAnyDealPerm &&
+        !hasAnyInventoryPerm &&
+        !hasAnyWishlistPerm &&
+        !hasAnyReviewPerm
+    ) {
         return null;
     }
 
@@ -64,7 +79,7 @@ export function ProductsSection({
         });
     }
 
-    if (hasAnyProductPerm) {
+    if (hasAnyDealPerm) {
         productSubmenu.push({
             title: 'Products Deals',
             href: '/admin/deals',
@@ -72,7 +87,7 @@ export function ProductsSection({
         });
     }
 
-    if (hasAnyProductPerm) {
+    if (hasAnyReviewPerm) {
         productSubmenu.push({
             title: 'Reviews',
             href: '/admin/reviews',
@@ -80,15 +95,15 @@ export function ProductsSection({
         });
     }
 
-    if (hasAnyProductPerm) {
+    if (hasAnyInventoryPerm) {
         productSubmenu.push({
             title: 'Inventory',
             href: '/admin/inventory',
-            icon: Warehouse, // یا Box
+            icon: Warehouse,
         });
     }
 
-    if (hasAnyProductPerm) {
+    if (hasAnyWishlistPerm) {
         productSubmenu.push({
             title: 'Wishlist',
             href: '/admin/wishlist',

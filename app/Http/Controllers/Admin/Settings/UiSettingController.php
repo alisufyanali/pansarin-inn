@@ -10,6 +10,14 @@ use Illuminate\Support\Facades\Storage;
 
 class UiSettingController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:view.settings')->only(['index']);
+        $this->middleware('permission:edit.settings')->only([
+            'updateBrandingUI', 'updateHeaderUI', 'updateHomepageUI',
+            'updateCategoriesUI', 'updateProductsUI', 'updateEmailUI', 'updateMarketingUI',
+        ]);
+    }
 
     private function updateSettings(Request $request, $keys) {
         foreach ($keys as $key) {

@@ -9,6 +9,14 @@ use Inertia\Inertia;
 
 class BusinessSettingController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:view.settings')->only(['index']);
+        $this->middleware('permission:edit.settings')->only([
+            'updatePayments', 'updateCurrency', 'updateShipping',
+            'updateVendor', 'updateFaqs', 'updateGateways', 'updateAdvanced',
+        ]);
+    }
 
     private function save($key, $value = null, $status = null) {
         $finalValue = is_array($value) ? json_encode($value) : $value;
