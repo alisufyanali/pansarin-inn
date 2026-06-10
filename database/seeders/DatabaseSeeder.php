@@ -18,7 +18,6 @@ class DatabaseSeeder extends Seeder
             BusinessSettingSeeder::class,
             CategorySeeder::class,
             AttributeSeeder::class,
-            LocationSeeder::class,
             ContactSeeder::class,
             CustomerSeeder::class,
             GeneralSettingSeeder::class,

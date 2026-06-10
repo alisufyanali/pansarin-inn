@@ -76,13 +76,23 @@ class OrderSeeder extends Seeder
         for ($j = 1; $j <= $itemsCount; $j++) {
             $product = $products->random();
             $quantity = rand(1, 3);
-            $price = $product->price;
-            $discount = rand(0, 50);
+            $price = (float) ($product->sale_price ?: $product->price ?: 100); // fallback to 100 if null
+            $discount = rand(0, min(50, (int)($price * $quantity)));
 
             $itemSubtotal = ($price * $quantity) - $discount;
             $subtotal += $itemSubtotal;
 
             $variantId = ProductVariant::where('product_id', $product->id)->value('id');
+
+            // If variant exists, use variant price
+            if ($variantId) {
+                $variantPrice = ProductVariant::find($variantId)?->price;
+                if ($variantPrice) {
+                    $price = (float) $variantPrice;
+                    $itemSubtotal = ($price * $quantity) - $discount;
+                    $subtotal = $subtotal - (($price * $quantity) - $discount) + $itemSubtotal;
+                }
+            }
 
             OrderItem::create([
                 'order_id' => $order->id,
