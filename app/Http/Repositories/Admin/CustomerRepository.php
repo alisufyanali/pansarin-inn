@@ -109,7 +109,7 @@ class CustomerRepository
                 'phone'             => $data['phone'],
                 'address'           => $data['address'],
                 'city_id'           => $data['city_id'],
-                'customer_group_id' => $data['customer_group_id'] ?: null,
+                'customer_group_id' => $data['customer_group_id'] ?? null,
                 'status'            => $data['status'] ?? 'active',
                 'referred_by'       => $data['referred_by'] ?? null,
             ]);

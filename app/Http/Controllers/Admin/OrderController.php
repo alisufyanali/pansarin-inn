@@ -84,6 +84,8 @@ class OrderController extends Controller
         try {
             $this->orderRepository->store($request->validated());
             return to_route('admin.orders.index')->with('success', 'Order created!');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e; // Let Inertia handle it as 422 with errors
         } catch (\Exception $e) {
             Log::error('Order store: ' . $e->getMessage());
             return back()->with('error', $e->getMessage());
@@ -120,6 +122,8 @@ class OrderController extends Controller
         try {
             $this->orderRepository->update($id, $request->validated());
             return to_route('admin.orders.index')->with('success', 'Order updated!');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
         } catch (\Exception $e) {
             Log::error('Order update: ' . $e->getMessage());
             return back()->with('error', $e->getMessage());

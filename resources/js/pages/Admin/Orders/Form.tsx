@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useForm } from '@inertiajs/react';
+import { useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from '@inertiajs/react';
+import { toast } from 'sonner';
 import { SearchableCustomerSelect, SearchableProductSelect } from '@/components/SearchableSelect';
 import CityDropdown, { type CityOption } from '@/components/CityDropdown';
 
@@ -67,6 +68,7 @@ export default function OrderForm({
   cities = [],
   isEdit = false 
 }: OrderFormProps) {
+  const { flash } = usePage<{ flash?: { success?: string; error?: string } }>().props;
   const { data, setData, errors, post, put, processing } = useForm<OrderFormData>({
     customer_id: order?.customer_id || '',
     city_id: order?.city_id || '',
@@ -110,6 +112,12 @@ export default function OrderForm({
   }, 0);
 
   const grandTotal = subtotal - productDiscount - Number(data.invoice_discount) + Number(data.shipping_charges) + Number(data.tax);
+
+  // Flash messages (success/error from backend)
+  useEffect(() => {
+    if (flash?.success) toast.success(flash.success);
+    if (flash?.error)   toast.error(flash.error);
+  }, [flash]);
 
   // Customer select hone par details load karo
   useEffect(() => {

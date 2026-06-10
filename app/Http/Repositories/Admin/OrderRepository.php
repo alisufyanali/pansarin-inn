@@ -267,7 +267,9 @@ class OrderRepository
                 $variantName = $variant ? (collect($variant->attributes ?? [])->values()->join(' / ') ?: $variant->value) : null;
                 $fullName = $variantName ? "{$productName} ({$variantName})" : $productName;
                 
-                throw new \Exception("Insufficient stock for {$fullName}. Requested: {$qty}, Available: {$availableStock}");
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'items' => "Insufficient stock for {$fullName}. Requested: {$qty}, Available: {$availableStock}",
+                ]);
             }
         }
 
