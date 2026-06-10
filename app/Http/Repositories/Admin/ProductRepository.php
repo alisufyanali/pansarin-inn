@@ -113,13 +113,13 @@ class ProductRepository
                 ProductVariant::create([
                     'product_id'         => $product->id,
                     'sku'                => $product->sku . '-V' . str_pad($index + 1, 2, '0', STR_PAD_LEFT),
-                    'attribute_value_id' => 1,
+                    'attribute_value_id' => null,
                     'value'              => $variant['combination'] ?? '',
                     'attributes'         => $variant['attributes'] ?? [],
-                    'additional'         => $variant['additional'] ?? 0,
-                    'price'              => $variant['purchase_price'] ?? 0,      // Purchase price
-                    'sale_price'         => $variant['sale_price'] ?? null,       // Sale price
-                    'stock_alert'        => $variant['stock_alert'] ?? 5,
+                    'additional'         => (int) ($variant['additional'] ?? 0),
+                    'price'              => (float) ($variant['purchase_price'] ?? 0),
+                    'sale_price'         => !empty($variant['sale_price']) ? (float) $variant['sale_price'] : null,
+                    'stock_alert'        => (int) ($variant['stock_alert'] ?? 5),
                     'is_default'         => ($index === 0),
                     'status'             => true,
                 ]);
@@ -173,18 +173,25 @@ class ProductRepository
         $product->update($data);
 
         if (!empty($variants)) {
-            $product->variants()->delete();
+            // Force delete (not soft delete) to avoid SKU unique constraint on re-insert
+            $product->variants()->forceDelete();
             foreach ($variants as $index => $variant) {
+                // Generate unique SKU using timestamp to avoid conflicts
+                $sku = $product->sku . '-V' . str_pad($index + 1, 2, '0', STR_PAD_LEFT);
+                // If SKU still exists (edge case), make it unique
+                if (ProductVariant::withTrashed()->where('sku', $sku)->exists()) {
+                    $sku = $product->sku . '-V' . str_pad($index + 1, 2, '0', STR_PAD_LEFT) . '-' . time();
+                }
                 ProductVariant::create([
                     'product_id'         => $product->id,
-                    'sku'                => $product->sku . '-V' . str_pad($index + 1, 2, '0', STR_PAD_LEFT),
-                    'attribute_value_id' => 0,
+                    'sku'                => $sku,
+                    'attribute_value_id' => null,
                     'value'              => $variant['combination'] ?? '',
                     'attributes'         => $variant['attributes'] ?? [],
-                    'additional'         => $variant['additional'] ?? 0,
-                    'price'              => $variant['purchase_price'] ?? 0,      // Purchase price
-                    'sale_price'         => $variant['sale_price'] ?? null,       // Sale price
-                    'stock_alert'        => $variant['stock_alert'] ?? 5,
+                    'additional'         => (int) ($variant['additional'] ?? 0),
+                    'price'              => (float) ($variant['purchase_price'] ?? 0),
+                    'sale_price'         => !empty($variant['sale_price']) ? (float) $variant['sale_price'] : null,
+                    'stock_alert'        => (int) ($variant['stock_alert'] ?? 5),
                     'is_default'         => ($index === 0),
                     'status'             => true,
                 ]);

@@ -2,6 +2,8 @@ import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, usePage } from '@inertiajs/react';
 import ProductForm, { type ProductFormData } from './Form';
+import { useEffect } from 'react';
+import toast from 'react-hot-toast';
 
 type Category  = { id: number; name: string };
 type Attribute = { id: number; name: string; slug: string; category_id: number; values: any[] };
@@ -21,6 +23,13 @@ export default function Edit({ product, categories, attributes }: Props) {
         { title: 'Products',          href: '/admin/products' },
         { title: `Edit: ${product.name}`, href: '#' },
     ];
+
+    const { props } = usePage<{ flash?: { success?: string; error?: string } }>();
+
+    useEffect(() => {
+        if (props.flash?.success) toast.success(props.flash.success);
+        if (props.flash?.error)   toast.error(props.flash.error);
+    }, [props.flash]);
 
     // ── Normalize thumbnail/gallery for edit ──────────────────────
     // Convert storage paths to full URLs so preview works

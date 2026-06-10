@@ -55,6 +55,8 @@ class ProductRequest extends FormRequest
             'variations.*.qty' => 'nullable|numeric|min:0',
             'variations.*.purchase_price' => 'nullable|numeric|min:0',
             'variations.*.sale_price' => 'nullable|numeric|min:0',
+            'variations.*.stock_alert' => 'nullable|numeric|min:0',
+            'variations.*.additional' => 'nullable|numeric|min:0',
             // 'affiliate_commission' => 'required|numeric|min:0|max:100',
         ];
     }

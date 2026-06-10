@@ -219,7 +219,7 @@ class ProductController extends Controller
         } catch (\Exception $e) {
             Log::error('Product update error: ' . $e->getMessage());
 
-            return back()->withInput()->with('error', 'Failed to update product.');
+            return back()->withInput()->with('error', 'Failed to update product: ' . $e->getMessage());
         }
     }
 

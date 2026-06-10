@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('sku')->unique();
             $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
-            $table->foreignId('attribute_value_id')->constrained('attribute_values')->onDelete('cascade');
+            $table->foreignId('attribute_value_id')->nullable()->constrained('attribute_values')->onDelete('cascade');
             $table->string('value');
             $table->json('attributes')->nullable(); // stores attribute_value ids or key-value JSON
           
