@@ -75,4 +75,18 @@ class ProductRequest extends FormRequest
             'gallery.*.max' => 'Gallery images cannot exceed 2MB each.',
         ];
     }
+
+    protected function prepareForValidation(): void
+    {
+        // Tags come as a comma-separated string from the frontend form
+        if ($this->has('tags') && is_string($this->tags)) {
+            $this->merge([
+                'tags' => collect(explode(',', $this->tags))
+                    ->map(fn ($tag) => trim($tag))
+                    ->filter()
+                    ->values()
+                    ->toArray(),
+            ]);
+        }
+    }
 }

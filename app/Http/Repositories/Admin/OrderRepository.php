@@ -14,7 +14,11 @@ class OrderRepository
     // ── DataTable ─────────────────────────────────────────────────
     public function getAllForDataTable($request)
     {
-        $query = Order::with(['customer'])->latest();
+        $query = Order::with([
+            'customer',
+            'city:id,name',
+            'items',
+        ])->latest();
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -55,6 +59,7 @@ class OrderRepository
         return DB::transaction(function () use ($data) {
             $order = Order::create([
                 'customer_id'      => $data['customer_id'],
+                'city_id'          => $data['city_id'] ?? null,
                 'order_number'     => Order::generateOrderNumber(),
                 'invoice_discount' => $data['invoice_discount'] ?? 0,
                 'shipping_charges' => $data['shipping_charges'] ?? 0,
@@ -64,6 +69,7 @@ class OrderRepository
                 'payment_method'   => $data['payment_method'] ?? null,
                 'payment_date'     => $data['payment_date'] ?? null,
                 'shipping_method'  => $data['shipping_method'] ?? null,
+                'courier_weight'   => $data['courier_weight'] ?? null,
                 'shipping_address' => $data['shipping_address'] ?? null,
                 'billing_address'  => $data['billing_address'] ?? null,
                 'order_note'       => $data['order_note'] ?? null,
@@ -72,6 +78,15 @@ class OrderRepository
 
             $this->syncItems($order, $data['items']);
             $order->calculateTotals();
+
+            // Auto-book courier if shipping method is set
+            if (!empty($data['shipping_method']) && in_array($data['shipping_method'], ['movex', 'px', 'leopard'])) {
+                $order->refresh();
+                $tracking = app(\App\Services\CourierService::class)->book($order);
+                if ($tracking) {
+                    $order->update(['shipping_response' => $tracking]);
+                }
+            }
 
             return $order;
         });
@@ -85,6 +100,7 @@ class OrderRepository
 
             $order->update([
                 'customer_id'      => $data['customer_id'],
+                'city_id'          => $data['city_id'] ?? null,
                 'invoice_discount' => $data['invoice_discount'] ?? 0,
                 'shipping_charges' => $data['shipping_charges'] ?? 0,
                 'tax'              => $data['tax'] ?? 0,
@@ -93,10 +109,25 @@ class OrderRepository
                 'payment_method'   => $data['payment_method'] ?? null,
                 'payment_date'     => $data['payment_date'] ?? null,
                 'shipping_method'  => $data['shipping_method'] ?? null,
+                'courier_weight'   => $data['courier_weight'] ?? null,
                 'shipping_address' => $data['shipping_address'] ?? null,
                 'billing_address'  => $data['billing_address'] ?? null,
                 'order_note'       => $data['order_note'] ?? null,
             ]);
+
+            // Purane items ka stock wapas karo (reverse inventory)
+            $order->load('items');
+            foreach ($order->items as $oldItem) {
+                \App\Models\Inventory::create([
+                    'product_id'         => $oldItem->product_id,
+                    'product_variant_id' => $oldItem->product_variant_id,
+                    'type'               => 'in',
+                    'quantity'           => $oldItem->quantity,
+                    'source'             => 'order_edit',
+                    'reference'          => $order->order_number,
+                    'note'               => 'Order edit reversal #' . $order->order_number,
+                ]);
+            }
 
             $order->items()->delete();
             $this->syncItems($order, $data['items']);
@@ -111,7 +142,21 @@ class OrderRepository
     public function delete($id): bool
     {
         return DB::transaction(function () use ($id) {
-            $order = Order::findOrFail($id);
+            $order = Order::with('items')->findOrFail($id);
+
+            // Stock wapas karo
+            foreach ($order->items as $item) {
+                \App\Models\Inventory::create([
+                    'product_id'         => $item->product_id,
+                    'product_variant_id' => $item->product_variant_id,
+                    'type'               => 'in',
+                    'quantity'           => $item->quantity,
+                    'source'             => 'order_delete',
+                    'reference'          => $order->order_number,
+                    'note'               => 'Order deleted #' . $order->order_number,
+                ]);
+            }
+
             $order->items()->delete();
             return $order->delete();
         });
@@ -150,28 +195,46 @@ class OrderRepository
     // ── Products for Form ─────────────────────────────────────────
     public function getProductsForForm(): \Illuminate\Support\Collection
     {
-        return Product::with('variants')
+        return Product::with(['variants'])
             ->where('status', true)
             ->orderBy('name')
-            ->get(['id', 'name', 'sku', 'unit'])
+            ->get(['id', 'name', 'sku', 'unit', 'price', 'sale_price', 'quantity'])
             ->map(function ($p) {
+                $hasVariants = $p->variants->isNotEmpty();
+
+                if ($hasVariants) {
+                    $baseStock = ProductStock::where('product_id', $p->id)
+                        ->whereNotNull('product_variant_id')
+                        ->sum('quantity');
+                } else {
+                    // product_stocks se try karo, nahi mila to products.quantity fallback
+                    $stockRecord = ProductStock::where('product_id', $p->id)
+                        ->whereNull('product_variant_id')
+                        ->first();
+
+                    if ($stockRecord) {
+                        $baseStock = $stockRecord->quantity;
+                    } else {
+                        // Fallback: products table ki quantity use karo
+                        $baseStock = (float) ($p->quantity ?? 0);
+                    }
+                }
+
                 return [
                     'id'       => $p->id,
                     'name'     => $p->name,
                     'sku'      => $p->sku,
                     'unit'     => $p->unit,
-                    'price'    => 0, // sale_price from variant
-                    'stock'    => ProductStock::where('product_id', $p->id)
-                                     ->whereNull('product_variant_id')
-                                     ->value('quantity') ?? 0,
+                    'price'    => (float) ($p->sale_price ?: $p->price ?: 0),
+                    'stock'    => (int) $baseStock,
                     'variants' => $p->variants->map(fn ($v) => [
                         'id'    => $v->id,
                         'name'  => collect($v->attributes ?? [])->values()->join(' / ') ?: $v->value,
                         'sku'   => $v->sku,
                         'price' => $v->sale_price ?? $v->price ?? 0,
-                        'stock' => ProductStock::where('product_id', $p->id)
+                        'stock' => (int) (ProductStock::where('product_id', $p->id)
                                        ->where('product_variant_id', $v->id)
-                                       ->value('quantity') ?? 0,
+                                       ->value('quantity') ?? 0),
                     ]),
                 ];
             });
@@ -193,11 +256,20 @@ class OrderRepository
             $discount = (float) ($item['discount'] ?? 0);
             $subtotal = ($price * $qty) - $discount;
 
+            // Cost price: variant ka purchase price ya product ka purchase_price_per_unit
+            $costPrice = 0;
+            if ($variant && isset($variant->purchase_price)) {
+                $costPrice = (float) $variant->purchase_price;
+            } elseif ($product) {
+                $costPrice = (float) ($product->purchase_price_per_unit ?? 0);
+            }
+
             $order->items()->create([
                 'product_id'         => $item['product_id'],
                 'product_variant_id' => $item['product_variant_id'] ?? null,
                 'quantity'           => $qty,
                 'price'              => $price,
+                'cost_price'         => $costPrice,
                 'discount'           => $discount,
                 'subtotal'           => $subtotal,
                 'meta'               => [
@@ -206,7 +278,19 @@ class OrderRepository
                     'variant_name' => $variant
                         ? collect($variant->attributes ?? [])->values()->join(' / ') ?: $variant->value
                         : null,
+                    'cost_price'   => $costPrice,
                 ],
+            ]);
+
+            // Stock deduct karo — Inventory entry create karo (booted event stock update karega)
+            \App\Models\Inventory::create([
+                'product_id'         => $item['product_id'],
+                'product_variant_id' => $item['product_variant_id'] ?? null,
+                'type'               => 'out',
+                'quantity'           => -$qty,
+                'source'             => 'order',
+                'reference'          => $order->order_number,
+                'note'               => 'Order #' . $order->order_number,
             ]);
         }
     }

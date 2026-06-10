@@ -30,6 +30,17 @@ return new class extends Migration
             $table->foreignId('state_id')->constrained()->onDelete('cascade');
             $table->string('name');
             $table->decimal('shipping_charges', 10, 2)->default(0);
+             // Province Enum
+            $table->enum('province', [
+                'sindh',
+                'punjab',
+                'balochistan',
+                'kpk',
+                'gilgit',
+                'azad_kashmir'
+            ]);
+
+
             $table->timestamps();
             $table->softDeletes();
         });

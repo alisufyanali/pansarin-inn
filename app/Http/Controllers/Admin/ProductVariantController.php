@@ -92,4 +92,65 @@ class ProductVariantController extends Controller
         }
     }
 
+    public function create()
+    {
+        try {
+            return Inertia::render('Admin/Variants/Create', [
+                'products'   => Product::orderBy('name')->get(['id', 'name']),
+                'attributes' => Attribute::with('values')->get(['id', 'name']),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to load variant create: '.$e->getMessage());
+            return redirect()->route('admin.product-variants.index')->with('error', 'Failed to load form.');
+        }
+    }
+
+    public function store(ProductVariantRequest $request)
+    {
+        try {
+            $this->variantRepository->store($request->validated());
+            return to_route('admin.product-variants.index')->with('success', 'Variant created successfully!');
+        } catch (\Exception $e) {
+            Log::error('Failed to create variant: '.$e->getMessage());
+            return back()->withInput()->with('error', 'Failed to create variant.');
+        }
+    }
+
+    public function edit(string $id)
+    {
+        try {
+            $variant = $this->variantRepository->find($id);
+            return Inertia::render('Admin/Variants/Edit', [
+                'variant'    => $variant,
+                'products'   => Product::orderBy('name')->get(['id', 'name']),
+                'attributes' => Attribute::with('values')->get(['id', 'name']),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to load variant edit: '.$e->getMessage());
+            return redirect()->route('admin.product-variants.index')->with('error', 'Failed to load variant.');
+        }
+    }
+
+    public function update(ProductVariantRequest $request, string $id)
+    {
+        try {
+            $this->variantRepository->update($id, $request->validated());
+            return to_route('admin.product-variants.index')->with('success', 'Variant updated successfully!');
+        } catch (\Exception $e) {
+            Log::error('Failed to update variant: '.$e->getMessage());
+            return back()->withInput()->with('error', 'Failed to update variant.');
+        }
+    }
+
+    public function destroy(string $id)
+    {
+        try {
+            $this->variantRepository->delete($id);
+            return redirect()->route('admin.product-variants.index')->with('success', 'Variant deleted successfully!');
+        } catch (\Exception $e) {
+            Log::error('Failed to delete variant: '.$e->getMessage());
+            return redirect()->route('admin.product-variants.index')->with('error', 'Failed to delete variant.');
+        }
+    }
+
 }

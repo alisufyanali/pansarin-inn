@@ -61,6 +61,7 @@ export function AppSidebar() {
     hasAnyCustomerPerm: permissions.hasAnyCustomerPerm || true,
     hasAnyOrderPerm: permissions.hasAnyOrderPerm || true,
     hasAnySalePerm: permissions.hasAnySalePerm || true,
+    hasAnyCitiesPerm: permissions.hasAnyCitiesPerm || true,
   });
   if (shopSection) {
     mainNavItems.push(shopSection);

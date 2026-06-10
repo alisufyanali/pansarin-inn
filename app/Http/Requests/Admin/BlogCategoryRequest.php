@@ -14,7 +14,8 @@ class BlogCategoryRequest extends FormRequest
     public function rules(): array
     {
         // Edit mode mein id route se milega
-        $id = $this->route('blogcategory')?->id;
+        $blogcategory = $this->route('blogcategory');
+        $id = is_object($blogcategory) ? $blogcategory->id : $blogcategory;
 
         return [
             'name' => 'required|string|max:255',

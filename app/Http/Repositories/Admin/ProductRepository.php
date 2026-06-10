@@ -4,7 +4,6 @@ namespace App\Http\Repositories\Admin;
 
 use App\Models\Product;
 use App\Models\ProductVariant;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class ProductRepository
@@ -88,21 +87,22 @@ class ProductRepository
 
         $product = Product::create($data);
         $folder  = $this->productFolder($product->id, $product->name);
+        $slug    = $product->slug;
 
         if ($thumbnailFile) {
-            $product->thumbnail = $thumbnailFile->store($folder, 'public');
+            $product->thumbnail = $this->moveUploadedFile($thumbnailFile, $folder, $slug);
             $product->save();
         }
 
         if ($socialImageFile) {
-            $product->social_image = $socialImageFile->store("{$folder}/social", 'public');
+            $product->social_image = $this->moveUploadedFile($socialImageFile, "{$folder}/social", $slug);
             $product->save();
         }
 
         if (!empty($galleryFiles)) {
             $galleryPaths = [];
-            foreach ($galleryFiles as $file) {
-                $galleryPaths[] = $file->store("{$folder}/gallery", 'public');
+            foreach ($galleryFiles as $index => $file) {
+                $galleryPaths[] = $this->moveUploadedFile($file, "{$folder}/gallery", $slug . '-' . ($index + 1));
             }
             $product->gallery = $galleryPaths;
             $product->save();
@@ -133,32 +133,34 @@ class ProductRepository
     {
         $product = $this->find($id);
         $folder  = $this->productFolder($product->id, $data['name'] ?? $product->name);
+        $slug    = $data['slug'] ?? $product->slug;
 
         if (isset($data['name']) && $data['name'] !== $product->name && empty($data['slug'])) {
             $data['slug'] = $this->generateUniqueSlug($data['name'], $product->id);
+            $slug = $data['slug'];
         }
 
         if ($thumbnailFile) {
-            if ($product->thumbnail) Storage::disk('public')->delete($product->thumbnail);
-            $data['thumbnail'] = $thumbnailFile->store($folder, 'public');
+            if ($product->thumbnail) $this->deleteUploadedFile($product->thumbnail);
+            $data['thumbnail'] = $this->moveUploadedFile($thumbnailFile, $folder, $slug);
         } else {
             unset($data['thumbnail']);
         }
 
         if ($socialImageFile) {
-            if ($product->social_image) Storage::disk('public')->delete($product->social_image);
-            $data['social_image'] = $socialImageFile->store("{$folder}/social", 'public');
+            if ($product->social_image) $this->deleteUploadedFile($product->social_image);
+            $data['social_image'] = $this->moveUploadedFile($socialImageFile, "{$folder}/social", $slug);
         } else {
             unset($data['social_image']);
         }
 
         if (!empty($galleryFiles)) {
             if ($product->gallery && is_array($product->gallery)) {
-                foreach ($product->gallery as $old) Storage::disk('public')->delete($old);
+                foreach ($product->gallery as $old) $this->deleteUploadedFile($old);
             }
             $galleryPaths = [];
-            foreach ($galleryFiles as $file) {
-                $galleryPaths[] = $file->store("{$folder}/gallery", 'public');
+            foreach ($galleryFiles as $index => $file) {
+                $galleryPaths[] = $this->moveUploadedFile($file, "{$folder}/gallery", $slug . '-' . ($index + 1));
             }
             $data['gallery'] = $galleryPaths;
         } else {
@@ -195,8 +197,13 @@ class ProductRepository
     public function delete($id)
     {
         $product = $this->find($id);
-        $folder  = $this->productFolder($product->id, $product->name);
-        Storage::disk('public')->deleteDirectory($folder);
+        $folder  = public_path('storage/' . $this->productFolder($product->id, $product->name));
+
+        // Delete entire product folder
+        if (is_dir($folder)) {
+            $this->deleteDirectory($folder);
+        }
+
         return $product->delete();
     }
 
@@ -227,5 +234,52 @@ class ProductRepository
         }
 
         return $slug;
+    }
+
+    /**
+     * Move uploaded file to public/storage/{folder}/{slug}.{ext}
+     * Returns relative path e.g. "products/6-my-product/my-product.jpg"
+     */
+    private function moveUploadedFile($file, string $folder, string $slug): string
+    {
+        $extension = $file->getClientOriginalExtension();
+        $filename  = Str::slug($slug) . '.' . $extension;
+        $directory = public_path('storage/' . $folder);
+
+        if (!is_dir($directory)) {
+            mkdir($directory, 0755, true);
+        }
+
+        $file->move($directory, $filename);
+
+        return $folder . '/' . $filename;
+    }
+
+    /**
+     * Delete a single file stored via moveUploadedFile()
+     */
+    private function deleteUploadedFile(string $relativePath): void
+    {
+        $fullPath = public_path('storage/' . $relativePath);
+
+        if (file_exists($fullPath)) {
+            unlink($fullPath);
+        }
+    }
+
+    /**
+     * Recursively delete a directory and all its contents
+     */
+    private function deleteDirectory(string $dir): void
+    {
+        if (!is_dir($dir)) return;
+
+        foreach (scandir($dir) as $item) {
+            if ($item === '.' || $item === '..') continue;
+            $path = $dir . DIRECTORY_SEPARATOR . $item;
+            is_dir($path) ? $this->deleteDirectory($path) : unlink($path);
+        }
+
+        rmdir($dir);
     }
 }

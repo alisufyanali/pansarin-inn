@@ -49,28 +49,26 @@ class ProductsDealController extends Controller
     {
         // Get all products
         $allProducts = Product::orderBy('name')
-            ->get(['id', 'name', 'price']);
+            ->get(['id', 'name']);
 
         // Try with active filter
         $activeProducts = Product::where('status', 1)
             ->orWhere('status', true)
             ->orderBy('name')
-            ->get(['id', 'name', 'price']);
+            ->get(['id', 'name']);
 
         $products = $activeProducts->count() > 0 ? $activeProducts : $allProducts;
 
         // Format products
-        $formattedProducts = $products->map(function ($product) {
-            return [
-                'id' => $product->id,
-                'name' => $product->name,
-                'price' => $product->price,
-                'image' => null,
-            ];
-        });
+        $formattedProducts = $products->map(fn ($p) => [
+            'id'    => $p->id,
+            'name'  => $p->name,
+            'price' => null,
+            'image' => null,
+        ]);
 
         return Inertia::render('Admin/ProductsDeals/Create', [
-            'products' => $formattedProducts->values(),
+            'products'  => $formattedProducts->values(),
             'dealTypes' => $this->getDealTypes(),
         ]);
     }
@@ -103,9 +101,13 @@ class ProductsDealController extends Controller
     public function show(Deal $deal)
     {
         $deal->load(['products' => function ($query) {
-            $query->select('products.id', 'products.name', 'products.price')
+            $query->select('products.id', 'products.name')
                 ->withPivot('custom_discount', 'stock_limit');
         }]);
+
+        if ($deal->image) {
+            $deal->image = asset('storage/' . $deal->image);
+        }
 
         return Inertia::render('Admin/ProductsDeals/Show', [
             'deal' => $deal,
@@ -115,39 +117,37 @@ class ProductsDealController extends Controller
     public function edit(Deal $deal)
     {
         $deal->load(['products' => function ($query) {
-            $query->select('products.id', 'products.name', 'products.price')
+            $query->select('products.id', 'products.name')
                 ->withPivot('custom_discount', 'stock_limit');
         }]);
 
         // Format deal products for form
         $dealProducts = $deal->products->map(function ($product) {
             return [
-                'id' => $product->id,
-                'name' => $product->name,
-                'price' => $product->price,
-                'image' => null,
+                'id'              => $product->id,
+                'name'            => $product->name,
+                'price'           => null,
+                'image'           => null,
                 'custom_discount' => $product->pivot->custom_discount,
-                'stock_limit' => $product->pivot->stock_limit,
+                'stock_limit'     => $product->pivot->stock_limit,
             ];
         });
 
         // Get all products for selector
-        $allProducts = Product::orderBy('name')->get(['id', 'name', 'price']);
-        $activeProducts = Product::where('status', 1)
+        $allProducts     = Product::orderBy('name')->get(['id', 'name']);
+        $activeProducts  = Product::where('status', 1)
             ->orWhere('status', true)
             ->orderBy('name')
-            ->get(['id', 'name', 'price']);
+            ->get(['id', 'name']);
 
         $products = $activeProducts->count() > 0 ? $activeProducts : $allProducts;
 
-        $formattedProducts = $products->map(function ($product) {
-            return [
-                'id' => $product->id,
-                'name' => $product->name,
-                'price' => $product->price,
-                'image' => null,
-            ];
-        });
+        $formattedProducts = $products->map(fn ($p) => [
+            'id'    => $p->id,
+            'name'  => $p->name,
+            'price' => null,
+            'image' => null,
+        ]);
 
         // Fix deal image
         if ($deal->image) {

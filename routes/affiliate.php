@@ -9,7 +9,7 @@ use Inertia\Inertia;
 
 /*
 |--------------------------------------------------------------------------
-| Public Routes (No Auth Required)
+| Public Routes (Dummy pages)
 |--------------------------------------------------------------------------
 */
 // Referral Registration: e.g., pansariinn.pk/register-affiliate?ref=CODE123
@@ -61,8 +61,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
 
         // Payouts Management
         Route::get('/payouts', [AdminAffiliateController::class, 'index'])->name('affiliate.payout.index'); // Fallback redirect
-        Route::get('/payouts-list', [App\Http\Controllers\Admin\Affiliate\PayoutController::class, 'index'])->name('admin.affiliate.payouts'); 
-        Route::post('/payouts/{id}/approve', [App\Http\Controllers\Admin\Affiliate\PayoutController::class, 'approve'])->name('admin.affiliate.payout.approve');
-        Route::post('/payouts/{id}/reject', [App\Http\Controllers\Admin\Affiliate\PayoutController::class, 'reject'])->name('admin.affiliate.payout.reject');
+        Route::get('/payouts-list', [App\Http\Controllers\Admin\Affiliate\PayoutController::class, 'index'])->name('affiliate.payouts'); 
+        Route::post('/payouts/{id}/approve', [App\Http\Controllers\Admin\Affiliate\PayoutController::class, 'approve'])->name('affiliate.payout.approve');
+        Route::post('/payouts/{id}/reject', [App\Http\Controllers\Admin\Affiliate\PayoutController::class, 'reject'])->name('affiliate.payout.reject');
     });
 });

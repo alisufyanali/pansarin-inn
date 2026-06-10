@@ -16,10 +16,19 @@ class SaleController extends Controller
 {
     public function __construct(protected SaleRepository $saleRepository)
     {
-        // $this->middleware('permission:create.sales')->only(['create', 'store']);
-        // $this->middleware('permission:edit.sales')->only(['edit', 'update']);
-        // $this->middleware('permission:delete.sales')->only(['destroy']);
-        // $this->middleware('permission:view.sales')->only(['index', 'show', 'getData']);
+        $this->middleware('permission:create.sales')->only(['create', 'store', 'createFromOrder']);
+        $this->middleware('permission:edit.sales')->only([
+            'edit',
+            'update',
+            'updateDeliveryStatus',
+            'updatePaymentStatus',
+            'bulkUpdatePaymentStatus',
+            'bulkUpdateDeliveryStatus',
+            'bulkSendReviewEmail',
+            'bulkSendReviewWhatsApp',
+        ]);
+        $this->middleware('permission:delete.sales')->only(['destroy']);
+        $this->middleware('permission:view.sales')->only(['index', 'show', 'getData']);
     }
 
     public function index(Request $request)
@@ -55,6 +64,14 @@ class SaleController extends Controller
                         'id'           => $s->order->id,
                         'order_number' => $s->order->order_number,
                     ] : null,
+                    'city'            => $s->customer?->city ? ['name' => $s->customer->city->name] : null,
+                    'items'           => $s->items->map(fn ($item) => [
+                        'product_name' => $item->meta['product_name'] ?? $item->product?->name ?? '—',
+                        'variant_name' => $item->meta['variant_name'] ?? null,
+                        'quantity'     => $item->quantity,
+                        'price'        => (float) $item->price,
+                        'subtotal'     => (float) $item->subtotal,
+                    ]),
                 ]),
                 'total'        => $sales->total(),
                 'per_page'     => $sales->perPage(),
@@ -203,6 +220,74 @@ class SaleController extends Controller
             return back()->with('success', 'Payment status updated!');
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
+        }
+    }
+
+    public function bulkUpdatePaymentStatus(Request $request)
+    {
+        try {
+            $request->validate([
+                'ids'            => 'required|array',
+                'ids.*'          => 'exists:sales,id',
+                'payment_status' => 'required|in:unpaid,paid,partially_paid,refunded',
+            ]);
+            \App\Models\Sale::whereIn('id', $request->ids)
+                ->update(['payment_status' => $request->payment_status]);
+            return response()->json(['success' => true, 'count' => count($request->ids)]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function bulkUpdateDeliveryStatus(Request $request)
+    {
+        try {
+            $request->validate([
+                'ids'             => 'required|array',
+                'ids.*'           => 'exists:sales,id',
+                'delivery_status' => 'required|in:pending,processing,shipped,delivered,cancelled,returned',
+            ]);
+            \App\Models\Sale::whereIn('id', $request->ids)
+                ->update(['delivery_status' => $request->delivery_status]);
+            return response()->json(['success' => true, 'count' => count($request->ids)]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function bulkSendReviewEmail(Request $request)
+    {
+        try {
+            $request->validate(['ids' => 'required|array', 'ids.*' => 'exists:sales,id']);
+            $sales = \App\Models\Sale::with('customer')->whereIn('id', $request->ids)->get();
+            $sent = 0;
+            foreach ($sales as $sale) {
+                if ($sale->customer?->email) {
+                    \App\Jobs\SendSaleReviewEmail::dispatch($sale);
+                    $sent++;
+                }
+            }
+            return response()->json(['success' => true, 'sent' => $sent]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function bulkSendReviewWhatsApp(Request $request)
+    {
+        try {
+            $request->validate(['ids' => 'required|array', 'ids.*' => 'exists:sales,id']);
+            $sales = \App\Models\Sale::with('customer')->whereIn('id', $request->ids)->get();
+            $sent = 0;
+            foreach ($sales as $sale) {
+                if ($sale->customer?->phone) {
+                    \App\Jobs\SendSaleReviewWhatsApp::dispatch($sale);
+                    $sent++;
+                }
+            }
+            return response()->json(['success' => true, 'sent' => $sent]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
 }

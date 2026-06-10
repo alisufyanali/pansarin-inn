@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Repositories\Admin\CustomerRepository;
 use App\Http\Requests\Admin\CustomerRequest;
+use App\Http\Requests\Admin\ProductVariantRequest;
 use App\Models\Customer;
 use App\Models\Country;
 use App\Models\State;
@@ -61,27 +62,35 @@ class CustomerController extends Controller
     }
 
     public function create() {
-        return Inertia::render('Admin/Customers/Create', [
-            'countries'  => Country::all(['id', 'name']),
-            'states'     => State::all(['id', 'name', 'country_id']),
-            'cities'     => City::all(['id', 'name', 'state_id']),
-            'groups'     => CustomerGroup::all(['id', 'name']),
-            'affiliates' => User::role('affiliate')->get(['id', 'name']), 
-        ]);
+        try {
+            return Inertia::render('Admin/Customers/Create', [
+                'cities' => City::orderBy('province')->orderBy('name')->get(['id', 'name', 'province']),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Customer create error: '.$e->getMessage());
+
+            return redirect()->route('admin.customers.index')
+                ->with('error', 'Failed to load create form.');
+        }
     }
 
     public function store(CustomerRequest $request) {
-        $validated = $request->validated();
-
         try {
-            $this->customerRepository->store($validated);
-            return to_route('admin.customers.index')->with('success', 'Customer created!');
+            $validated = $request->validated();
+
+            try {
+                $this->customerRepository->store($validated);
+                return to_route('admin.customers.index')->with('success', 'Customer created!');
+            } catch (\Exception $e) {
+                dd([
+                    'error_message' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine()
+                ]);
+            }
         } catch (\Exception $e) {
-            dd([
-                'error_message' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine()
-            ]);
+            Log::error('Customer store outer error: '.$e->getMessage());
+            return back()->with('error', 'Something went wrong.');
         }
     }
 
@@ -101,31 +110,35 @@ class CustomerController extends Controller
     }
 
     public function edit(Customer $customer) {
-        $customer->load('user');
+        try {
+            $customer->load('user');
 
-        return Inertia::render('Admin/Customers/Edit', [
-        'customer'   => $customer,
-        'countries'  => Country::all(['id', 'name']),
-        'states'     => State::where('country_id', $customer->city?->state?->country_id)->get(['id', 'name', 'country_id']), 
-        'cities'     => City::where('state_id', $customer->city?->state_id)->get(['id', 'name', 'state_id']),
-        'groups'     => CustomerGroup::all(['id', 'name']),
-        'affiliates' => User::role('affiliate')->get(['id', 'name']),
-        ]);
+            return Inertia::render('Admin/Customers/Edit', [
+                'customer' => $customer,
+                'cities' => City::orderBy('province')->orderBy('name')->get(['id', 'name', 'province']),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Customer edit error: '.$e->getMessage());
+
+            return redirect()->route('admin.customers.index')
+                ->with('error', 'Failed to load customer.');
+        }
     }
 
-    public function update(CustomerRequest $request, Customer $customer) {
+    // Fixed: Route Model Binding use kiya string id ki jagah taake $customer object available ho
+    public function update(CustomerRequest $request, Customer $customer)
+    {
         try {
             $this->customerRepository->update($customer, $request->validated());
             return to_route('admin.customers.index')->with('success', 'Customer updated successfully!');
         } catch (\Exception $e) {
-            \Log::error('Customer update error: ' . $e->getMessage());
+            Log::error('Customer update error: ' . $e->getMessage());
             return back()->with('error', 'Failed to update customer.');
         }
     }
 
     public function destroy(Customer $customer) {
         try {
-            // Ab yahan poora object pass ho raha hai
             $this->customerRepository->delete($customer);
 
             return redirect()->route('admin.customers.index')

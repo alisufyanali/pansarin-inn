@@ -14,7 +14,8 @@ class BlogTagRequest extends FormRequest
     public function rules(): array
     {
         // Edit mode mein id route se milega
-        $id = $this->route('blogtag')?->id;
+        $blogtag = $this->route('blogtag');
+        $id = is_object($blogtag) ? $blogtag->id : $blogtag;
 
         return [
             'name' => 'required|string|max:255',

@@ -228,14 +228,45 @@ class ProductController extends Controller
     {
         $search = $request->get('q', '');
 
-        $products = Product::with(['variants:id,product_id,name,price,stock'])
-            ->where('status', 'active')
+        $products = Product::with(['variants'])
+            ->where('status', true)
             ->where(function ($query) use ($search) {
                 $query->where('name', 'like', "%{$search}%")
                     ->orWhere('sku', 'like', "%{$search}%");
             })
             ->limit(20)
-            ->get(['id', 'name', 'sku', 'price', 'stock']);
+            ->get(['id', 'name', 'sku', 'unit'])
+            ->map(function ($p) {
+                $hasVariants = $p->variants->isNotEmpty();
+
+                if ($hasVariants) {
+                    $baseStock = \App\Models\ProductStock::where('product_id', $p->id)
+                        ->whereNotNull('product_variant_id')
+                        ->sum('quantity');
+                } else {
+                    $baseStock = \App\Models\ProductStock::where('product_id', $p->id)
+                        ->whereNull('product_variant_id')
+                        ->value('quantity') ?? 0;
+                }
+
+                return [
+                    'id'       => $p->id,
+                    'name'     => $p->name,
+                    'sku'      => $p->sku,
+                    'unit'     => $p->unit,
+                    'price'    => 0,
+                    'stock'    => (int) $baseStock,
+                    'variants' => $p->variants->map(fn ($v) => [
+                        'id'    => $v->id,
+                        'name'  => collect($v->attributes ?? [])->values()->join(' / ') ?: $v->value,
+                        'sku'   => $v->sku,
+                        'price' => $v->sale_price ?? $v->price ?? 0,
+                        'stock' => (int) (\App\Models\ProductStock::where('product_id', $p->id)
+                                       ->where('product_variant_id', $v->id)
+                                       ->value('quantity') ?? 0),
+                    ]),
+                ];
+            });
 
         return response()->json($products);
     }

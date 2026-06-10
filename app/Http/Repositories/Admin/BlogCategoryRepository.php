@@ -3,7 +3,7 @@
 namespace App\Http\Repositories\Admin;
 
 use App\Models\BlogCategory;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Yajra\DataTables\Facades\DataTables;
 
 class BlogCategoryRepository
@@ -64,7 +64,8 @@ class BlogCategoryRepository
         }
 
         if ($socialImageFile) {
-            $data['social_image'] = $socialImageFile->store('blog-categories', 'public');
+            $slug = $data['slug'] ?: str()->slug($data['name']);
+            $data['social_image'] = $this->moveUploadedFile($socialImageFile, 'blog-categories', $slug);
         }
 
         return BlogCategory::create($data);
@@ -79,11 +80,13 @@ class BlogCategoryRepository
         }
 
         if ($socialImageFile) {
-            // Purani image delete karo
             if ($blogCategory->social_image) {
-                Storage::disk('public')->delete($blogCategory->social_image);
+                $this->deleteUploadedFile($blogCategory->social_image);
             }
-            $data['social_image'] = $socialImageFile->store('blog-categories', 'public');
+            $slug = $data['slug'] ?? $blogCategory->slug;
+            $data['social_image'] = $this->moveUploadedFile($socialImageFile, 'blog-categories', $slug);
+        } else {
+            unset($data['social_image']);
         }
 
         $blogCategory->update($data);
@@ -100,7 +103,7 @@ class BlogCategoryRepository
         }
 
         if ($blogCategory->social_image) {
-            Storage::disk('public')->delete($blogCategory->social_image);
+            $this->deleteUploadedFile($blogCategory->social_image);
         }
 
         return $blogCategory->delete();
@@ -113,5 +116,36 @@ class BlogCategoryRepository
             'with_parent' => BlogCategory::whereNotNull('parent_id')->count(),
             'root_categories' => BlogCategory::whereNull('parent_id')->count(),
         ];
+    }
+
+    /**
+     * Move uploaded file to public/storage/{folder}/{slug}.{ext}
+     * Returns relative path e.g. "blog-categories/health-wellness.jpg"
+     */
+    private function moveUploadedFile($file, string $folder, string $slug): string
+    {
+        $extension = $file->getClientOriginalExtension();
+        $filename  = Str::slug($slug) . '.' . $extension;
+        $directory = public_path('storage/' . $folder);
+
+        if (!is_dir($directory)) {
+            mkdir($directory, 0755, true);
+        }
+
+        $file->move($directory, $filename);
+
+        return $folder . '/' . $filename;
+    }
+
+    /**
+     * Delete a file stored via moveUploadedFile()
+     */
+    private function deleteUploadedFile(string $relativePath): void
+    {
+        $fullPath = public_path('storage/' . $relativePath);
+
+        if (file_exists($fullPath)) {
+            unlink($fullPath);
+        }
     }
 }

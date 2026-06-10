@@ -1,19 +1,21 @@
 // components/sidebar-sections/shop-section.tsx
-import { ShoppingCart, User, DollarSign, TicketPercent, Star, Package } from 'lucide-react';
+import { ShoppingCart, User, DollarSign, TicketPercent, Star, Package, MapPin } from 'lucide-react';
 import { type NavItem } from '@/types';
 
 interface ShopSectionProps {
     hasAnyCustomerPerm: boolean;
     hasAnyOrderPerm: boolean;
     hasAnySalePerm: boolean;
+    hasAnyCitiesPerm: boolean;
 }
 
 export function ShopSection({
     hasAnyCustomerPerm,
     hasAnyOrderPerm,
     hasAnySalePerm,
+    hasAnyCitiesPerm,
 }: ShopSectionProps): NavItem | null {
-    if (!hasAnyCustomerPerm && !hasAnyOrderPerm && !hasAnySalePerm) {
+    if (!hasAnyCustomerPerm && !hasAnyOrderPerm && !hasAnySalePerm && !hasAnyCitiesPerm) {
         return null;
     }
 
@@ -32,6 +34,12 @@ export function ShopSection({
             title: 'Orders',
             href: '/admin/orders',
             icon: ShoppingCart,
+        });
+
+        shopSubmenu.push({
+            title: 'Track Orders',
+            href: '/admin/orders/track',
+            icon: MapPin,
         });
     }
 
@@ -54,8 +62,16 @@ export function ShopSection({
     if (hasAnySalePerm) {
         shopSubmenu.push({
             title: 'Order Reviews',
-            href: '/admin/orderReviews',
+            href: '/admin/order-reviews',
             icon: Star,
+        });
+    }
+
+    if (hasAnyCitiesPerm) {
+        shopSubmenu.push({
+            title: 'Cities',
+            href: '/admin/cities',
+            icon: User,
         });
     }
 

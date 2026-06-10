@@ -140,4 +140,20 @@
     body {
         @apply bg-background text-foreground;
     }
+
+    /* Global dark mode fix for all form inputs */
+    .dark input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]),
+    .dark textarea,
+    .dark select {
+        background-color: rgb(31 41 55) !important; /* gray-800 */
+        color: rgb(243 244 246) !important;          /* gray-100 */
+        border-color: rgb(75 85 99) !important;      /* gray-600 */
+    }
+
+    .dark input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]):disabled,
+    .dark textarea:disabled,
+    .dark select:disabled {
+        background-color: rgb(17 24 39) !important; /* gray-900 */
+        color: rgb(156 163 175) !important;          /* gray-400 */
+    }
 }

@@ -11,6 +11,7 @@ class Order extends Model
 
     protected $fillable = [
         'customer_id',
+        'city_id',
         'order_number',
         'subtotal',
         'product_discount',
@@ -23,6 +24,8 @@ class Order extends Model
         'shipping_address',
         'billing_address',
         'shipping_method',
+        'courier_weight',
+        'shipping_response',
         'payment_method',
         'payment_status',
         'payment_date',
@@ -44,6 +47,11 @@ class Order extends Model
     public function customer()
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function city()
+    {
+        return $this->belongsTo(City::class);
     }
 
     public function items()

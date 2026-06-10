@@ -14,12 +14,14 @@ interface OrderItem {
     product_variant_id: number | null;
     quantity: number;
     price: number;
+    cost_price: number;
     discount: number;
     subtotal: number;
     meta: {
         product_name: string;
         sku: string;
         variant_name?: string;
+        cost_price?: number;
     };
     product?: {
         id: number;
@@ -117,9 +119,20 @@ export default function Show({ order }: { order: Order }) {
                                     </span>
                                 </div>
                             </div>
-                            <div className="text-right">
+                            <div className="text-right space-y-1">
                                 <div className="text-blue-100 text-sm">Grand Total</div>
                                 <div className="text-4xl font-bold">PKR {order.grand_total.toFixed(2)}</div>
+                                {(() => {
+                                    const totalProfit = order.items.reduce((sum, item) => {
+                                        const cp = item.cost_price ?? item.meta?.cost_price ?? 0;
+                                        return sum + ((item.price - cp) * item.quantity - item.discount);
+                                    }, 0) - Number(order.invoice_discount);
+                                    return (
+                                        <div className={`text-sm font-semibold ${totalProfit >= 0 ? 'text-green-300' : 'text-red-300'}`}>
+                                            Profit: PKR {totalProfit.toFixed(2)}
+                                        </div>
+                                    );
+                                })()}
                             </div>
                         </div>
                     </div>
@@ -213,14 +226,19 @@ export default function Show({ order }: { order: Order }) {
                                 <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
                                     <tr>
                                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Product</th>
+                                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Cost</th>
                                         <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Price</th>
                                         <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Qty</th>
                                         <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Discount</th>
                                         <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Subtotal</th>
+                                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Profit</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                                    {order.items.map((item) => (
+                                    {order.items.map((item) => {
+                                        const cp = item.cost_price ?? item.meta?.cost_price ?? 0;
+                                        const profit = (item.price - cp) * item.quantity - item.discount;
+                                        return (
                                         <tr key={item.id}>
                                             <td className="px-4 py-4">
                                                 <div className="flex flex-col">
@@ -237,6 +255,9 @@ export default function Show({ order }: { order: Order }) {
                                                     )}
                                                 </div>
                                             </td>
+                                            <td className="px-4 py-4 text-right text-gray-500 dark:text-gray-400 text-sm">
+                                                PKR {Number(cp).toFixed(2)}
+                                            </td>
                                             <td className="px-4 py-4 text-right text-gray-900 dark:text-white">
                                                 PKR {item.price.toFixed(2)}
                                             </td>
@@ -249,8 +270,12 @@ export default function Show({ order }: { order: Order }) {
                                             <td className="px-4 py-4 text-right font-semibold text-gray-900 dark:text-white">
                                                 PKR {item.subtotal.toFixed(2)}
                                             </td>
+                                            <td className={`px-4 py-4 text-right font-semibold ${profit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                                {profit >= 0 ? '+' : ''}PKR {profit.toFixed(2)}
+                                            </td>
                                         </tr>
-                                    ))}
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         </div>
@@ -283,6 +308,18 @@ export default function Show({ order }: { order: Order }) {
                                         <span className="text-gray-900 dark:text-white">Grand Total:</span>
                                         <span className="text-blue-600 dark:text-blue-400">PKR {order.grand_total.toFixed(2)}</span>
                                     </div>
+                                    {(() => {
+                                        const totalProfit = order.items.reduce((sum, item) => {
+                                            const cp = item.cost_price ?? item.meta?.cost_price ?? 0;
+                                            return sum + ((item.price - cp) * item.quantity - item.discount);
+                                        }, 0) - Number(order.invoice_discount);
+                                        return (
+                                            <div className={`flex justify-between text-base font-bold border-t border-gray-300 dark:border-gray-600 pt-2 ${totalProfit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                                <span>Net Profit:</span>
+                                                <span>{totalProfit >= 0 ? '+' : ''}PKR {totalProfit.toFixed(2)}</span>
+                                            </div>
+                                        );
+                                    })()}
                                 </div>
                             </div>
                         </div>

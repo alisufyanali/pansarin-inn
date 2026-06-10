@@ -13,7 +13,7 @@ class SaleRepository
 {
     public function getAllForDataTable($request)
     {
-        $query = Sale::with(['customer', 'order'])->latest();
+        $query = Sale::with(['customer', 'order', 'items', 'customer.city'])->latest();
 
         if ($request->filled('search')) {
             $search = $request->search;

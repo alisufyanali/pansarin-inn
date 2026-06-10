@@ -12,9 +12,14 @@ class Customer extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'user_id', 'customer_group_id', 'first_name', 'last_name', 'address','city_id',
-        'email', 'phone', 'gender', 'dob', 'profile_picture', 'country',
-        'status', 'total_spent', 'total_orders'
+        'first_name',
+        'last_name',
+        'phone',
+        'email',
+        'address',
+        'address2',
+        'city_id',
+        'country',
     ];
 
     protected $appends = ['full_name'];

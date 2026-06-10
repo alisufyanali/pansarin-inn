@@ -12,6 +12,7 @@ class OrderRequest extends FormRequest
     {
         return [
             'customer_id'           => 'required|exists:customers,id',
+            'city_id'               => 'nullable|exists:cities,id',
             'items'                 => 'required|array|min:1',
             'items.*.product_id'    => 'required|exists:products,id',
             'items.*.product_variant_id' => 'nullable|exists:product_variants,id',
@@ -26,6 +27,7 @@ class OrderRequest extends FormRequest
             'payment_method'        => 'nullable|string|max:100',
             'payment_date'          => 'nullable|date',
             'shipping_method'       => 'nullable|string|max:100',
+            'courier_weight'        => 'nullable|string|max:50',
             'shipping_address'      => 'nullable|string',
             'billing_address'       => 'nullable|string',
             'order_note'            => 'nullable|string',

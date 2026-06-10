@@ -2,7 +2,6 @@
 
 namespace App\Http\Repositories\Admin;
 
-use App\Models\Order;
 use App\Models\Review;
 
 class ProductReviewRepository
@@ -59,41 +58,24 @@ class ProductReviewRepository
 
     public function store(array $data)
     {
-        // Check if order number exists and belongs to this product
-        $isVerified = false;
-        if (! empty($data['order_number'])) {
-            $order = Order::where('order_number', $data['order_number'])
-                ->whereHas('items', function ($q) use ($data) {
-                    $q->where('product_id', $data['product_id']);
-                })
-                ->first();
-
-            $isVerified = $order ? true : false;
-        }
-
-        $data['is_verified'] = $isVerified;
-        $data['status'] = $data['status'] ?? false; // Pending approval by default
-        $data['user_id'] = auth()->id(); // If logged in
-
-        return Review::create($data);
+        return Review::create([
+            'product_id' => $data['product_id'],
+            'user_id'    => $data['user_id'],
+            'rating'     => $data['rating'],
+            'review'     => $data['review'] ?? null,
+        ]);
     }
 
     public function update($id, array $data)
     {
         $review = $this->find($id);
 
-        // Re-verify if order number changed
-        if (! empty($data['order_number']) && $data['order_number'] !== $review->order_number) {
-            $order = Order::where('order_number', $data['order_number'])
-                ->whereHas('items', function ($q) use ($data) {
-                    $q->where('product_id', $data['product_id']);
-                })
-                ->first();
-
-            $data['is_verified'] = $order ? true : false;
-        }
-
-        $review->update($data);
+        $review->update([
+            'product_id' => $data['product_id'],
+            'user_id'    => $data['user_id'],
+            'rating'     => $data['rating'],
+            'review'     => $data['review'] ?? null,
+        ]);
 
         return $review;
     }

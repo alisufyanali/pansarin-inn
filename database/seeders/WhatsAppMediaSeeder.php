@@ -36,43 +36,21 @@ class WhatsAppMediaSeeder extends Seeder
     }
 
     /**
-     * Create a dummy image file (payment screenshot)
+     * Create a dummy image file (minimal valid JPEG)
      */
     private function createDummyImage($path)
     {
-        // Create a simple colored rectangle as dummy image
-        $width = 400;
-        $height = 600;
-        $image = imagecreatetruecolor($width, $height);
+        // Minimal valid 1x1 white JPEG (no GD required)
+        $jpeg = base64_decode(
+            '/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8U'.
+            'HRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgN'.
+            'DRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIy'.
+            'MjL/wAARCAABAAEDASIAAhEBAxEB/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAA'.
+            'AAAAAAAAAAAAAP/EABQBAQAAAAAAAAAAAAAAAAAAAAD/xAAUEQEAAAAAAAAAAAAAAAAAAAAA'.
+            '/9oADAMBAAIRAxEAPwCwABmX/9k='
+        );
 
-        // Background color (light gray)
-        $bgColor = imagecolorallocate($image, 240, 240, 240);
-        imagefill($image, 0, 0, $bgColor);
-
-        // Header color (green for payment)
-        $headerColor = imagecolorallocate($image, 37, 211, 102);
-        imagefilledrectangle($image, 0, 0, $width, 80, $headerColor);
-
-        // White text color
-        $white = imagecolorallocate($image, 255, 255, 255);
-        $black = imagecolorallocate($image, 0, 0, 0);
-
-        // Add text
-        imagestring($image, 5, 120, 30, 'PAYMENT RECEIPT', $white);
-        imagestring($image, 3, 50, 120, 'Transaction ID: TXN-123456789', $black);
-        imagestring($image, 3, 50, 160, 'Amount: Rs. 2,500.00', $black);
-        imagestring($image, 3, 50, 200, 'Date: '.date('Y-m-d H:i:s'), $black);
-        imagestring($image, 3, 50, 240, 'Status: SUCCESS', $black);
-        imagestring($image, 3, 50, 300, 'Payment Method: JazzCash', $black);
-        imagestring($image, 3, 50, 340, 'Reference: REF-987654', $black);
-
-        // Add green checkmark (success indicator)
-        $green = imagecolorallocate($image, 37, 211, 102);
-        imagefilledellipse($image, 200, 450, 100, 100, $green);
-
-        // Save image
-        imagejpeg($image, $path, 90);
-        imagedestroy($image);
+        file_put_contents($path, $jpeg);
 
         $this->command->info('✓ Created: media_1704723456.jpg (Payment Screenshot)');
     }

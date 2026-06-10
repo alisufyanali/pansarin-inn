@@ -3,7 +3,6 @@
 namespace App\Http\Repositories\Admin;
 
 use App\Models\Blog;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class BlogRepository
@@ -93,11 +92,11 @@ class BlogRepository
         }
 
         if ($thumbnailFile) {
-            $data['thumbnail'] = $thumbnailFile->store('blogs', 'public');
+            $data['thumbnail'] = $this->moveUploadedFile($thumbnailFile, 'blogs', $data['slug']);
         }
 
         if ($socialImageFile) {
-            $data['social_image'] = $socialImageFile->store('blogs', 'public');
+            $data['social_image'] = $this->moveUploadedFile($socialImageFile, 'blogs/social', $data['slug']);
         }
 
         $tags = $data['tags'] ?? [];
@@ -120,20 +119,22 @@ class BlogRepository
             $data['slug'] = $this->generateUniqueSlug($data['title'], $blog->id);
         }
 
+        $slug = $data['slug'] ?? $blog->slug;
+
         if ($thumbnailFile) {
             if ($blog->thumbnail) {
-                Storage::disk('public')->delete($blog->thumbnail);
+                $this->deleteUploadedFile($blog->thumbnail);
             }
-            $data['thumbnail'] = $thumbnailFile->store('blogs', 'public');
+            $data['thumbnail'] = $this->moveUploadedFile($thumbnailFile, 'blogs', $slug);
         } else {
             unset($data['thumbnail']);
         }
 
         if ($socialImageFile) {
             if ($blog->social_image) {
-                Storage::disk('public')->delete($blog->social_image);
+                $this->deleteUploadedFile($blog->social_image);
             }
-            $data['social_image'] = $socialImageFile->store('blogs', 'public');
+            $data['social_image'] = $this->moveUploadedFile($socialImageFile, 'blogs/social', $slug);
         } else {
             unset($data['social_image']);
         }
@@ -152,10 +153,10 @@ class BlogRepository
         $blog = $this->find($id);
 
         if ($blog->thumbnail) {
-            Storage::disk('public')->delete($blog->thumbnail);
+            $this->deleteUploadedFile($blog->thumbnail);
         }
         if ($blog->social_image) {
-            Storage::disk('public')->delete($blog->social_image);
+            $this->deleteUploadedFile($blog->social_image);
         }
 
         return $blog->delete();
@@ -187,5 +188,36 @@ class BlogRepository
         }
 
         return $slug;
+    }
+
+    /**
+     * Move uploaded file to public/storage/{folder}/{slug}.{ext}
+     * Returns relative path e.g. "blogs/my-blog-post.jpg"
+     */
+    private function moveUploadedFile($file, string $folder, string $slug): string
+    {
+        $extension = $file->getClientOriginalExtension();
+        $filename  = Str::slug($slug) . '.' . $extension;
+        $directory = public_path('storage/' . $folder);
+
+        if (!is_dir($directory)) {
+            mkdir($directory, 0755, true);
+        }
+
+        $file->move($directory, $filename);
+
+        return $folder . '/' . $filename;
+    }
+
+    /**
+     * Delete a file stored via moveUploadedFile()
+     */
+    private function deleteUploadedFile(string $relativePath): void
+    {
+        $fullPath = public_path('storage/' . $relativePath);
+
+        if (file_exists($fullPath)) {
+            unlink($fullPath);
+        }
     }
 }

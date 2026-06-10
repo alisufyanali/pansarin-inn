@@ -1,100 +1,49 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useForm } from '@inertiajs/react';
 import { ArrowLeft, User, Mail, Phone, MapPin, ShieldCheck, Share2, Save, Globe, Landmark } from 'lucide-react';
 import { Link } from '@inertiajs/react';
+import CityDropdown, { type CityOption } from '@/components/CityDropdown';
 
-// Types
-type LocationItem = { id: number; name: string; country_id?: number; state_id?: number };
+type City = CityOption;
 
-export interface CustomerFormData {
-    first_name: string;
-    last_name?: string;
-    email: string;
-    phone: string;
-    password?: string;
-    address?: string;
-    country_id: string | number;
-    state_id: string | number;
-    city_id: string | number;
-    customer_group_id?: string | number;
-    status: string;
-    referred_by?: string | number;
+export type CustomerFormData = {
+  first_name: string;
+  last_name: string;
+  phone: string;
+  email: string;
+  address: string;
+  address2: string;
+  city_id: string | number;
+  country: string;
+};
+
+interface CustomerFormProps {
+  customer?: CustomerFormData & { id?: number };
+  cities?: City[];
+  isEdit?: boolean;
 }
 
-export interface CustomerFormProps {
-    customer?: any;
-    countries: LocationItem[];
-    states: LocationItem[];
-    cities: LocationItem[];
-    groups: { id: number; name: string }[];
-    affiliates: { id: number; name: string }[];
-    isEdit?: boolean;
-}
+export default function CustomerForm({ customer, cities = [], isEdit = false }: CustomerFormProps) {
+  const { data, setData, errors, post, put, processing } = useForm<CustomerFormData>({
+    first_name: customer?.first_name || '',
+    last_name: customer?.last_name || '',
+    phone: customer?.phone || '',
+    email: customer?.email || '',
+    address: customer?.address || '',
+    address2: customer?.address2 || '',
+    city_id: customer?.city_id || '',
+    country: customer?.country || '',
+  });
 
-export default function CustomerForm({ 
-    customer, 
-    countries = [], 
-    states = [], 
-    cities = [], 
-    groups = [], 
-    affiliates = [], 
-    isEdit = false 
-}: CustomerFormProps) {
-  
-    const { data, setData, errors, post, put, processing } = useForm({
-        first_name: customer?.first_name || '',
-        last_name: customer?.last_name || '',
-        email: customer?.email || '',
-        phone: customer?.phone || '',
-        password: '', 
-        address: customer?.address || '',
-        country_id: customer?.city?.state?.country_id || '', 
-        state_id: customer?.city?.state_id || '',
-        city_id: customer?.city_id || '',
-        customer_group_id: customer?.customer_group_id || '',
-        status: customer?.status || 'active',
-        referred_by: (customer?.referred_by || customer?.user?.referred_by || '').toString(),
-    });
-
-    const [filteredStates, setFilteredStates] = useState<LocationItem[]>([]);
-    const [filteredCities, setFilteredCities] = useState<LocationItem[]>([]);
-
-    // Effect 1: Filter States
-    useEffect(() => {
-        if (data.country_id && states.length > 0) {
-            const filtered = states.filter(s => {
-                if (!s.country_id) return true; 
-                return Number(s.country_id) === Number(data.country_id);
-            });
-            setFilteredStates(filtered);
-        }
-    }, [data.country_id, states]);
-
-    // Effect 2: Filter Cities
-    useEffect(() => {
-        if (data.state_id && cities.length > 0) {
-            const filtered = cities.filter(c => {
-                if (!c.state_id) return true;
-                return Number(c.state_id) === Number(data.state_id);
-            });
-            setFilteredCities(filtered);
-        }
-    }, [data.state_id, cities]);
-
-    // Handlers for dynamic dropdowns to clear children
-    const handleCountryChange = (id: string) => {
-        setData(prev => ({ ...prev, country_id: id, state_id: '', city_id: '' }));
-    };
-
-    const handleStateChange = (id: string) => {
-        setData(prev => ({ ...prev, state_id: id, city_id: '' }));
-    };
-
-    const submit = (e: React.FormEvent) => {
-        e.preventDefault();
-        // @ts-ignore (Kyunke route global ho sakta hai)
-        isEdit ? put(`/admin/customers/${customer.id}`) : post('/admin/customers');
-    };
+  function submit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    
+    if (isEdit && customer?.id) {
+      put(`/admin/customers/${customer.id}`);
+    } else {
+      post('/admin/customers');
+    }
+  }
 
     return (
         <div className="p-4 max-w-6xl mx-auto">
@@ -190,43 +139,79 @@ export default function CustomerForm({
                     </div>
                 </div>
 
-                <div className="space-y-8">
-                    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6 sticky top-6">
-                        <div className="flex items-center gap-2 mb-6 border-b pb-4">
-                            <ShieldCheck className="w-5 h-5 text-purple-600" />
-                            <h3 className="font-bold text-gray-700 dark:text-gray-200">Account Settings</h3>
-                        </div>
-                        <div className="space-y-6">
-                            <div>
-                                <label className="text-sm font-semibold mb-1.5 block">Customer Group</label>
-                                <select value={data.customer_group_id} onChange={e => setData('customer_group_id', e.target.value)} className="w-full px-4 py-2.5 border rounded-lg dark:bg-gray-700">
-                                    <option value="">General</option>
-                                    {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
-                                </select>
-                            </div>
-                            <div>
-                                <label className="text-sm font-semibold mb-1.5 block text-blue-600 flex items-center gap-2"><Share2 className="w-4 h-4"/> Referred By</label>
-                                <select value={data.referred_by} onChange={e => setData('referred_by', e.target.value)} 
-                                    className="w-full px-4 py-2.5 border-blue-100 bg-blue-50/50 dark:bg-gray-900 rounded-lg" >
-                                    <option value="">Direct / Organic</option>
-                                    {affiliates.map(a => (
-                                        <option key={a.id} value={a.id.toString()}> 
-                                            {a.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div>
-                                <label className="text-sm font-semibold mb-1.5 block">Status</label>
-                                <div className="flex p-1 bg-gray-100 dark:bg-gray-900 rounded-lg">
-                                    <button type="button" onClick={() => setData('status', 'active')} className={`flex-1 py-1.5 text-xs font-bold rounded-md transition ${data.status === 'active' ? 'bg-white dark:bg-gray-700 text-emerald-600' : 'text-gray-500'}`}>ACTIVE</button>
-                                    <button type="button" onClick={() => setData('status', 'inactive')} className={`flex-1 py-1.5 text-xs font-bold rounded-md transition ${data.status === 'inactive' ? 'bg-white dark:bg-gray-700 text-red-600' : 'text-gray-500'}`}>INACTIVE</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </form>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Address 1</label>
+              <textarea
+                placeholder="Street address, apartment, suite, etc."
+                value={data.address}
+                onChange={e => setData('address', e.target.value)}
+                rows={2}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 resize-none"
+              />
+              {errors.address && <p className="text-red-500 dark:text-red-400 text-sm mt-1">{errors.address}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Address 2 <span className="text-gray-400 text-xs">(optional)</span></label>
+              <textarea
+                placeholder="Landmark, area, additional info..."
+                value={data.address2}
+                onChange={e => setData('address2', e.target.value)}
+                rows={2}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 resize-none"
+              />
+              {errors.address2 && <p className="text-red-500 dark:text-red-400 text-sm mt-1">{errors.address2}</p>}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <CityDropdown
+                  cities={cities}
+                  value={data.city_id}
+                  onChange={val => setData('city_id', val)}
+                  error={errors.city_id}
+                  label="City"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Country</label>
+                <input
+                  type="text"
+                  placeholder="Pakistan"
+                  value={data.country}
+                  onChange={e => setData('country', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                />
+              </div>
+            </div>
+          </div>
         </div>
-    );
+
+        {/* Action Buttons */}
+        <div className="flex gap-3">
+          <Link
+            href="/admin/customers"
+            className="flex-1 text-center border border-gray-300 dark:border-gray-600 py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
+          >
+            Cancel
+          </Link>
+          
+          <button
+            type="submit"
+            disabled={processing}
+            className="flex-1 bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            <Save className="w-4 h-4" />
+            {processing ? 'Saving...' : (isEdit ? 'Update Customer' : 'Create Customer')}
+          </button>
+        </div>
+      </form>
+
+      <br /> <br />
+      <br /> <br />
+     
+    </div>
+  );
 }

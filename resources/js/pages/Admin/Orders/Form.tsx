@@ -3,8 +3,18 @@ import { useForm } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from '@inertiajs/react';
 import { SearchableCustomerSelect, SearchableProductSelect } from '@/components/SearchableSelect';
+import CityDropdown, { type CityOption } from '@/components/CityDropdown';
 
-type Customer = { id: number; first_name: string; last_name: string; phone: string; email: string | null };
+type Customer = { 
+  id: number; 
+  first_name: string; 
+  last_name: string; 
+  phone: string; 
+  email: string | null;
+  address: string | null;
+  address2: string | null;
+  city_id: number | null;
+};
 type Variant = { id: number; name: string; price: number; stock: number };
 type Product = { 
   id: number; 
@@ -14,7 +24,7 @@ type Product = {
   stock: number;
   variants?: Variant[];
 };
-type City = { id: number; name: string };
+type City = CityOption;
 
 type OrderItem = {
   product_id: number | string;
@@ -26,6 +36,7 @@ type OrderItem = {
 
 export type OrderFormData = {
   customer_id: string | number;
+  city_id: string | number;
   items: OrderItem[];
   invoice_discount: string | number;
   shipping_charges: string | number;
@@ -38,6 +49,7 @@ export type OrderFormData = {
   shipping_address: string;
   billing_address: string;
   order_note: string;
+  courier_weight: string | number;
 };
 
 interface OrderFormProps {
@@ -57,6 +69,7 @@ export default function OrderForm({
 }: OrderFormProps) {
   const { data, setData, errors, post, put, processing } = useForm<OrderFormData>({
     customer_id: order?.customer_id || '',
+    city_id: order?.city_id || '',
     items: order?.items || [{ product_id: '', product_variant_id: '', quantity: 1, price: 0, discount: 0 }],
     invoice_discount: order?.invoice_discount || 0,
     shipping_charges: order?.shipping_charges || 0,
@@ -69,6 +82,7 @@ export default function OrderForm({
     shipping_address: order?.shipping_address || '',
     billing_address: order?.billing_address || '',
     order_note: order?.order_note || '',
+    courier_weight: order?.courier_weight || '',
   });
 
   // FIX: selectedProducts ko properly initialize karo agar edit mode mein hain
@@ -102,10 +116,19 @@ export default function OrderForm({
     if (data.customer_id) {
       const customer = customers.find(c => c.id === Number(data.customer_id));
       setSelectedCustomer(customer || null);
+      if (customer) {
+        const city = cities.find(c => c.id === Number(customer.city_id));
+        setData('shipping_address', customer.address || '');
+        setData('billing_address', customer.address2 || '');
+        setData('city_id', customer.city_id ?? '');
+        if (city?.shipping_charges != null) {
+          setData('shipping_charges', Number(city.shipping_charges));
+        }
+      }
     } else {
       setSelectedCustomer(null);
     }
-  }, [data.customer_id, customers]);
+  }, [data.customer_id, customers, cities]);
 
   function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -322,11 +345,63 @@ export default function OrderForm({
                         className="w-full px-3 py-2 text-sm rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
                       >
                         <option value="">Select One</option>
-                        <option value="Standard">Standard</option>
-                        <option value="Express">Express</option>
-                        <option value="Same Day">Same Day</option>
+                        <option value="leopard">Leopard Courier</option>
+                        <option value="cc">Call Courier</option>
+                        <option value="pp">Pakistan Post</option>
+                        <option value="px">PostEx</option>
+                        <option value="movex">Movex</option>
                       </select>
                       {errors.shipping_method && <p className="text-red-500 text-xs mt-1">{errors.shipping_method}</p>}
+
+                      {/* Conditional weight field */}
+                      {data.shipping_method === 'leopard' && (
+                        <div className="mt-2">
+                          <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Leopard Weight (kg)</label>
+                          <input
+                            type="number" min="0" step="0.5"
+                            value={data.courier_weight}
+                            onChange={e => setData('courier_weight', e.target.value)}
+                            className="w-full px-3 py-2 text-sm rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
+                            placeholder="0.5"
+                          />
+                        </div>
+                      )}
+                      {data.shipping_method === 'cc' && (
+                        <div className="mt-2">
+                          <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Call Courier Weight</label>
+                          <input
+                            type="text"
+                            value={data.courier_weight}
+                            onChange={e => setData('courier_weight', e.target.value)}
+                            className="w-full px-3 py-2 text-sm rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
+                            placeholder="e.g. 500g"
+                          />
+                        </div>
+                      )}
+                      {data.shipping_method === 'px' && (
+                        <div className="mt-2">
+                          <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">PostEx Weight (kg)</label>
+                          <input
+                            type="number" min="0" step="0.5"
+                            value={data.courier_weight}
+                            onChange={e => setData('courier_weight', e.target.value)}
+                            className="w-full px-3 py-2 text-sm rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
+                            placeholder="0.5"
+                          />
+                        </div>
+                      )}
+                      {data.shipping_method === 'movex' && (
+                        <div className="mt-2">
+                          <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Movex Weight (kg)</label>
+                          <input
+                            type="number" min="0" step="0.5"
+                            value={data.courier_weight}
+                            onChange={e => setData('courier_weight', e.target.value)}
+                            className="w-full px-3 py-2 text-sm rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
+                            placeholder="0.5"
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -347,13 +422,30 @@ export default function OrderForm({
                     {errors.shipping_address && <p className="text-red-500 text-xs mt-1">{errors.shipping_address}</p>}
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">City</label>
-                    <select className="w-full px-3 py-2 text-sm rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none">
-                      <option value="">Select One</option>
-                      {cities.map((city) => (
-                        <option key={city.id} value={city.id}>{city.name}</option>
-                      ))}
-                    </select>
+                    <CityDropdown
+                      cities={cities}
+                      value={data.city_id ?? ''}
+                      onChange={val => {
+                        const city = cities.find(c => String(c.id) === String(val));
+                        console.log('City selected:', city);
+                        console.log('shipping_charges:', city?.shipping_charges);
+                        setData('city_id', val);
+                        if (city?.shipping_charges != null) {
+                          setData('shipping_charges', Number(city.shipping_charges));
+                        }
+                      }}
+                      error={errors.city_id}
+                      label="City"
+                    />
+                    {data.city_id && (() => {
+                      const city = cities.find(c => String(c.id) === String(data.city_id));
+                      if (!city?.shipping_charges) return null;
+                      return (
+                        <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                          Shipping: Rs. {Number(city.shipping_charges).toFixed(0)} (auto-set)
+                        </p>
+                      );
+                    })()}
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Address 2</label>
@@ -391,7 +483,17 @@ export default function OrderForm({
                               value={item.product_id}
                               onChange={(id) => handleProductChange(index, String(id))}
                               required
+                              allowOutOfStock={true}
                             />
+                            {/* Stock badge for selected product (no variant) */}
+                            {item.product_id && !item.product_variant_id && selectedProducts[index] && (
+                              <p className={`text-xs mt-0.5 font-medium ${
+                                selectedProducts[index].stock > 10 ? 'text-green-600' :
+                                selectedProducts[index].stock > 0  ? 'text-yellow-600' : 'text-red-600'
+                              }`}>
+                                Stock: {selectedProducts[index].stock}
+                              </p>
+                            )}
                             {getItemError(index, 'product_id') && (
                               <p className="text-red-500 text-xs mt-1">{getItemError(index, 'product_id')}</p>
                             )}
@@ -401,23 +503,40 @@ export default function OrderForm({
                           <td className="px-3 py-2">
                             <select
                               value={item.product_variant_id}
-                              onChange={(e) => handleVariantChange(index, e.target.value)}
+                              onChange={(e) => {
+                                const variantId = e.target.value;
+                                const product = selectedProducts[index];
+                                if (variantId && product) {
+                                  const variant = product.variants?.find(v => v.id === Number(variantId));
+                                  if (variant && variant.stock <= 0) {
+                                    alert(`Variant "${variant.name}" is out of stock. Please add stock first.`);
+                                    return;
+                                  }
+                                }
+                                handleVariantChange(index, variantId);
+                              }}
                               className="w-full px-2 py-1 text-xs rounded bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 focus:ring-1 focus:ring-blue-500 outline-none disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:text-gray-400"
                               disabled={!selectedProducts[index]?.variants?.length}
                             >
                               <option value="">None</option>
                               {selectedProducts[index]?.variants?.map((variant) => (
-                                <option key={variant.id} value={variant.id}>
-                                  {variant.name}
+                                <option key={variant.id} value={variant.id}
+                                  disabled={variant.stock <= 0}
+                                  style={variant.stock <= 0 ? { color: '#ef4444' } : {}}>
+                                  {variant.name} — Stock: {variant.stock}{variant.stock <= 0 ? ' ⚠ Out' : ''}
                                 </option>
                               ))}
                             </select>
-                            {/* FIX: Selected variant ka naam show karo */}
-                            {item.product_variant_id && selectedProducts[index]?.variants && (
-                              <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5">
-                                {selectedProducts[index].variants?.find(v => v.id === Number(item.product_variant_id))?.name}
-                              </p>
-                            )}
+                            {/* Stock badge for selected variant */}
+                            {item.product_variant_id && selectedProducts[index]?.variants && (() => {
+                              const v = selectedProducts[index].variants?.find(v => v.id === Number(item.product_variant_id));
+                              if (!v) return null;
+                              return (
+                                <p className={`text-xs mt-0.5 font-medium ${v.stock > 10 ? 'text-green-600' : v.stock > 0 ? 'text-yellow-600' : 'text-red-600'}`}>
+                                  Stock: {v.stock}
+                                </p>
+                              );
+                            })()}
                             {getItemError(index, 'product_variant_id') && (
                               <p className="text-red-500 text-xs mt-1">{getItemError(index, 'product_variant_id')}</p>
                             )}
@@ -539,7 +658,7 @@ export default function OrderForm({
                         <input
                           type="number"
                           step="0.01"
-                          value={data.shipping_charges}
+                          value={Number(data.shipping_charges)}
                           onChange={e => setData('shipping_charges', e.target.value)}
                           className="w-24 px-2 py-1 text-xs rounded bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 focus:ring-1 focus:ring-blue-500 outline-none text-right"
                         />

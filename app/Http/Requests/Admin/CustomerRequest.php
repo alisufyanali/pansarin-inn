@@ -38,11 +38,10 @@ class CustomerRequest extends FormRequest
                 'max:255',
                 Rule::unique('users', 'email')->ignore($userId),
             ],
-            'address' => 'nullable|string|max:255',
-            'city_id' => 'required|exists:cities,id',
-            'customer_group_id' => 'nullable|exists:customer_groups,id',
-            'status' => 'required|in:active,inactive',
-            'referred_by' => 'nullable|exists:users,id',
+            'address'  => 'nullable|string|max:255',
+            'address2' => 'nullable|string|max:255',
+            'city_id'  => 'nullable|exists:cities,id',
+            'country'  => 'nullable|string|max:100',
         ];
     }
 

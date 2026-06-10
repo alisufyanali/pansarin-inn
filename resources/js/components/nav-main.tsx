@@ -49,18 +49,15 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
                                     <SidebarMenuButton
                                         tooltip={{ children: item.title }}
                                         className="cursor-pointer"
-                                        onClick={() => toggleExpanded(item.title)} 
+                                        onClick={() => toggleExpanded(item.title)}
                                     >
                                         {item.icon && <item.icon />}
                                         <span>{item.title}</span>
-
-                                        <div className="ml-auto">
-                                            <ChevronRight
-                                                className={`h-4 w-4 transition-transform duration-200 ${
-                                                    isExpanded ? 'rotate-90' : ''
-                                                }`}
-                                            />
-                                        </div>
+                                        <ChevronRight
+                                            className={`ml-auto transition-transform ${
+                                                isExpanded ? 'rotate-90' : ''
+                                            }`}
+                                        />
                                     </SidebarMenuButton>
 
                                     {isExpanded && (

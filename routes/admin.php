@@ -1,11 +1,11 @@
 <?php
 
 use App\Http\Controllers\Admin\BlogCategoryController;
+use App\Http\Controllers\Admin\WishlistController;
 use App\Http\Controllers\Admin\BlogController;
 // Controllers
 use App\Http\Controllers\Admin\BlogsCommentsController;
 use App\Http\Controllers\Admin\BlogTagController;
-use App\Http\Controllers\Admin\BlogTagsController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ContactController;
 use App\Http\Controllers\Admin\CouponController;
@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\NewsletterController;
 use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\OrderReviewController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\ProductAttributeController;
 use App\Http\Controllers\Admin\ProductController;
@@ -23,7 +24,9 @@ use App\Http\Controllers\Admin\ProductsReviewsController;
 use App\Http\Controllers\Admin\ProductVariantController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SaleController;
+use App\Http\Controllers\Admin\CityController;
 use App\Http\Controllers\Admin\WhatsAppController;
+use App\Http\Controllers\Admin\SlideController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -81,7 +84,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('attributes-data', [ProductAttributeController::class, 'getData'])->name('attributes.data');
 
     Route::resource('deals', ProductsDealController::class);
-    Route::get('deals-data', [ProductsDealController::class, 'getData'])->name('products.data');
+    Route::get('deals-data', [ProductsDealController::class, 'getData'])->name('deals.data');
 
     Route::resource('reviews', ProductsReviewsController::class);
     Route::get('reviews-data', [ProductsReviewsController::class, 'getData'])->name('reviews.data');
@@ -92,10 +95,18 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     | Orders
     |--------------------------------------------------------------------------
     */
+    Route::get('orders/track', [OrderController::class, 'track'])->name('orders.track');
     Route::resource('orders', OrderController::class);
     Route::get('orders-data', [OrderController::class, 'getData'])->name('orders.data');
     Route::post('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
     Route::post('orders/{order}/payment', [OrderController::class, 'updatePaymentStatus'])->name('orders.updatePayment');
+    Route::post('orders/bulk-send-email', [OrderController::class, 'bulkSendEmail'])->name('orders.bulk-email');
+    Route::post('orders/bulk-send-whatsapp', [OrderController::class, 'bulkSendWhatsApp'])->name('orders.bulk-whatsapp');
+
+    // Order Reviews
+    Route::resource('order-reviews', OrderReviewController::class);
+    Route::get('order-reviews-data', [OrderReviewController::class, 'getData'])->name('order-reviews.data');
+    Route::patch('order-reviews/{review}/status', [OrderReviewController::class, 'updateStatus'])->name('order-reviews.status');
 
     /*
     |--------------------------------------------------------------------------
@@ -116,6 +127,15 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
 
     /*
     |--------------------------------------------------------------------------
+    | Cities
+    |--------------------------------------------------------------------------
+    */
+    Route::resource('cities', CityController::class);
+    Route::get('cities-data', [CityController::class, 'getData'])->name('cities.data');
+    Route::post('cities/bulk-delete', [CityController::class, 'bulkDelete'])->name('cities.bulk-delete');
+
+    /*
+    |--------------------------------------------------------------------------
     | Blogs
     |--------------------------------------------------------------------------
     */
@@ -124,12 +144,11 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
 
     Route::resource('blogtags', BlogTagController::class);
     Route::get('blogtags-data', [BlogTagController::class, 'getData'])->name('blogtags.data');
-    Route::get('blogtags-active', [BlogTagsController::class, 'getActiveTags'])->name('blogstags.active');
+    Route::get('blogtags-active', [BlogTagController::class, 'getActiveTags'])->name('blogtags.active');
 
     Route::post('blogs/{blog}', [BlogController::class, 'update'])->middleware('permission:edit.blogs');
     Route::resource('blogs', BlogController::class);
     Route::get('blogs-data', [BlogController::class, 'getData'])->name('blogs.data');
-    Route::post('blogs/{blog}/update', [BlogController::class, 'update']);
 
     // Blogs Comments Routes
     Route::resource('blogscomments', BlogsCommentsController::class);
@@ -161,6 +180,11 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::resource('newsletters', NewsletterController::class);
     Route::get('newsletters-data', [NewsletterController::class, 'getData'])->name('newsletters.data');
 
+    // Slides
+    Route::resource('slides', SlideController::class);
+    Route::get('slides-data', [SlideController::class, 'getData'])->name('slides.data');
+    Route::patch('slides/{slide}/toggle', [SlideController::class, 'toggleStatus'])->name('slides.toggle');
+
     // WhatsApp Chat Routes
     Route::prefix('whatsapp')->name('whatsapp.')->group(function () {
         Route::get('/chat', [WhatsAppController::class, 'index'])->name('chat');
@@ -175,7 +199,10 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('sales-data', [SaleController::class, 'getData'])->name('sales.data');
     Route::patch('sales/{sale}/delivery-status', [SaleController::class, 'updateDeliveryStatus'])->name('sales.delivery-status');
     Route::patch('sales/{sale}/payment-status', [SaleController::class, 'updatePaymentStatus'])->name('sales.payment-status');
-
+    Route::post('sales/bulk-payment-status', [SaleController::class, 'bulkUpdatePaymentStatus'])->name('sales.bulk-payment-status');
+    Route::post('sales/bulk-delivery-status', [SaleController::class, 'bulkUpdateDeliveryStatus'])->name('sales.bulk-delivery-status');
+    Route::post('sales/bulk-review-email', [SaleController::class, 'bulkSendReviewEmail'])->name('sales.bulk-review-email');
+    Route::post('sales/bulk-review-whatsapp', [SaleController::class, 'bulkSendReviewWhatsApp'])->name('sales.bulk-review-whatsapp');
 
     // Sales CRUD
     Route::resource('sales', SaleController::class);
@@ -214,5 +241,15 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
 
     Route::post('contacts/bulk-update-status', [ContactController::class, 'bulkUpdateStatus'])
         ->name('contacts.bulk-update-status');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Wishlists
+    |--------------------------------------------------------------------------
+    */
+    Route::get('wishlist/variants-by-product', [WishlistController::class, 'getVariantsByProduct'])->name('wishlist.variants-by-product');
+    Route::post('wishlist/bulk-delete', [WishlistController::class, 'bulkDelete'])->name('wishlist.bulk-delete');
+    Route::get('wishlist-data', [WishlistController::class, 'getData'])->name('wishlist.data');
+    Route::resource('wishlist', WishlistController::class)->except(['edit', 'update']);
 
 });

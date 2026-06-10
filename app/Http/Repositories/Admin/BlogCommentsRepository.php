@@ -87,6 +87,10 @@ class BlogCommentsRepository
 
     public function store(array $data)
     {
+        if (empty($data['blog_id'])) {
+            throw new \Exception('Blog ID is required.');
+        }
+
         $data['user_id'] = auth()->id();
 
         if (empty($data['status'])) {

@@ -131,9 +131,14 @@ class CouponController extends Controller
         try {
             $coupon = $this->couponRepository->find($id);
 
+            // Format dates as Y-m-d strings for HTML date input
+            $couponData = $coupon->toArray();
+            $couponData['start_date'] = $coupon->start_date?->format('Y-m-d');
+            $couponData['end_date']   = $coupon->end_date?->format('Y-m-d');
+
             return Inertia::render('Admin/Coupons/Edit', [
-                'coupon' => $coupon,
-                'products' => Product::orderBy('name')->get(['id', 'name']),
+                'coupon'     => $couponData,
+                'products'   => Product::orderBy('name')->get(['id', 'name']),
                 'categories' => Category::orderBy('name')->get(['id', 'name']),
             ]);
         } catch (\Exception $e) {

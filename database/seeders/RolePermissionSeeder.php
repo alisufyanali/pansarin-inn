@@ -100,6 +100,12 @@ class RolePermissionSeeder extends Seeder
             'edit.coupons',
             'delete.coupons',
 
+            // cities permissions
+            'view.cities',
+            'create.cities',
+            'edit.cities',
+            'delete.cities',
+
             // Shipping permissions
             'view.shippings',
             'create.shippings',

@@ -1,32 +1,37 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { PlusCircle, ShoppingCart, Clock, TrendingUp, CheckCircle, DollarSign, ShoppingBag } from 'lucide-react';
-import { useEffect } from 'react';
+import { PlusCircle, ShoppingCart, Clock, TrendingUp, CheckCircle, DollarSign, ShoppingBag, Printer, Mail, MessageCircle } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
 import DataTableWrapper from '@/components/DataTableWrapper';
 import { CommonColumns } from '@/components/TableColumns';
 import StatCard from '@/components/StatCard';
-import toast from "react-hot-toast";
+import toast from 'react-hot-toast';
+import axios from 'axios';
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Orders', href: '/admin/orders' },
 ];
+
+interface OrderItem {
+    product_name: string;
+    variant_name: string | null;
+    quantity: number;
+    price: number;
+}
 
 interface Order {
     id: number;
     order_number: string;
     subtotal: number;
     grand_total: number;
-    status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
-    payment_status: 'unpaid' | 'paid' | 'partially_paid' | 'refunded';
+    status: string;
+    payment_status: string;
     payment_method: string | null;
     created_at: string;
-    customer?: {
-        id: number;
-        first_name: string;
-        last_name: string;
-        phone: string;
-    };
+    customer?: { id: number; first_name: string; last_name: string; phone: string };
+    city?: { name: string } | null;
+    items?: OrderItem[];
 }
 
 interface Stats {
@@ -59,13 +64,154 @@ const PAYMENT_COLORS: Record<string, string> = {
 };
 
 export default function Index({ stats, flash }: Props) {
+    const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+    const [allRows, setAllRows] = useState<Order[]>([]);
+    const printRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (flash?.success) toast.success(flash.success);
         if (flash?.error)   toast.error(flash.error);
     }, [flash]);
 
+    const allSelected = allRows.length > 0 && allRows.every(r => selectedIds.has(r.id));
+
+    function toggleAll() {
+        if (allSelected) {
+            setSelectedIds(new Set());
+        } else {
+            setSelectedIds(new Set(allRows.map(r => r.id)));
+        }
+    }
+
+    function toggleRow(id: number) {
+        setSelectedIds(prev => {
+            const next = new Set(prev);
+            next.has(id) ? next.delete(id) : next.add(id);
+            return next;
+        });
+    }
+
+    function handlePrint() {
+        const selected = allRows.filter(r => selectedIds.has(r.id));
+        if (selected.length === 0) {
+            toast.error('Please select at least one order to print.');
+            return;
+        }
+
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) return;
+
+        const rows = selected.map(order => {
+            const items = (order.items ?? []);
+            const itemRows = items.length > 0
+                ? items.map((item, i) => `
+                    <tr>
+                        ${i === 0 ? `
+                            <td rowspan="${items.length}" style="border:1px solid #ccc;padding:8px;vertical-align:middle;text-align:center;">${order.order_number}</td>
+                            <td rowspan="${items.length}" style="border:1px solid #ccc;padding:8px;vertical-align:middle;">${order.customer?.first_name ?? ''} ${order.customer?.last_name ?? ''}</td>
+                            <td rowspan="${items.length}" style="border:1px solid #ccc;padding:8px;vertical-align:middle;">${order.customer?.phone ?? ''}</td>
+                            <td rowspan="${items.length}" style="border:1px solid #ccc;padding:8px;vertical-align:middle;">${order.city?.name ?? ''}</td>
+                        ` : ''}
+                        <td style="border:1px solid #ccc;padding:6px;">
+                            <table style="width:100%;border-collapse:collapse;">
+                                <tr>
+                                    <td style="border:1px solid #ddd;padding:4px;font-size:12px;">${item.product_name}</td>
+                                    <td style="border:1px solid #ddd;padding:4px;font-size:12px;white-space:nowrap;">${item.variant_name ?? ''}</td>
+                                    <td style="border:1px solid #ddd;padding:4px;font-size:12px;white-space:nowrap;">${item.quantity} qty</td>
+                                </tr>
+                            </table>
+                        </td>
+                        ${i === 0 ? `<td rowspan="${items.length}" style="border:1px solid #ccc;padding:8px;vertical-align:middle;text-align:right;font-weight:bold;">PKR ${Number(order.grand_total).toLocaleString()}</td>` : ''}
+                    </tr>
+                `).join('')
+                : `<tr>
+                    <td style="border:1px solid #ccc;padding:8px;text-align:center;">${order.order_number}</td>
+                    <td style="border:1px solid #ccc;padding:8px;">${order.customer?.first_name ?? ''} ${order.customer?.last_name ?? ''}</td>
+                    <td style="border:1px solid #ccc;padding:8px;">${order.customer?.phone ?? ''}</td>
+                    <td style="border:1px solid #ccc;padding:8px;">${order.city?.name ?? ''}</td>
+                    <td style="border:1px solid #ccc;padding:8px;">—</td>
+                    <td style="border:1px solid #ccc;padding:8px;text-align:right;font-weight:bold;">PKR ${Number(order.grand_total).toLocaleString()}</td>
+                   </tr>`;
+            return itemRows;
+        }).join('');
+
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Orders Print</title>
+                <style>
+                    body { font-family: Arial, sans-serif; font-size: 13px; margin: 20px; }
+                    h2 { text-align: center; margin-bottom: 16px; }
+                    table { width: 100%; border-collapse: collapse; }
+                    th { background: #f3f4f6; border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 13px; }
+                    td { border: 1px solid #ccc; padding: 8px; vertical-align: top; font-size: 13px; }
+                    @media print { body { margin: 10px; } }
+                </style>
+            </head>
+            <body>
+                <h2>Orders — ${new Date().toLocaleDateString()}</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:80px">Order #</th>
+                            <th>Name</th>
+                            <th>Phone</th>
+                            <th>City</th>
+                            <th>Product Detail</th>
+                            <th style="width:90px;text-align:right">Total Price</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+                <script>window.onload = () => { window.print(); window.close(); }<\/script>
+            </body>
+            </html>
+        `);
+        printWindow.document.close();
+    }
+
+    async function handleBulkEmail() {
+        if (selectedIds.size === 0) { toast.error('Please select at least one order.'); return; }
+        try {
+            const res = await axios.post('/admin/orders/bulk-send-email', { ids: [...selectedIds] });
+            toast.success(`Email queued for ${res.data.sent} order(s).`);
+        } catch {
+            toast.error('Failed to send emails.');
+        }
+    }
+
+    async function handleBulkWhatsApp() {
+        if (selectedIds.size === 0) { toast.error('Please select at least one order.'); return; }
+        try {
+            const res = await axios.post('/admin/orders/bulk-send-whatsapp', { ids: [...selectedIds] });
+            toast.success(`WhatsApp queued for ${res.data.sent} order(s).`);
+        } catch {
+            toast.error('Failed to send WhatsApp messages.');
+        }
+    }
+
     const columns = [
+        {
+            name: (
+                <input
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={toggleAll}
+                    className="w-4 h-4 rounded border-gray-300 text-blue-600 cursor-pointer"
+                />
+            ),
+            cell: (row: Order) => (
+                <input
+                    type="checkbox"
+                    checked={selectedIds.has(row.id)}
+                    onChange={() => toggleRow(row.id)}
+                    className="w-4 h-4 rounded border-gray-300 text-blue-600 cursor-pointer"
+                />
+            ),
+            width: '50px',
+            ignoreRowClick: true,
+        },
         CommonColumns.id(),
         {
             name: 'Order Number',
@@ -96,22 +242,17 @@ export default function Index({ stats, flash }: Props) {
             grow: 1.5,
         },
         {
-            name: 'Total Amount',
+            name: 'Total',
             selector: (row: Order) => row.grand_total,
             sortable: true,
             cell: (row: Order) => (
-                <div className="flex flex-col">
-                    <span className="font-bold text-gray-900 dark:text-white">
-                        PKR {Number(row.grand_total ?? 0).toFixed(2)}
-                    </span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                        Subtotal: PKR {Number(row.subtotal ?? 0).toFixed(2)}
-                    </span>
-                </div>
+                <span className="font-bold text-gray-900 dark:text-white">
+                    PKR {Number(row.grand_total ?? 0).toLocaleString()}
+                </span>
             ),
         },
         {
-            name: 'Order Status',
+            name: 'Status',
             selector: (row: Order) => row.status,
             sortable: true,
             cell: (row: Order) => (
@@ -135,20 +276,13 @@ export default function Index({ stats, flash }: Props) {
                 </div>
             ),
         },
-        CommonColumns.createdAt(false),
-        CommonColumns.actions({
-            baseUrl: '/admin/orders',
-            canEdit: true,
-            canDelete: true,
-            showView: true,
-        }),
+        CommonColumns.actions({ baseUrl: '/admin/orders', canEdit: true, canDelete: true, showView: true }),
         {
             name: 'Sale',
             cell: (row: Order) => (
                 <Link
                     href={`/admin/sales/create-from-order/${row.id}`}
                     className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition whitespace-nowrap"
-                    title="Create Sale from this Order"
                 >
                     <ShoppingBag className="w-3.5 h-3.5" />
                     Sale
@@ -160,16 +294,14 @@ export default function Index({ stats, flash }: Props) {
     ];
 
     const csvHeaders = [
-        { label: 'ID',              key: 'id' },
-        { label: 'Order Number',    key: 'order_number' },
-        { label: 'Customer',        key: 'customer.first_name' },
-        { label: 'Phone',           key: 'customer.phone' },
-        { label: 'Subtotal',        key: 'subtotal' },
-        { label: 'Grand Total',     key: 'grand_total' },
-        { label: 'Status',          key: 'status' },
-        { label: 'Payment Status',  key: 'payment_status' },
-        { label: 'Payment Method',  key: 'payment_method' },
-        { label: 'Created At',      key: 'created_at' },
+        { label: 'ID',             key: 'id' },
+        { label: 'Order Number',   key: 'order_number' },
+        { label: 'Customer',       key: 'customer.first_name' },
+        { label: 'Phone',          key: 'customer.phone' },
+        { label: 'Grand Total',    key: 'grand_total' },
+        { label: 'Status',         key: 'status' },
+        { label: 'Payment Status', key: 'payment_status' },
+        { label: 'Created At',     key: 'created_at' },
     ];
 
     return (
@@ -185,22 +317,49 @@ export default function Index({ stats, flash }: Props) {
                             Manage customer orders and track deliveries
                         </p>
                     </div>
-                    <Link
-                        href="/admin/orders/create"
-                        className="inline-flex items-center gap-3 px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
-                    >
-                        <PlusCircle className="w-5 h-5" />
-                        Create New Order
-                    </Link>
+                    <div className="flex items-center gap-3 flex-wrap">
+                        {selectedIds.size > 0 && (
+                            <>
+                                <button
+                                    onClick={handlePrint}
+                                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-800 hover:bg-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 text-white rounded-xl font-semibold transition-all shadow-md"
+                                >
+                                    <Printer className="w-4 h-4" />
+                                    Print ({selectedIds.size})
+                                </button>
+                                <button
+                                    onClick={handleBulkEmail}
+                                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-all shadow-md"
+                                >
+                                    <Mail className="w-4 h-4" />
+                                    Email ({selectedIds.size})
+                                </button>
+                                <button
+                                    onClick={handleBulkWhatsApp}
+                                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold transition-all shadow-md"
+                                >
+                                    <MessageCircle className="w-4 h-4" />
+                                    WhatsApp ({selectedIds.size})
+                                </button>
+                            </>
+                        )}
+                        <Link
+                            href="/admin/orders/create"
+                            className="inline-flex items-center gap-3 px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
+                        >
+                            <PlusCircle className="w-5 h-5" />
+                            Create New Order
+                        </Link>
+                    </div>
                 </div>
 
                 {/* Stats */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                    <StatCard title="Total Orders" value={stats.total}                                        color="blue"   icon={ShoppingCart} />
-                    <StatCard title="Pending"      value={stats.pending}                                     color="amber"  icon={Clock} />
-                    <StatCard title="Processing"   value={stats.processing}                                  color="purple" icon={TrendingUp} />
-                    <StatCard title="Delivered"    value={stats.delivered}                                   color="emerald" icon={CheckCircle} />
-                    <StatCard title="Revenue"      value={`PKR ${Number(stats.totalRevenue ?? 0).toFixed(0)}`} color="amber"  icon={DollarSign} />
+                    <StatCard title="Total Orders" value={stats.total}     color="blue"    icon={ShoppingCart} />
+                    <StatCard title="Pending"      value={stats.pending}   color="amber"   icon={Clock} />
+                    <StatCard title="Processing"   value={stats.processing} color="purple" icon={TrendingUp} />
+                    <StatCard title="Delivered"    value={stats.delivered} color="emerald" icon={CheckCircle} />
+                    <StatCard title="Revenue"      value={`PKR ${Number(stats.totalRevenue ?? 0).toLocaleString()}`} color="amber" icon={DollarSign} />
                 </div>
 
                 {/* DataTable */}
@@ -209,7 +368,11 @@ export default function Index({ stats, flash }: Props) {
                         fetchUrl="/admin/orders-data"
                         columns={columns}
                         csvHeaders={csvHeaders}
-                        searchableKeys={['order_number', 'customer.first_name', 'customer.last_name', 'status', 'payment_status']}
+                        searchableKeys={['order_number', 'customer.first_name', 'status']}
+                        onDataLoaded={(rows: Order[]) => {
+                            setAllRows(rows);
+                            setSelectedIds(new Set());
+                        }}
                     />
                 </div>
             </div>

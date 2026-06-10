@@ -9,12 +9,11 @@ class City extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['name', 'shipping_charges', 'state_id'];
+    protected $fillable = ['name', 'shipping_charges', 'province'];
 
-    public function state()
-    {
-        return $this->belongsTo(State::class);
-    }
+    protected $casts = [
+        'shipping_charges' => 'decimal:2',
+    ];
 
     public function customers()
     {

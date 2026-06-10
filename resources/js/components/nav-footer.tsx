@@ -51,13 +51,10 @@ export function NavFooter({
                                         >
                                             {item.icon && <item.icon />}
                                             <span>{item.title}</span>
-
-                                            <SidebarMenuAction className="ml-auto">
-                                                <ChevronRight
-                                                    className={`transition-transform ${isExpanded ? 'rotate-90' : ''
-                                                        }`}
-                                                />
-                                            </SidebarMenuAction>
+                                            <ChevronRight
+                                                className={`ml-auto transition-transform ${isExpanded ? 'rotate-90' : ''
+                                                    }`}
+                                            />
                                         </SidebarMenuButton>
 
                                         {isExpanded && (
