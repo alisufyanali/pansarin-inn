@@ -38,14 +38,14 @@ class SlideController extends Controller
     public function store(SlideRequest $request)
     {
         try {
-            $data = $request->except('image');
+            $data = $request->only(['type', 'title', 'subtitle', 'btn_text', 'btn_url', 'sort_order']);
             $data['is_active']  = $request->boolean('is_active', true);
-            $data['sort_order'] = $request->input('sort_order', 0);
+            $data['sort_order'] = (int) $request->input('sort_order', 0);
             $this->repo->store($data, $request->file('image'));
             return to_route('admin.slides.index')->with('success', 'Slide created successfully!');
         } catch (\Exception $e) {
             Log::error('Slide store: '.$e->getMessage());
-            return back()->withInput()->with('error', 'Failed to create slide.');
+            return back()->withInput()->with('error', 'Failed to create slide: ' . $e->getMessage());
         }
     }
 
@@ -66,14 +66,14 @@ class SlideController extends Controller
     public function update(SlideRequest $request, string $id)
     {
         try {
-            $data = $request->except('image');
+            $data = $request->only(['type', 'title', 'subtitle', 'btn_text', 'btn_url', 'sort_order']);
             $data['is_active']  = $request->boolean('is_active', true);
-            $data['sort_order'] = $request->input('sort_order', 0);
+            $data['sort_order'] = (int) $request->input('sort_order', 0);
             $this->repo->update($id, $data, $request->file('image'));
             return to_route('admin.slides.index')->with('success', 'Slide updated successfully!');
         } catch (\Exception $e) {
             Log::error('Slide update: '.$e->getMessage());
-            return back()->withInput()->with('error', 'Failed to update slide.');
+            return back()->withInput()->with('error', 'Failed to update slide: ' . $e->getMessage());
         }
     }
 

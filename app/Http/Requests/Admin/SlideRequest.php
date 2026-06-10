@@ -17,8 +17,8 @@ class SlideRequest extends FormRequest
             'btn_text'   => 'nullable|string|max:100',
             'btn_url'    => 'nullable|string|max:500',
             'image'      => 'nullable|image|max:5120',
-            'sort_order' => 'integer|min:0',
-            'is_active'  => 'boolean',
+            'sort_order' => 'nullable|integer|min:0',
+            'is_active'  => 'nullable|boolean',
         ];
     }
 }
