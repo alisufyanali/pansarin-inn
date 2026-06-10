@@ -35,6 +35,9 @@ class DatabaseSeeder extends Seeder
             UiSettingSeeder::class,
             WhatsAppMediaSeeder::class,
             WhatsAppSeeder::class,
+            CountrySeeder::class,
+            StateSeeder::class,
+            CitySeeder::class,
         ]);
     }
 }
