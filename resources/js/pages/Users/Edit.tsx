@@ -24,7 +24,7 @@ export default function UserEdit({ user, roles, userRoles = [] }: { user: { id: 
         email: user.email || '',
         password: user.password ?? '',
         password_confirmation: user.password_confirmation ?? '',
-        role: (userRoles && userRoles[0]) ? userRoles[0].toLowerCase() : '',
+        role: (userRoles && userRoles[0]) ? userRoles[0] : '',
     });
 
     function submit(e: { preventDefault: () => void; }) {
@@ -117,7 +117,7 @@ export default function UserEdit({ user, roles, userRoles = [] }: { user: { id: 
                                 >
                                     <option value="">Select a role</option>
                                     {roles.map((role) => (
-                                        <option key={role.id} value={role.name.toLowerCase()} className="capitalize">{role.name}</option>
+                                        <option key={role.id} value={role.name} className="capitalize">{role.name}</option>
                                     ))}
                                 </select>
                                 {errors.role && <div className="text-red-500 text-sm mt-1">{errors.role}</div>}

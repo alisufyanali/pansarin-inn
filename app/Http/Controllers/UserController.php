@@ -87,8 +87,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
-            'roles' => 'required|array',
-            'roles.*' => 'string|exists:roles,name',
+            'role' => 'required|string|exists:roles,name',
         ]);
 
         // Create user
@@ -101,8 +100,8 @@ class UserController extends Controller
             'status' => $request->status ?? 1,
         ]);
 
-        // Assign multiple roles via Spatie
-        $user->syncRoles($request->roles);
+        // Assign single role via Spatie
+        $user->syncRoles([$request->role]);
 
         return to_route('admin.users.index')->with('success', 'User successfully created!');
     }
@@ -136,8 +135,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,'.$id,
             'password' => 'nullable|string|min:8|confirmed',
-            'roles' => 'required|array',
-            'roles.*' => 'string|exists:roles,name',
+            'role' => 'required|string|exists:roles,name',
         ]);
 
         $user = User::findOrFail($id);
@@ -153,8 +151,8 @@ class UserController extends Controller
 
         $user->save();
 
-        // Update roles
-        $user->syncRoles($request->roles);
+        // Update role
+        $user->syncRoles([$request->role]);
 
         return to_route('admin.users.index')->with('success', 'User successfully updated!');
     }
