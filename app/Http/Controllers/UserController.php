@@ -161,25 +161,6 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
-<<<<<<< HEAD
-            'role' => 'required|string|exists:roles,name',
-        ]);
-
-        // Create user
-        $user = User::create([
-            'name'     => $request->name,
-            'email'    => $request->email,
-            'password' => Hash::make($request->password),
-            'phone'    => $request->phone ?? null,
-            'username' => $request->filled('username')
-                            ? $request->username
-                            : \Illuminate\Support\Str::slug($request->name) . '_' . \Illuminate\Support\Str::random(4),
-            'status'   => $request->status ?? 1,
-        ]);
-
-        // Assign single role via Spatie
-        $user->syncRoles([$request->role]);
-=======
             'roles' => 'required|array|min:1',
             'referred_by' => 'nullable|exists:users,id',
         ]);
@@ -191,15 +172,14 @@ class UserController extends Controller
                     'name' => $request->name,
                     'email' => $request->email,
                     'phone' => $request->phone,
-                    'password' => \Hash::make($request->password),
-                    'username' => $request->username ?? \Str::slug($request->name) . '-' . rand(10, 99),
+                    'password' => Hash::make($request->password),
+                    'username' => $request->username ?? Str::slug($request->name) . '-' . rand(10, 99),
                     'status' => $request->status ?? 1,
-                    'referred_by' => $request->referred_by, 
+                    'referred_by' => $request->referred_by,
                 ]);
 
                 $user->syncRoles($request->roles);
                 $selectedRoles = array_map('strtolower', $request->roles);
->>>>>>> origin/danish-branch
 
                 // 2. Customer & Financials (Wallet/Points)
                 if (in_array('customer', $selectedRoles) || in_array('affiliate', $selectedRoles)) {
@@ -218,21 +198,21 @@ class UserController extends Controller
                 if (in_array('affiliate', $selectedRoles)) {
                     Affiliate::create([
                         'user_id'         => $user->id,
-                        'affiliate_code'  => strtoupper(\Str::random(10)),
+                        'affiliate_code'  => strtoupper(Str::random(10)),
                         'status'          => 'active',
                         'commission_rate' => 5.00,
                         'joined_at'       => now(),
                     ]);
                 }
 
-                // 4. Referral Tracking (Direct Referral Logic)
+                // 4. Referral Tracking
                 if ($user->referred_by) {
                     $referrerAffiliate = Affiliate::where('user_id', $user->referred_by)->first();
 
                     if ($referrerAffiliate) {
                         Referral::create([
                             'affiliate_id'             => $referrerAffiliate->id,
-                            'customer_id'              => $user->id, 
+                            'customer_id'              => $user->id,
                             'order_amount'             => 0,
                             'commission_rate_snapshot' => $referrerAffiliate->commission_rate,
                             'commission_amount'        => 0,
@@ -243,7 +223,7 @@ class UserController extends Controller
                     }
                 }
 
-                return redirect()->route('admin.users.index')->with('success', 'User, registered successfully!');
+                return redirect()->route('admin.users.index')->with('success', 'User registered successfully!');
             });
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Registration failed: ' . $e->getMessage()]);
@@ -292,11 +272,7 @@ class UserController extends Controller
             'email'    => 'required|string|email|max:255|unique:users,email,' . $user->id,
             'phone'    => 'nullable|string|max:20',
             'password' => 'nullable|string|min:8|confirmed',
-<<<<<<< HEAD
-            'role' => 'required|string|exists:roles,name',
-=======
             'roles'    => 'required|array',
->>>>>>> origin/danish-branch
         ]);
 
         $user->update($request->only('name', 'username', 'email', 'phone'));
@@ -305,15 +281,8 @@ class UserController extends Controller
             $user->update(['password' => Hash::make($request->password)]);
         }
 
-<<<<<<< HEAD
-        $user->save();
-
-        // Update role
-        $user->syncRoles([$request->role]);
-=======
         $user->syncRoles($request->roles);
         $selectedRoles = array_map('strtolower', $request->roles);
->>>>>>> origin/danish-branch
 
         // Customer & Wallet Logic (Check on Update)
         if (in_array('customer', $selectedRoles) || in_array('affiliate', $selectedRoles)) {

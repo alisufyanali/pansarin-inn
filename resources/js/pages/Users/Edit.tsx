@@ -39,16 +39,10 @@ export default function UserEdit({ user, roles, userRoles = [] }: Props) {
         name: user.name || '',
         username: user.username || '',
         email: user.email || '',
-<<<<<<< HEAD
-        password: user.password ?? '',
-        password_confirmation: user.password_confirmation ?? '',
-        role: (userRoles && userRoles[0]) ? userRoles[0] : '',
-=======
         phone: user.phone || '',
         password: '',
         password_confirmation: '',
         roles: userRoles,
->>>>>>> origin/danish-branch
     });
 
     const handleRoleChange = (roleName: string) => {
@@ -161,9 +155,6 @@ export default function UserEdit({ user, roles, userRoles = [] }: Props) {
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Assign Roles</label>
                                 <div className="grid grid-cols-2 gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700">
                                     {roles.map((role) => (
-<<<<<<< HEAD
-                                        <option key={role.id} value={role.name} className="capitalize">{role.name}</option>
-=======
                                         <label key={role.id} className="flex items-center gap-2 cursor-pointer">
                                             <input
                                                 type="checkbox"
@@ -173,7 +164,6 @@ export default function UserEdit({ user, roles, userRoles = [] }: Props) {
                                             />
                                             <span className="text-sm text-gray-700 dark:text-gray-300 capitalize">{role.name}</span>
                                         </label>
->>>>>>> origin/danish-branch
                                     ))}
                                 </div>
                                 {errors.roles && <div className="text-red-500 text-sm mt-1">{errors.roles}</div>}
