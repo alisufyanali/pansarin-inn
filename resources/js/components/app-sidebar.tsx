@@ -96,9 +96,13 @@ export function AppSidebar() {
         mainNavItems.push(userManagementSection);
     }
 
-    // Affiliate Section — shown only if user has affiliate permissions
+    // Affiliate Section
+    // isAffiliate: user has view.affiliates (affiliate role users)
+    // isAdmin: user can manage affiliates — only super-admin / admin (manage.affiliates permission)
+    // managers, customers, and regular users see nothing
     const affiliateSection = AffiliateSection({
-        isAdmin: permissions.hasAnyAffiliatePerm || permissions.hasAnyUserPerm,
+        isAffiliate: permissions.canViewAffiliate,
+        isAdmin: permissions.canManageAffiliate,
     });
     if (affiliateSection) {
         mainNavItems.push(affiliateSection);

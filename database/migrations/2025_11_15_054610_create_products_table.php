@@ -59,7 +59,7 @@ return new class extends Migration
             $table->text('meta_keywords')->nullable();
             $table->text('schema_markup')->nullable();
             // Social Fields
-            $table->string('social_image_icon')->nullable();
+            $table->string('social_image')->nullable();
             $table->text('social_description')->nullable();
 
             $table->timestamps();

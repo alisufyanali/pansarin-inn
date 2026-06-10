@@ -191,8 +191,8 @@ class RolePermissionSeeder extends Seeder
             // Reports
             'view.reports', 'view.analytics',
 
-            // Affiliates (view only)
-            'view.affiliates', 'view.payout.requests',
+            // Affiliates (view only — admin can see affiliate management panel)
+            'view.payout.requests',
         ]);
 
         // 4. Affiliate — limited to their own area
@@ -204,6 +204,7 @@ class RolePermissionSeeder extends Seeder
             'view.payout.requests',
             'view.affiliate.settings',
             'update.affiliate.settings',
+            'view.affiliates',   // lets the sidebar show for affiliate users (their own data only)
             'view.blogs',
             'view.deals',
         ]);
