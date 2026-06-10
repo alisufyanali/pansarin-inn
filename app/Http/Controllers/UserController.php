@@ -92,12 +92,14 @@ class UserController extends Controller
 
         // Create user
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
+            'name'     => $request->name,
+            'email'    => $request->email,
             'password' => Hash::make($request->password),
-            'phone' => $request->phone,
-            'username' => $request->username ?? null,
-            'status' => $request->status ?? 1,
+            'phone'    => $request->phone ?? null,
+            'username' => $request->filled('username')
+                            ? $request->username
+                            : \Illuminate\Support\Str::slug($request->name) . '_' . \Illuminate\Support\Str::random(4),
+            'status'   => $request->status ?? 1,
         ]);
 
         // Assign single role via Spatie
