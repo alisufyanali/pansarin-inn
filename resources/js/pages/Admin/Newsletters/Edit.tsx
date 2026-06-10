@@ -1,23 +1,33 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
-import NewsletterForm, { type NewsletterFormData } from './Form';
+import NewsletterForm from './Form';
 
-interface Props {
-    newsletter: NewsletterFormData & { id: number };
+interface Newsletter {
+    id: number;
+    email: string;
+    name?: string;
+    status: 'active' | 'unsubscribed' | 'bounced';
+    source?: string;
+    verified_at?: string | null;
 }
 
-export default function Edit({ newsletter }: Props) {
-    const breadcrumbs: BreadcrumbItem[] = [
-        { title: 'Newsletter Subscribers', href: '/admin/newsletters' },
-        { title: newsletter.email, href: '#' },
-        { title: 'Edit', href: '#' },
-    ];
+interface Props {
+    newsletter: Newsletter;
+}
 
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Newsletter', href: '/admin/newsletters' },
+    { title: 'Edit Subscriber', href: '#' },
+];
+
+export default function Edit({ newsletter }: Props) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title={`Edit ${newsletter.email}`} />
-            <NewsletterForm newsletter={newsletter} isEdit={true} />
+            <Head title="Edit Newsletter Subscriber" />
+            <div className="p-4">
+                <NewsletterForm newsletter={newsletter} isEdit={true} />
+            </div>
         </AppLayout>
     );
 }

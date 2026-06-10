@@ -1,161 +1,175 @@
 import React from 'react';
-import { useForm } from '@inertiajs/react';
-import { ArrowLeft, Check, Mail, User, Shield, Tag } from 'lucide-react';
-import { Link } from '@inertiajs/react';
+import { useForm, Link } from '@inertiajs/react';
+import { ArrowLeft, Save, Mail, User, Globe } from 'lucide-react';
 
-export type NewsletterFormData = {
-    email: string;
+interface Newsletter {
+    id?: number;
+    email?: string;
     name?: string;
-    status: 'active' | 'unsubscribed' | 'bounced';
+    status?: 'active' | 'unsubscribed' | 'bounced';
     source?: string;
-};
+    verified_at?: string | null;
+}
 
-interface NewsletterFormProps {
-    newsletter?: NewsletterFormData & { id?: number };
+interface FormProps {
+    newsletter?: Newsletter;
     isEdit?: boolean;
 }
 
-export default function NewsletterForm({ newsletter, isEdit = false }: NewsletterFormProps) {
-    const { data, setData, errors, post, put, processing } = useForm<NewsletterFormData>({
-        email: newsletter?.email || '',
-        name: newsletter?.name || '',
-        status: newsletter?.status || 'active',
-        source: newsletter?.source || '',
+export default function NewsletterForm({ newsletter, isEdit = false }: FormProps) {
+    const { data, setData, post, put, processing, errors } = useForm({
+        email: newsletter?.email ?? '',
+        name: newsletter?.name ?? '',
+        status: newsletter?.status ?? 'active',
+        source: newsletter?.source ?? 'admin',
     });
 
-    function submit(e: React.FormEvent<HTMLFormElement>) {
+    const submit = (e: React.FormEvent) => {
         e.preventDefault();
         if (isEdit && newsletter?.id) {
             put(`/admin/newsletters/${newsletter.id}`);
         } else {
             post('/admin/newsletters');
         }
-    }
+    };
 
     return (
-        <div className="p-3">
-            <div className="flex items-center gap-2 mb-4">
+        <div className="max-w-2xl mx-auto">
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-6">
                 <Link
                     href="/admin/newsletters"
-                    className="inline-flex items-center justify-center rounded-md bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-white w-10 h-10 transition-colors"
+                    className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 transition"
                 >
                     <ArrowLeft className="w-5 h-5" />
                 </Link>
-            </div>
-
-            <div className="py-6">
-                <div className="max-w-4xl mx-auto bg-white dark:bg-gray-900 rounded-xl p-6 shadow-lg">
-                    <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2 text-center">
-                        {isEdit ? 'Edit Newsletter Subscriber' : 'Create New Subscriber'}
-                    </h2>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 text-center">
-                        {isEdit ? 'Update the subscriber details below.' : 'Fill the form below to add a new subscriber.'}
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                        {isEdit ? 'Edit Subscriber' : 'Add Subscriber'}
+                    </h1>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                        {isEdit ? 'Update subscriber details' : 'Add a new newsletter subscriber'}
                     </p>
-
-                    <form onSubmit={submit} className="space-y-6">
-                        {/* Basic Information Section */}
-                        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6 space-y-4">
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2 mb-4">
-                                <Mail className="w-5 h-5" />
-                                Basic Information
-                            </h3>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {/* Email */}
-                                <div>
-                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                        Email Address *
-                                    </label>
-                                    <input
-                                        type="email"
-                                        value={data.email}
-                                        onChange={e => setData('email', e.target.value)}
-                                        className="w-full px-4 py-2 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
-                                        placeholder="subscriber@example.com"
-                                        required
-                                    />
-                                    {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
-                                </div>
-
-                                {/* Name */}
-                                <div>
-                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                        Name (Optional)
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={data.name}
-                                        onChange={e => setData('name', e.target.value)}
-                                        className="w-full px-4 py-2 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
-                                        placeholder="John Doe"
-                                    />
-                                    {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {/* Status */}
-                                <div>
-                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                        Status *
-                                    </label>
-                                    <select
-                                        value={data.status}
-                                        onChange={e => setData('status', e.target.value as any)}
-                                        className="w-full px-4 py-2 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
-                                        required
-                                    >
-                                        <option value="active">Active</option>
-                                        <option value="unsubscribed">Unsubscribed</option>
-                                        <option value="bounced">Bounced</option>
-                                    </select>
-                                    {errors.status && <p className="text-red-500 text-xs mt-1">{errors.status}</p>}
-                                </div>
-
-                                {/* Source */}
-                                <div>
-                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                        Source
-                                    </label>
-                                    <select
-                                        value={data.source}
-                                        onChange={e => setData('source', e.target.value)}
-                                        className="w-full px-4 py-2 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
-                                    >
-                                        <option value="">Select Source</option>
-                                        <option value="website">Website</option>
-                                        <option value="popup">Popup</option>
-                                        <option value="footer">Footer</option>
-                                        <option value="landing_page">Landing Page</option>
-                                        <option value="manual">Manual Entry</option>
-                                    </select>
-                                    {errors.source && <p className="text-red-500 text-xs mt-1">{errors.source}</p>}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Buttons */}
-                        <div className="flex justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
-                            <Link
-                                href="/admin/newsletters"
-                                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 font-medium transition"
-                            >
-                                <ArrowLeft size={16} />
-                                Cancel
-                            </Link>
-
-                            <button
-                                type="submit"
-                                disabled={processing}
-                                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium transition"
-                            >
-                                <Check size={16} />
-                                {isEdit ? 'Update Subscriber' : 'Create Subscriber'}
-                            </button>
-                        </div>
-                    </form>
                 </div>
             </div>
+
+            <form onSubmit={submit}>
+                <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6 space-y-5">
+
+                    {/* Email */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                            Email Address <span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative">
+                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input
+                                type="email"
+                                value={data.email}
+                                onChange={e => setData('email', e.target.value)}
+                                disabled={isEdit}
+                                placeholder="subscriber@example.com"
+                                className={`w-full pl-9 pr-4 py-2.5 rounded-lg border text-sm
+                                    ${errors.email ? 'border-red-400' : 'border-gray-300 dark:border-gray-600'}
+                                    ${isEdit ? 'bg-gray-50 dark:bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-white dark:bg-gray-800'}
+                                    text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition`}
+                            />
+                        </div>
+                        {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
+                        {isEdit && <p className="mt-1 text-xs text-gray-400">Email cannot be changed after creation.</p>}
+                    </div>
+
+                    {/* Name */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                            Name <span className="text-gray-400 text-xs">(optional)</span>
+                        </label>
+                        <div className="relative">
+                            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input
+                                type="text"
+                                value={data.name}
+                                onChange={e => setData('name', e.target.value)}
+                                placeholder="Subscriber name"
+                                className={`w-full pl-9 pr-4 py-2.5 rounded-lg border text-sm
+                                    ${errors.name ? 'border-red-400' : 'border-gray-300 dark:border-gray-600'}
+                                    bg-white dark:bg-gray-800 text-gray-900 dark:text-white
+                                    focus:ring-2 focus:ring-blue-500 outline-none transition`}
+                            />
+                        </div>
+                        {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name}</p>}
+                    </div>
+
+                    {/* Status */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                            Status <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                            value={data.status}
+                            onChange={e => setData('status', e.target.value as 'active' | 'unsubscribed' | 'bounced')}
+                            className={`w-full px-4 py-2.5 rounded-lg border text-sm
+                                ${errors.status ? 'border-red-400' : 'border-gray-300 dark:border-gray-600'}
+                                bg-white dark:bg-gray-800 text-gray-900 dark:text-white
+                                focus:ring-2 focus:ring-blue-500 outline-none transition`}
+                        >
+                            <option value="active">Active</option>
+                            <option value="unsubscribed">Unsubscribed</option>
+                            <option value="bounced">Bounced</option>
+                        </select>
+                        {errors.status && <p className="mt-1 text-xs text-red-500">{errors.status}</p>}
+                    </div>
+
+                    {/* Source */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                            Source <span className="text-gray-400 text-xs">(optional)</span>
+                        </label>
+                        <div className="relative">
+                            <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input
+                                type="text"
+                                value={data.source}
+                                onChange={e => setData('source', e.target.value)}
+                                placeholder="e.g. admin, website, popup"
+                                className={`w-full pl-9 pr-4 py-2.5 rounded-lg border text-sm
+                                    ${errors.source ? 'border-red-400' : 'border-gray-300 dark:border-gray-600'}
+                                    bg-white dark:bg-gray-800 text-gray-900 dark:text-white
+                                    focus:ring-2 focus:ring-blue-500 outline-none transition`}
+                            />
+                        </div>
+                        {errors.source && <p className="mt-1 text-xs text-red-500">{errors.source}</p>}
+                    </div>
+
+                    {/* Info: Auto-verified */}
+                    {!isEdit && (
+                        <div className="flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
+                            <span className="text-blue-600 dark:text-blue-400 text-xs mt-0.5">ℹ️</span>
+                            <p className="text-xs text-blue-700 dark:text-blue-300">
+                                Subscribers added by admin are automatically marked as <strong>verified</strong>.
+                            </p>
+                        </div>
+                    )}
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-3 mt-6">
+                    <button
+                        type="submit"
+                        disabled={processing}
+                        className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg text-sm font-medium transition"
+                    >
+                        <Save className="w-4 h-4" />
+                        {processing ? 'Saving...' : (isEdit ? 'Update Subscriber' : 'Add Subscriber')}
+                    </button>
+                    <Link
+                        href="/admin/newsletters"
+                        className="px-6 py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium transition"
+                    >
+                        Cancel
+                    </Link>
+                </div>
+            </form>
         </div>
     );
 }

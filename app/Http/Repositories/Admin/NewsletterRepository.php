@@ -77,10 +77,17 @@ class NewsletterRepository
 
     /**
      * Create new newsletter subscriber
+     * Admin-added subscribers are auto-verified
      */
     public function store(array $data)
     {
         try {
+            // Admin se add kiye subscribers ko auto-verify karo
+            if (!isset($data['verified_at'])) {
+                $data['verified_at'] = now();
+                $data['verification_token'] = null;
+            }
+
             return Newsletter::create($data);
         } catch (\Exception $e) {
             Log::error('Newsletter creation error: '.$e->getMessage());

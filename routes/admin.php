@@ -179,6 +179,8 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
 
     Route::resource('newsletters', NewsletterController::class);
     Route::get('newsletters-data', [NewsletterController::class, 'getData'])->name('newsletters.data');
+    Route::patch('newsletters/{newsletter}/status', [NewsletterController::class, 'updateStatus'])->name('newsletters.status');
+    Route::post('newsletters/bulk-delete', [NewsletterController::class, 'bulkDelete'])->name('newsletters.bulk-delete');
 
     // Slides
     Route::resource('slides', SlideController::class);
