@@ -1,15 +1,15 @@
 <?php
+use App\Http\Controllers\Admin\Settings\GeneralSettingController;
+use App\Http\Controllers\Admin\Settings\UiSettingController;
+use App\Http\Controllers\Admin\Settings\BusinessSettingController;
+use App\Http\Controllers\Admin\PageController;
 
-use App\Http\Controllers\Admin\Frontend\BusinessSettingController;
-use App\Http\Controllers\Admin\Frontend\GeneralSettingController;
-use App\Http\Controllers\Admin\Frontend\PageController;
-use App\Http\Controllers\Admin\Frontend\UiSettingController;
 use App\Http\Controllers\Api\FrontendController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/index', [FrontendController::class, 'index']);
+// Route::get('/index', [FrontendController::class, 'index']);
 
-// Route::middleware(['web', 'auth'])->prefix('admin/frontend')->name('admin.')->group(function () {
+// Route::middleware(['auth'])->prefix('admin/pages')->name('admin.')->group(function () {
 //     Route::resource('business-settings', BusinessSettingController::class)->only(['index', 'store']);
 //     Route::resource('pages', PageController::class);
 //     Route::get('admin/pages-data', [PageController::class, 'getPagesData'])->name('admin.pages.data');
@@ -17,13 +17,13 @@ Route::get('/index', [FrontendController::class, 'index']);
 
 Route::middleware(['auth'])->prefix('admin/settings/ui')->name('admin.ui-settings.')->group(function () {
     Route::get('/', [UiSettingController::class, 'index'])->name('index');
-    Route::Post('/branding', [UiSettingController::class, 'updateBrandingUI'])->name('updateBrandingUI');
-    Route::Post('/header', [UiSettingController::class, 'updateHeaderUI'])->name('updateHeaderUI');
-    Route::Post('/homepage', [UiSettingController::class, 'updateHomepageUI'])->name('updateHomepageUI');
-    Route::Post('/categories', [UiSettingController::class, 'updateCategoriesUI'])->name('updateCategoriesUI');
-    Route::Post('/products', [UiSettingController::class, 'updateProductsUI'])->name('updateProductsUI');
-    Route::Post('/email', [UiSettingController::class, 'updateEmailUI'])->name('updateEmailUI');
-    Route::Post('/marketing', [UiSettingController::class, 'updateMarketingUI'])->name('updateMarketingUI');
+    Route::Post('/branding',[UiSettingController::class, 'updateBrandingUI'])->name('updateBrandingUI');
+    Route::Post('/header',[UiSettingController::class, 'updateHeaderUI'])->name('updateHeaderUI');
+    Route::Post('/homepage',[UiSettingController::class, 'updateHomepageUI'])->name('updateHomepageUI');
+    Route::Post('/categories',[UiSettingController::class, 'updateCategoriesUI'])->name('updateCategoriesUI');
+    Route::Post('/products',[UiSettingController::class, 'updateProductsUI'])->name('updateProductsUI');
+    Route::Post('/email',[UiSettingController::class, 'updateEmailUI'])->name('updateEmailUI');
+    Route::Post('/marketing',[UiSettingController::class, 'updateMarketingUI'])->name('updateMarketingUI');
 
 });
 
@@ -51,3 +51,15 @@ Route::middleware(['auth'])->prefix('admin/settings/business')->name('admin.busi
     Route::post('/gateways', [BusinessSettingController::class, 'updateGateways'])->name('updateGateways');
     Route::post('/advanced', [BusinessSettingController::class, 'updateAdvanced'])->name('updateAdvanced');
 });
+
+
+// Temporary Routes
+Route::get('/index', [FrontendController::class, 'index'])->name('frontend.home');
+
+// 1. All Products (localhost:8000/frontend/products)
+Route::get('/frontend/products', [FrontendController::class, 'products'])
+    ->name('frontend.products');
+
+// 2. Single Product (localhost:8000/frontend/products/slug)
+Route::get('/frontend/products/{slug}', [FrontendController::class, 'productDetail'])
+    ->name('frontend.product.detail');

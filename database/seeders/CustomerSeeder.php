@@ -1,10 +1,13 @@
-<?php
+<?php 
 
 namespace Database\Seeders;
 
 use App\Models\City;
 use App\Models\Customer;
+use App\Models\CustomerGroup;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class CustomerSeeder extends Seeder
 {
@@ -76,6 +79,6 @@ class CustomerSeeder extends Seeder
             );
         }
 
-        $this->command->info('5 Customers added successfully!');
+        $this->command->info('Success: 5 Customers, Users, Wallets, and Points added!');
     }
 }

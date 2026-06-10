@@ -33,7 +33,8 @@ export function AppSidebar() {
   const mainNavItems: NavItem[] = [
     {
       title: 'Dashboard',
-      href: "/admin/dashboard",
+      // href: "/admin/dashboard",
+      href: route('admin.dashboard'),
       icon: LayoutGrid,
     },
   ];
@@ -89,12 +90,12 @@ export function AppSidebar() {
 
   // Add Affiliate Section
   const affiliateSection = AffiliateSection({ 
-    isAdmin: permissions.hasAnyUserPerm
+    isAdmin: permissions.hasAnyUserPerm 
   });
-  // const affiliateSection = AffiliateSection();
-    if (affiliateSection) {
-      mainNavItems.push(affiliateSection);
-    }
+
+  if (affiliateSection) {
+    mainNavItems.push(affiliateSection);
+  }
 
   // Get Footer Items (Settings)
   const footerNavItems = SettingsSections();
@@ -106,7 +107,7 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               {/* <Link href={dashboard()} prefetch> */}
-              <Link href={"dashboard"} prefetch>
+              <Link href={route('admin.dashboard')} prefetch>
                 <AppLogo />
               </Link>
             </SidebarMenuButton>

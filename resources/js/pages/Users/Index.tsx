@@ -16,6 +16,7 @@ interface User {
   id: number;
   name: string;
   email: string;
+  phone: string;
   roles: Array<{ id: number; name: string }>;
   created_at: string;
   updated_at: string;
@@ -29,7 +30,7 @@ interface Props {
   stats?: {
     total: number;
     admins: number;
-    vendors: number;
+    affiliate: number;
     customers: number;
   };
   flash?: {
@@ -68,6 +69,16 @@ export default function Index({ users = DEFAULT_USERS, stats: propsStats, flash 
       ),
     },
     {
+      name: 'Phone',
+      selector: (row: User) => row.phone,
+      sortable: true,
+      cell: (row: User) => (
+        <span className="text-gray-600 dark:text-gray-400">
+          {row.phone}
+        </span>
+      ),
+    },
+    {
       name: 'Role',
       selector: (row: User) => row.roles?.map(r => r.name).join(', ') || '-',
       sortable: true,
@@ -99,6 +110,7 @@ export default function Index({ users = DEFAULT_USERS, stats: propsStats, flash 
     { label: 'ID', key: 'id' },
     { label: 'User Name', key: 'name' },
     { label: 'Email', key: 'email' },
+    { label: 'Phone', key: 'phone' },
     { label: 'Role', key: 'roles.0.name' },
     { label: 'Created At', key: 'created_at' },
     { label: 'Updated At', key: 'updated_at' },
@@ -108,7 +120,7 @@ export default function Index({ users = DEFAULT_USERS, stats: propsStats, flash 
   const stats = propsStats || {
     total: formattedUsers.total || 0,
     admins: formattedUsers.data?.filter(u => u?.roles?.some(r => r.name === 'admin')).length || 0,
-    vendors: formattedUsers.data?.filter(u => u?.roles?.some(r => r.name === 'vendor')).length || 0,
+    affiliate: formattedUsers.data?.filter(u => u?.roles?.some(r => r.name === 'affiliate')).length || 0,
     customers: formattedUsers.data?.filter(u => u?.roles?.some(r => r.name === 'customer')).length || 0,
   };
 
@@ -148,7 +160,7 @@ export default function Index({ users = DEFAULT_USERS, stats: propsStats, flash 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard title="Total Users" value={stats.total} color="blue" icon={UsersIcon} />
           <StatCard title="Admins" value={stats.admins} color="emerald" icon={UsersIcon} />
-          <StatCard title="Vendors" value={stats.vendors} color="purple" icon={UsersIcon} />
+          <StatCard title="Affiliate" value={stats.affiliate} color="purple" icon={UsersIcon} />
           <StatCard title="Customers" value={stats.customers} color="amber" icon={UsersIcon} />
         </div>
 
@@ -158,7 +170,7 @@ export default function Index({ users = DEFAULT_USERS, stats: propsStats, flash 
             fetchUrl="/admin/users-data"
             columns={columns}
             csvHeaders={csvHeaders}
-            searchableKeys={['name', 'email', 'roles.name']}
+            searchableKeys={['name', 'email','phone', 'roles']}
           />
         </div>
       </div>

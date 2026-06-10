@@ -24,6 +24,8 @@ return new class extends Migration
             $table->string('phone')->nullable()->unique();
             $table->boolean('status')->default(1);
 
+            $table->foreignId('referred_by')->nullable()->constrained('users')->onDelete('set null');
+
             $table->rememberToken();
             $table->timestamps();
             $table->softDeletes();

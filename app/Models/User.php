@@ -7,10 +7,12 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Spatie\Permission\Traits\HasRoles;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class User extends Authenticatable
 {
-    use HasFactory, HasRoles, Notifiable, TwoFactorAuthenticatable;
+    use HasFactory, HasRoles, Notifiable, TwoFactorAuthenticatable, SoftDeletes;
 
     protected $fillable = [
         'name',
@@ -19,6 +21,7 @@ class User extends Authenticatable
         'phone',
         'username',
         'status',
+        'referred_by',
     ];
 
     protected $hidden = [
@@ -66,4 +69,38 @@ class User extends Authenticatable
     {
         return $this->hasRole('admin');
     }
+
+    /**
+ * 1. Jis Affiliate ne is user ko refer kiya (The Parent)
+ */
+public function referrer()
+{
+    return $this->belongsTo(User::class, 'referred_by');
+}
+
+/**
+ * 2. Wo Users jinko is Affiliate ne refer kiya (The Downline)
+ */
+public function referrals()
+{
+    return $this->hasMany(User::class, 'referred_by');
+}
+
+/**
+ * 3. Affiliate ki earnings (Referral Table se)
+ * Jab ye user as an Affiliate kamaye ga
+ */
+public function affiliateCommissions()
+{
+    return $this->hasMany(Referral::class, 'affiliate_id');
+}
+
+/**
+ * 4. User ki purchases (Referral Table se)
+ * Jab ye user as a Customer kuch khareeday ga
+ */
+public function customerPurchases()
+{
+    return $this->hasMany(Referral::class, 'customer_id');
+}
 }

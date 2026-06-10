@@ -11,8 +11,8 @@ class UiSettingSeeder extends Seeder
     {
         $settings = [
             // Branding
-            'header_color' => 'green-2',
-            'footer_color' => 'dark-1',
+            'header_color' => '#3ab805',
+            'footer_color' => '#05b8a3',
             'font' => 'Roboto',
 
             // Menu Toggles

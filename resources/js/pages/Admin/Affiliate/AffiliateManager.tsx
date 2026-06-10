@@ -1,156 +1,133 @@
-import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
-import { Head, router } from '@inertiajs/react';
+import AppLayout from "@/layouts/app-layout";
+import { Head, router } from "@inertiajs/react";
+import { Users, ShieldCheck, ShieldAlert, CreditCard } from "lucide-react";
+import toast from "react-hot-toast";
 
-// 1. Affiliate Interface for TypeScript
 interface Affiliate {
-    id: number;
-    affiliate_code: string;
-    balance: number;
-    commission_rate: number;
-    status: boolean;
-    user: {
-        first_name: string;
-        last_name: string;
-        email: string;
-    };
+  id: number;
+  affiliate_code: string;
+  balance: number;
+  commission_rate: number;
+  status: string;
+  user: { first_name: string; last_name: string; email: string };
 }
 
-interface Props {
-    affiliates: Affiliate[];
-}
-
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Affiliate Dashboard',
-        href: '/admin/affiliates',
-    },
-];
-
-export default function Dashboard({ affiliates }: Props) {
-    // 2. Fixed Toggle Status Function
-    const toggleStatus = (id: number) => {
-        // 'id' ko object { id } mein pass karne se red line hat jayegi
-        router.patch(
-            route('admin.affiliate.updateStatus', { id }),
-            {},
-            {
-                preserveScroll: true, // Status change hone par page jump nahi karega
-            },
-        );
-    };
-
-    return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Affiliate Management" />
-
-            <div className="p-6">
-                <div className="mb-6 flex items-center justify-between">
-                    <h1 className="text-2xl font-bold">Affiliate Management</h1>
-                </div>
-
-                <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
-                    <table className="w-full border-collapse text-left">
-                        <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
-                            <tr>
-                                <th className="p-4 font-semibold text-gray-700 dark:text-gray-200">
-                                    Name
-                                </th>
-                                <th className="p-4 font-semibold text-gray-700 dark:text-gray-200">
-                                    Code
-                                </th>
-                                <th className="p-4 font-semibold text-gray-700 dark:text-gray-200">
-                                    Balance
-                                </th>
-                                <th className="p-4 font-semibold text-gray-700 dark:text-gray-200">
-                                    Rate (%)
-                                </th>
-                                <th className="p-4 font-semibold text-gray-700 dark:text-gray-200">
-                                    Status
-                                </th>
-                                <th className="p-4 text-right font-semibold text-gray-700 dark:text-gray-200">
-                                    Actions
-                                </th>
-                            </tr>
-                        </thead>
-
-                        <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                            {affiliates && affiliates.length > 0 ? (
-                                affiliates.map((item) => (
-                                    <tr
-                                        key={item.id}
-                                        className="transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
-                                    >
-                                        <td className="p-4">
-                                            <div className="font-semibold text-gray-900 dark:text-white">
-                                                {item.user.first_name}{' '}
-                                                {item.user.last_name}
-                                            </div>
-                                            <div className="text-sm text-gray-500 dark:text-gray-400">
-                                                {item.user.email}
-                                            </div>
-                                        </td>
-
-                                        <td className="p-4">
-                                            <code className="rounded-md bg-gray-100 px-2 py-1 font-mono text-xs text-gray-800 dark:bg-gray-800 dark:text-gray-200">
-                                                {item.affiliate_code}
-                                            </code>
-                                        </td>
-
-                                        <td className="p-4 font-bold text-emerald-600">
-                                            Rs. {item.balance.toLocaleString()}
-                                        </td>
-
-                                        <td className="p-4">
-                                            {item.commission_rate}%
-                                        </td>
-
-                                        <td className="p-4">
-                                            <span
-                                                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                                                    item.status
-                                                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200'
-                                                        : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200'
-                                                }`}
-                                            >
-                                                {item.status
-                                                    ? 'Active'
-                                                    : 'Inactive'}
-                                            </span>
-                                        </td>
-
-                                        <td className="p-4 text-right">
-                                            <button
-                                                onClick={() =>
-                                                    toggleStatus(item.id)
-                                                }
-                                                className={`inline-flex items-center rounded-lg border px-3 py-1.5 text-sm font-semibold transition-all ${
-                                                    item.status
-                                                        ? 'border-red-200 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20'
-                                                        : 'border-emerald-200 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
-                                                }`}
-                                            >
-                                                {item.status
-                                                    ? 'Deactivate'
-                                                    : 'Activate'}
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td
-                                        colSpan={6}
-                                        className="p-12 text-center text-gray-500"
-                                    >
-                                        No affiliates found in the database.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </AppLayout>
+export default function AffiliateManager({
+  affiliates,
+}: {
+  affiliates: Affiliate[];
+}) {
+  const toggleStatus = (id: number) => {
+    router.patch(
+      route("admin.affiliate.updateStatus", { id }),
+      {},
+      {
+        preserveScroll: true,
+        onSuccess: () => toast.success("Status updated!"),
+      },
     );
+  };
+
+  return (
+    <AppLayout
+      breadcrumbs={[
+        { title: "Affiliate Management", href: "/admin/affiliates" },
+      ]}
+    >
+      <Head title="Admin - Manage Affiliates" />
+
+      <div className="p-6 lg:p-10 space-y-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-black dark:text-white flex items-center gap-3">
+              <Users className="text-blue-600" size={32} />
+              Affiliate Partners
+            </h1>
+            <p className="text-gray-500 mt-1">
+              Sytem ke tamam affiliate members ko yahan se manage karein.
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 overflow-hidden shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-gray-50/50 dark:bg-gray-800/50 text-[10px] uppercase tracking-widest text-gray-400 font-bold">
+                  <th className="px-8 py-5">Partner Details</th>
+                  <th className="px-8 py-5">Affiliate Code</th>
+                  <th className="px-8 py-5">Current Balance</th>
+                  <th className="px-8 py-5">Commission</th>
+                  <th className="px-8 py-5 text-center">Status</th>
+                  <th className="px-8 py-5 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
+                {affiliates.map((item) => (
+                  <tr
+                    key={item.id}
+                    className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors group"
+                  >
+                    <td className="px-8 py-5">
+                      <div className="font-bold text-gray-900 dark:text-white">
+                        {item.user.first_name} {item.user.last_name}
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        {item.user.email}
+                      </div>
+                    </td>
+                    <td className="px-8 py-5">
+                      <span className="font-mono bg-blue-50 dark:bg-blue-900/20 text-blue-600 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-tighter">
+                        {item.affiliate_code}
+                      </span>
+                    </td>
+                    <td className="px-8 py-5 font-black text-gray-900 dark:text-gray-100">
+                      Rs. {item.balance.toLocaleString()}
+                    </td>
+                    <td className="px-8 py-5 font-semibold text-blue-600">
+                      {item.commission_rate}%
+                    </td>
+                    <td className="px-8 py-5 text-center">
+                      <span
+                        className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                          item.status
+                            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                            : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                        }`}
+                      >
+                        {item.status ? "Active" : "Inactive"}
+                      </span>
+                    </td>
+                    <td className="px-8 py-5 text-right">
+                      <button
+    onClick={() => toggleStatus(item.id)}
+    className={`inline-flex items-center gap-2 p-2 px-3 rounded-xl transition-all shadow-sm font-medium ${
+        item.status
+        ? "bg-red-50 text-red-600 hover:bg-red-600 hover:text-white"
+        : "bg-green-50 text-green-600 hover:bg-green-600 hover:text-white"
+    }`}
+    title={item.status ? "Deactivate User" : "Activate User"}
+>
+    {item.status ? (
+        <>
+            <ShieldAlert size={18} />
+            <span>Block</span>
+        </>
+    ) : (
+        <>
+            <ShieldCheck size={18} />
+            <span>Allow</span>
+        </>
+    )}
+</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </AppLayout>
+  );
 }

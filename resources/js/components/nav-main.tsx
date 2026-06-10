@@ -45,6 +45,7 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
                         <SidebarMenuItem key={item.title}>
                             {hasChildren ? (
                                 <>
+                                    {/* FIX: onClick ko SidebarMenuAction se hata kar SidebarMenuButton par shift kar diya */}
                                     <SidebarMenuButton
                                         tooltip={{ children: item.title }}
                                         className="cursor-pointer"
