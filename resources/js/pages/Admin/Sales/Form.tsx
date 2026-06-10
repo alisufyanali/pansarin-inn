@@ -314,7 +314,11 @@ export default function SaleForm({
                                                 className="w-full px-3 py-2 text-sm rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
                                             >
                                                 <option value="">Select One</option>
-                                                <option value="leopard">Leopard</option>
+                                                <option value="leopard">Leopard Courier</option>
+                                                <option value="cc">Call Courier</option>
+                                                <option value="pp">Pakistan Post</option>
+                                                <option value="px">PostEx</option>
+                                                <option value="movex">Movex</option>
                                                 <option value="tcs">TCS</option>
                                                 <option value="trax">TRAX</option>
                                                 <option value="rider">Rider</option>

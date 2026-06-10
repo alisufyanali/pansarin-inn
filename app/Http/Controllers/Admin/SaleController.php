@@ -110,6 +110,8 @@ class SaleController extends Controller
                     'shipping_address'=> $order->shipping_address,
                     'billing_address' => $order->billing_address,
                     'shipping_method' => $order->shipping_method,
+                    'payment_method'  => $order->payment_method,
+                    'payment_status'  => $order->payment_status,
                     'shipping_charges'=> $order->shipping_charges,
                     'invoice_discount'=> $order->invoice_discount,
                     'grand_total'     => $order->grand_total,

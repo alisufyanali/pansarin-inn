@@ -50,6 +50,8 @@ type PrefilledOrder = {
     shipping_address: string | null;
     billing_address: string | null;
     shipping_method: string | null;
+    payment_method: string | null;
+    payment_status: string | null;
     shipping_charges: number;
     invoice_discount: number;
     grand_total: number;
@@ -100,6 +102,16 @@ const INPUT_DISABLED = "w-full px-3 py-2 text-sm rounded-md bg-gray-50 dark:bg-g
 const SELECT = "w-full px-3 py-2 text-sm rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none transition";
 const LABEL = "block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1";
 
+// Maps Order payment_method → Sale payment_type values
+function mapPaymentMethod(method: string | null): string {
+    if (!method) return '';
+    const m = method.toLowerCase().replace(/\s+/g, '_');
+    if (m.includes('cash') || m.includes('cod'))    return 'cash_on_delivery';
+    if (m.includes('bank') || m.includes('transfer')) return 'bank_transfer';
+    if (m.includes('card'))                          return 'card_payment';
+    return '';
+}
+
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function SaleForm({
@@ -142,8 +154,8 @@ export default function SaleForm({
         vat_percent:       sale?.vat_percent        ?? '',
         shipping_charges:  sale?.shipping_charges   ?? order?.shipping_charges ?? 0,
         delivery_status:   sale?.delivery_status    ?? 'pending',
-        payment_status:    sale?.payment_status     ?? 'unpaid',
-        payment_type:      sale?.payment_type       ?? '',
+        payment_status:    sale?.payment_status     ?? order?.payment_status   ?? 'unpaid',
+        payment_type:      sale?.payment_type       ?? (order?.payment_method ? mapPaymentMethod(order.payment_method) : ''),
         payment_timestamp: sale?.payment_timestamp  ?? '',
         shipping_method:   sale?.shipping_method    ?? order?.shipping_method  ?? '',
         shipping_address:  sale?.shipping_address   ?? order?.shipping_address ?? '',
@@ -360,11 +372,14 @@ export default function SaleForm({
                                 <label className={LABEL}>Shipping Method</label>
                                 <select className={SELECT} value={data.shipping_method} onChange={e => setData('shipping_method', e.target.value)}>
                                     <option value="">Select</option>
-                                    <option value="leopard">Leopard</option>
+                                    <option value="leopard">Leopard Courier</option>
+                                    <option value="cc">Call Courier</option>
+                                    <option value="pp">Pakistan Post</option>
+                                    <option value="px">PostEx</option>
+                                    <option value="movex">Movex</option>
                                     <option value="tcs">TCS</option>
                                     <option value="trax">TRAX</option>
                                     <option value="rider">Rider</option>
-                                    <option value="self">Self Pickup</option>
                                 </select>
                             </div>
                             <div className="col-span-2">
