@@ -471,6 +471,7 @@ export default function OrderForm({
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 w-28">Rate *</th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 w-28">Discount</th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 w-28">Total *</th>
+                        <th className="px-3 py-2 w-10"></th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -595,6 +596,22 @@ export default function OrderForm({
                               disabled
                               className="w-24 px-2 py-1 text-xs rounded bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-right font-medium"
                             />
+                          </td>
+
+                          {/* Delete Row Button */}
+                          <td className="px-2 py-2 text-center">
+                            {data.items.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => removeItem(index)}
+                                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                title="Remove item"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                                </svg>
+                              </button>
+                            )}
                           </td>
                         </tr>
                       ))}

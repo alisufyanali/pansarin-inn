@@ -243,6 +243,35 @@ class OrderRepository
     // ── Private Helpers ───────────────────────────────────────────
     private function syncItems(Order $order, array $items): void
     {
+        // FIRST: Validate stock availability for all items before creating any
+        foreach ($items as $item) {
+            if (empty($item['product_id'])) continue;
+
+            $qty = (int) $item['quantity'];
+            $variantId = $item['product_variant_id'] ?? null;
+
+            // Get current stock
+            $stockRecord = ProductStock::where('product_id', $item['product_id'])
+                ->when($variantId, fn($q) => $q->where('product_variant_id', $variantId))
+                ->when(!$variantId, fn($q) => $q->whereNull('product_variant_id'))
+                ->first();
+
+            $availableStock = $stockRecord ? $stockRecord->quantity : 0;
+
+            // Validate stock
+            if ($qty > $availableStock) {
+                $product = Product::find($item['product_id']);
+                $variant = $variantId ? ProductVariant::find($variantId) : null;
+                
+                $productName = $product?->name ?? 'Unknown Product';
+                $variantName = $variant ? (collect($variant->attributes ?? [])->values()->join(' / ') ?: $variant->value) : null;
+                $fullName = $variantName ? "{$productName} ({$variantName})" : $productName;
+                
+                throw new \Exception("Insufficient stock for {$fullName}. Requested: {$qty}, Available: {$availableStock}");
+            }
+        }
+
+        // THEN: Create order items and deduct stock
         foreach ($items as $item) {
             if (empty($item['product_id'])) continue;
 
