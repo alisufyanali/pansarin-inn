@@ -21,7 +21,7 @@ interface ContactFormProps {
 }
 
 export default function Form({ contact, isEdit = false }: ContactFormProps) {
-    const { data, setData, errors, post, processing } = useForm<ContactFormData>({
+    const { data, setData, errors, post, put, processing } = useForm<ContactFormData>({
         name: contact?.name || '',
         email: contact?.email || '',
         phone: contact?.phone || '',
@@ -35,9 +35,7 @@ export default function Form({ contact, isEdit = false }: ContactFormProps) {
         e.preventDefault();
         
         if (isEdit && contact?.id) {
-            post(`/admin/contacts/${contact.id}`, {
-                method: 'put' as any,
-            });
+            put(`/admin/contacts/${contact.id}`);
         } else {
             post('/admin/contacts');
         }

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, router } from '@inertiajs/react';
 import { Edit2, Mail, User, MessageSquare, Send } from 'lucide-react';
 import InfoRow from '@/components/InfoRow';
 import SectionCard from '@/components/SectionCard';
@@ -41,10 +41,6 @@ export default function Show({ contact }: ShowProps) {
     admin_reply: '',
   });
 
-  const { setData: setStatusData, patch: patchStatus } = useForm({
-    status: contact.status,
-  });
-
   const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Contacts', href: '/admin/contacts' },
     { title: contact.subject, href: '#' },
@@ -70,10 +66,7 @@ export default function Show({ contact }: ShowProps) {
   };
 
   const updateStatus = (status: string) => {
-    setStatusData('status', status);
-    patchStatus(`/admin/contacts/${contact.id}/status`, {
-      onSuccess: () => window.location.reload(),
-    });
+    router.patch(`/admin/contacts/${contact.id}/status`, { status });
   };
 
   return (
