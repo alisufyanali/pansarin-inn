@@ -172,7 +172,7 @@ export default function AttributeForm({ attribute, categories, isEdit = false }:
                                             </td>
                                             <td className="px-3 py-2">
                                                 <input
-                                                    type="number"
+                                                    type="text"
                                                     placeholder="e.g., 100"
                                                     value={val.value}
                                                     onChange={(e) => updateValue(i, 'value', e.target.value)}

@@ -149,8 +149,21 @@ class ProductController extends Controller
     {
         $product = $this->productRepository->find($id);
 
+        // Map DB variants → form's "variations" shape
+        $variations = $product->variants->map(fn ($v) => [
+            'combination'    => $v->value ?? '',
+            'attributes'     => $v->attributes ?? [],
+            'purchase_price' => (string) ($v->price ?? ''),           // price = purchase_price
+            'sale_price'     => (string) ($v->sale_price ?? ''),      // sale_price = sale_price
+            'stock_alert'    => (string) ($v->stock_alert ?? '5'),
+            'additional'     => (string) ($v->additional ?? '0'),
+        ])->values()->toArray();
+
+        $productData = $product->toArray();
+        $productData['variations'] = $variations;
+
         return Inertia::render('Admin/Products/Edit', [
-            'product'    => $product,
+            'product'    => $productData,
             'categories' => Category::orderBy('name')->get(['id', 'name']),
             'attributes' => Attribute::with('values')->get(['id', 'name', 'slug', 'category_id']),
         ]);

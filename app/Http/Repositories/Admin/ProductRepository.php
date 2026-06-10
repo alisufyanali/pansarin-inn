@@ -67,7 +67,7 @@ class ProductRepository
 
     public function find($id)
     {
-        return Product::findOrFail($id);
+        return Product::with(['variants'])->findOrFail($id);
     }
 
     private function productFolder(int $id, string $name): string
@@ -116,10 +116,10 @@ class ProductRepository
                     'attribute_value_id' => 1,
                     'value'              => $variant['combination'] ?? '',
                     'attributes'         => $variant['attributes'] ?? [],
-                    'additional'         => 0,
-                    'price'              => $variant['sale_price'] ?? 0,
-                    'sale_price'         => null,
-                    'stock_alert'        => 5,
+                    'additional'         => $variant['additional'] ?? 0,
+                    'price'              => $variant['purchase_price'] ?? 0,      // Purchase price
+                    'sale_price'         => $variant['sale_price'] ?? null,       // Sale price
+                    'stock_alert'        => $variant['stock_alert'] ?? 5,
                     'is_default'         => ($index === 0),
                     'status'             => true,
                 ]);
@@ -181,10 +181,10 @@ class ProductRepository
                     'attribute_value_id' => 0,
                     'value'              => $variant['combination'] ?? '',
                     'attributes'         => $variant['attributes'] ?? [],
-                    'additional'         => 0,
-                    'price'              => $variant['sale_price'] ?? 0,
-                    'sale_price'         => null,
-                    'stock_alert'        => 5,
+                    'additional'         => $variant['additional'] ?? 0,
+                    'price'              => $variant['purchase_price'] ?? 0,      // Purchase price
+                    'sale_price'         => $variant['sale_price'] ?? null,       // Sale price
+                    'stock_alert'        => $variant['stock_alert'] ?? 5,
                     'is_default'         => ($index === 0),
                     'status'             => true,
                 ]);

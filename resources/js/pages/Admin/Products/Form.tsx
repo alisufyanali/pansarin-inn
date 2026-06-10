@@ -162,6 +162,10 @@ export default function ProductForm({ product, categories, attributes = [], isEd
         variations:           product?.variations           || [],
     });
 
+    // Track initial mount to avoid clearing variations on edit load
+    const isInitialMount = React.useRef(true);
+    const hasLoadedInitialVariations = React.useRef(false);
+
     // Load attributes on category change
     useEffect(() => {
         if (!data.category_id) { setCatAttrs([]); setData('selected_attributes', {}); setData('variations', []); return; }
@@ -173,8 +177,64 @@ export default function ProductForm({ product, categories, attributes = [], isEd
                 .then((r) => r.json()).then((d) => { setCatAttrs(d); setLoadingAttrs(false); })
                 .catch(() => setLoadingAttrs(false));
         }
-        setData('selected_attributes', {}); setData('variations', []);
+        
+        // Only clear variations on user-driven category change, NOT on initial edit load
+        if (isInitialMount.current) {
+            isInitialMount.current = false;
+            // In edit mode, mark that we've loaded initial variations
+            if (isEdit && product?.variations && product.variations.length > 0) {
+                hasLoadedInitialVariations.current = true;
+            }
+        } else {
+            // Only clear if we're not in edit mode with loaded variations
+            if (!hasLoadedInitialVariations.current) {
+                setData('selected_attributes', {}); 
+                setData('variations', []);
+            }
+        }
     }, [data.category_id]);
+
+    // Reconstruct selected_attributes from existing variations in edit mode
+    useEffect(() => {
+        if (isEdit && product?.variations && product.variations.length > 0 && catAttrs.length > 0) {
+            const reconstructed: Record<number, number[]> = {};
+            
+            // Extract all unique attribute values from variations
+            product.variations.forEach((variation: any) => {
+                if (variation.attributes) {
+                    Object.entries(variation.attributes).forEach(([attrName, attrValue]) => {
+                        // Find the attribute by name
+                        const attr = catAttrs.find(a => a.name === attrName);
+                        if (attr) {
+                            // Find the value ID
+                            const val = attr.values.find(v => v.value === attrValue);
+                            if (val) {
+                                if (!reconstructed[attr.id]) {
+                                    reconstructed[attr.id] = [];
+                                }
+                                if (!reconstructed[attr.id].includes(val.id)) {
+                                    reconstructed[attr.id].push(val.id);
+                                }
+                            }
+                        }
+                    });
+                }
+            });
+
+            if (Object.keys(reconstructed).length > 0) {
+                setData('selected_attributes', reconstructed);
+            }
+        }
+    }, [catAttrs, isEdit]);
+
+    // Debug: Check variations after everything is initialized
+    useEffect(() => {
+        console.log('🔍 Checking variations render:', {
+            variationsLength: data.variations.length,
+            hasVariations: data.variations.length > 0,
+            variations: data.variations
+        });
+    }, [data.variations]);
 
     const toggleVal  = (attrId: number, valId: number) => {
         const curr = data.selected_attributes[attrId] || [];
@@ -189,14 +249,18 @@ export default function ProductForm({ product, categories, attributes = [], isEd
             return vals.length ? [{ attrName: attr.name, values: vals }] : [];
         });
         if (!groups.length) return;
-        setData('variations', cartesian(groups.map((g) => g.values)).map((combo) => ({
+        
+        const newVariations = cartesian(groups.map((g) => g.values)).map((combo) => ({
             combination:    combo.map((v) => v.value).join(' / '),
             attributes:     Object.fromEntries(combo.map((v, i) => [groups[i].attrName, v.value])),
             purchase_price: '',
             sale_price:     '',
             stock_alert:    '5',   // default
             additional:     '0',   // default
-        })));
+        }));
+        
+        console.log('Generated variations:', newVariations);
+        setData('variations', newVariations);
     };
 
     const updateVar = (i: number, field: keyof Variation, val: string) => {
@@ -226,7 +290,15 @@ export default function ProductForm({ product, categories, attributes = [], isEd
         const social_image = data.social_image instanceof File ? data.social_image : null;
         const gallery      = (data.gallery as any[]).filter((f) => f instanceof File);
 
-        const submitData = { ...data, tags, thumbnail, social_image, gallery };
+        // Ensure variations are included in submit data
+        const submitData = { 
+            ...data, 
+            tags, 
+            thumbnail, 
+            social_image, 
+            gallery,
+            variations: data.variations  // Explicitly include variations
+        };
 
         if (isEdit && product?.id) {
             router.post(`/admin/products/${product.id}`, { ...submitData, _method: 'PUT' }, { forceFormData: true });
