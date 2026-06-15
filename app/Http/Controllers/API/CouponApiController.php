@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Coupon;
@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 class CouponApiController extends Controller
 {
     // POST /api/coupons/validate
-    public function validate(Request $request)
+    public function check(Request $request)
     {
         $request->validate([
             'code'       => 'required|string',

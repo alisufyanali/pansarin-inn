@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
@@ -65,12 +65,16 @@ class AuthApiController extends Controller
 
         $user->assignRole('customer');
 
-        // Create customer profile
+        // Create customer profile — phone uniqueness handle karo
+        $customerPhone = $request->phone ?? null;
+        if ($customerPhone && \App\Models\Customer::where('phone', $customerPhone)->exists()) {
+            $customerPhone = null;
+        }
         \App\Models\Customer::create([
             'user_id'    => $user->id,
             'first_name' => $request->name,
             'email'      => $request->email,
-            'phone'      => $request->phone ?? null,
+            'phone'      => $customerPhone,
             'status'     => 'active',
         ]);
 

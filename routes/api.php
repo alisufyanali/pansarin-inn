@@ -1,13 +1,13 @@
 <?php
 
-use App\Http\Controllers\Api\AuthApiController;
-use App\Http\Controllers\Api\BlogApiController;
-use App\Http\Controllers\Api\CartApiController;
-use App\Http\Controllers\Api\ContactApiController;
-use App\Http\Controllers\Api\CouponApiController;
-use App\Http\Controllers\Api\OrderApiController;
-use App\Http\Controllers\Api\ProductApiController;
-use App\Http\Controllers\Api\WishlistApiController;
+use App\Http\Controllers\API\AuthApiController;
+use App\Http\Controllers\API\BlogApiController;
+use App\Http\Controllers\API\CartApiController;
+use App\Http\Controllers\API\ContactApiController;
+use App\Http\Controllers\API\CouponApiController;
+use App\Http\Controllers\API\OrderApiController;
+use App\Http\Controllers\API\ProductApiController;
+use App\Http\Controllers\API\WishlistApiController;
 use Illuminate\Support\Facades\Route;
 
 // ── Public Routes ─────────────────────────────────────────────────
@@ -23,7 +23,7 @@ Route::get('/blogs',         [BlogApiController::class, 'index']);
 Route::get('/blogs/{slug}',  [BlogApiController::class, 'show']);
 
 Route::post('/contact',           [ContactApiController::class, 'store']);
-Route::post('/coupons/validate',  [CouponApiController::class, 'validate']);
+Route::post('/coupons/validate',  [CouponApiController::class, 'check']);
 
 // ── Protected Routes (auth:sanctum) ───────────────────────────────
 Route::middleware('auth:sanctum')->group(function () {
