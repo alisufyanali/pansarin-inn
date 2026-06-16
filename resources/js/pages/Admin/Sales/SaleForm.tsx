@@ -2,6 +2,13 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useForm } from '@inertiajs/react';
 import { ArrowLeft, Plus, Trash2, Package } from 'lucide-react';
 import { Link } from '@inertiajs/react';
+import {
+    PAYMENT_METHOD_OPTIONS,
+    SHIPPING_METHOD_OPTIONS,
+    PAYMENT_STATUS_OPTIONS,
+    DELIVERY_STATUS_OPTIONS,
+    COURIERS_WITH_WEIGHT,
+} from '@/constants/orderOptions';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -340,46 +347,35 @@ export default function SaleForm({
                             <div>
                                 <label className={LABEL}>Payment Status *</label>
                                 <select className={SELECT} value={data.payment_status} onChange={e => setData('payment_status', e.target.value)}>
-                                    <option value="unpaid">Unpaid</option>
-                                    <option value="paid">Paid</option>
-                                    <option value="partially_paid">Partially Paid</option>
-                                    <option value="refunded">Refunded</option>
+                                    {PAYMENT_STATUS_OPTIONS.map(o => (
+                                        <option key={o.value} value={o.value}>{o.label}</option>
+                                    ))}
                                 </select>
                             </div>
                             <div>
                                 <label className={LABEL}>Payment Type</label>
                                 <select className={SELECT} value={data.payment_type} onChange={e => setData('payment_type', e.target.value)}>
                                     <option value="">Select</option>
-                                    <option value="cash_on_delivery">Cash on Delivery</option>
-                                    <option value="bank_transfer">Bank Transfer</option>
-                                    <option value="card_payment">Card Payment</option>
-                                    <option value="easypaisa">EasyPaisa</option>
-                                    <option value="jazzcash">JazzCash</option>
+                                    {PAYMENT_METHOD_OPTIONS.map(o => (
+                                        <option key={o.value} value={o.value}>{o.label}</option>
+                                    ))}
                                 </select>
                             </div>
                             <div>
                                 <label className={LABEL}>Delivery Status *</label>
                                 <select className={SELECT} value={data.delivery_status} onChange={e => setData('delivery_status', e.target.value)}>
-                                    <option value="pending">Pending</option>
-                                    <option value="processing">Processing</option>
-                                    <option value="shipped">Shipped</option>
-                                    <option value="delivered">Delivered</option>
-                                    <option value="cancelled">Cancelled</option>
-                                    <option value="returned">Returned</option>
+                                    {DELIVERY_STATUS_OPTIONS.map(o => (
+                                        <option key={o.value} value={o.value}>{o.label}</option>
+                                    ))}
                                 </select>
                             </div>
                             <div>
                                 <label className={LABEL}>Shipping Method</label>
                                 <select className={SELECT} value={data.shipping_method} onChange={e => setData('shipping_method', e.target.value)}>
                                     <option value="">Select</option>
-                                    <option value="leopard">Leopard Courier</option>
-                                    <option value="cc">Call Courier</option>
-                                    <option value="pp">Pakistan Post</option>
-                                    <option value="px">PostEx</option>
-                                    <option value="movex">Movex</option>
-                                    <option value="tcs">TCS</option>
-                                    <option value="trax">TRAX</option>
-                                    <option value="rider">Rider</option>
+                                    {SHIPPING_METHOD_OPTIONS.map(o => (
+                                        <option key={o.value} value={o.value}>{o.label}</option>
+                                    ))}
                                 </select>
                             </div>
                             <div className="col-span-2">

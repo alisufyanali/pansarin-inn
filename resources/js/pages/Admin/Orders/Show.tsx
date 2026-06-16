@@ -2,11 +2,18 @@ import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { ArrowLeft, Edit2, User, Package, MapPin, CreditCard, Calendar, FileText, Truck } from 'lucide-react';
+import { PAYMENT_METHOD_OPTIONS, SHIPPING_METHOD_OPTIONS } from '@/constants/orderOptions';
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Orders', href: '/admin/orders' },
     { title: 'Details', href: '#' },
 ];
+
+/** Convert slug value → human label, falling back to the raw value */
+function getOptionLabel(options: readonly { value: string; label: string }[], value: string | null): string {
+    if (!value) return '—';
+    return options.find(o => o.value === value)?.label ?? value;
+}
 
 interface OrderItem {
     id: number;
@@ -180,7 +187,9 @@ export default function Show({ order }: { order: Order }) {
                                 {order.payment_method && (
                                     <div>
                                         <label className="text-sm text-gray-500 dark:text-gray-400">Method</label>
-                                        <p className="font-medium text-gray-900 dark:text-white">{order.payment_method}</p>
+                                        <p className="font-medium text-gray-900 dark:text-white">
+                                            {getOptionLabel(PAYMENT_METHOD_OPTIONS, order.payment_method)}
+                                        </p>
                                     </div>
                                 )}
                                 {order.payment_date && (
@@ -204,7 +213,9 @@ export default function Show({ order }: { order: Order }) {
                                 {order.shipping_method && (
                                     <div>
                                         <label className="text-sm text-gray-500 dark:text-gray-400">Method</label>
-                                        <p className="font-medium text-gray-900 dark:text-white">{order.shipping_method}</p>
+                                        <p className="font-medium text-gray-900 dark:text-white">
+                                            {getOptionLabel(SHIPPING_METHOD_OPTIONS, order.shipping_method)}
+                                        </p>
                                     </div>
                                 )}
                                 <div>

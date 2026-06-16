@@ -6,6 +6,12 @@ import {
     Search, ShoppingBag, Truck, XCircle,
 } from 'lucide-react';
 import { useState } from 'react';
+import { PAYMENT_METHOD_OPTIONS } from '@/constants/orderOptions';
+
+function getOptionLabel(options: readonly { value: string; label: string }[], value: string | null): string {
+    if (!value) return '—';
+    return options.find(o => o.value === value)?.label ?? value;
+}
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Shop', href: '#' },
@@ -218,7 +224,9 @@ export default function Track({ order, error, searched }: Props) {
                                     </div>
                                     <div className="flex justify-between">
                                         <dt className="text-gray-500">Payment</dt>
-                                        <dd className="font-medium text-gray-900 dark:text-gray-100">{order.payment_method ?? '—'}</dd>
+                                        <dd className="font-medium text-gray-900 dark:text-gray-100">
+                                            {getOptionLabel(PAYMENT_METHOD_OPTIONS, order.payment_method)}
+                                        </dd>
                                     </div>
                                 </dl>
                             </div>

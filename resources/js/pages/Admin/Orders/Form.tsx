@@ -1,10 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import { Link } from '@inertiajs/react';
 import { toast } from 'sonner';
 import { SearchableCustomerSelect, SearchableProductSelect } from '@/components/SearchableSelect';
 import CityDropdown, { type CityOption } from '@/components/CityDropdown';
+import {
+  PAYMENT_METHOD_OPTIONS,
+  SHIPPING_METHOD_OPTIONS,
+  PAYMENT_STATUS_OPTIONS,
+  ORDER_STATUS_OPTIONS,
+  COURIERS_WITH_WEIGHT,
+} from '@/constants/orderOptions';
 
 type Customer = { 
   id: number; 
@@ -309,15 +316,27 @@ export default function OrderForm({
                   </h3>
                   <div className="space-y-3">
                     <div>
+                      <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Order Status</label>
+                      <select
+                        value={data.status}
+                        onChange={(e) => setData('status', e.target.value)}
+                        className="w-full px-3 py-2 text-sm rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
+                      >
+                        {ORDER_STATUS_OPTIONS.map(o => (
+                          <option key={o.value} value={o.value}>{o.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
                       <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Payment Status</label>
                       <select
                         value={data.payment_status}
                         onChange={(e) => setData('payment_status', e.target.value)}
                         className="w-full px-3 py-2 text-sm rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
                       >
-                        <option value="unpaid">Due</option>
-                        <option value="paid">Paid</option>
-                        <option value="partially_paid">Partially Paid</option>
+                        {PAYMENT_STATUS_OPTIONS.map(o => (
+                          <option key={o.value} value={o.value}>{o.label}</option>
+                        ))}
                       </select>
                       {errors.payment_status && <p className="text-red-500 text-xs mt-1">{errors.payment_status}</p>}
                     </div>
@@ -329,9 +348,9 @@ export default function OrderForm({
                         className="w-full px-3 py-2 text-sm rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
                       >
                         <option value="">Select One</option>
-                        <option value="Cash On Delivery">Cash On Delivery</option>
-                        <option value="Bank Transfer">Bank Transfer</option>
-                        <option value="Card Payment">Card Payment</option>
+                        {PAYMENT_METHOD_OPTIONS.map(o => (
+                          <option key={o.value} value={o.value}>{o.label}</option>
+                        ))}
                       </select>
                       {errors.payment_method && <p className="text-red-500 text-xs mt-1">{errors.payment_method}</p>}
                     </div>
@@ -353,54 +372,18 @@ export default function OrderForm({
                         className="w-full px-3 py-2 text-sm rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
                       >
                         <option value="">Select One</option>
-                        <option value="leopard">Leopard Courier</option>
-                        <option value="cc">Call Courier</option>
-                        <option value="pp">Pakistan Post</option>
-                        <option value="px">PostEx</option>
-                        <option value="movex">Movex</option>
+                        {SHIPPING_METHOD_OPTIONS.map(o => (
+                          <option key={o.value} value={o.value}>{o.label}</option>
+                        ))}
                       </select>
                       {errors.shipping_method && <p className="text-red-500 text-xs mt-1">{errors.shipping_method}</p>}
 
-                      {/* Conditional weight field */}
-                      {data.shipping_method === 'leopard' && (
+                      {/* Weight field — shown for all couriers that require it */}
+                      {COURIERS_WITH_WEIGHT.includes(data.shipping_method as any) && (
                         <div className="mt-2">
-                          <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Leopard Weight (kg)</label>
-                          <input
-                            type="number" min="0" step="0.5"
-                            value={data.courier_weight}
-                            onChange={e => setData('courier_weight', e.target.value)}
-                            className="w-full px-3 py-2 text-sm rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
-                            placeholder="0.5"
-                          />
-                        </div>
-                      )}
-                      {data.shipping_method === 'cc' && (
-                        <div className="mt-2">
-                          <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Call Courier Weight</label>
-                          <input
-                            type="text"
-                            value={data.courier_weight}
-                            onChange={e => setData('courier_weight', e.target.value)}
-                            className="w-full px-3 py-2 text-sm rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
-                            placeholder="e.g. 500g"
-                          />
-                        </div>
-                      )}
-                      {data.shipping_method === 'px' && (
-                        <div className="mt-2">
-                          <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">PostEx Weight (kg)</label>
-                          <input
-                            type="number" min="0" step="0.5"
-                            value={data.courier_weight}
-                            onChange={e => setData('courier_weight', e.target.value)}
-                            className="w-full px-3 py-2 text-sm rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
-                            placeholder="0.5"
-                          />
-                        </div>
-                      )}
-                      {data.shipping_method === 'movex' && (
-                        <div className="mt-2">
-                          <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Movex Weight (kg)</label>
+                          <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">
+                            Courier Weight (kg)
+                          </label>
                           <input
                             type="number" min="0" step="0.5"
                             value={data.courier_weight}
@@ -469,6 +452,17 @@ export default function OrderForm({
 
               {/* Order Items Table */}
               <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                {/* Table header with Add Item button — matches Sales module */}
+                <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between bg-white dark:bg-gray-900">
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Order Items</h3>
+                  <button
+                    type="button"
+                    onClick={addItem}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Add Item
+                  </button>
+                </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead className="bg-gray-50 dark:bg-gray-800">
@@ -608,18 +602,15 @@ export default function OrderForm({
 
                           {/* Delete Row Button */}
                           <td className="px-2 py-2 text-center">
-                            {data.items.length > 1 && (
-                              <button
-                                type="button"
-                                onClick={() => removeItem(index)}
-                                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                                title="Remove item"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-                                </svg>
-                              </button>
-                            )}
+                            <button
+                              type="button"
+                              onClick={() => removeItem(index)}
+                              disabled={data.items.length === 1}
+                              className="inline-flex items-center justify-center w-7 h-7 rounded bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/60 text-red-600 dark:text-red-400 disabled:opacity-30 transition"
+                              title="Remove item"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
                           </td>
                         </tr>
                       ))}
@@ -700,25 +691,6 @@ export default function OrderForm({
                     </div>
                   </div>
                 </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={addItem}
-                  className="px-4 py-2 text-sm bg-gray-500 hover:bg-gray-600 text-white rounded"
-                >
-                  Add new item
-                </button>
-                <button
-                  type="button"
-                  onClick={() => removeItem(data.items.length - 1)}
-                  disabled={data.items.length === 1}
-                  className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white rounded"
-                >
-                  Delete item
-                </button>
               </div>
 
               {/* Submit */}

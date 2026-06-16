@@ -8,10 +8,16 @@ import { CommonColumns } from '@/components/TableColumns';
 import StatCard from '@/components/StatCard';
 import toast from 'react-hot-toast';
 import axios from 'axios';
+import { PAYMENT_METHOD_OPTIONS, SHIPPING_METHOD_OPTIONS } from '@/constants/orderOptions';
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Orders', href: '/admin/orders' },
 ];
+
+function getOptionLabel(options: readonly { value: string; label: string }[], value: string | null): string {
+    if (!value) return '—';
+    return options.find(o => o.value === value)?.label ?? value;
+}
 
 interface OrderItem {
     product_name: string;
@@ -271,7 +277,9 @@ export default function Index({ stats, flash }: Props) {
                         {row.payment_status.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())}
                     </span>
                     {row.payment_method && (
-                        <span className="text-xs text-gray-500 dark:text-gray-400">{row.payment_method}</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                            {getOptionLabel(PAYMENT_METHOD_OPTIONS, row.payment_method)}
+                        </span>
                     )}
                 </div>
             ),

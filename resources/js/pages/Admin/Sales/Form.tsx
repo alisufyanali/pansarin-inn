@@ -3,6 +3,12 @@ import { useForm } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from '@inertiajs/react';
 import { SearchableCustomerSelect, SearchableProductSelect } from '@/components/SearchableSelect';
+import {
+    PAYMENT_METHOD_OPTIONS,
+    SHIPPING_METHOD_OPTIONS,
+    PAYMENT_STATUS_OPTIONS,
+    DELIVERY_STATUS_OPTIONS,
+} from '@/constants/orderOptions';
 
 type Customer = { id: number; first_name: string; last_name: string; phone: string; email: string | null };
 type Order = { id: number; order_number: string; customer_id: number; grand_total: number };
@@ -272,10 +278,9 @@ export default function SaleForm({
                                                 onChange={(e) => setData('payment_status', e.target.value)}
                                                 className="w-full px-3 py-2 text-sm rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
                                             >
-                                                <option value="unpaid">Due</option>
-                                                <option value="paid">Paid</option>
-                                                <option value="partially_paid">Partially Paid</option>
-                                                <option value="refunded">Refunded</option>
+                                                {PAYMENT_STATUS_OPTIONS.map(o => (
+                                                    <option key={o.value} value={o.value}>{o.label}</option>
+                                                ))}
                                             </select>
                                         </div>
                                         <div>
@@ -286,9 +291,9 @@ export default function SaleForm({
                                                 className="w-full px-3 py-2 text-sm rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
                                             >
                                                 <option value="">Select One</option>
-                                                <option value="cash_on_delivery">Cash On Delivery</option>
-                                                <option value="bank_transfer">Bank Transfer</option>
-                                                <option value="card_payment">Card Payment</option>
+                                                {PAYMENT_METHOD_OPTIONS.map(o => (
+                                                    <option key={o.value} value={o.value}>{o.label}</option>
+                                                ))}
                                             </select>
                                         </div>
                                         <div>
@@ -298,12 +303,9 @@ export default function SaleForm({
                                                 onChange={(e) => setData('delivery_status', e.target.value)}
                                                 className="w-full px-3 py-2 text-sm rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
                                             >
-                                                <option value="pending">Pending</option>
-                                                <option value="processing">Processing</option>
-                                                <option value="shipped">Shipped</option>
-                                                <option value="delivered">Delivered</option>
-                                                <option value="cancelled">Cancelled</option>
-                                                <option value="returned">Returned</option>
+                                                {DELIVERY_STATUS_OPTIONS.map(o => (
+                                                    <option key={o.value} value={o.value}>{o.label}</option>
+                                                ))}
                                             </select>
                                         </div>
                                         <div>
@@ -314,14 +316,9 @@ export default function SaleForm({
                                                 className="w-full px-3 py-2 text-sm rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
                                             >
                                                 <option value="">Select One</option>
-                                                <option value="leopard">Leopard Courier</option>
-                                                <option value="cc">Call Courier</option>
-                                                <option value="pp">Pakistan Post</option>
-                                                <option value="px">PostEx</option>
-                                                <option value="movex">Movex</option>
-                                                <option value="tcs">TCS</option>
-                                                <option value="trax">TRAX</option>
-                                                <option value="rider">Rider</option>
+                                                {SHIPPING_METHOD_OPTIONS.map(o => (
+                                                    <option key={o.value} value={o.value}>{o.label}</option>
+                                                ))}
                                             </select>
                                         </div>
                                     </div>
