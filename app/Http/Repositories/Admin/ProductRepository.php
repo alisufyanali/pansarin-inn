@@ -4,6 +4,8 @@ namespace App\Http\Repositories\Admin;
 
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Models\ProductStock;
+use App\Models\Inventory;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
@@ -112,7 +114,7 @@ class ProductRepository
 
         if (!empty($variants)) {
             foreach ($variants as $index => $variant) {
-                ProductVariant::create([
+                $pv = ProductVariant::create([
                     'product_id'         => $product->id,
                     'sku'                => $product->sku . '-V' . str_pad($index + 1, 2, '0', STR_PAD_LEFT),
                     'attribute_value_id' => null,
@@ -125,6 +127,11 @@ class ProductRepository
                     'is_default'         => ($index === 0),
                     'status'             => true,
                 ]);
+
+                $qty = (float) ($variant['current_stock'] ?? 0);
+                if ($qty > 0) {
+                    $this->syncVariantStock($product->id, $pv->id, $qty);
+                }
             }
         }
 
@@ -184,7 +191,7 @@ class ProductRepository
                 if (ProductVariant::withTrashed()->where('sku', $sku)->exists()) {
                     $sku = $product->sku . '-V' . str_pad($index + 1, 2, '0', STR_PAD_LEFT) . '-' . time();
                 }
-                ProductVariant::create([
+                $pv = ProductVariant::create([
                     'product_id'         => $product->id,
                     'sku'                => $sku,
                     'attribute_value_id' => null,
@@ -197,6 +204,9 @@ class ProductRepository
                     'is_default'         => ($index === 0),
                     'status'             => true,
                 ]);
+
+                $qty = (float) ($variant['current_stock'] ?? 0);
+                $this->syncVariantStock($product->id, $pv->id, $qty);
             }
         }
 
@@ -223,17 +233,52 @@ class ProductRepository
             $counts = Product::selectRaw("
                 COUNT(*) as total,
                 SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as active,
-                SUM(CASE WHEN featured = 1 THEN 1 ELSE 0 END) as featured,
-                SUM(CASE WHEN sale_price IS NOT NULL AND sale_price > 0 AND sale_price < price THEN 1 ELSE 0 END) as onSale
+                SUM(CASE WHEN featured = 1 THEN 1 ELSE 0 END) as featured
             ")->first();
+
+            $onSale = \DB::table('product_variants')
+                ->whereNotNull('sale_price')
+                ->where('sale_price', '>', 0)
+                ->whereColumn('sale_price', '<', 'price')
+                ->distinct('product_id')
+                ->count('product_id');
 
             return [
                 'total'    => (int) $counts->total,
                 'active'   => (int) $counts->active,
                 'featured' => (int) $counts->featured,
-                'onSale'   => (int) $counts->onSale,
+                'onSale'   => (int) $onSale,
             ];
         });
+    }
+
+    /**
+     * Sync opening/updated stock for a variant via the Inventory model.
+     * Reuses Inventory model's booted events (same path as InventoryRepository::store).
+     * On update: replaces ProductStock quantity to match the new desired total,
+     * then writes a correcting Inventory ledger entry.
+     */
+    private function syncVariantStock(int $productId, int $variantId, float $desiredQty): void
+    {
+        $existing = ProductStock::where('product_id', $productId)
+            ->where('product_variant_id', $variantId)
+            ->first();
+
+        $currentQty = $existing ? (float) $existing->quantity : 0.0;
+        $diff = $desiredQty - $currentQty;
+
+        if ($diff == 0) return;
+
+        // Write Inventory ledger entry (type=in or adjustment) — model booted event
+        // will automatically update ProductStock via adjustStock().
+        Inventory::create([
+            'product_id'         => $productId,
+            'product_variant_id' => $variantId,
+            'type'               => $diff > 0 ? 'in' : 'adjustment',
+            'quantity'           => $diff,
+            'source'             => 'product_form',
+            'note'               => 'Stock set from product create/edit form',
+        ]);
     }
 
     private function generateUniqueSlug(string $name, ?int $excludeId = null): string

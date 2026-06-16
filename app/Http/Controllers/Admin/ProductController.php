@@ -157,6 +157,9 @@ class ProductController extends Controller
             'sale_price'     => (string) ($v->sale_price ?? ''),      // sale_price = sale_price
             'stock_alert'    => (string) ($v->stock_alert ?? '5'),
             'additional'     => (string) ($v->additional ?? '0'),
+            'current_stock'  => (string) (\App\Models\ProductStock::where('product_id', $product->id)
+                ->where('product_variant_id', $v->id)
+                ->value('quantity') ?? 0),
         ])->values()->toArray();
 
         $productData = $product->toArray();

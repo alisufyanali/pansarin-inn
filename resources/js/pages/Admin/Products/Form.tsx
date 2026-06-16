@@ -9,7 +9,7 @@ type Attribute = { id: number; name: string; slug: string; category_id: number; 
 type Variation = {
     combination: string; attributes: Record<string, string>;
     purchase_price: string; sale_price: string;
-    stock_alert: string; additional: string;          // ← NEW
+    stock_alert: string; additional: string; current_stock: string;
 };
 
 export type ProductFormData = {
@@ -257,6 +257,7 @@ export default function ProductForm({ product, categories, attributes = [], isEd
             sale_price:     '',
             stock_alert:    '5',   // default
             additional:     '0',   // default
+            current_stock:  '0',   // default opening stock
         }));
         
         console.log('Generated variations:', newVariations);
@@ -308,7 +309,7 @@ export default function ProductForm({ product, categories, attributes = [], isEd
     }
 
     // Variation table headers
-    const varHeaders = ['#', 'Combination', 'Purchase Rs *', 'Sale Rs *', 'P&L', 'Stock Alert', '+ Price', ''];
+    const varHeaders = ['#', 'Combination', 'Purchase Rs *', 'Sale Rs *', 'P&L', 'Stock Alert', 'Current Stock', '+ Price', ''];
 
     return (
         <div className="p-4 max-w-7xl mx-auto">
@@ -476,6 +477,11 @@ export default function ProductForm({ product, categories, attributes = [], isEd
                                                             <input type="number" step="1" min="0" placeholder="5" value={v.stock_alert} onChange={(e) => updateVar(i, 'stock_alert', e.target.value)} className={cx.inputSm} />
                                                         </td>
 
+                                                        {/* Current Stock */}
+                                                        <td className={`${cx.tdCell} w-24`}>
+                                                            <input type="number" step="1" min="0" placeholder="0" value={v.current_stock ?? '0'} onChange={(e) => updateVar(i, 'current_stock', e.target.value)} className={cx.inputSm} />
+                                                        </td>
+
                                                         {/* Additional Price ← NEW */}
                                                         <td className={`${cx.tdCell} w-24`}>
                                                             <input type="number" step="0.1" min="0" placeholder="0" value={v.additional} onChange={(e) => updateVar(i, 'additional', e.target.value)} className={cx.inputSm} />
@@ -503,6 +509,7 @@ export default function ProductForm({ product, categories, attributes = [], isEd
                                 {/* Column legend */}
                                 <div className="mt-3 flex flex-wrap gap-3 text-xs text-gray-400">
                                     <span>🔔 <strong>Stock Alert</strong> — low stock threshold</span>
+                                    <span>📦 <strong>Current Stock</strong> — opening stock (auto-synced to Inventory)</span>
                                     <span>➕ <strong>+ Price</strong> — extra charge for this variant</span>
                                 </div>
                             </Card>
