@@ -22,7 +22,7 @@ interface RoleFormProps {
 export default function RoleForm({ role, permissions, isEdit = false }: RoleFormProps) {
     const [expandedCategories, setExpandedCategories] = React.useState<Set<string>>(new Set());
 
-    const { data, setData, errors, post, patch, processing } = useForm<RoleFormData>({
+    const { data, setData, errors, post, put, processing } = useForm<RoleFormData>({
         name: role?.name || '',
         permission: role?.permission || [],
     });
@@ -156,9 +156,7 @@ export default function RoleForm({ role, permissions, isEdit = false }: RoleForm
         e.preventDefault();
         
         if (isEdit && role?.id) {
-            patch(`/admin/roles/${role.id}`, {
-                method: 'put' as any,
-            });
+            put(`/admin/roles/${role.id}`);
         } else {
             post('/admin/roles');
         }

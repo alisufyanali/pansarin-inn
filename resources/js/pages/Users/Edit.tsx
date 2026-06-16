@@ -58,7 +58,7 @@ export default function UserEdit({ user, roles, userRoles = [] }: Props) {
 
     function submit(e: React.FormEvent) {
         e.preventDefault();
-        put(route('admin.users.update', { id: user.id }));
+        put(route('admin.users.update', { user: user.id }));
     }
 
     return (

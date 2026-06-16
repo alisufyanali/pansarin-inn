@@ -14,6 +14,7 @@ type Role = RoleFormData & { id: number };
 interface EditProps {
     role: Role;
     permissions: Permission[];
+    rolepermissions: string[];
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -21,11 +22,11 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Edit', href: '#' },
 ];
 
-export default function Edit({ role, permissions }: EditProps) {
+export default function Edit({ role, permissions, rolepermissions }: EditProps) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Edit ${role.name}`} />
-            <RoleForm role={role} permissions={permissions} isEdit={true} />
+            <RoleForm role={{ ...role, permission: rolepermissions }} permissions={permissions} isEdit={true} />
         </AppLayout>
     );
 }
