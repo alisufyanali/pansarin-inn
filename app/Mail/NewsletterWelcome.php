@@ -15,7 +15,7 @@ class NewsletterWelcome extends Mailable
     /**
      * Create a new message instance.
      */
-    public function __construct()
+    public function __construct(public readonly string $subscriberEmail = '')
     {
         //
     }
@@ -36,7 +36,7 @@ class NewsletterWelcome extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'view.name',
+            view: 'emails.newsletter.welcome',
         );
     }
 

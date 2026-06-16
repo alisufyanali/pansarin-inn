@@ -3,8 +3,10 @@
 namespace App\Http\Repositories\Admin;
 
 use App\Models\Newsletter;
+use App\Mail\NewsletterWelcome;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Yajra\DataTables\Facades\DataTables;
 
 class NewsletterRepository
@@ -88,7 +90,19 @@ class NewsletterRepository
                 $data['verification_token'] = null;
             }
 
-            return Newsletter::create($data);
+            $newsletter = Newsletter::create($data);
+
+            // Send welcome email to newly subscribed active subscribers
+            if (($newsletter->status ?? 'active') === 'active' && $newsletter->email) {
+                try {
+                    Mail::to($newsletter->email)->queue(new NewsletterWelcome());
+                } catch (\Exception $mailEx) {
+                    Log::error('Newsletter welcome email failed: ' . $mailEx->getMessage());
+                    // Don't rethrow — subscriber was saved, mail failure is non-fatal
+                }
+            }
+
+            return $newsletter;
         } catch (\Exception $e) {
             Log::error('Newsletter creation error: '.$e->getMessage());
             throw $e;
