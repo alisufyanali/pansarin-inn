@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\ProductStock;
 use App\Models\ProductVariant;
 use App\Models\Sale;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -41,6 +42,7 @@ class SaleRepository
     public function store(array $data): Sale
     {
         return DB::transaction(function () use ($data) {
+            Cache::forget('sale_stats');
             $sale = Sale::create([
                 'order_id'         => $data['order_id'],
                 'customer_id'      => $data['customer_id'],
@@ -107,6 +109,7 @@ class SaleRepository
     public function delete($id): bool
     {
         return DB::transaction(function () use ($id) {
+            Cache::forget('sale_stats');
             $sale = Sale::findOrFail($id);
             $sale->items()->delete();
             return $sale->delete();
@@ -135,39 +138,50 @@ class SaleRepository
 
     public function getStats(): array
     {
-        return [
-            'total'        => Sale::count(),
-            'pending'      => Sale::where('delivery_status', 'pending')->count(),
-            'processing'   => Sale::where('delivery_status', 'processing')->count(),
-            'delivered'    => Sale::where('delivery_status', 'delivered')->count(),
-            'totalRevenue' => Sale::where('payment_status', 'paid')->sum('grand_total'),
-        ];
+        return Cache::remember('sale_stats', 300, function () {
+            $counts = Sale::selectRaw("
+                COUNT(*) as total,
+                SUM(CASE WHEN delivery_status = 'pending' THEN 1 ELSE 0 END) as pending,
+                SUM(CASE WHEN delivery_status = 'processing' THEN 1 ELSE 0 END) as processing,
+                SUM(CASE WHEN delivery_status = 'delivered' THEN 1 ELSE 0 END) as delivered,
+                SUM(CASE WHEN payment_status = 'paid' THEN grand_total ELSE 0 END) as totalRevenue
+            ")->first();
+
+            return [
+                'total'        => (int) $counts->total,
+                'pending'      => (int) $counts->pending,
+                'processing'   => (int) $counts->processing,
+                'delivered'    => (int) $counts->delivered,
+                'totalRevenue' => (float) $counts->totalRevenue,
+            ];
+        });
     }
 
     public function getProductsForForm(): \Illuminate\Support\Collection
     {
+        // Eager load all stocks in one query to avoid N+1
+        $allStocks = ProductStock::all()->groupBy(function ($s) {
+            return $s->product_id . '_' . ($s->product_variant_id ?? 'null');
+        });
+
         return Product::with('variants')
             ->where('status', true)
             ->orderBy('name')
             ->get(['id', 'name', 'sku', 'unit'])
-            ->map(function ($p) {
+            ->map(function ($p) use ($allStocks) {
                 return [
                     'id'       => $p->id,
                     'name'     => $p->name,
                     'sku'      => $p->sku,
                     'unit'     => $p->unit,
                     'price'    => 0,
-                    'stock'    => ProductStock::where('product_id', $p->id)
-                                     ->whereNull('product_variant_id')
-                                     ->value('quantity') ?? 0,
+                    'stock'    => (int) ($allStocks->get($p->id . '_null')?->first()?->quantity ?? 0),
                     'variants' => $p->variants->map(fn ($v) => [
                         'id'    => $v->id,
                         'name'  => collect($v->attributes ?? [])->values()->join(' / ') ?: $v->value,
                         'sku'   => $v->sku,
                         'price' => $v->sale_price ?? $v->price ?? 0,
-                        'stock' => ProductStock::where('product_id', $p->id)
-                                       ->where('product_variant_id', $v->id)
-                                       ->value('quantity') ?? 0,
+                        'stock' => (int) ($allStocks->get($p->id . '_' . $v->id)?->first()?->quantity ?? 0),
                     ]),
                 ];
             });

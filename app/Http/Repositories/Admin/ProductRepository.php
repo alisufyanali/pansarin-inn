@@ -4,6 +4,7 @@ namespace App\Http\Repositories\Admin;
 
 use App\Models\Product;
 use App\Models\ProductVariant;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class ProductRepository
@@ -78,6 +79,7 @@ class ProductRepository
 
     public function store(array $data, $thumbnailFile = null, $socialImageFile = null, $galleryFiles = [])
     {
+        Cache::forget('product_stats');
         if (empty($data['slug'])) {
             $data['slug'] = $this->generateUniqueSlug($data['name']);
         }
@@ -203,6 +205,7 @@ class ProductRepository
 
     public function delete($id)
     {
+        Cache::forget('product_stats');
         $product = $this->find($id);
         $folder  = public_path('storage/' . $this->productFolder($product->id, $product->name));
 
@@ -216,14 +219,21 @@ class ProductRepository
 
     public function getStats()
     {
-        return [
-            'total'    => Product::count(),
-            'active'   => Product::where('status', true)->count(),
-            'featured' => Product::where('featured', true)->count(),
-            'onSale'   => Product::whereNotNull('sale_price')
-                            ->whereColumn('sale_price', '<', 'price')
-                            ->where('sale_price', '>', 0)->count(),
-        ];
+        return Cache::remember('product_stats', 300, function () {
+            $counts = Product::selectRaw("
+                COUNT(*) as total,
+                SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as active,
+                SUM(CASE WHEN featured = 1 THEN 1 ELSE 0 END) as featured,
+                SUM(CASE WHEN sale_price IS NOT NULL AND sale_price > 0 AND sale_price < price THEN 1 ELSE 0 END) as onSale
+            ")->first();
+
+            return [
+                'total'    => (int) $counts->total,
+                'active'   => (int) $counts->active,
+                'featured' => (int) $counts->featured,
+                'onSale'   => (int) $counts->onSale,
+            ];
+        });
     }
 
     private function generateUniqueSlug(string $name, ?int $excludeId = null): string

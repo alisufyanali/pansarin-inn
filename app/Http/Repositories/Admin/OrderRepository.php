@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductStock;
 use App\Models\ProductVariant;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -57,6 +58,7 @@ class OrderRepository
     public function store(array $data): Order
     {
         return DB::transaction(function () use ($data) {
+            Cache::forget('order_stats');
             $order = Order::create([
                 'customer_id'      => $data['customer_id'],
                 'city_id'          => $data['city_id'] ?? null,
@@ -142,6 +144,7 @@ class OrderRepository
     public function delete($id): bool
     {
         return DB::transaction(function () use ($id) {
+            Cache::forget('order_stats');
             $order = Order::with('items')->findOrFail($id);
 
             // Stock wapas karo
@@ -183,41 +186,45 @@ class OrderRepository
     // ── Stats ─────────────────────────────────────────────────────
     public function getStats(): array
     {
-        return [
-            'total'        => Order::count(),
-            'pending'      => Order::where('status', 'pending')->count(),
-            'processing'   => Order::where('status', 'processing')->count(),
-            'delivered'    => Order::where('status', 'delivered')->count(),
-            'totalRevenue' => Order::where('payment_status', 'paid')->sum('grand_total'),
-        ];
+        return Cache::remember('order_stats', 300, function () {
+            $counts = Order::selectRaw("
+                COUNT(*) as total,
+                SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+                SUM(CASE WHEN status = 'processing' THEN 1 ELSE 0 END) as processing,
+                SUM(CASE WHEN status = 'delivered' THEN 1 ELSE 0 END) as delivered,
+                SUM(CASE WHEN payment_status = 'paid' THEN grand_total ELSE 0 END) as totalRevenue
+            ")->first();
+
+            return [
+                'total'        => (int) $counts->total,
+                'pending'      => (int) $counts->pending,
+                'processing'   => (int) $counts->processing,
+                'delivered'    => (int) $counts->delivered,
+                'totalRevenue' => (float) $counts->totalRevenue,
+            ];
+        });
     }
 
     // ── Products for Form ─────────────────────────────────────────
     public function getProductsForForm(): \Illuminate\Support\Collection
     {
+        // Eager load all stocks in one query to avoid N+1
+        $allStocks = ProductStock::all()->groupBy(function ($s) {
+            return $s->product_id . '_' . ($s->product_variant_id ?? 'null');
+        });
+
         return Product::with(['variants'])
             ->where('status', true)
             ->orderBy('name')
             ->get(['id', 'name', 'sku', 'unit', 'price', 'sale_price', 'quantity'])
-            ->map(function ($p) {
+            ->map(function ($p) use ($allStocks) {
                 $hasVariants = $p->variants->isNotEmpty();
 
                 if ($hasVariants) {
-                    $baseStock = ProductStock::where('product_id', $p->id)
-                        ->whereNotNull('product_variant_id')
-                        ->sum('quantity');
+                    $baseStock = $allStocks->filter(fn($g, $k) => str_starts_with($k, $p->id . '_') && !str_ends_with($k, '_null'))->sum(fn($g) => $g->sum('quantity'));
                 } else {
-                    // product_stocks se try karo, nahi mila to products.quantity fallback
-                    $stockRecord = ProductStock::where('product_id', $p->id)
-                        ->whereNull('product_variant_id')
-                        ->first();
-
-                    if ($stockRecord) {
-                        $baseStock = $stockRecord->quantity;
-                    } else {
-                        // Fallback: products table ki quantity use karo
-                        $baseStock = (float) ($p->quantity ?? 0);
-                    }
+                    $stockRecord = $allStocks->get($p->id . '_null')?->first();
+                    $baseStock   = $stockRecord ? $stockRecord->quantity : (float) ($p->quantity ?? 0);
                 }
 
                 return [
@@ -232,9 +239,7 @@ class OrderRepository
                         'name'  => collect($v->attributes ?? [])->values()->join(' / ') ?: $v->value,
                         'sku'   => $v->sku,
                         'price' => $v->sale_price ?? $v->price ?? 0,
-                        'stock' => (int) (ProductStock::where('product_id', $p->id)
-                                       ->where('product_variant_id', $v->id)
-                                       ->value('quantity') ?? 0),
+                        'stock' => (int) ($allStocks->get($p->id . '_' . $v->id)?->first()?->quantity ?? 0),
                     ]),
                 ];
             });
