@@ -26,6 +26,10 @@ export default function UiSettingsIndex({ settings }: { settings: any }) {
 
     const ActiveComponent = tabs.find(t => t.id === activeTab)?.component || BrandingTab;
 
+    // Stringify settings as a stable cache-bust key so child tabs remount
+    // whenever a save returns fresh data from the server.
+    const settingsKey = JSON.stringify(settings);
+
     return (
         <AppLayout>
             <Head title="UI Settings" />
@@ -45,9 +49,9 @@ export default function UiSettingsIndex({ settings }: { settings: any }) {
                             </button>
                         ))}
                     </div>
-                    {/* Content Area */}
+                    {/* Content Area — key forces remount when settings change after save */}
                     <div className="flex-1 bg-white dark:bg-gray-900 border rounded-2xl p-6 shadow-sm">
-                        <ActiveComponent settings={settings} />
+                        <ActiveComponent key={`${activeTab}-${settingsKey}`} settings={settings} />
                     </div>
                 </div>
             </div>

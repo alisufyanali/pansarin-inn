@@ -24,18 +24,23 @@ interface OrderItem {
     variant_name: string | null;
     quantity: number;
     price: number;
+    subtotal: number;
 }
 
 interface Order {
     id: number;
     order_number: string;
     subtotal: number;
+    product_discount: number;
+    invoice_discount: number;
+    shipping_charges: number;
+    tax: number;
     grand_total: number;
     status: string;
     payment_status: string;
     payment_method: string | null;
     created_at: string;
-    customer?: { id: number; first_name: string; last_name: string; phone: string };
+    customer?: { id: number; first_name: string; last_name: string; phone: string; email?: string; address?: string };
     city?: { name: string } | null;
     items?: OrderItem[];
 }
@@ -104,77 +109,126 @@ export default function Index({ stats, flash }: Props) {
             return;
         }
 
-        const printWindow = window.open('', '_blank');
-        if (!printWindow) return;
+        const phoneIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:4px;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.18 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6.29 6.29l.96-.96a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`;
+        const mailIcon  = `<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:4px;"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>`;
+        const pinIcon   = `<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:4px;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>`;
+        const cityIcon  = `<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:4px;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`;
 
-        const rows = selected.map(order => {
-            const items = (order.items ?? []);
-            const itemRows = items.length > 0
-                ? items.map((item, i) => `
-                    <tr>
-                        ${i === 0 ? `
-                            <td rowspan="${items.length}" style="border:1px solid #ccc;padding:8px;vertical-align:middle;text-align:center;">${order.order_number}</td>
-                            <td rowspan="${items.length}" style="border:1px solid #ccc;padding:8px;vertical-align:middle;">${order.customer?.first_name ?? ''} ${order.customer?.last_name ?? ''}</td>
-                            <td rowspan="${items.length}" style="border:1px solid #ccc;padding:8px;vertical-align:middle;">${order.customer?.phone ?? ''}</td>
-                            <td rowspan="${items.length}" style="border:1px solid #ccc;padding:8px;vertical-align:middle;">${order.city?.name ?? ''}</td>
-                        ` : ''}
-                        <td style="border:1px solid #ccc;padding:6px;">
-                            <table style="width:100%;border-collapse:collapse;">
-                                <tr>
-                                    <td style="border:1px solid #ddd;padding:4px;font-size:12px;">${item.product_name}</td>
-                                    <td style="border:1px solid #ddd;padding:4px;font-size:12px;white-space:nowrap;">${item.variant_name ?? ''}</td>
-                                    <td style="border:1px solid #ddd;padding:4px;font-size:12px;white-space:nowrap;">${item.quantity} qty</td>
-                                </tr>
-                            </table>
-                        </td>
-                        ${i === 0 ? `<td rowspan="${items.length}" style="border:1px solid #ccc;padding:8px;vertical-align:middle;text-align:right;font-weight:bold;">PKR ${Number(order.grand_total).toLocaleString()}</td>` : ''}
-                    </tr>
-                `).join('')
-                : `<tr>
-                    <td style="border:1px solid #ccc;padding:8px;text-align:center;">${order.order_number}</td>
-                    <td style="border:1px solid #ccc;padding:8px;">${order.customer?.first_name ?? ''} ${order.customer?.last_name ?? ''}</td>
-                    <td style="border:1px solid #ccc;padding:8px;">${order.customer?.phone ?? ''}</td>
-                    <td style="border:1px solid #ccc;padding:8px;">${order.city?.name ?? ''}</td>
-                    <td style="border:1px solid #ccc;padding:8px;">—</td>
-                    <td style="border:1px solid #ccc;padding:8px;text-align:right;font-weight:bold;">PKR ${Number(order.grand_total).toLocaleString()}</td>
-                   </tr>`;
-            return itemRows;
+        const invoices = selected.map(order => {
+            const items = order.items ?? [];
+            const date  = new Date(order.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+            const itemRows = items.map((item: any, i: number) => `
+                <tr style="background:${i % 2 === 0 ? '#ffffff' : '#f0fdf4'};">
+                    <td style="padding:7px 10px;border-bottom:1px solid #e8f5e9;text-align:center;color:#9ca3af;font-size:11px;">${i + 1}</td>
+                    <td style="padding:7px 10px;border-bottom:1px solid #e8f5e9;font-weight:500;color:#1a1a1a;">${item.product_name ?? '—'}</td>
+                    <td style="padding:7px 10px;border-bottom:1px solid #e8f5e9;text-align:center;color:#6b7280;font-size:11px;">${item.variant_name ?? '—'}</td>
+                    <td style="padding:7px 10px;border-bottom:1px solid #e8f5e9;text-align:center;font-weight:600;">${item.quantity}</td>
+                    <td style="padding:7px 10px;border-bottom:1px solid #e8f5e9;text-align:right;color:#374151;">Rs ${Number(item.price).toLocaleString()}</td>
+                    <td style="padding:7px 10px;border-bottom:1px solid #e8f5e9;text-align:right;font-weight:700;color:#166534;">Rs ${Number(item.subtotal).toLocaleString()}</td>
+                </tr>
+            `).join('');
+
+            return `
+            <div style="break-inside:avoid;margin-bottom:16px;border-radius:10px;overflow:hidden;border:1px solid #d1fae5;font-family:'Segoe UI',Arial,sans-serif;font-size:12px;background:#fff;box-shadow:0 2px 8px rgba(45,106,79,0.08);">
+                <div style="height:5px;background:linear-gradient(90deg,#1b4332,#2d6a4f,#52b788,#95d5b2);"></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 20px 12px;background:linear-gradient(135deg,#f0fdf4,#ffffff);">
+                    <div><img src="/logo.png" style="height:46px;object-fit:contain;" onerror="this.style.display='none'" /></div>
+                    <div style="text-align:right;">
+                        <div style="font-size:18px;font-weight:800;color:#1b4332;letter-spacing:2px;text-transform:uppercase;">Invoice</div>
+                        <div style="font-size:11px;color:#6b7280;margin-top:3px;">
+                            <span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:20px;font-weight:600;">${order.order_number}</span>
+                        </div>
+                        <div style="font-size:11px;color:#9ca3af;margin-top:4px;">${date}</div>
+                    </div>
+                </div>
+                <div style="height:1px;background:linear-gradient(90deg,transparent,#d1fae5,transparent);margin:0 20px;"></div>
+                <div style="display:flex;gap:12px;padding:12px 20px;">
+                    <div style="flex:1;background:#f8fffe;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;">
+                        <div style="font-size:9px;font-weight:800;color:#2d6a4f;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;border-bottom:1px solid #d1fae5;padding-bottom:4px;">Bill To</div>
+                        <div style="font-size:13px;font-weight:700;color:#1a1a1a;margin-bottom:5px;">${order.customer?.first_name ?? ''} ${order.customer?.last_name ?? ''}</div>
+                        <div style="color:#555;font-size:11px;line-height:1.9;">
+                            <div>${phoneIcon}${order.customer?.phone ?? '—'}</div>
+                            ${order.customer?.email ? `<div>${mailIcon}${order.customer.email}</div>` : ''}
+                        </div>
+                    </div>
+                    <div style="flex:1;background:#f8f8ff;border:1px solid #c7d2fe;border-radius:8px;padding:10px 14px;">
+                        <div style="font-size:9px;font-weight:800;color:#4338ca;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;border-bottom:1px solid #e0e7ff;padding-bottom:4px;">Ship To</div>
+                        <div style="color:#555;font-size:11px;line-height:1.9;">
+                            ${order.customer?.address ? `<div>${pinIcon}${order.customer.address}</div>` : '<div style="color:#aaa;font-style:italic;">No address provided</div>'}
+                            ${order.city?.name ? `<div>${cityIcon}${order.city.name}</div>` : ''}
+                            <div>${phoneIcon}${order.customer?.phone ?? '—'}</div>
+                        </div>
+                    </div>
+                </div>
+                <div style="padding:0 20px 14px;">
+                    <table style="width:100%;border-collapse:collapse;font-size:11px;border-radius:8px;overflow:hidden;border:1px solid #d1fae5;">
+                        <thead>
+                            <tr style="background:linear-gradient(90deg,#1b4332,#2d6a4f);color:#fff;">
+                                <th style="padding:9px 10px;text-align:center;width:32px;font-weight:600;">#</th>
+                                <th style="padding:9px 10px;text-align:left;font-weight:600;">Item</th>
+                                <th style="padding:9px 10px;text-align:center;width:110px;font-weight:600;">Options</th>
+                                <th style="padding:9px 10px;text-align:center;width:50px;font-weight:600;">Qty</th>
+                                <th style="padding:9px 10px;text-align:right;width:85px;font-weight:600;">Unit Price</th>
+                                <th style="padding:9px 10px;text-align:right;width:85px;font-weight:600;">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>${itemRows || '<tr><td colspan="6" style="text-align:center;padding:14px;color:#aaa;font-style:italic;">No items found</td></tr>'}</tbody>
+                    </table>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:flex-end;padding:0 20px 16px;gap:12px;">
+                    <div style="font-size:10px;color:#9ca3af;font-style:italic;max-width:200px;line-height:1.6;">
+                        Thank you for your order!<br/>
+                        For queries contact: pansariinn@gmail.com
+                    </div>
+                    <div style="min-width:210px;border-radius:8px;overflow:hidden;border:1px solid #d1fae5;">
+                        <div style="display:flex;justify-content:space-between;padding:6px 12px;background:#f0fdf4;font-size:11px;border-bottom:1px solid #d1fae5;">
+                            <span style="color:#6b7280;">Subtotal</span>
+                            <span style="font-weight:500;">Rs ${Number(order.subtotal ?? 0).toLocaleString()}</span>
+                        </div>
+                        ${Number(order.product_discount ?? 0) > 0 ? `
+                        <div style="display:flex;justify-content:space-between;padding:6px 12px;background:#f0fdf4;font-size:11px;border-bottom:1px solid #d1fae5;">
+                            <span style="color:#6b7280;">Product Discount</span>
+                            <span style="font-weight:500;color:#dc2626;">- Rs ${Number(order.product_discount).toLocaleString()}</span>
+                        </div>` : ''}
+                        ${Number(order.invoice_discount ?? 0) > 0 ? `
+                        <div style="display:flex;justify-content:space-between;padding:6px 12px;background:#f0fdf4;font-size:11px;border-bottom:1px solid #d1fae5;">
+                            <span style="color:#6b7280;">Invoice Discount</span>
+                            <span style="font-weight:500;color:#dc2626;">- Rs ${Number(order.invoice_discount).toLocaleString()}</span>
+                        </div>` : ''}
+                        <div style="display:flex;justify-content:space-between;padding:6px 12px;background:#f0fdf4;font-size:11px;border-bottom:1px solid #d1fae5;">
+                            <span style="color:#6b7280;">Shipping</span>
+                            <span style="font-weight:500;">Rs ${Number(order.shipping_charges ?? 0).toLocaleString()}</span>
+                        </div>
+                        ${Number(order.tax ?? 0) > 0 ? `
+                        <div style="display:flex;justify-content:space-between;padding:6px 12px;background:#f0fdf4;font-size:11px;border-bottom:1px solid #d1fae5;">
+                            <span style="color:#6b7280;">Tax</span>
+                            <span style="font-weight:500;">Rs ${Number(order.tax).toLocaleString()}</span>
+                        </div>` : ''}
+                        <div style="display:flex;justify-content:space-between;padding:9px 12px;background:linear-gradient(90deg,#1b4332,#2d6a4f);color:#fff;">
+                            <span style="font-weight:700;font-size:12px;">Grand Total</span>
+                            <span style="font-weight:800;font-size:13px;">Rs ${Number(order.grand_total).toLocaleString()}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
         }).join('');
 
-        printWindow.document.write(`
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>Orders Print</title>
-                <style>
-                    body { font-family: Arial, sans-serif; font-size: 13px; margin: 20px; }
-                    h2 { text-align: center; margin-bottom: 16px; }
-                    table { width: 100%; border-collapse: collapse; }
-                    th { background: #f3f4f6; border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 13px; }
-                    td { border: 1px solid #ccc; padding: 8px; vertical-align: top; font-size: 13px; }
-                    @media print { body { margin: 10px; } }
-                </style>
-            </head>
-            <body>
-                <h2>Orders — ${new Date().toLocaleDateString()}</h2>
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="width:80px">Order #</th>
-                            <th>Name</th>
-                            <th>Phone</th>
-                            <th>City</th>
-                            <th>Product Detail</th>
-                            <th style="width:90px;text-align:right">Total Price</th>
-                        </tr>
-                    </thead>
-                    <tbody>${rows}</tbody>
-                </table>
-                <script>window.onload = () => { window.print(); window.close(); }<\/script>
-            </body>
-            </html>
+        const win = window.open('', '_blank');
+        if (!win) return;
+        win.document.write(`
+            <!DOCTYPE html><html><head><title>Invoices</title>
+            <style>
+                * { box-sizing:border-box; margin:0; padding:0; }
+                body { background:#fff; padding:10px; font-family:'Segoe UI',Arial,sans-serif; }
+                @media print { body { padding:0; } @page { margin:8mm; size:A4; } }
+            </style>
+            </head><body>
+            ${invoices}
+            <script>window.onload = () => { window.print(); window.close(); }<\/script>
+            </body></html>
         `);
-        printWindow.document.close();
+        win.document.close();
     }
 
     async function handleBulkEmail() {

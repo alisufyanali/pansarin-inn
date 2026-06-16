@@ -25,7 +25,10 @@ interface Sale {
     id: number;
     sale_code: string;
     subtotal: number;
+    product_discount: number;
+    invoice_discount: number;
     shipping_charges: number;
+    vat: number;
     grand_total: number;
     delivery_status: string;
     payment_status: string;
@@ -201,10 +204,25 @@ export default function Index({ stats, flash }: Props) {
                             <span style="color:#6b7280;">Subtotal</span>
                             <span style="font-weight:500;">Rs ${Number(sale.subtotal).toLocaleString()}</span>
                         </div>
+                        ${Number(sale.product_discount ?? 0) > 0 ? `
+                        <div style="display:flex;justify-content:space-between;padding:6px 12px;background:#f0fdf4;font-size:11px;border-bottom:1px solid #d1fae5;">
+                            <span style="color:#6b7280;">Product Discount</span>
+                            <span style="font-weight:500;color:#dc2626;">- Rs ${Number(sale.product_discount).toLocaleString()}</span>
+                        </div>` : ''}
+                        ${Number(sale.invoice_discount ?? 0) > 0 ? `
+                        <div style="display:flex;justify-content:space-between;padding:6px 12px;background:#f0fdf4;font-size:11px;border-bottom:1px solid #d1fae5;">
+                            <span style="color:#6b7280;">Invoice Discount</span>
+                            <span style="font-weight:500;color:#dc2626;">- Rs ${Number(sale.invoice_discount).toLocaleString()}</span>
+                        </div>` : ''}
                         <div style="display:flex;justify-content:space-between;padding:6px 12px;background:#f0fdf4;font-size:11px;border-bottom:1px solid #d1fae5;">
                             <span style="color:#6b7280;">Shipping</span>
-                            <span style="font-weight:500;">Rs ${Number(sale.shipping_charges).toLocaleString()}</span>
+                            <span style="font-weight:500;">Rs ${Number(sale.shipping_charges ?? 0).toLocaleString()}</span>
                         </div>
+                        ${Number(sale.vat ?? 0) > 0 ? `
+                        <div style="display:flex;justify-content:space-between;padding:6px 12px;background:#f0fdf4;font-size:11px;border-bottom:1px solid #d1fae5;">
+                            <span style="color:#6b7280;">VAT</span>
+                            <span style="font-weight:500;">Rs ${Number(sale.vat).toLocaleString()}</span>
+                        </div>` : ''}
                         <div style="display:flex;justify-content:space-between;padding:9px 12px;background:linear-gradient(90deg,#1b4332,#2d6a4f);color:#fff;">
                             <span style="font-weight:700;font-size:12px;">Grand Total</span>
                             <span style="font-weight:800;font-size:13px;">Rs ${Number(sale.grand_total).toLocaleString()}</span>

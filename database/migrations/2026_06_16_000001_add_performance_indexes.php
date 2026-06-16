@@ -20,9 +20,6 @@ return new class extends Migration
             if (!$this->hasIndex('orders', 'orders_status_index')) {
                 $table->index('status', 'orders_status_index');
             }
-            if (!$this->hasIndex('orders', 'orders_payment_status_index')) {
-                $table->index('payment_status', 'orders_payment_status_index');
-            }
             if (!$this->hasIndex('orders', 'orders_customer_id_index')) {
                 $table->index('customer_id', 'orders_customer_id_index');
             }
@@ -33,9 +30,7 @@ return new class extends Migration
             if (!$this->hasIndex('sales', 'sales_delivery_status_index')) {
                 $table->index('delivery_status', 'sales_delivery_status_index');
             }
-            if (!$this->hasIndex('sales', 'sales_payment_status_index')) {
-                $table->index('payment_status', 'sales_payment_status_index');
-            }
+        
             if (!$this->hasIndex('sales', 'sales_customer_id_index')) {
                 $table->index('customer_id', 'sales_customer_id_index');
             }

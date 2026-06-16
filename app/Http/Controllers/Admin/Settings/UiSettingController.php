@@ -68,7 +68,7 @@ class UiSettingController extends Controller
             'fav_ext',
         ]);
 
-        return redirect()->back()->with('success', 'Brand Settings updated!');
+        return redirect()->route('admin.ui-settings.index')->with('success', 'Brand Settings updated!');
     }
 
     public function updateHeaderUI(Request $request){
@@ -83,7 +83,7 @@ class UiSettingController extends Controller
             'header_store_locator_status',
         ]);
 
-        return redirect()->back()->with('success', 'Header updated!');
+        return redirect()->route('admin.ui-settings.index')->with('success', 'Header updated!');
     }
 
     public function updateHomepageUI(Request $request){
@@ -98,7 +98,7 @@ class UiSettingController extends Controller
             'parallax_vendor_title',
         ]);
 
-        return redirect()->back()->with('success', 'Homepage updated!');
+        return redirect()->route('admin.ui-settings.index')->with('success', 'Homepage updated!');
     }
 
     public function updateCategoriesUI(Request $request){
@@ -111,7 +111,7 @@ class UiSettingController extends Controller
             'top_slide_categories',
         ]);
 
-        return redirect()->back()->with('success', 'Categories updated!');
+        return redirect()->route('admin.ui-settings.index')->with('success', 'Categories updated!');
     }
 
     public function updateProductsUI(Request $request){
@@ -123,7 +123,7 @@ class UiSettingController extends Controller
             'special_products_show',
         ]);
 
-        return redirect()->back()->with('success', 'Products Setting updated!');
+        return redirect()->route('admin.ui-settings.index')->with('success', 'Products Setting updated!');
     }
 
     public function updateEmailUI(Request $request){
@@ -133,7 +133,7 @@ class UiSettingController extends Controller
             'email_theme_style_2',
         ]);
 
-        return redirect()->back()->with('success', 'Email Template updated!');
+        return redirect()->route('admin.ui-settings.index')->with('success', 'Email Template updated!');
     }
 
     public function updateMarketingUI(Request $request){
@@ -144,6 +144,6 @@ class UiSettingController extends Controller
             'affiliate_system',
         ]);
 
-        return redirect()->back()->with('success', 'Marketing updated!');
+        return redirect()->route('admin.ui-settings.index')->with('success', 'Marketing updated!');
     }
 }
