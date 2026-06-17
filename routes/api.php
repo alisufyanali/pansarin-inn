@@ -24,6 +24,7 @@ Route::get('/blogs/{slug}',  [BlogApiController::class, 'show']);
 
 Route::post('/contact',           [ContactApiController::class, 'store']);
 Route::post('/coupons/validate',  [CouponApiController::class, 'check']);
+Route::post('/orders/guest',      [OrderApiController::class, 'storeGuest']);
 
 // ── Protected Routes (auth:sanctum) ───────────────────────────────
 Route::middleware('auth:sanctum')->group(function () {

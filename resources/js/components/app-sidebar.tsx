@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { LayoutGrid } from 'lucide-react';
+import { LayoutGrid, Image, Monitor } from 'lucide-react';
 
 import { usePermissionChecks } from '@/hooks/use-permission-checks';
 import { BlogSection } from '@/components/sidebar-sections/blog-section';
@@ -106,6 +106,24 @@ export function AppSidebar() {
     });
     if (affiliateSection) {
         mainNavItems.push(affiliateSection);
+    }
+
+    // Slides — permission-gated
+    if (permissions.hasAnySlidePerm) {
+        mainNavItems.push({
+            title: 'Slides',
+            href: '/admin/slides',
+            icon: Image,
+        });
+    }
+
+    // Display / UI Settings quick link — permission-gated
+    if (permissions.hasAnySettingsPerm) {
+        mainNavItems.push({
+            title: 'Display Settings',
+            href: '/admin/settings/ui',
+            icon: Monitor,
+        });
     }
 
     // Footer: Settings — shown only if user has settings permissions
