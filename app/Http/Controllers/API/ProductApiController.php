@@ -95,10 +95,32 @@ class ProductApiController extends Controller
         ]);
     }
 
+    // GET /api/products/with-video
+    public function withVideo()
+    {
+        $products = Product::with(['category:id,name,slug', 'variants'])
+            ->where('status', true)
+            ->whereNotNull('video')
+            ->where('video', '!=', '')
+            ->orderByDesc('featured')
+            ->latest()
+            ->take(12)
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data'    => $products->map(fn ($p) => array_merge(
+                $this->formatProduct($p),
+                ['video' => $p->video]
+            )),
+        ]);
+    }
+
     // GET /api/categories
     public function categories()
     {
         $categories = \App\Models\Category::where('status', true)
+            ->withCount(['products' => fn ($q) => $q->where('status', true)])
             ->with('children:id,name,slug,image,parent_id')
             ->whereNull('parent_id')
             ->orderBy('name')
@@ -107,11 +129,12 @@ class ProductApiController extends Controller
         return response()->json([
             'success' => true,
             'data'    => $categories->map(fn ($c) => [
-                'id'       => $c->id,
-                'name'     => $c->name,
-                'slug'     => $c->slug,
-                'image'    => $c->image ? asset('storage/' . $c->image) : null,
-                'children' => $c->children->map(fn ($ch) => [
+                'id'             => $c->id,
+                'name'           => $c->name,
+                'slug'           => $c->slug,
+                'image'          => $c->image ? asset('storage/' . $c->image) : null,
+                'products_count' => $c->products_count,
+                'children'       => $c->children->map(fn ($ch) => [
                     'id'    => $ch->id,
                     'name'  => $ch->name,
                     'slug'  => $ch->slug,

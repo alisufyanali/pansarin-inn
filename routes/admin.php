@@ -89,6 +89,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::resource('reviews', ProductsReviewsController::class);
     Route::get('reviews-data', [ProductsReviewsController::class, 'getData'])->name('reviews.data');
     Route::patch('reviews/{review}/status', [ProductsReviewsController::class, 'updateStatus'])->name('reviews.status');
+    Route::patch('reviews/{id}/toggle-homepage', [ProductsReviewsController::class, 'toggleHomepage'])->name('reviews.toggle-homepage');
 
     /*
     |--------------------------------------------------------------------------

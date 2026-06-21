@@ -5,6 +5,7 @@ use App\Http\Controllers\API\BlogApiController;
 use App\Http\Controllers\API\CartApiController;
 use App\Http\Controllers\API\ContactApiController;
 use App\Http\Controllers\API\CouponApiController;
+use App\Http\Controllers\API\HomepageApiController;
 use App\Http\Controllers\API\NewsletterApiController;
 use App\Http\Controllers\API\OrderApiController;
 use App\Http\Controllers\API\ProductApiController;
@@ -15,21 +16,25 @@ use Illuminate\Support\Facades\Route;
 Route::post('/login',    [AuthApiController::class, 'login']);
 Route::post('/register', [AuthApiController::class, 'register']);
 
-Route::get('/products/featured',  [ProductApiController::class, 'featured']);
-Route::get('/products',           [ProductApiController::class, 'index']);
-Route::get('/products/{slug}',    [ProductApiController::class, 'show']);
-Route::get('/categories',         [ProductApiController::class, 'categories']);
+// Products — with-video must come before {slug} wildcard
+Route::get('/products/featured',    [ProductApiController::class, 'featured']);
+Route::get('/products/with-video',  [ProductApiController::class, 'withVideo']);
+Route::get('/products',             [ProductApiController::class, 'index']);
+Route::get('/products/{slug}',      [ProductApiController::class, 'show']);
+Route::get('/categories',           [ProductApiController::class, 'categories']);
 
+// Homepage dynamic sections
 Route::get('/homepage/category-products', [ProductApiController::class, 'homepageCategoryProducts']);
+Route::get('/homepage/reviews',           [HomepageApiController::class, 'reviews']);
 
 Route::get('/blogs',         [BlogApiController::class, 'index']);
 Route::get('/blogs/{slug}',  [BlogApiController::class, 'show']);
 
-Route::post('/contact',           [ContactApiController::class, 'store']);
-Route::post('/coupons/validate',  [CouponApiController::class, 'check']);
+Route::post('/contact',              [ContactApiController::class, 'store']);
+Route::post('/coupons/validate',     [CouponApiController::class, 'check']);
 Route::post('/newsletter/subscribe', [NewsletterApiController::class, 'subscribe']);
-Route::get('/orders/track',       [OrderApiController::class, 'track']);
-Route::post('/orders/guest',      [OrderApiController::class, 'storeGuest']);
+Route::get('/orders/track',          [OrderApiController::class, 'track']);
+Route::post('/orders/guest',         [OrderApiController::class, 'storeGuest']);
 
 // ── Protected Routes (auth:sanctum) ───────────────────────────────
 Route::middleware('auth:sanctum')->group(function () {

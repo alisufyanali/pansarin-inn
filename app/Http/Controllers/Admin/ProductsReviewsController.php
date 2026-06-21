@@ -130,6 +130,23 @@ class ProductsReviewsController extends Controller
         }
     }
 
+    public function toggleHomepage(Request $request, $id)
+    {
+        try {
+            $review = \App\Models\ProductReview::findOrFail($id);
+            $review->update(['show_on_homepage' => (bool) $request->show_on_homepage]);
+
+            return response()->json([
+                'success'          => true,
+                'show_on_homepage' => $review->show_on_homepage,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Review toggleHomepage error: ' . $e->getMessage());
+
+            return response()->json(['success' => false, 'message' => 'Failed to update.'], 500);
+        }
+    }
+
     public function destroy(Review $review)
     {
         try {

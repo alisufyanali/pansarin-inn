@@ -9,6 +9,13 @@ class ProductReview extends Model
     protected $fillable = [
         'product_id', 'user_id', 'customer_name', 'customer_email',
         'order_number', 'rating', 'comment', 'is_verified', 'status',
+        'show_on_homepage',
+    ];
+
+    protected $casts = [
+        'status'          => 'boolean',
+        'is_verified'     => 'boolean',
+        'show_on_homepage'=> 'boolean',
     ];
 
     // Relationships
