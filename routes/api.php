@@ -5,6 +5,7 @@ use App\Http\Controllers\API\BlogApiController;
 use App\Http\Controllers\API\CartApiController;
 use App\Http\Controllers\API\ContactApiController;
 use App\Http\Controllers\API\CouponApiController;
+use App\Http\Controllers\API\NewsletterApiController;
 use App\Http\Controllers\API\OrderApiController;
 use App\Http\Controllers\API\ProductApiController;
 use App\Http\Controllers\API\WishlistApiController;
@@ -26,6 +27,8 @@ Route::get('/blogs/{slug}',  [BlogApiController::class, 'show']);
 
 Route::post('/contact',           [ContactApiController::class, 'store']);
 Route::post('/coupons/validate',  [CouponApiController::class, 'check']);
+Route::post('/newsletter/subscribe', [NewsletterApiController::class, 'subscribe']);
+Route::get('/orders/track',       [OrderApiController::class, 'track']);
 Route::post('/orders/guest',      [OrderApiController::class, 'storeGuest']);
 
 // ── Protected Routes (auth:sanctum) ───────────────────────────────

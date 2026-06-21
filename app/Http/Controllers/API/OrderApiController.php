@@ -119,6 +119,46 @@ class OrderApiController extends Controller
         }
     }
 
+    // GET /api/orders/track?order_number=X&email=Y  — public, no auth required
+    public function track(Request $request)
+    {
+        try {
+            $request->validate([
+                'order_number' => 'required|string',
+                'email'        => 'required|email',
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => collect($e->errors())->flatten()->first(),
+                'errors'  => $e->errors(),
+            ], 422);
+        }
+
+        $order = Order::with(['items.product', 'items.variant', 'city:id,name', 'customer'])
+            ->where('order_number', $request->order_number)
+            ->whereHas('customer', fn ($q) => $q->where('email', $request->email))
+            ->first();
+
+        if (! $order) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Order not found.',
+            ], 404);
+        }
+
+        $order->items->transform(function ($item) {
+            $item->product_name  = $item->meta['product_name'] ?? $item->product?->name;
+            $item->variant_label = $item->meta['variant_name'] ?? $item->variant?->value;
+            return $item;
+        });
+
+        return response()->json([
+            'success' => true,
+            'data'    => $this->formatOrder($order, detailed: true),
+        ]);
+    }
+
     // POST /api/orders/guest  — public, no auth required
     public function storeGuest(Request $request)
     {

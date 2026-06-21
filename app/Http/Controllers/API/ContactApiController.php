@@ -25,7 +25,7 @@ class ContactApiController extends Controller
             'name'    => $request->name,
             'email'   => $request->email,
             'phone'   => $request->phone ?? null,
-            'subject' => $request->subject ?? null,
+            'subject' => $request->subject ?? 'No Subject',
             'message' => $request->message,
             'status'  => 'new',
         ]);

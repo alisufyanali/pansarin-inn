@@ -47,52 +47,76 @@ class AuthApiController extends Controller
     // POST /api/register
     public function register(Request $request)
     {
-        $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8|confirmed',
-            'phone'    => 'nullable|string|max:20',
-        ]);
-
-        $user = User::create([
-            'name'     => $request->name,
-            'email'    => $request->email,
-            'password' => Hash::make($request->password),
-            'phone'    => $request->phone ?? null,
-            'username' => \Illuminate\Support\Str::slug($request->name) . '-' . rand(1000, 9999),
-            'status'   => 1,
-        ]);
-
-        $user->assignRole('customer');
-
-        // Create customer profile — phone uniqueness handle karo
-        $customerPhone = $request->phone ?? null;
-        if ($customerPhone && \App\Models\Customer::where('phone', $customerPhone)->exists()) {
-            $customerPhone = null;
+        try {
+            $request->validate([
+                'name'     => 'required|string|max:255',
+                'email'    => 'required|email|unique:users,email',
+                'password' => 'required|string|min:8|confirmed',
+                'phone'    => 'nullable|string|max:20',
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => collect($e->errors())->flatten()->first(),
+                'errors'  => $e->errors(),
+            ], 422);
         }
-        \App\Models\Customer::create([
-            'user_id'    => $user->id,
-            'first_name' => $request->name,
-            'email'      => $request->email,
-            'phone'      => $customerPhone,
-            'status'     => 'active',
-        ]);
 
-        $token = $user->createToken('api-token')->plainTextToken;
+        try {
+            $user = User::create([
+                'name'     => $request->name,
+                'email'    => $request->email,
+                'password' => Hash::make($request->password),
+                'phone'    => $request->phone ?? null,
+                'username' => \Illuminate\Support\Str::slug($request->name) . '-' . rand(1000, 9999),
+                'status'   => 1,
+            ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Registration successful.',
-            'data'    => [
-                'token' => $token,
-                'user'  => [
-                    'id'    => $user->id,
-                    'name'  => $user->name,
-                    'email' => $user->email,
-                    'phone' => $user->phone,
+            $user->assignRole('customer');
+
+            // Create customer profile — phone uniqueness handle karo
+            $customerPhone = $request->phone ?? null;
+            if ($customerPhone && \App\Models\Customer::where('phone', $customerPhone)->exists()) {
+                $customerPhone = null;
+            }
+            \App\Models\Customer::create([
+                'user_id'    => $user->id,
+                'first_name' => $request->name,
+                'email'      => $request->email,
+                'phone'      => $customerPhone,
+                'status'     => 'active',
+            ]);
+
+            $token = $user->createToken('api-token')->plainTextToken;
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Registration successful.',
+                'data'    => [
+                    'token' => $token,
+                    'user'  => [
+                        'id'    => $user->id,
+                        'name'  => $user->name,
+                        'email' => $user->email,
+                        'phone' => $user->phone,
+                    ],
                 ],
-            ],
-        ], 201);
+            ], 201);
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Duplicate email/username constraint
+            if (str_contains($e->getMessage(), 'UNIQUE constraint') || $e->getCode() === '23000') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'An account with this email already exists.',
+                    'errors'  => ['email' => ['This email is already registered.']],
+                ], 422);
+            }
+            \Illuminate\Support\Facades\Log::error('API Register DB error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Registration failed. Please try again.'], 500);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('API Register error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Registration failed. Please try again.'], 500);
+        }
     }
 
     // POST /api/logout  (auth:sanctum)
