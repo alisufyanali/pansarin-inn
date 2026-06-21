@@ -19,6 +19,8 @@ Route::get('/products',           [ProductApiController::class, 'index']);
 Route::get('/products/{slug}',    [ProductApiController::class, 'show']);
 Route::get('/categories',         [ProductApiController::class, 'categories']);
 
+Route::get('/homepage/category-products', [ProductApiController::class, 'homepageCategoryProducts']);
+
 Route::get('/blogs',         [BlogApiController::class, 'index']);
 Route::get('/blogs/{slug}',  [BlogApiController::class, 'show']);
 

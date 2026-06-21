@@ -1,27 +1,21 @@
 import AppLayout from '@/layouts/app-layout';
 import { Head, useForm } from '@inertiajs/react';
-import { Palette, Save, Layout, Eye, Settings2, MessageSquare, ListChecks } from 'lucide-react';
+import { Palette, Save, Eye, Settings2, ListChecks } from 'lucide-react';
 import { useState } from 'react';
 import toast from "react-hot-toast";
 
 export default function UiSettings({ settings }: { settings: any }) {
     const [activeTab, setActiveTab] = useState('general');
 
-    // SQL data ke mutabiq complete list
     const { data, setData, post, processing } = useForm({
-        // General
         header_color: settings.header_color || 'green-2',
         footer_color: settings.footer_color || 'green-2',
         font: settings.font || 'Roboto',
         marquee_text: settings.marquee_text || '',
-
-        // Show/Hide Toggles (Section Visibility)
         brand_show: settings.brand_show || 'ok',
         featured_show: settings.featured_show || 'ok',
         blog_show: settings.blog_show || 'ok',
         todays_deal_show: settings.todays_deal_show || 'ok',
-
-        // Header Navigation Status (SQL IDs 45-56)
         header_homepage_status: settings.header_homepage_status || 'yes',
         header_all_categories_status: settings.header_all_categories_status || 'yes',
         header_featured_products_status: settings.header_featured_products_status || 'yes',
@@ -38,7 +32,6 @@ export default function UiSettings({ settings }: { settings: any }) {
         });
     };
 
-    // Helper to render Status Selects
     const StatusSelect = ({ label, field, options = ['yes', 'no'] }: any) => (
         <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300 capitalize">
@@ -49,7 +42,7 @@ export default function UiSettings({ settings }: { settings: any }) {
                 onChange={e => setData(field as any, e.target.value)}
                 className="rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full"
             >
-                {options.map(opt => (
+                {options.map((opt: string) => (
                     <option key={opt} value={opt}>{opt.toUpperCase()}</option>
                 ))}
             </select>
@@ -65,7 +58,8 @@ export default function UiSettings({ settings }: { settings: any }) {
                         <Settings2 className="text-indigo-600" /> Pansari Inn Settings
                     </h1>
                     <button 
-                        onClick={submit} 
+                        type="submit"
+                        form="ui-settings-form"
                         disabled={processing} 
                         className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-2.5 rounded-xl font-bold flex items-center gap-2 transition shadow-lg disabled:opacity-50"
                     >
@@ -73,7 +67,6 @@ export default function UiSettings({ settings }: { settings: any }) {
                     </button>
                 </div>
 
-                {/* Tabs Navigation */}
                 <div className="flex bg-gray-100 dark:bg-gray-800/50 p-1 rounded-xl mb-8 w-fit border border-gray-200 dark:border-gray-700">
                     {[
                         { id: 'general', label: 'General', icon: Palette },
@@ -82,6 +75,7 @@ export default function UiSettings({ settings }: { settings: any }) {
                     ].map(tab => (
                         <button
                             key={tab.id}
+                            type="button"
                             onClick={() => setActiveTab(tab.id)}
                             className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-medium transition-all ${
                                 activeTab === tab.id 
@@ -94,16 +88,23 @@ export default function UiSettings({ settings }: { settings: any }) {
                     ))}
                 </div>
 
-                <form onSubmit={submit}>
-                    {/* Tab 1: General Appearance */}
+                <form id="ui-settings-form" onSubmit={submit}>
                     {activeTab === 'general' && (
-                        <div className="space-y-6 animate-in fade-in duration-300">
+                        <div className="space-y-6">
                             <div className="bg-white dark:bg-gray-900 p-8 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm">
                                 <h2 className="text-xl font-semibold mb-6">Theme Appearance</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     <div>
-                                        <label className="block text-sm font-medium mb-2">Header Color Name (e.g. green-2)</label>
+                                        <label className="block text-sm font-medium mb-2">Header Color Name</label>
                                         <input type="text" value={data.header_color} onChange={e => setData('header_color', e.target.value)} className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium mb-2">Footer Color Name</label>
+                                        <input type="text" value={data.footer_color} onChange={e => setData('footer_color', e.target.value)} className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium mb-2">Font Family</label>
+                                        <input type="text" value={data.font} onChange={e => setData('font', e.target.value)} className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium mb-2">Marquee Text</label>
@@ -114,9 +115,8 @@ export default function UiSettings({ settings }: { settings: any }) {
                         </div>
                     )}
 
-                    {/* Tab 2: Section Visibility */}
                     {activeTab === 'visibility' && (
-                        <div className="bg-white dark:bg-gray-900 p-8 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in duration-300">
+                        <div className="bg-white dark:bg-gray-900 p-8 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-6">
                             <StatusSelect label="Show Brands" field="brand_show" options={['ok', 'no']} />
                             <StatusSelect label="Show Featured" field="featured_show" options={['ok', 'no']} />
                             <StatusSelect label="Show Blog" field="blog_show" options={['ok', 'no']} />
@@ -124,9 +124,8 @@ export default function UiSettings({ settings }: { settings: any }) {
                         </div>
                     )}
 
-                    {/* Tab 3: Menu Status */}
                     {activeTab === 'header' && (
-                        <div className="bg-white dark:bg-gray-900 p-8 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm animate-in fade-in duration-300">
+                        <div className="bg-white dark:bg-gray-900 p-8 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm">
                             <h2 className="text-xl font-semibold mb-6">Header Navigation Links</h2>
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                                 <StatusSelect label="Home Page" field="header_homepage_status" />

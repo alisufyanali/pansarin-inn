@@ -27,6 +27,7 @@ Route::middleware(['auth', 'verified', 'permission:edit.settings'])->prefix('adm
     Route::Post('/products',[UiSettingController::class, 'updateProductsUI'])->name('updateProductsUI');
     Route::Post('/email',[UiSettingController::class, 'updateEmailUI'])->name('updateEmailUI');
     Route::Post('/marketing',[UiSettingController::class, 'updateMarketingUI'])->name('updateMarketingUI');
+    Route::post('/category-products', [UiSettingController::class, 'updateCategoryProducts'])->name('updateCategoryProducts');
 });
 
 Route::middleware(['auth', 'verified', 'permission:view.settings'])->prefix('admin/settings/general')->name('admin.general-settings.')->group(function () {

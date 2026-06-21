@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Http\Repositories\Admin\CategoryRepository;
 use App\Http\Repositories\Admin\ProductRepository;
+use App\Models\HomepageCategoryProduct;
 use App\Models\Product;
 use App\Models\ProductStock;
 use Illuminate\Http\Request;
@@ -117,6 +118,42 @@ class ProductApiController extends Controller
                     'image' => $ch->image ? asset('storage/' . $ch->image) : null,
                 ]),
             ]),
+        ]);
+    }
+
+    // ── Format Helper ─────────────────────────────────────────────
+    // GET /api/homepage/category-products
+    public function homepageCategoryProducts()
+    {
+        $rows = HomepageCategoryProduct::with([
+                'category:id,name,slug',
+                'product.category:id,name,slug',
+                'product.variants',
+            ])
+            ->orderBy('category_id')
+            ->orderBy('sort_order')
+            ->get();
+
+        // Group by category, preserving sort_order within each category
+        $grouped = $rows->groupBy('category_id');
+
+        $data = $grouped->map(function ($items) {
+            $firstItem = $items->first();
+            $category  = $firstItem->category;
+
+            return [
+                'category' => [
+                    'id'   => $category->id,
+                    'name' => $category->name,
+                    'slug' => $category->slug,
+                ],
+                'products' => $items->map(fn ($item) => $this->formatProduct($item->product))->values(),
+            ];
+        })->values();
+
+        return response()->json([
+            'success' => true,
+            'data'    => $data,
         ]);
     }
 

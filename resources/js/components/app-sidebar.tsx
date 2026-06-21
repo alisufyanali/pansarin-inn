@@ -117,14 +117,7 @@ export function AppSidebar() {
         });
     }
 
-    // Display / UI Settings quick link — permission-gated
-    if (permissions.hasAnySettingsPerm) {
-        mainNavItems.push({
-            title: 'Display Settings',
-            href: '/admin/settings/ui',
-            icon: Monitor,
-        });
-    }
+    
 
     // Footer: Settings — shown only if user has settings permissions
     const footerNavItems = SettingsSections();
