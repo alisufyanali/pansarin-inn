@@ -8,8 +8,8 @@ const getRoute = (name: string) => {
     return (window as any).route(name);
   }
   const routes: Record<string, string> = {
-    'customers.search': '/admin/customers/search',
-    'products.search': '/admin/products/search',
+    'admin.customers.search': '/admin/customers/search',
+    'admin.products.search': '/admin/products/search',
   };
   return routes[name] || '';
 };
@@ -54,21 +54,22 @@ export function SearchableCustomerSelect({
     customers.find(c => c.id === Number(value));
 
   useEffect(() => {
-    if (!useApi || !search || search.length < 2) {
-      if (!useApi || !search) {
-        const filtered = search
-          ? initialCustomers.filter(customer => {
-              const s = search.toLowerCase();
-              return (
-                customer.first_name.toLowerCase().includes(s) ||
-                customer.last_name.toLowerCase().includes(s) ||
-                customer.phone.includes(search) ||
-                (customer.email && customer.email.toLowerCase().includes(s))
-              );
-            })
-          : initialCustomers;
-        setCustomers(filtered);
-      }
+    if (!search) {
+      setCustomers(initialCustomers);
+      return;
+    }
+
+    if (!useApi) {
+      const s = search.toLowerCase();
+      const filtered = initialCustomers.filter(customer => {
+        return (
+          customer.first_name.toLowerCase().includes(s) ||
+          customer.last_name.toLowerCase().includes(s) ||
+          customer.phone.includes(search) ||
+          (customer.email && customer.email.toLowerCase().includes(s))
+        );
+      });
+      setCustomers(filtered);
       return;
     }
 
@@ -77,7 +78,7 @@ export function SearchableCustomerSelect({
     searchTimeoutRef.current = setTimeout(async () => {
       setLoading(true);
       try {
-        const response = await axios.get(getRoute('customers.search'), { params: { q: search } });
+        const response = await axios.get(getRoute('admin.customers.search'), { params: { q: search } });
         setCustomers(response.data);
       } catch (error) {
         console.error('Customer search error:', error);
@@ -278,16 +279,17 @@ export function SearchableProductSelect({
   };
 
   useEffect(() => {
-    if (!useApi || !search || search.length < 2) {
-      if (!useApi || !search) {
-        const filtered = search
-          ? initialProducts.filter(p => {
-              const s = search.toLowerCase();
-              return p.name.toLowerCase().includes(s) || p.sku.toLowerCase().includes(s);
-            })
-          : initialProducts;
-        setProducts(filtered);
-      }
+    if (!search) {
+      setProducts(initialProducts);
+      return;
+    }
+
+    if (!useApi) {
+      const s = search.toLowerCase();
+      const filtered = initialProducts.filter(p => {
+        return p.name.toLowerCase().includes(s) || p.sku.toLowerCase().includes(s);
+      });
+      setProducts(filtered);
       return;
     }
 
@@ -296,7 +298,7 @@ export function SearchableProductSelect({
     searchTimeoutRef.current = setTimeout(async () => {
       setLoading(true);
       try {
-        const response = await axios.get(getRoute('products.search'), { params: { q: search } });
+        const response = await axios.get(getRoute('admin.products.search'), { params: { q: search } });
         setProducts(response.data);
       } catch (error) {
         console.error('Product search error:', error);
@@ -325,8 +327,13 @@ export function SearchableProductSelect({
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
-    // Also close on scroll so dropdown doesn't float away
-    const handleScroll = () => setIsOpen(false);
+    // Also close on scroll so dropdown doesn't float away, but ignore scroll inside the dropdown itself
+    const handleScroll = (event: Event) => {
+      if (dropdownRef.current && dropdownRef.current.contains(event.target as Node)) {
+        return;
+      }
+      setIsOpen(false);
+    };
     window.addEventListener('scroll', handleScroll, true);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
