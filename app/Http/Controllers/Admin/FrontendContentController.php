@@ -64,7 +64,7 @@ class FrontendContentController extends Controller
         }
 
         // Pagination
-        $perPage = $request->input('per_page', 10);
+        $perPage = $request->input('perPage', $request->input('per_page', 10));
         $contents = $query->paginate($perPage);
 
         return response()->json($contents);

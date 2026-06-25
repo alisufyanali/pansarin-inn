@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import DataTable from "react-data-table-component";
 import { useReactTable, getCoreRowModel, flexRender, ColumnDef } from '@tanstack/react-table'
-import { CSVLink } from "react-csv";
 import { Link } from "@inertiajs/react";
 import jsPDF from "jspdf";
 // @ts-ignore
@@ -59,6 +58,7 @@ export default function DataTableWrapper({
   const [perPage, setPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
+  const [exportLoading, setExportLoading] = useState(false);
   
   // Refs
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -261,6 +261,8 @@ export default function DataTableWrapper({
 
     const params = new URLSearchParams();
     params.append('page', page.toString());
+    params.append('perPage', limit.toString());
+    params.append('per_page', limit.toString());
     
     Object.entries(filters).forEach(([key, value]) => {
       if (value) params.append(key, value);
@@ -286,10 +288,14 @@ export default function DataTableWrapper({
 
       const result: ApiResponse = await response.json();
 
-      setData(result.data || []);
-      setTotalRows(result.total || 0);
-      setCurrentPage(result.current_page || 1);
-      onDataLoaded?.(result.data || []);
+      const responseData = result.data || [];
+      const total = result.total ?? result.meta?.total ?? responseData.length;
+      const currentPageFromResponse = result.current_page ?? result.meta?.current_page ?? 1;
+
+      setData(responseData);
+      setTotalRows(total);
+      setCurrentPage(currentPageFromResponse);
+      onDataLoaded?.(responseData);
     } catch (error: any) {
       if (error.name !== 'AbortError') {
         console.error('Error fetching data:', error);
@@ -342,33 +348,39 @@ export default function DataTableWrapper({
     setFilterText(value);
   };
 
-  // Memoized exports data
-  const filteredItemsForExport = useMemo(() => 
-    data.filter(item => searchItem(item, filterText)),
-    [data, filterText, searchItem]
-  );
+  const fetchAllData = useCallback(async (): Promise<any[]> => {
+    const params = new URLSearchParams();
+    params.append('page', '1');
+    params.append('perPage', '99999');
+    params.append('per_page', '99999');
+    
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value) params.append(key, value);
+    });
 
-  const csvData = useMemo(() => 
-    filteredItemsForExport.map(row => {
-      const newRow: Record<string, any> = {};
-      csvHeaders.forEach(h => {
-        newRow[h.key] = resolveKey(row, h.key);
-      });
-      return newRow;
-    }),
-    [filteredItemsForExport, csvHeaders, resolveKey]
-  );
+    if (filterText) {
+      params.append('search', filterText);
+    }
 
-  const pdfTableData = useMemo(() => ({
-    columns: csvHeaders.map(h => h.label),
-    rows: filteredItemsForExport.map(row =>
-      csvHeaders.map(h => resolveKey(row, h.key))
-    )
-  }), [filteredItemsForExport, csvHeaders, resolveKey]);
+    const url = `${fetchUrl}${fetchUrl.includes('?') ? '&' : '?'}${params.toString()}`;
+    const response = await fetch(url, {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    return result.data || [];
+  }, [filters, filterText, fetchUrl]);
 
   // PDF Export with Promise-based image loading
   const exportPDF = useCallback(async (openInNewTab = false) => {
-    const doc = new jsPDF();
+    setExportLoading(true);
     
     const loadImage = (): Promise<HTMLImageElement> => {
       return new Promise((resolve, reject) => {
@@ -380,6 +392,15 @@ export default function DataTableWrapper({
     };
 
     try {
+      const allData = await fetchAllData();
+      const filteredData = allData.filter(item => searchItem(item, filterText));
+
+      const columns = csvHeaders.map(h => h.label);
+      const rows = filteredData.map(row =>
+        csvHeaders.map(h => resolveKey(row, h.key))
+      );
+
+      const doc = new jsPDF();
       const img = await loadImage();
       
       // Add Logo
@@ -393,8 +414,8 @@ export default function DataTableWrapper({
 
       // Add Table
       (autoTable as any)(doc, {
-        head: [pdfTableData.columns],
-        body: pdfTableData.rows,
+        head: [columns],
+        body: rows,
         startY: 35,
         styles: { fontSize: 8 },
         headStyles: { fillColor: [220, 220, 220] },
@@ -411,8 +432,45 @@ export default function DataTableWrapper({
     } catch (error) {
       console.error('Error generating PDF:', error);
       alert('Failed to generate PDF. Please try again.');
+    } finally {
+      setExportLoading(false);
     }
-  }, [pdfTableData]);
+  }, [filters, filterText, fetchUrl, csvHeaders, resolveKey, searchItem, fetchAllData]);
+
+  const exportCSV = useCallback(async () => {
+    setExportLoading(true);
+    try {
+      const allData = await fetchAllData();
+      const filteredData = allData.filter(item => searchItem(item, filterText));
+
+      // Construct CSV content
+      const headersRow = csvHeaders.map(h => `"${h.label.replace(/"/g, '""')}"`).join(',');
+      
+      const dataRows = filteredData.map(row => 
+        csvHeaders.map(h => {
+          const val = resolveKey(row, h.key) ?? '';
+          return `"${val.toString().replace(/"/g, '""')}"`;
+        }).join(',')
+      );
+
+      const csvContent = [headersRow, ...dataRows].join('\r\n');
+      
+      // Download CSV
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `export-${new Date().getTime()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error generating CSV:', error);
+      alert('Failed to generate CSV. Please try again.');
+    } finally {
+      setExportLoading(false);
+    }
+  }, [filters, filterText, fetchUrl, csvHeaders, resolveKey, searchItem, fetchAllData]);
 
   // Subheader component
   const subHeaderComponent = useMemo(() => (
@@ -467,24 +525,23 @@ export default function DataTableWrapper({
           </div>
         </div>
         <div className="flex gap-2">
-          <CSVLink
-            data={csvData}
-            headers={csvHeaders}
-            filename={`export-${new Date().getTime()}.csv`}
+          <button
+            onClick={exportCSV}
+            disabled={loading || exportLoading}
             className="rounded-lg bg-green-600 px-4 py-2.5 text-white font-medium hover:bg-green-700 active:bg-green-800 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Loading...' : 'Export CSV'}
-          </CSVLink>
+            {exportLoading ? 'Exporting...' : 'Export CSV'}
+          </button>
           <button
             onClick={() => exportPDF(false)}
-            disabled={loading}
+            disabled={loading || exportLoading}
             className="rounded-lg bg-red-600 px-4 py-2.5 text-white font-medium hover:bg-red-700 active:bg-red-800 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Export PDF
           </button>
           <button
             onClick={() => exportPDF(true)}
-            disabled={loading}
+            disabled={loading || exportLoading}
             className="rounded-lg bg-slate-600 px-4 py-2.5 text-white font-medium hover:bg-slate-700 active:bg-slate-800 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
             View PDF
@@ -492,7 +549,7 @@ export default function DataTableWrapper({
         </div>
       </div>
     </div>
-  ), [additionalFilters, filters, filterText, loading, searchableKeys, csvData, csvHeaders, exportPDF]);
+  ), [additionalFilters, filters, filterText, loading, exportLoading, searchableKeys, csvHeaders, exportPDF, exportCSV]);
 
   return (
     <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
