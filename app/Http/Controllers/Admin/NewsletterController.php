@@ -222,4 +222,66 @@ class NewsletterController extends Controller
             return back()->with('error', 'Failed to delete newsletter subscribers.');
         }
     }
+
+    /**
+     * Compose email form
+     */
+    public function compose()
+    {
+        $subscribers = Newsletter::where('status', 'active')
+            ->select('id', 'email', 'name')
+            ->orderBy('email')
+            ->get();
+
+        return Inertia::render('Admin/Newsletters/Compose', [
+            'subscribers' => $subscribers,
+        ]);
+    }
+
+    /**
+     * Send composed email to subscribers
+     */
+    public function composeSend(Request $request)
+    {
+        $request->validate([
+            'subject'  => 'required|string|max:255',
+            'body'     => 'required|string',
+            'send_to'  => 'required|in:all,specific',
+            'emails'   => 'required_if:send_to,specific|array',
+            'emails.*' => 'email',
+        ]);
+
+        $emails = $request->send_to === 'all'
+            ? Newsletter::where('status', 'active')->pluck('email')
+            : collect($request->emails);
+
+        $sent = 0;
+        foreach ($emails as $email) {
+            try {
+                Mail::to($email)->queue(new \App\Mail\CustomNewsletterMail(
+                    $request->subject,
+                    $request->body,
+                    $email
+                ));
+                $sent++;
+            } catch (\Exception $e) {
+                Log::warning("Failed to queue newsletter for {$email}: " . $e->getMessage());
+            }
+        }
+
+        return back()->with('success', "Email queued for {$sent} subscriber(s) successfully.");
+    }
+
+    /**
+     * Return active subscribers list as JSON (for Compose page)
+     */
+    public function subscribersList()
+    {
+        $subscribers = Newsletter::where('status', 'active')
+            ->select('id', 'email', 'name')
+            ->orderBy('email')
+            ->get();
+
+        return response()->json($subscribers);
+    }
 }

@@ -178,6 +178,9 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::resource('frontend', FrontendContentController::class);
     Route::get('frontend-data', [FrontendContentController::class, 'getData'])->name('frontend.data');
 
+    Route::get('newsletters/compose', [NewsletterController::class, 'compose'])->name('newsletters.compose')->middleware('permission:edit.newsletters');
+    Route::post('newsletters/compose/send', [NewsletterController::class, 'composeSend'])->name('newsletters.compose.send')->middleware('permission:edit.newsletters');
+    Route::get('newsletters/subscribers-list', [NewsletterController::class, 'subscribersList'])->name('newsletters.subscribers-list')->middleware('permission:view.newsletters');
     Route::resource('newsletters', NewsletterController::class);
     Route::get('newsletters-data', [NewsletterController::class, 'getData'])->name('newsletters.data');
     Route::patch('newsletters/{newsletter}/status', [NewsletterController::class, 'updateStatus'])->name('newsletters.status');

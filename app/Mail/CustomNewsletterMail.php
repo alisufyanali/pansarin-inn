@@ -9,26 +9,23 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class NewsletterMail extends Mailable implements ShouldQueue
+class CustomNewsletterMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
-    // Avoid redeclaring parent $subject — use distinct names
+    // Use distinct property names — parent Mailable already owns $subject
     public string $emailSubject;
     public string $body;
-    public string $subscriberEmail;
-    public ?string $subscriberName;
+    public string $recipientEmail;
 
     public function __construct(
         string $subject,
         string $body,
-        string $subscriberEmail,
-        ?string $subscriberName = null,
+        string $recipientEmail,
     ) {
-        $this->emailSubject    = $subject;
-        $this->body            = $body;
-        $this->subscriberEmail = $subscriberEmail;
-        $this->subscriberName  = $subscriberName;
+        $this->emailSubject   = $subject;
+        $this->body           = $body;
+        $this->recipientEmail = $recipientEmail;
     }
 
     public function envelope(): Envelope
@@ -38,7 +35,7 @@ class NewsletterMail extends Mailable implements ShouldQueue
 
     public function content(): Content
     {
-        return new Content(view: 'emails.newsletter.campaign');
+        return new Content(view: 'emails.custom-newsletter');
     }
 
     public function attachments(): array
