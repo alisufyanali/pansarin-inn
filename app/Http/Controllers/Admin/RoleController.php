@@ -149,8 +149,11 @@ class RoleController extends Controller
             'permission' => 'required|array|min:1',
         ]);
 
-        $role = Role::create(['name' => $request->name]);
-        $role->syncPermissions($request->permission);
+        $role = Role::create([
+            'name' => $request->name,
+            'guard_name' => 'web',
+        ]);
+        $role->syncPermissions($request->permission ?? []);
 
         return to_route('admin.roles.index')->with('success', 'Role created successfully.');
     }
@@ -195,8 +198,9 @@ class RoleController extends Controller
 
         $role = Role::findOrFail($id);
         $role->name = $request->name;
+        $role->guard_name = 'web';
         $role->save();
-        $role->syncPermissions($request->permission);
+        $role->syncPermissions($request->permission ?? []);
 
         return to_route('admin.roles.index')->with('success', 'Role updated successfully.');
     }

@@ -156,7 +156,7 @@ export default function RoleForm({ role, permissions, isEdit = false }: RoleForm
         e.preventDefault();
         
         if (isEdit && role?.id) {
-            put(`/admin/roles/${role.id}`);
+            post(`/admin/roles/${role.id}?_method=PUT`);
         } else {
             post('/admin/roles');
         }

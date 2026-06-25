@@ -57,6 +57,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('users-data', [UserController::class, 'getData'])->name('users.data');
 
     Route::resource('roles', RoleController::class);
+    Route::post('roles/{role}', [RoleController::class, 'update'])->name('roles.update.post');
     Route::get('roles-data', [RoleController::class, 'getData'])->name('roles.data');
 
     Route::resource('permissions', PermissionController::class);
