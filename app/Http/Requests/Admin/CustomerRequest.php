@@ -20,8 +20,12 @@ class CustomerRequest extends FormRequest
     public function rules(): array
     {
         $customer = $this->route('customer');
-        $userId = $customer ? $customer->user_id : null;
-        $customerId = $customer ? $customer->id : null;
+        if (is_numeric($customer) || is_string($customer)) {
+            $customer = \App\Models\Customer::find($customer);
+        }
+        
+        $userId = $customer instanceof \App\Models\Customer ? $customer->user_id : null;
+        $customerId = $customer instanceof \App\Models\Customer ? $customer->id : null;
 
         return [
             'first_name' => 'required|string|max:100',
@@ -31,12 +35,14 @@ class CustomerRequest extends FormRequest
                 'string',
                 'max:20',
                 Rule::unique('customers', 'phone')->ignore($customerId),
+                Rule::unique('users', 'phone')->ignore($userId),
             ],
             'email' => [
                 'required',
                 'email',
                 'max:255',
                 Rule::unique('users', 'email')->ignore($userId),
+                Rule::unique('customers', 'email')->ignore($customerId),
             ],
             'address'  => 'nullable|string|max:255',
             'address2' => 'nullable|string|max:255',

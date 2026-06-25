@@ -175,7 +175,7 @@ class CustomerRepository
 
             // Purana referrer ID store karein taake check kar sakein ke change hua hai ya nahi
             $oldReferredBy = $customer->user->referred_by;
-            $newReferredBy = $data['referred_by'] ?? null;
+            $newReferredBy = array_key_exists('referred_by', $data) ? $data['referred_by'] : $customer->user->referred_by;
 
             // 1. Update User Account
             $customer->user->update([
@@ -191,10 +191,10 @@ class CustomerRepository
                 'last_name'         => $data['last_name'] ?? null,
                 'email'             => $data['email'],
                 'phone'             => $data['phone'],
-                'address'           => $data['address'],
-                'city_id'           => $data['city_id'],
-                'customer_group_id' => $data['customer_group_id'] ?: null,
-                'status'            => $data['status'],
+                'address'           => $data['address'] ?? null,
+                'city_id'           => $data['city_id'] ?? null,
+                'customer_group_id' => array_key_exists('customer_group_id', $data) ? ($data['customer_group_id'] ?: null) : $customer->customer_group_id,
+                'status'            => $data['status'] ?? $customer->status ?? 'active',
                 'referred_by'       => $newReferredBy,
             ]);
 

@@ -125,10 +125,13 @@ class CustomerController extends Controller
         }
     }
 
-    // Fixed: Route Model Binding use kiya string id ki jagah taake $customer object available ho
-    public function update(CustomerRequest $request, Customer $customer)
+    // Fixed: Route Model Binding and raw ID fallback handling to ensure $customer object is resolved
+    public function update(CustomerRequest $request, $customer)
     {
         try {
+            if (is_numeric($customer) || is_string($customer)) {
+                $customer = Customer::findOrFail($customer);
+            }
             $this->customerRepository->update($customer, $request->validated());
             return to_route('admin.customers.index')->with('success', 'Customer updated successfully!');
         } catch (\Exception $e) {
