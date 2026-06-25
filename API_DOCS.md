@@ -1,4 +1,4 @@
-# Pansarin Inn — REST API Documentation
+# Pansari Inn — REST API Documentation
 
 > **Backend:** Laravel 12 + Sanctum  
 > **Frontend:** Next.js  
@@ -1216,7 +1216,7 @@ slug  string — required — blog slug e.g. benefits-of-turmeric
     "excerpt":    "Turmeric has been used for centuries...",
     "content":    "<h2>What is Turmeric?</h2><p>Turmeric is a golden spice...</p>",
     "thumbnail":  "http://localhost:8000/storage/blogs/benefits-of-turmeric.jpg",
-    "meta_title": "Benefits of Turmeric — Pansarin Inn",
+    "meta_title": "Benefits of Turmeric — Pansari Inn",
     "meta_desc":  "Turmeric has been used for centuries...",
     "category": {
       "id":   1,

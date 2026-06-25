@@ -9,27 +9,25 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class NewsletterWelcome extends Mailable implements ShouldQueue
+class NewsletterMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
     public function __construct(
-        public readonly string $subscriberEmail = '',
-        public readonly string $subscriberName  = '',
+        public readonly string $subject,
+        public readonly string $body,
+        public readonly string $subscriberEmail,
+        public readonly ?string $subscriberName = null,
     ) {}
 
     public function envelope(): Envelope
     {
-        return new Envelope(
-            subject: 'Welcome to Pansari Inn Newsletter! 🌿',
-        );
+        return new Envelope(subject: $this->subject);
     }
 
     public function content(): Content
     {
-        return new Content(
-            view: 'emails.newsletter.welcome',
-        );
+        return new Content(view: 'emails.newsletter.campaign');
     }
 
     public function attachments(): array

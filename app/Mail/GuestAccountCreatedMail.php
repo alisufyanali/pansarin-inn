@@ -33,7 +33,7 @@ class GuestAccountCreatedMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Your Pansarin Inn Account & Order Confirmation',
+            subject: 'Your Pansari Inn Account & Order Confirmation',
         );
     }
 

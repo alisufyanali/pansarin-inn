@@ -53,6 +53,13 @@ class NewsletterApiController extends Controller
             'user_agent' => $request->userAgent(),
         ]);
 
+        try {
+            \Illuminate\Support\Facades\Mail::to($request->email)
+                ->queue(new \App\Mail\NewsletterWelcome($request->email, $request->name ?? ''));
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('NewsletterWelcome mail failed: ' . $e->getMessage());
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Subscribed successfully.',

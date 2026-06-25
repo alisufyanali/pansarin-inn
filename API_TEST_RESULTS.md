@@ -1,4 +1,4 @@
-# API Test Results — Pansarin Inn
+# API Test Results — Pansari Inn
 
 > **Tested:** 2026-06-16 00:07:30  
 > **Server:** http://127.0.0.1:8000  

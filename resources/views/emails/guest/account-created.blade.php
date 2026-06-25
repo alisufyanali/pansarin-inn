@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Your Pansarin Inn Account</title>
+    <title>Your Pansari Inn Account</title>
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 20px; color: #333; }
         .container { max-width: 600px; margin: 0 auto; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
@@ -25,7 +25,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🌿 Pansarin Inn</h1>
+            <h1>🌿 Pansari Inn</h1>
             <p>Order Confirmed &amp; Account Created</p>
         </div>
         <div class="body">
@@ -36,7 +36,7 @@
                 <span>Order #{{ $orderNumber }}</span>
             </div>
 
-            <p>We have also created an account for you on <strong>Pansarin Inn</strong> so you can track your orders anytime.</p>
+            <p>We have also created an account for you on <strong>Pansari Inn</strong> so you can track your orders anytime.</p>
 
             <div class="credentials">
                 <p><strong>Your Login Credentials:</strong></p>
@@ -51,7 +51,7 @@
             <p style="font-size:13px;color:#6b7280;">If you did not place this order, please contact us immediately at <a href="mailto:pansariinn@gmail.com">pansariinn@gmail.com</a></p>
         </div>
         <div class="footer">
-            &copy; {{ date('Y') }} Pansarin Inn. All rights reserved.
+            &copy; {{ date('Y') }} Pansari Inn. All rights reserved.
         </div>
     </div>
 </body>

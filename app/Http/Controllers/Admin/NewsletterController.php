@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Repositories\Admin\NewsletterRepository;
 use App\Http\Requests\Admin\NewsletterRequest;
+use App\Mail\NewsletterWelcome;
 use App\Models\Newsletter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 
 class NewsletterController extends Controller
@@ -77,7 +79,17 @@ class NewsletterController extends Controller
         try {
             $validated = $request->validated();
 
-            $this->newsletterRepository->store($validated);
+            $newsletter = $this->newsletterRepository->store($validated);
+
+            // Send welcome email to new subscriber
+            if (($validated['status'] ?? 'active') === 'active') {
+                try {
+                    Mail::to($newsletter->email)
+                        ->queue(new NewsletterWelcome($newsletter->email, $newsletter->name ?? ''));
+                } catch (\Throwable $e) {
+                    Log::error('NewsletterWelcome mail dispatch failed: ' . $e->getMessage());
+                }
+            }
 
             return redirect()->route('admin.newsletters.index')
                 ->with('success', 'Newsletter subscriber successfully created!');
