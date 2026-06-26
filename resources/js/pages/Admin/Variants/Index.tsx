@@ -16,7 +16,7 @@ interface Variant {
   id: number;
   sku: string;
   price: number;
-  stock: number;
+  stock?: { quantity: number } | null;
   status: boolean;
   is_default: boolean;
   attributes?: Record<string, string>;
@@ -103,19 +103,22 @@ export default function Index({ stats: backendStats = DEFAULT_STATS, flash }: Pr
     },
     {
       name: 'Stock',
-      selector: (row: Variant) => row.stock,
+      selector: (row: any) => row.stock?.quantity ?? 0,
       sortable: true,
-      cell: (row: Variant) => (
-        <span className={`px-3 py-1 text-xs rounded-full font-medium ${
-          row.stock > 10
-            ? 'bg-green-500/10 dark:bg-green-500/20 text-green-700 dark:text-green-400'
-            : row.stock > 0
-            ? 'bg-yellow-500/10 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-400'
-            : 'bg-red-500/10 dark:bg-red-500/20 text-red-700 dark:text-red-400'
-        }`}>
-          {row.stock}
-        </span>
-      ),
+      cell: (row: any) => {
+        const qty = row.stock?.quantity ?? 0;
+        return (
+          <span className={`px-3 py-1 text-xs rounded-full font-medium ${
+            qty > 10
+              ? 'bg-green-500/10 dark:bg-green-500/20 text-green-700 dark:text-green-400'
+              : qty > 0
+              ? 'bg-yellow-500/10 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-400'
+              : 'bg-red-500/10 dark:bg-red-500/20 text-red-700 dark:text-red-400'
+          }`}>
+            {qty}
+          </span>
+        );
+      },
       width: '100px',
       center: true,
     },
@@ -147,7 +150,7 @@ export default function Index({ stats: backendStats = DEFAULT_STATS, flash }: Pr
     { label: 'Product', key: 'product.name' },
     { label: 'SKU', key: 'sku' },
     { label: 'Price', key: 'price' },
-    { label: 'Stock', key: 'stock' },
+    { label: 'Stock', key: 'stock.quantity' },
     { label: 'Is Default', key: 'is_default' },
     { label: 'Status', key: 'status' },
     { label: 'Created At', key: 'created_at' },
@@ -230,7 +233,7 @@ export default function Index({ stats: backendStats = DEFAULT_STATS, flash }: Pr
             fetchUrl="/admin/product-variants-data"
             columns={columns}
             csvHeaders={csvHeaders}
-            searchableKeys={['sku', 'product.name', 'price', 'stock']}
+            searchableKeys={['sku', 'product.name', 'price', 'stock.quantity']}
             additionalFilters={additionalFilters}
           />
         </div>

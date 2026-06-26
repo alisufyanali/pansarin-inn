@@ -5,6 +5,7 @@ import { Link } from "@inertiajs/react";
 import jsPDF from "jspdf";
 // @ts-ignore
 import autoTable from "jspdf-autotable";
+import { StyleSheetManager } from "styled-components";
 
 interface FilterOption {
   value: string;
@@ -564,47 +565,49 @@ export default function DataTableWrapper({
       )}
       {/* Table Container */}
       <div className="relative flex-1 overflow-hidden rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg dark:shadow-2xl dark:shadow-slate-950/50">
-        <DataTable
-          columns={tableColumns}
-          data={data}
-          progressPending={loading}
-          progressComponent={
-            <div className="p-8 text-center">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <p className="mt-2 text-slate-600 dark:text-slate-400">Loading data...</p>
-            </div>
-          }
-          noDataComponent={
-            <div className="p-8 text-center">
-              <p className="text-slate-500 dark:text-slate-400">
-                {error ? 'Failed to load data' : 'No records found'}
-              </p>
-            </div>
-          }
-          pagination
-          paginationServer
-          paginationTotalRows={totalRows}
-          onChangePage={handlePageChange}
-          onChangeRowsPerPage={handlePerRowsChange}
-          highlightOnHover
-          striped
-          responsive
-          subHeader
-          subHeaderComponent={subHeaderComponent}
-          customStyles={
-            document.documentElement.classList.contains('dark') 
-              ? customStyles.dark 
-              : customStyles.light
-          }
-          paginationPerPage={perPage}
-          paginationRowsPerPageOptions={[10, 20, 30, 50, 100]}
-          paginationComponentOptions={{
-            rowsPerPageText: 'Rows per page:',
-            rangeSeparatorText: 'of',
-            noRowsPerPage: false,
-            selectAllRowsItem: false,
-          }}
-        />
+        <StyleSheetManager shouldForwardProp={(prop) => !['align', 'center', 'grow', 'allowOverflow', 'button'].includes(prop)}>
+          <DataTable
+            columns={tableColumns}
+            data={data}
+            progressPending={loading}
+            progressComponent={
+              <div className="p-8 text-center">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <p className="mt-2 text-slate-600 dark:text-slate-400">Loading data...</p>
+              </div>
+            }
+            noDataComponent={
+              <div className="p-8 text-center">
+                <p className="text-slate-500 dark:text-slate-400">
+                  {error ? 'Failed to load data' : 'No records found'}
+                </p>
+              </div>
+            }
+            pagination
+            paginationServer
+            paginationTotalRows={totalRows}
+            onChangePage={handlePageChange}
+            onChangeRowsPerPage={handlePerRowsChange}
+            highlightOnHover
+            striped
+            responsive
+            subHeader
+            subHeaderComponent={subHeaderComponent}
+            customStyles={
+              document.documentElement.classList.contains('dark') 
+                ? customStyles.dark 
+                : customStyles.light
+            }
+            paginationPerPage={perPage}
+            paginationRowsPerPageOptions={[10, 20, 30, 50, 100]}
+            paginationComponentOptions={{
+              rowsPerPageText: 'Rows per page:',
+              rangeSeparatorText: 'of',
+              noRowsPerPage: false,
+              selectAllRowsItem: false,
+            }}
+          />
+        </StyleSheetManager>
       </div>
 
     </div>
