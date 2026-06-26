@@ -229,6 +229,22 @@ class CustomerRepository
         });
     }
 
+    public function search(string $query): \Illuminate\Support\Collection
+    {
+        return \App\Models\Customer::with('user')
+            ->where(function($q) use ($query) {
+                $q->where('first_name', 'like', "%{$query}%")
+                  ->orWhere('last_name', 'like', "%{$query}%")
+                  ->orWhere('phone', 'like', "%{$query}%")
+                  ->orWhereHas('user', fn($u) =>
+                      $u->where('email', 'like', "%{$query}%")
+                        ->orWhere('name', 'like', "%{$query}%")
+                  );
+            })
+            ->limit(20)
+            ->get();
+    }
+
     public function delete(Customer $customer) {
         return DB::transaction(function () use ($customer) {
             

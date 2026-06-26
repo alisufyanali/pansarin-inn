@@ -37,8 +37,8 @@ class SendOrderConfirmationEmail implements ShouldQueue
 
             // Check if customer has email
             if ($this->order->customer && $this->order->customer->email) {
-                // Mail::to($this->order->customer->email)
-                Mail::to('fefadaf184@ixospace.com')
+                Mail::to($this->order->customer->email)
+                // Mail::to('fefadaf184@ixospace.com')
                     ->send(new OrderConfirmation($this->order));
 
                 Log::info('Order confirmation email sent', [
