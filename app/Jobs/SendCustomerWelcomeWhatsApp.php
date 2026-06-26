@@ -39,7 +39,17 @@ class SendCustomerWelcomeWhatsApp implements ShouldQueue
             $customerName = $this->customer->full_name ?? $this->customer->first_name;
             $message = "Hello {$customerName},\n\nWelcome to Pansari Inn! 🌿\n\nYour account has been successfully registered. We are thrilled to have you with us!\n\nBest regards,\nPansari Inn Team";
 
-            $whatsappService->sendTextMessage($this->customer->phone, $message);
+            $response = $whatsappService->sendTextMessage($this->customer->phone, $message);
+
+            \App\Models\WhatsappMessageLog::create([
+                'phone' => $this->customer->phone,
+                'customer_name' => $customerName,
+                'order_id' => 'Welcome',
+                'order_total' => 0,
+                'delivery_address' => $this->customer->address ?? '',
+                'messages' => $message,
+                'api_response' => json_encode($response),
+            ]);
 
             Log::info('Customer welcome WhatsApp sent', [
                 'customer_id' => $this->customer->id,

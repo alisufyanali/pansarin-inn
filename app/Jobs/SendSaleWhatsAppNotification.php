@@ -49,10 +49,20 @@ class SendSaleWhatsAppNotification implements ShouldQueue
             $message = "Hello {$customerName},\n\nThank you for your purchase! 🌿\n\nYour purchase details:\nSale Code: {$saleCode}\nTotal: {$grandTotal}\nDelivery Address: {$deliveryAddress}\n\nWe appreciate your business!\n\nBest regards,\nPansari Inn Team";
 
             // Send WhatsApp message using custom text
-            $whatsappService->sendTextMessage(
+            $response = $whatsappService->sendTextMessage(
                 $this->sale->customer->phone,
                 $message
             );
+
+            \App\Models\WhatsappMessageLog::create([
+                'phone' => $this->sale->customer->phone,
+                'customer_name' => $customerName,
+                'order_id' => $saleCode,
+                'order_total' => $this->sale->grand_total,
+                'delivery_address' => $deliveryAddress,
+                'messages' => $message,
+                'api_response' => json_encode($response),
+            ]);
 
             Log::info('Sale WhatsApp sent', [
                 'sale_id' => $this->sale->id,
