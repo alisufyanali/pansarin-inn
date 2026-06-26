@@ -114,7 +114,6 @@ class CustomerRepository
                 'city_id'           => $data['city_id'],
                 'customer_group_id' => $data['customer_group_id'] ?? null,
                 'status'            => $data['status'] ?? 'active',
-                'referred_by'       => $data['referred_by'] ?? null,
             ]);
 
             // 4. Initialize Wallet & Loyalty Points

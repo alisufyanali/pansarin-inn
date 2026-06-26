@@ -89,7 +89,24 @@ class OrderController extends Controller
     public function store(OrderRequest $request)
     {
         try {
-            $this->orderRepository->store($request->validated());
+            $order = $this->orderRepository->store($request->validated());
+
+            if ($order) {
+                // Send Order Confirmation Email (Queued)
+                try {
+                    \App\Jobs\SendOrderConfirmationEmail::dispatch($order);
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::warning('Order confirmation email dispatch failed: ' . $e->getMessage());
+                }
+
+                // Send Order Confirmation WhatsApp (Queued)
+                try {
+                    \App\Jobs\SendOrderWhatsAppNotification::dispatch($order);
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::warning('Order confirmation WhatsApp dispatch failed: ' . $e->getMessage());
+                }
+            }
+
             return to_route('admin.orders.index')->with('success', 'Order created!');
         } catch (\Illuminate\Validation\ValidationException $e) {
             throw $e; // Let Inertia handle it as 422 with errors

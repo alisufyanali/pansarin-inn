@@ -150,7 +150,26 @@ class SaleController extends Controller
     public function store(SaleRequest $request)
     {
         try {
-            $this->saleRepository->store($request->validated());
+            $sale = $this->saleRepository->store($request->validated());
+
+            if ($sale) {
+                // Send Sale Confirmation Email (Queued)
+                if ($sale->customer && !empty($sale->customer->email)) {
+                    try {
+                        \Illuminate\Support\Facades\Mail::to($sale->customer->email)->queue(new \App\Mail\SaleConfirmationMail($sale));
+                    } catch (\Exception $e) {
+                        \Illuminate\Support\Facades\Log::warning('Sale confirmation email queue failed: ' . $e->getMessage());
+                    }
+                }
+
+                // Send Sale Confirmation WhatsApp (Queued)
+                try {
+                    \App\Jobs\SendSaleWhatsAppNotification::dispatch($sale);
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::warning('Sale confirmation WhatsApp dispatch failed: ' . $e->getMessage());
+                }
+            }
+
             return to_route('admin.sales.index')->with('success', 'Sale created successfully!');
         } catch (\Exception $e) {
             Log::error('Sale store: ' . $e->getMessage());

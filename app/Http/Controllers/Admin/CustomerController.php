@@ -77,17 +77,29 @@ class CustomerController extends Controller
     public function store(CustomerRequest $request) {
         try {
             $validated = $request->validated();
+            $customer = $this->customerRepository->store($validated);
 
-            try {
-                $this->customerRepository->store($validated);
-                return to_route('admin.customers.index')->with('success', 'Customer created!');
-            } catch (\Exception $e) {
-                dd([
-                    'error_message' => $e->getMessage(),
-                    'file' => $e->getFile(),
-                    'line' => $e->getLine()
-                ]);
+            if ($customer) {
+                // Welcome Email
+                if (!empty($customer->email)) {
+                    try {
+                        \Illuminate\Support\Facades\Mail::to($customer->email)->queue(new \App\Mail\CustomerWelcomeMail($customer));
+                    } catch (\Exception $e) {
+                        \Illuminate\Support\Facades\Log::warning('Customer welcome email failed to queue: ' . $e->getMessage());
+                    }
+                }
+
+                // Welcome WhatsApp
+                if (!empty($customer->phone)) {
+                    try {
+                        \App\Jobs\SendCustomerWelcomeWhatsApp::dispatch($customer);
+                    } catch (\Exception $e) {
+                        \Illuminate\Support\Facades\Log::warning('Customer welcome WhatsApp failed to dispatch: ' . $e->getMessage());
+                    }
+                }
             }
+
+            return to_route('admin.customers.index')->with('success', 'Customer created!');
         } catch (\Exception $e) {
             Log::error('Customer store outer error: '.$e->getMessage());
             return back()->with('error', 'Something went wrong.');

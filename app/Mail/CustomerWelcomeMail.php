@@ -2,26 +2,26 @@
 
 namespace App\Mail;
 
-use App\Models\Sale;
+use App\Models\Customer;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\SerializesModels;
 
-class SaleConfirmationMail extends Mailable implements ShouldQueue
+class CustomerWelcomeMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
-    public $sale;
+    public $customer;
 
     /**
      * Create a new message instance.
      */
-    public function __construct(Sale $sale)
+    public function __construct(Customer $customer)
     {
-        $this->sale = $sale;
+        $this->customer = $customer;
     }
 
     /**
@@ -30,7 +30,7 @@ class SaleConfirmationMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Sale Confirmation - '.$this->sale->sale_code,
+            subject: 'Welcome to Pansari Inn! 🌿',
         );
     }
 
@@ -40,14 +40,12 @@ class SaleConfirmationMail extends Mailable implements ShouldQueue
     public function content(): Content
     {
         return new Content(
-            view: 'emails.sale.confirmation',
+            view: 'emails.customer.welcome',
         );
     }
 
     /**
      * Get the attachments for the message.
-     *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
      */
     public function attachments(): array
     {
