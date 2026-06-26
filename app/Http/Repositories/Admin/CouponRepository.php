@@ -5,7 +5,6 @@ namespace App\Http\Repositories\Admin;
 use App\Models\Coupon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Yajra\DataTables\Facades\DataTables;
 
 class CouponRepository
 {
@@ -18,7 +17,7 @@ class CouponRepository
     }
 
     /**
-     * Get DataTable data for coupons
+     * Get DataTable data for coupons — paginated JSON for DataTableWrapper
      */
     public function getAllForDataTable(Request $request)
     {
@@ -27,24 +26,17 @@ class CouponRepository
 
             // Search handling
             if ($request->has('search') && $request->search !== '') {
-                if (is_string($request->search)) {
-                    $search = $request->search;
+                $search = is_array($request->search)
+                    ? ($request->search['value'] ?? '')
+                    : $request->search;
+
+                if (! empty($search)) {
                     $query->where(function ($q) use ($search) {
                         $q->where('code', 'like', "%{$search}%")
                             ->orWhere('description', 'like', "%{$search}%")
                             ->orWhere('discount_type', 'like', "%{$search}%")
                             ->orWhere('apply_to', 'like', "%{$search}%");
                     });
-                } elseif (is_array($request->search) && isset($request->search['value'])) {
-                    $search = $request->search['value'];
-                    if (! empty($search)) {
-                        $query->where(function ($q) use ($search) {
-                            $q->where('code', 'like', "%{$search}%")
-                                ->orWhere('description', 'like', "%{$search}%")
-                                ->orWhere('discount_type', 'like', "%{$search}%")
-                                ->orWhere('apply_to', 'like', "%{$search}%");
-                        });
-                    }
                 }
             }
 
@@ -61,14 +53,22 @@ class CouponRepository
                 $query->where('is_active', $request->is_active);
             }
 
-            return DataTables::of($query)
-                ->addColumn('product_name', function ($coupon) {
-                    return $coupon->product ? $coupon->product->name : null;
-                })
-                ->addColumn('category_name', function ($coupon) {
-                    return $coupon->category ? $coupon->category->name : null;
-                })
-                ->make(true);
+            $perPage   = (int) $request->get('perPage', $request->get('per_page', 10));
+            $page      = (int) $request->get('page', 1);
+            $paginated = $query->paginate($perPage, ['*'], 'page', $page);
+
+            return response()->json([
+                'data'         => $paginated->map(function ($coupon) {
+                    $arr = $coupon->toArray();
+                    $arr['product_name']  = $coupon->product  ? $coupon->product->name  : null;
+                    $arr['category_name'] = $coupon->category ? $coupon->category->name : null;
+                    return $arr;
+                })->values(),
+                'total'        => $paginated->total(),
+                'per_page'     => $paginated->perPage(),
+                'current_page' => $paginated->currentPage(),
+                'last_page'    => $paginated->lastPage(),
+            ]);
         } catch (\Exception $e) {
             Log::error('Coupon DataTable error: '.$e->getMessage());
             throw $e;

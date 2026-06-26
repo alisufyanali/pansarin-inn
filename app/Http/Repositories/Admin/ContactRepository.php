@@ -6,7 +6,6 @@ use App\Models\Contact;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Yajra\DataTables\Facades\DataTables;
 
 class ContactRepository
 {
@@ -19,7 +18,7 @@ class ContactRepository
     }
 
     /**
-     * Get DataTable data for contacts
+     * Get DataTable data for contacts — paginated JSON for DataTableWrapper
      */
     public function getAllForDataTable(Request $request)
     {
@@ -28,8 +27,11 @@ class ContactRepository
 
             // Search handling
             if ($request->has('search') && $request->search !== '') {
-                if (is_string($request->search)) {
-                    $search = $request->search;
+                $search = is_array($request->search)
+                    ? ($request->search['value'] ?? '')
+                    : $request->search;
+
+                if (! empty($search)) {
                     $query->where(function ($q) use ($search) {
                         $q->where('name', 'like', "%{$search}%")
                             ->orWhere('email', 'like', "%{$search}%")
@@ -37,17 +39,6 @@ class ContactRepository
                             ->orWhere('subject', 'like', "%{$search}%")
                             ->orWhere('message', 'like', "%{$search}%");
                     });
-                } elseif (is_array($request->search) && isset($request->search['value'])) {
-                    $search = $request->search['value'];
-                    if (! empty($search)) {
-                        $query->where(function ($q) use ($search) {
-                            $q->where('name', 'like', "%{$search}%")
-                                ->orWhere('email', 'like', "%{$search}%")
-                                ->orWhere('phone', 'like', "%{$search}%")
-                                ->orWhere('subject', 'like', "%{$search}%")
-                                ->orWhere('message', 'like', "%{$search}%");
-                        });
-                    }
                 }
             }
 
@@ -56,11 +47,23 @@ class ContactRepository
                 $query->where('status', $request->status);
             }
 
-            return DataTables::of($query)
-                ->addColumn('replied_by_name', function ($contact) {
-                    return $contact->repliedByUser ? $contact->repliedByUser->name : null;
-                })
-                ->make(true);
+            $perPage   = (int) $request->get('perPage', $request->get('per_page', 10));
+            $page      = (int) $request->get('page', 1);
+            $paginated = $query->paginate($perPage, ['*'], 'page', $page);
+
+            return response()->json([
+                'data'         => $paginated->map(function ($contact) {
+                    $arr = $contact->toArray();
+                    $arr['replied_by_name'] = $contact->repliedByUser
+                        ? $contact->repliedByUser->name
+                        : null;
+                    return $arr;
+                })->values(),
+                'total'        => $paginated->total(),
+                'per_page'     => $paginated->perPage(),
+                'current_page' => $paginated->currentPage(),
+                'last_page'    => $paginated->lastPage(),
+            ]);
         } catch (\Exception $e) {
             Log::error('Contact DataTable error: '.$e->getMessage());
             throw $e;

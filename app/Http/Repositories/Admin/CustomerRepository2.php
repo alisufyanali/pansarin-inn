@@ -5,7 +5,6 @@ namespace App\Http\Repositories\Admin;
 use App\Models\Customer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Yajra\DataTables\Facades\DataTables;
 
 class CustomerRepository
 {
@@ -18,7 +17,7 @@ class CustomerRepository
     }
 
     /**
-     * Get DataTable data for customers
+     * Get DataTable data for customers — paginated JSON for DataTableWrapper
      */
     public function getAllForDataTable(Request $request)
     {
@@ -27,8 +26,11 @@ class CustomerRepository
 
             // Search handling
             if ($request->has('search') && $request->search !== '') {
-                if (is_string($request->search)) {
-                    $search = $request->search;
+                $search = is_array($request->search)
+                    ? ($request->search['value'] ?? '')
+                    : $request->search;
+
+                if (! empty($search)) {
                     $query->where(function ($q) use ($search) {
                         $q->where('first_name', 'like', "%{$search}%")
                             ->orWhere('last_name', 'like', "%{$search}%")
@@ -40,21 +42,6 @@ class CustomerRepository
                                 $q->where('name', 'like', "%{$search}%");
                             });
                     });
-                } elseif (is_array($request->search) && isset($request->search['value'])) {
-                    $search = $request->search['value'];
-                    if (! empty($search)) {
-                        $query->where(function ($q) use ($search) {
-                            $q->where('first_name', 'like', "%{$search}%")
-                                ->orWhere('last_name', 'like', "%{$search}%")
-                                ->orWhere('phone', 'like', "%{$search}%")
-                                ->orWhere('email', 'like', "%{$search}%")
-                                ->orWhere('address', 'like', "%{$search}%")
-                                ->orWhere('country', 'like', "%{$search}%")
-                                ->orWhereHas('city', function ($q) use ($search) {
-                                    $q->where('name', 'like', "%{$search}%");
-                                });
-                        });
-                    }
                 }
             }
 
@@ -67,14 +54,22 @@ class CustomerRepository
                 $query->where('country', $request->country);
             }
 
-            return DataTables::of($query)
-                ->addColumn('city_name', function ($customer) {
-                    return $customer->city ? $customer->city->name : null;
-                })
-                ->addColumn('full_name', function ($customer) {
-                    return $customer->full_name;
-                })
-                ->make(true);
+            $perPage   = (int) $request->get('perPage', $request->get('per_page', 10));
+            $page      = (int) $request->get('page', 1);
+            $paginated = $query->paginate($perPage, ['*'], 'page', $page);
+
+            return response()->json([
+                'data'         => $paginated->map(function ($customer) {
+                    $arr = $customer->toArray();
+                    $arr['city_name'] = $customer->city ? $customer->city->name : null;
+                    $arr['full_name'] = $customer->full_name;
+                    return $arr;
+                })->values(),
+                'total'        => $paginated->total(),
+                'per_page'     => $paginated->perPage(),
+                'current_page' => $paginated->currentPage(),
+                'last_page'    => $paginated->lastPage(),
+            ]);
         } catch (\Exception $e) {
             Log::error('Customer DataTable error: '.$e->getMessage());
             throw $e;

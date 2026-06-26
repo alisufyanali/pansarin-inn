@@ -16,7 +16,7 @@ class ProductVariantRepository
     }
 
     /**
-     * Get all variants for DataTable
+     * Get all variants for DataTable — returns paginated JSON for DataTableWrapper
      */
     public function getAllForDataTable($request)
     {
@@ -24,28 +24,18 @@ class ProductVariantRepository
 
         // Search handling
         if ($request->has('search') && $request->search !== '') {
-            if (is_string($request->search)) {
-                $search = $request->search;
+            $search = is_array($request->search)
+                ? ($request->search['value'] ?? '')
+                : $request->search;
+
+            if (! empty($search)) {
                 $query->where(function ($q) use ($search) {
                     $q->where('sku', 'like', "%{$search}%")
                         ->orWhere('price', 'like', "%{$search}%")
-                        ->orWhere('stock', 'like', "%{$search}%")
                         ->orWhereHas('product', function ($q) use ($search) {
                             $q->where('name', 'like', "%{$search}%");
                         });
                 });
-            } elseif (is_array($request->search) && isset($request->search['value'])) {
-                $search = $request->search['value'];
-                if (! empty($search)) {
-                    $query->where(function ($q) use ($search) {
-                        $q->where('sku', 'like', "%{$search}%")
-                            ->orWhere('price', 'like', "%{$search}%")
-                            ->orWhere('stock', 'like', "%{$search}%")
-                            ->orWhereHas('product', function ($q) use ($search) {
-                                $q->where('name', 'like', "%{$search}%");
-                            });
-                    });
-                }
             }
         }
 
@@ -75,7 +65,17 @@ class ProductVariantRepository
             }
         }
 
-        return $query;
+        $perPage  = (int) $request->get('perPage', $request->get('per_page', 10));
+        $page     = (int) $request->get('page', 1);
+        $paginated = $query->paginate($perPage, ['*'], 'page', $page);
+
+        return response()->json([
+            'data'         => $paginated->items(),
+            'total'        => $paginated->total(),
+            'per_page'     => $paginated->perPage(),
+            'current_page' => $paginated->currentPage(),
+            'last_page'    => $paginated->lastPage(),
+        ]);
     }
 
     /**

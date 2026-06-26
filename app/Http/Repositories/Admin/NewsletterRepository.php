@@ -7,7 +7,6 @@ use App\Mail\NewsletterWelcome;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Yajra\DataTables\Facades\DataTables;
 
 class NewsletterRepository
 {
@@ -20,7 +19,7 @@ class NewsletterRepository
     }
 
     /**
-     * Get DataTable data for newsletters
+     * Get DataTable data for newsletters — paginated JSON for DataTableWrapper
      */
     public function getAllForDataTable(Request $request)
     {
@@ -29,22 +28,16 @@ class NewsletterRepository
 
             // Search handling
             if ($request->has('search') && $request->search !== '') {
-                if (is_string($request->search)) {
-                    $search = $request->search;
+                $search = is_array($request->search)
+                    ? ($request->search['value'] ?? '')
+                    : $request->search;
+
+                if (! empty($search)) {
                     $query->where(function ($q) use ($search) {
                         $q->where('email', 'like', "%{$search}%")
                             ->orWhere('name', 'like', "%{$search}%")
                             ->orWhere('source', 'like', "%{$search}%");
                     });
-                } elseif (is_array($request->search) && isset($request->search['value'])) {
-                    $search = $request->search['value'];
-                    if (! empty($search)) {
-                        $query->where(function ($q) use ($search) {
-                            $q->where('email', 'like', "%{$search}%")
-                                ->orWhere('name', 'like', "%{$search}%")
-                                ->orWhere('source', 'like', "%{$search}%");
-                        });
-                    }
                 }
             }
 
@@ -62,7 +55,17 @@ class NewsletterRepository
                 }
             }
 
-            return DataTables::of($query)->make(true);
+            $perPage   = (int) $request->get('perPage', $request->get('per_page', 10));
+            $page      = (int) $request->get('page', 1);
+            $paginated = $query->paginate($perPage, ['*'], 'page', $page);
+
+            return response()->json([
+                'data'         => $paginated->items(),
+                'total'        => $paginated->total(),
+                'per_page'     => $paginated->perPage(),
+                'current_page' => $paginated->currentPage(),
+                'last_page'    => $paginated->lastPage(),
+            ]);
         } catch (\Exception $e) {
             Log::error('Newsletter DataTable error: '.$e->getMessage());
             throw $e;

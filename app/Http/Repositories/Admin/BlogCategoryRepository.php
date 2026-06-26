@@ -4,7 +4,6 @@ namespace App\Http\Repositories\Admin;
 
 use App\Models\BlogCategory;
 use Illuminate\Support\Str;
-use Yajra\DataTables\Facades\DataTables;
 
 class BlogCategoryRepository
 {
@@ -19,7 +18,7 @@ class BlogCategoryRepository
 
         // Search
         if ($request->has('search') && ! empty($request->search)) {
-            $search = is_array($request->search) ? $request->search['value'] : $request->search;
+            $search = is_array($request->search) ? ($request->search['value'] ?? '') : $request->search;
             if (! empty($search)) {
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
@@ -39,10 +38,21 @@ class BlogCategoryRepository
             }
         }
 
-        return DataTables::of($query)
-            ->addIndexColumn()
-            ->addColumn('parent_name', fn ($row) => $row->parent?->name ?? 'N/A')
-            ->make(true);
+        $perPage   = (int) $request->get('perPage', $request->get('per_page', 10));
+        $page      = (int) $request->get('page', 1);
+        $paginated = $query->paginate($perPage, ['*'], 'page', $page);
+
+        return response()->json([
+            'data'         => $paginated->map(function ($row) {
+                $arr = $row->toArray();
+                $arr['parent_name'] = $row->parent?->name ?? 'N/A';
+                return $arr;
+            })->values(),
+            'total'        => $paginated->total(),
+            'per_page'     => $paginated->perPage(),
+            'current_page' => $paginated->currentPage(),
+            'last_page'    => $paginated->lastPage(),
+        ]);
     }
 
     public function find($id)

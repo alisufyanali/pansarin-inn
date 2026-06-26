@@ -10,7 +10,7 @@ use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
-use Yajra\DataTables\Facades\DataTables;
+
 
 class ProductVariantController extends Controller
 {
@@ -46,30 +46,11 @@ class ProductVariantController extends Controller
     public function getData(Request $request)
     {
         try {
-            $query = $this->variantRepository->getAllForDataTable($request);
-
-            return DataTables::of($query)
-                ->addColumn('product_name', function ($variant) {
-                    return $variant->product ? $variant->product->name : null;
-                })
-                ->addColumn('status_text', function ($variant) {
-                    return $variant->status ? 'Active' : 'Inactive';
-                })
-                ->addColumn('is_default_text', function ($variant) {
-                    return $variant->is_default ? 'Yes' : 'No';
-                })
-                ->addColumn('stock', function ($variant) {
-                    return $variant->stock ? $variant->stock->quantity : 0;
-                })
-                ->addColumn('stock_status', function ($variant) {
-                    $quantity = $variant->stock ? $variant->stock->quantity : 0;
-                    return $quantity > 0 ? 'In Stock' : 'Out of Stock';
-                })
-                ->make(true);
+            return $this->variantRepository->getAllForDataTable($request);
         } catch (\Exception $e) {
             Log::error('Failed to get variants data: '.$e->getMessage());
 
-            return response()->json(['error' => 'Failed to load data'], 500);
+            return response()->json(['error' => 'Failed to load data', 'data' => [], 'total' => 0], 500);
         }
     }
 

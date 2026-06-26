@@ -15,7 +15,6 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
-use Yajra\DataTables\Facades\DataTables;
 
 class CustomerRepository
 {
@@ -24,39 +23,43 @@ class CustomerRepository
             $query = Customer::with(['user', 'wallet', 'customerGroup', 'city'])->latest();
 
             if ($request->has('search') && !empty($request->search)) {
-                $search = is_array($request->search) ? $request->search['value'] : $request->search;
-                $query->where(function ($q) use ($search) {
-                    $q->where('first_name', 'like', "%{$search}%")
-                      ->orWhere('last_name', 'like', "%{$search}%")
-                      ->orWhere('phone', 'like', "%{$search}%")
-                      ->orWhereHas('user', function($u) use ($search) {
-                          $u->where('email', 'like', "%{$search}%");
-                      });
-                });
+                $search = is_array($request->search)
+                    ? ($request->search['value'] ?? '')
+                    : $request->search;
+
+                if (! empty($search)) {
+                    $query->where(function ($q) use ($search) {
+                        $q->where('first_name', 'like', "%{$search}%")
+                          ->orWhere('last_name', 'like', "%{$search}%")
+                          ->orWhere('phone', 'like', "%{$search}%")
+                          ->orWhereHas('user', function($u) use ($search) {
+                              $u->where('email', 'like', "%{$search}%");
+                          });
+                    });
+                }
             }
 
-            return DataTables::of($query)
-            ->addColumn('wallet_balance', function ($customer) {
-                return $customer->wallet ? number_format($customer->wallet->balance, 2) : '0.00';
-            })
-            ->addColumn('email', function ($customer) {
-                return $customer->user ? $customer->user->email : $customer->email;
-            })
-            ->addColumn('group_name', function ($customer) {
-                return $customer->customerGroup ? $customer->customerGroup->name : 'General';
-            })
-            ->filterColumn('wallet_balance', function($query, $keyword) {
-                $query->whereHas('wallet', function($q) use ($keyword) {
-                    $q->where('balance', 'like', "%{$keyword}%");
-                });
-            })
-            ->filterColumn('group_name', function($query, $keyword) {
-                $query->whereHas('customerGroup', function($q) use ($keyword) {
-                    $q->where('name', 'like', "%{$keyword}%");
-                });
-            })
-            ->rawColumns(['wallet_balance'])
-            ->make(true);
+            $perPage   = (int) $request->get('perPage', $request->get('per_page', 10));
+            $page      = (int) $request->get('page', 1);
+            $paginated = $query->paginate($perPage, ['*'], 'page', $page);
+
+            return response()->json([
+                'data'         => $paginated->map(function ($customer) {
+                    $arr = $customer->toArray();
+                    $arr['wallet_balance'] = $customer->wallet
+                        ? number_format($customer->wallet->balance, 2)
+                        : '0.00';
+                    $arr['email']      = $customer->user ? $customer->user->email : $customer->email;
+                    $arr['group_name'] = $customer->customerGroup
+                        ? $customer->customerGroup->name
+                        : 'General';
+                    return $arr;
+                })->values(),
+                'total'        => $paginated->total(),
+                'per_page'     => $paginated->perPage(),
+                'current_page' => $paginated->currentPage(),
+                'last_page'    => $paginated->lastPage(),
+            ]);
         } catch (\Exception $e) {
             Log::error('Customer DataTable error: '.$e->getMessage());
             throw $e;

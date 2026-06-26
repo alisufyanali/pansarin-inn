@@ -5,7 +5,6 @@ namespace App\Http\Repositories\Admin;
 use App\Models\City;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Yajra\DataTables\Facades\DataTables;
 
 class CityRepository
 {
@@ -36,7 +35,17 @@ class CityRepository
                 $query->where('province', $request->province);
             }
 
-            return DataTables::of($query)->make(true);
+            $perPage   = (int) $request->get('perPage', $request->get('per_page', 10));
+            $page      = (int) $request->get('page', 1);
+            $paginated = $query->paginate($perPage, ['*'], 'page', $page);
+
+            return response()->json([
+                'data'         => $paginated->items(),
+                'total'        => $paginated->total(),
+                'per_page'     => $paginated->perPage(),
+                'current_page' => $paginated->currentPage(),
+                'last_page'    => $paginated->lastPage(),
+            ]);
         } catch (\Exception $e) {
             Log::error('City DataTable error: '.$e->getMessage());
             throw $e;

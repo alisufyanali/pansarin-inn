@@ -3,7 +3,6 @@
 namespace App\Http\Repositories\Admin;
 
 use App\Models\BlogTag;
-use Yajra\DataTables\Facades\DataTables;
 
 class BlogTagRepository
 {
@@ -18,7 +17,7 @@ class BlogTagRepository
 
         // Search
         if ($request->has('search') && ! empty($request->search)) {
-            $search = is_array($request->search) ? $request->search['value'] : $request->search;
+            $search = is_array($request->search) ? ($request->search['value'] ?? '') : $request->search;
             if (! empty($search)) {
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
@@ -33,10 +32,17 @@ class BlogTagRepository
             $query->where('is_active', $request->is_active);
         }
 
-        return DataTables::of($query)
-            ->addIndexColumn()
-            ->addColumn('blogs_count', fn ($row) => $row->blogs_count)
-            ->make(true);
+        $perPage   = (int) $request->get('perPage', $request->get('per_page', 10));
+        $page      = (int) $request->get('page', 1);
+        $paginated = $query->paginate($perPage, ['*'], 'page', $page);
+
+        return response()->json([
+            'data'         => $paginated->items(),
+            'total'        => $paginated->total(),
+            'per_page'     => $paginated->perPage(),
+            'current_page' => $paginated->currentPage(),
+            'last_page'    => $paginated->lastPage(),
+        ]);
     }
 
     public function find($id)
