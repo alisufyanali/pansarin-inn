@@ -64,6 +64,11 @@ class Order extends Model
         return $this->hasOne(Sale::class);
     }
 
+    public function sales()
+    {
+        return $this->hasMany(Sale::class);
+    }
+
     // ── Helpers ───────────────────────────────────────────────────
 
     public static function generateOrderNumber(): string

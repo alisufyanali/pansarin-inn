@@ -153,6 +153,10 @@ class SaleController extends Controller
             $sale = $this->saleRepository->store($request->validated());
 
             if ($sale) {
+                if ($sale->order_id) {
+                    \App\Models\Order::where('id', $sale->order_id)->update(['status' => 'processing']);
+                }
+
                 // Send Sale Confirmation Email (Queued)
                 if ($sale->customer && !empty($sale->customer->email)) {
                     try {

@@ -8,11 +8,18 @@ class OrderRequest extends FormRequest
 {
     public function authorize(): bool { return true; }
 
+    protected function prepareForValidation()
+    {
+        if ($this->has('city_id') && $this->input('city_id') === '') {
+            $this->merge(['city_id' => null]);
+        }
+    }
+
     public function rules(): array
     {
         return [
             'customer_id'           => 'required|exists:customers,id',
-            'city_id'               => 'nullable|exists:cities,id',
+            'city_id'               => 'required|exists:cities,id',
             'items'                 => 'required|array|min:1',
             'items.*.product_id'    => 'required|exists:products,id',
             'items.*.product_variant_id' => 'nullable|exists:product_variants,id',
@@ -20,7 +27,7 @@ class OrderRequest extends FormRequest
             'items.*.price'         => 'required|numeric|min:0',
             'items.*.discount'      => 'nullable|numeric|min:0',
             'invoice_discount'      => 'nullable|numeric|min:0',
-            'shipping_charges'      => 'nullable|numeric|min:0',
+            'shipping_charges'      => 'required|numeric|min:0',
             'tax'                   => 'nullable|numeric|min:0',
             'status'                => 'required|in:pending,processing,shipped,delivered,cancelled,refunded',
             'payment_status'        => 'required|in:unpaid,paid,partially_paid,refunded',

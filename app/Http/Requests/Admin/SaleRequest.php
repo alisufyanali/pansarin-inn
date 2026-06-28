@@ -36,7 +36,7 @@ class SaleRequest extends FormRequest
             'payment_status' => 'required|in:unpaid,paid,partially_paid,refunded',
             'payment_type' => 'nullable|string|max:100',
             'payment_timestamp' => 'nullable|date',
-            'shipping_method' => 'nullable|string|max:100',
+            'shipping_method' => 'required|string',
             'shipping_address' => 'nullable|string',
             'shipping_response' => 'nullable|string',
             'delivery_datetime' => 'nullable|date',

@@ -43,6 +43,7 @@ interface Order {
     customer?: { id: number; first_name: string; last_name: string; phone: string; email?: string; address?: string };
     city?: { name: string } | null;
     items?: OrderItem[];
+    sales_count?: number;
 }
 
 interface Stats {
@@ -341,7 +342,7 @@ export default function Index({ stats, flash }: Props) {
         CommonColumns.actions({ baseUrl: '/admin/orders', canEdit: true, canDelete: true, showView: true }),
         {
             name: 'Sale',
-            cell: (row: Order) => (
+            cell: (row: Order) => row.sales_count === 0 && (
                 <Link
                     href={`/admin/sales/create-from-order/${row.id}`}
                     className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition whitespace-nowrap"

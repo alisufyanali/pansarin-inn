@@ -32,7 +32,7 @@ class OrderController extends Controller
     public function getData(Request $request)
     {
         try {
-            $query = $this->orderRepository->getAllForDataTable($request);
+            $query = $this->orderRepository->getAllForDataTable($request)->withCount('sales');
             $orders = $query->paginate($request->get('perPage', 10));
 
             return response()->json([
@@ -49,6 +49,7 @@ class OrderController extends Controller
                     'payment_status'   => $o->payment_status,
                     'payment_method'   => $o->payment_method,
                     'created_at'       => $o->created_at,
+                    'sales_count'      => $o->sales_count,
                     'customer'         => $o->customer ? [
                         'id'         => $o->customer->id,
                         'first_name' => $o->customer->first_name,
