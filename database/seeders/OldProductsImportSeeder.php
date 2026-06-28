@@ -34,6 +34,10 @@ class OldProductsImportSeeder extends Seeder
         $total = count($items);
         $this->command->info("Found {$total} products in JSON. Starting import...");
 
+        // ── Image Paths ───────────────────────────────────────────
+        $imagePath = storage_path('app/public/product_image');
+        $publicPath = 'product_image'; // relative path for DB
+
         // ── Counters ──────────────────────────────────────────────
         $catsCreated      = 0;
         $catsFound        = 0;
@@ -41,6 +45,9 @@ class OldProductsImportSeeder extends Seeder
         $productsSkipped  = 0;
         $variantsCreated  = 0;
         $inventoryCreated = 0;
+        $productsWithThumbnail   = 0;
+        $productsWithNoThumbnail = 0;
+        $totalGalleryImagesLinked = 0;
         $skipped          = [];  // [slug => reason]
 
         // ── Step 1: Pre-build category map ─────────────────────────
@@ -77,10 +84,15 @@ class OldProductsImportSeeder extends Seeder
                 DB::transaction(function () use (
                     $item,
                     $categoryMap,
+                    $imagePath,
+                    $publicPath,
                     &$productsCreated,
                     &$productsSkipped,
                     &$variantsCreated,
                     &$inventoryCreated,
+                    &$productsWithThumbnail,
+                    &$productsWithNoThumbnail,
+                    &$totalGalleryImagesLinked,
                     &$skipped
                 ) {
                     $catName = $item['category_name'] ?? null;
@@ -146,6 +158,38 @@ class OldProductsImportSeeder extends Seeder
                         $sku = $sku . '-' . time() . rand(10, 99);
                     }
 
+                    // Image handling logic
+                    $oldId = $item['old_id'] ?? null;
+                    $thumbnail = null;
+                    $gallery = [];
+
+                    if ($oldId) {
+                        $thumbFile = "product_{$oldId}_1_thumb.jpg";
+                        $thumbPath = "{$imagePath}/{$thumbFile}";
+
+                        if (file_exists($thumbPath)) {
+                            $thumbnail = "{$publicPath}/{$thumbFile}";
+                            $productsWithThumbnail++;
+                        } else {
+                            $productsWithNoThumbnail++;
+                        }
+
+                        // Build gallery array — check files 1 to 10
+                        for ($i = 1; $i <= 10; $i++) {
+                            $file = "product_{$oldId}_{$i}.jpg";
+                            if (file_exists("{$imagePath}/{$file}")) {
+                                $gallery[] = "{$publicPath}/{$file}";
+                                $totalGalleryImagesLinked++;
+                            } else {
+                                break; // stop at first missing
+                            }
+                        }
+                    } else {
+                        $productsWithNoThumbnail++;
+                    }
+
+                    $socialImage = $thumbnail;
+
                     $product = Product::create([
                         'category_id'       => $category->id,
                         'name'              => $item['name'],
@@ -160,7 +204,9 @@ class OldProductsImportSeeder extends Seeder
                         'status'            => true,
                         'meta_title'        => $metaTitle,
                         'meta_description'  => $item['meta_description'] ?? null,
-                        'thumbnail'         => null,
+                        'thumbnail'         => $thumbnail,
+                        'gallery'           => $gallery,
+                        'social_image'      => $socialImage,
                         'affiliate_commission' => 5.00,
                         'sort_order'        => 0,
                     ]);
@@ -269,6 +315,9 @@ class OldProductsImportSeeder extends Seeder
                 ['Products skipped',    $productsSkipped],
                 ['Variants created',    $variantsCreated],
                 ['Inventory entries',   $inventoryCreated],
+                ['Products with thumbnail', $productsWithThumbnail],
+                ['Products with NO thumbnail', $productsWithNoThumbnail],
+                ['Gallery images linked', $totalGalleryImagesLinked],
             ]
         );
 
