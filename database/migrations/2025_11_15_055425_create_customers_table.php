@@ -26,6 +26,7 @@ return new class extends Migration
             $table->string('status')->default('active'); 
             $table->decimal('total_spent', 12, 2)->default(0);
             $table->integer('total_orders')->default(0);
+            $table->unsignedBigInteger('referred_by')->nullable();   
             $table->timestamps();
             $table->softDeletes();
 
