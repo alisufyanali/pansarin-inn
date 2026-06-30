@@ -160,7 +160,7 @@ class SaleController extends Controller
                 // Send Sale Confirmation Email (Queued)
                 if ($sale->customer && !empty($sale->customer->email)) {
                     try {
-                        \Illuminate\Support\Facades\Mail::to($sale->customer->email)->queue(new \App\Mail\SaleConfirmationMail($sale));
+                        \Illuminate\Support\Facades\Mail::to($sale->customer->email)->send(new \App\Mail\SaleConfirmationMail($sale));
                     } catch (\Exception $e) {
                         \Illuminate\Support\Facades\Log::error('MAIL FAILED: Sale confirmation email queue failed', [
                             'sale_id' => $sale->id,

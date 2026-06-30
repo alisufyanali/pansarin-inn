@@ -253,7 +253,7 @@ class OrderApiController extends Controller
             // Re-queue welcome email with real order number for new guests
             if ($accountCreated) {
                 try {
-                    Mail::to($request->email)->queue(
+                    Mail::to($request->email)->send(
                         new GuestAccountCreatedMail(
                             $request->name,
                             $request->email,
@@ -262,7 +262,7 @@ class OrderApiController extends Controller
                         )
                     );
                 } catch (\Throwable $e) {
-                    Log::error('GuestAccountCreatedMail (with order number) queue failed: ' . $e->getMessage());
+                    Log::error('GuestAccountCreatedMail (with order number) send failed: ' . $e->getMessage());
                 }
             }
 

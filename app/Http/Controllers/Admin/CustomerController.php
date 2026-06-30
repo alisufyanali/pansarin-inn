@@ -83,7 +83,7 @@ class CustomerController extends Controller
                 // Welcome Email
                 if (!empty($customer->email)) {
                     try {
-                        \Illuminate\Support\Facades\Mail::to($customer->email)->queue(new \App\Mail\CustomerWelcomeMail($customer));
+                        \Illuminate\Support\Facades\Mail::to($customer->email)->send(new \App\Mail\CustomerWelcomeMail($customer));
                     } catch (\Exception $e) {
                         \Illuminate\Support\Facades\Log::error('MAIL FAILED: Customer welcome email queue failed', [
                             'customer_id' => $customer->id,

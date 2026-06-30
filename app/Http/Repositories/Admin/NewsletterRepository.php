@@ -98,7 +98,7 @@ class NewsletterRepository
             // Send welcome email to newly subscribed active subscribers
             if (($newsletter->status ?? 'active') === 'active' && $newsletter->email) {
                 try {
-                    Mail::to($newsletter->email)->queue(new NewsletterWelcome());
+                    Mail::to($newsletter->email)->send(new NewsletterWelcome());
                 } catch (\Exception $mailEx) {
                     Log::error('Newsletter welcome email failed: ' . $mailEx->getMessage());
                     // Don't rethrow — subscriber was saved, mail failure is non-fatal

@@ -55,7 +55,7 @@ class NewsletterApiController extends Controller
 
         try {
             \Illuminate\Support\Facades\Mail::to($request->email)
-                ->queue(new \App\Mail\NewsletterWelcome($request->email, $request->name ?? ''));
+                ->send(new \App\Mail\NewsletterWelcome($request->email, $request->name ?? ''));
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('NewsletterWelcome mail failed: ' . $e->getMessage());
         }

@@ -85,7 +85,7 @@ class NewsletterController extends Controller
             if (($validated['status'] ?? 'active') === 'active') {
                 try {
                     Mail::to($newsletter->email)
-                        ->queue(new NewsletterWelcome($newsletter->email, $newsletter->name ?? ''));
+                        ->send(new NewsletterWelcome($newsletter->email, $newsletter->name ?? ''));
                 } catch (\Throwable $e) {
                     Log::error('NewsletterWelcome mail dispatch failed: ' . $e->getMessage());
                 }
@@ -257,15 +257,15 @@ class NewsletterController extends Controller
 
         $sent = 0;
         foreach ($emails as $email) {
-            try {
-                Mail::to($email)->queue(new \App\Mail\CustomNewsletterMail(
-                    $request->subject,
-                    $request->body,
-                    $email
-                ));
-                $sent++;
-            } catch (\Exception $e) {
-                Log::warning("Failed to queue newsletter for {$email}: " . $e->getMessage());
+                try {
+                    Mail::to($email)->send(new \App\Mail\CustomNewsletterMail(
+                        $request->subject,
+                        $request->body,
+                        $email
+                    ));
+                    $sent++;
+                } catch (\Exception $e) {
+                    Log::warning("Failed to send newsletter for {$email}: " . $e->getMessage());
             }
         }
 
