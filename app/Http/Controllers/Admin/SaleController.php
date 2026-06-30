@@ -162,7 +162,15 @@ class SaleController extends Controller
                     try {
                         \Illuminate\Support\Facades\Mail::to($sale->customer->email)->queue(new \App\Mail\SaleConfirmationMail($sale));
                     } catch (\Exception $e) {
-                        \Illuminate\Support\Facades\Log::warning('Sale confirmation email queue failed: ' . $e->getMessage());
+                        \Illuminate\Support\Facades\Log::error('MAIL FAILED: Sale confirmation email queue failed', [
+                            'sale_id' => $sale->id,
+                            'sale_code' => $sale->sale_code,
+                            'email' => $sale->customer->email,
+                            'message' => $e->getMessage(),
+                            'trace' => $e->getTraceAsString(),
+                            'file' => $e->getFile(),
+                            'line' => $e->getLine(),
+                        ]);
                     }
                 }
 
@@ -170,7 +178,14 @@ class SaleController extends Controller
                 try {
                     \App\Jobs\SendSaleWhatsAppNotification::dispatch($sale);
                 } catch (\Exception $e) {
-                    \Illuminate\Support\Facades\Log::warning('Sale confirmation WhatsApp dispatch failed: ' . $e->getMessage());
+                    \Illuminate\Support\Facades\Log::error('WHATSAPP DISPATCH FAILED: Sale confirmation WhatsApp dispatch failed', [
+                        'sale_id' => $sale->id,
+                        'sale_code' => $sale->sale_code,
+                        'message' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString(),
+                        'file' => $e->getFile(),
+                        'line' => $e->getLine(),
+                    ]);
                 }
             }
 

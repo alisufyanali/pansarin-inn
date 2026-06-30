@@ -85,7 +85,14 @@ class CustomerController extends Controller
                     try {
                         \Illuminate\Support\Facades\Mail::to($customer->email)->queue(new \App\Mail\CustomerWelcomeMail($customer));
                     } catch (\Exception $e) {
-                        \Illuminate\Support\Facades\Log::warning('Customer welcome email failed to queue: ' . $e->getMessage());
+                        \Illuminate\Support\Facades\Log::error('MAIL FAILED: Customer welcome email queue failed', [
+                            'customer_id' => $customer->id,
+                            'email' => $customer->email,
+                            'message' => $e->getMessage(),
+                            'trace' => $e->getTraceAsString(),
+                            'file' => $e->getFile(),
+                            'line' => $e->getLine(),
+                        ]);
                     }
                 }
 
@@ -94,7 +101,14 @@ class CustomerController extends Controller
                     try {
                         \App\Jobs\SendCustomerWelcomeWhatsApp::dispatch($customer);
                     } catch (\Exception $e) {
-                        \Illuminate\Support\Facades\Log::warning('Customer welcome WhatsApp failed to dispatch: ' . $e->getMessage());
+                        \Illuminate\Support\Facades\Log::error('WHATSAPP DISPATCH FAILED: Customer welcome WhatsApp failed to dispatch', [
+                            'customer_id' => $customer->id,
+                            'phone' => $customer->phone,
+                            'message' => $e->getMessage(),
+                            'trace' => $e->getTraceAsString(),
+                            'file' => $e->getFile(),
+                            'line' => $e->getLine(),
+                        ]);
                     }
                 }
             }

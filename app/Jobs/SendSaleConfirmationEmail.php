@@ -49,7 +49,15 @@ class SendSaleConfirmationEmail implements ShouldQueue
             Log::info("Sale confirmation email sent for sale: {$this->sale->sale_code}");
 
         } catch (\Exception $e) {
-            Log::error("Failed to send sale confirmation email for sale {$this->sale->sale_code}: ".$e->getMessage());
+            Log::error('MAIL FAILED: Failed to send sale confirmation email', [
+                'sale_id' => $this->sale->id,
+                'sale_code' => $this->sale->sale_code,
+                'customer_email' => $this->sale->customer?->email,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
             throw $e;
         }
     }

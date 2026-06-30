@@ -57,9 +57,13 @@ class SendCustomerWelcomeWhatsApp implements ShouldQueue
             ]);
 
         } catch (\Exception $e) {
-            Log::warning('Failed to send customer welcome WhatsApp', [
+            Log::error('WHATSAPP FAILED: Failed to send customer welcome WhatsApp', [
                 'customer_id' => $this->customer->id,
-                'error' => $e->getMessage(),
+                'phone' => $this->customer->phone,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
             ]);
         }
     }

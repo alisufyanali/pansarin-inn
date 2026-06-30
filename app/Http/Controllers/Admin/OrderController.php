@@ -97,14 +97,26 @@ class OrderController extends Controller
                 try {
                     \App\Jobs\SendOrderConfirmationEmail::dispatch($order);
                 } catch (\Exception $e) {
-                    \Illuminate\Support\Facades\Log::warning('Order confirmation email dispatch failed: ' . $e->getMessage());
+                    \Illuminate\Support\Facades\Log::error('MAIL FAILED: Order confirmation email dispatch failed', [
+                        'order_id' => $order->id,
+                        'message' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString(),
+                        'file' => $e->getFile(),
+                        'line' => $e->getLine(),
+                    ]);
                 }
 
                 // Send Order Confirmation WhatsApp (Queued)
                 try {
                     \App\Jobs\SendOrderWhatsAppNotification::dispatch($order);
                 } catch (\Exception $e) {
-                    \Illuminate\Support\Facades\Log::warning('Order confirmation WhatsApp dispatch failed: ' . $e->getMessage());
+                    \Illuminate\Support\Facades\Log::error('WHATSAPP DISPATCH FAILED: Order confirmation WhatsApp dispatch failed', [
+                        'order_id' => $order->id,
+                        'message' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString(),
+                        'file' => $e->getFile(),
+                        'line' => $e->getLine(),
+                    ]);
                 }
             }
 
