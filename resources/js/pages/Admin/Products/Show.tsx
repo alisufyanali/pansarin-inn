@@ -236,7 +236,7 @@ export default function Show({ product }: { product: Product }) {
                                                     </td>
                                                     <td className="px-4 py-3">
                                                         <div className="flex flex-wrap gap-1">
-                                                            {Object.entries(variant.attributes).map(([key, value]) => (
+                                                           {Object.entries(variant.attributes ?? {}).map(([key, value]) => (
                                                                 <span key={key} className="inline-flex items-center rounded bg-indigo-100 px-2 py-0.5 text-xs text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300">
                                                                     <span className="text-indigo-400 mr-1">{key}:</span>{value}
                                                                 </span>
