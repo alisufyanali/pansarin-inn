@@ -49,13 +49,20 @@ class SendSaleWhatsAppNotification implements ShouldQueue
             $message = "Hello {$customerName},\n\nThank you for your purchase! 🌿\n\nYour purchase details:\nSale Code: {$saleCode}\nTotal: {$grandTotal}\nDelivery Address: {$deliveryAddress}\n\nWe appreciate your business!\n\nBest regards,\nPansari Inn Team";
 
             // Send WhatsApp message using custom text
+            Log::info('WHATSAPP JOB START: send sale message', [
+                'sale_id' => $this->sale->id,
+                'phone' => $this->sale->customer->phone,
+                'clean_phone' => preg_replace('/\D+/', '', $this->sale->customer->phone),
+                'message' => $message,
+            ]);
+
             $response = $whatsappService->sendTextMessage(
                 $this->sale->customer->phone,
                 $message
             );
 
             \App\Models\WhatsappMessageLog::create([
-                'phone' => $this->sale->customer->phone,
+                'phone' => preg_replace('/\D+/', '', $this->sale->customer->phone),
                 'customer_name' => $customerName,
                 'order_id' => $saleCode,
                 'order_total' => $this->sale->grand_total,
@@ -64,9 +71,9 @@ class SendSaleWhatsAppNotification implements ShouldQueue
                 'api_response' => json_encode($response),
             ]);
 
-            Log::info('Sale WhatsApp sent', [
+            Log::info('WHATSAPP JOB RESPONSE: sale message sent', [
                 'sale_id' => $this->sale->id,
-                'phone' => $this->sale->customer->phone,
+                'response' => $response,
             ]);
 
         } catch (\Exception $e) {

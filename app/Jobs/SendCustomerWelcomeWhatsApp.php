@@ -39,10 +39,17 @@ class SendCustomerWelcomeWhatsApp implements ShouldQueue
             $customerName = $this->customer->full_name ?? $this->customer->first_name;
             $message = "Hello {$customerName},\n\nWelcome to Pansari Inn! 🌿\n\nYour account has been successfully registered. We are thrilled to have you with us!\n\nBest regards,\nPansari Inn Team";
 
+            Log::info('WHATSAPP JOB START: send customer welcome', [
+                'customer_id' => $this->customer->id,
+                'phone' => $this->customer->phone,
+                'clean_phone' => preg_replace('/\D+/', '', $this->customer->phone),
+                'message' => $message,
+            ]);
+
             $response = $whatsappService->sendTextMessage($this->customer->phone, $message);
 
             \App\Models\WhatsappMessageLog::create([
-                'phone' => $this->customer->phone,
+                'phone' => preg_replace('/\D+/', '', $this->customer->phone),
                 'customer_name' => $customerName,
                 'order_id' => 'Welcome',
                 'order_total' => 0,
@@ -51,9 +58,9 @@ class SendCustomerWelcomeWhatsApp implements ShouldQueue
                 'api_response' => json_encode($response),
             ]);
 
-            Log::info('Customer welcome WhatsApp sent', [
+            Log::info('WHATSAPP JOB RESPONSE: customer welcome sent', [
                 'customer_id' => $this->customer->id,
-                'phone' => $this->customer->phone,
+                'response' => $response,
             ]);
 
         } catch (\Exception $e) {

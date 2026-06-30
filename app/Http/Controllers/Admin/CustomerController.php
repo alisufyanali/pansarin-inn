@@ -99,7 +99,12 @@ class CustomerController extends Controller
                 // Welcome WhatsApp
                 if (!empty($customer->phone)) {
                     try {
-                        \App\Jobs\SendCustomerWelcomeWhatsApp::dispatch($customer);
+                        if (config('queue.default') === 'sync' || env('QUEUE_CONNECTION') === 'sync') {
+                            // Run job synchronously as a fallback when queue worker may not be running
+                            (new \App\Jobs\SendCustomerWelcomeWhatsApp($customer))->handle(app(\App\Services\WhatsAppService::class));
+                        } else {
+                            \App\Jobs\SendCustomerWelcomeWhatsApp::dispatch($customer);
+                        }
                     } catch (\Exception $e) {
                         \Illuminate\Support\Facades\Log::error('WHATSAPP DISPATCH FAILED: Customer welcome WhatsApp failed to dispatch', [
                             'customer_id' => $customer->id,

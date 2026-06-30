@@ -176,7 +176,11 @@ class SaleController extends Controller
 
                 // Send Sale Confirmation WhatsApp (Queued)
                 try {
-                    \App\Jobs\SendSaleWhatsAppNotification::dispatch($sale);
+                    if (config('queue.default') === 'sync' || env('QUEUE_CONNECTION') === 'sync') {
+                        (new \App\Jobs\SendSaleWhatsAppNotification($sale))->handle(app(\App\Services\WhatsAppService::class));
+                    } else {
+                        \App\Jobs\SendSaleWhatsAppNotification::dispatch($sale);
+                    }
                 } catch (\Exception $e) {
                     \Illuminate\Support\Facades\Log::error('WHATSAPP DISPATCH FAILED: Sale confirmation WhatsApp dispatch failed', [
                         'sale_id' => $sale->id,

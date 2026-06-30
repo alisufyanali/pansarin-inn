@@ -108,7 +108,11 @@ class OrderController extends Controller
 
                 // Send Order Confirmation WhatsApp (Queued)
                 try {
-                    \App\Jobs\SendOrderWhatsAppNotification::dispatch($order);
+                    if (config('queue.default') === 'sync' || env('QUEUE_CONNECTION') === 'sync') {
+                        (new \App\Jobs\SendOrderWhatsAppNotification($order))->handle(app(\App\Services\WhatsAppService::class));
+                    } else {
+                        \App\Jobs\SendOrderWhatsAppNotification::dispatch($order);
+                    }
                 } catch (\Exception $e) {
                     \Illuminate\Support\Facades\Log::error('WHATSAPP DISPATCH FAILED: Order confirmation WhatsApp dispatch failed', [
                         'order_id' => $order->id,
@@ -213,7 +217,11 @@ class OrderController extends Controller
             $sent = 0;
             foreach ($orders as $order) {
                 if ($order->customer?->phone) {
-                    \App\Jobs\SendOrderWhatsAppNotification::dispatch($order);
+                    if (config('queue.default') === 'sync' || env('QUEUE_CONNECTION') === 'sync') {
+                        (new \App\Jobs\SendOrderWhatsAppNotification($order))->handle(app(\App\Services\WhatsAppService::class));
+                    } else {
+                        \App\Jobs\SendOrderWhatsAppNotification::dispatch($order);
+                    }
                     $sent++;
                 }
             }

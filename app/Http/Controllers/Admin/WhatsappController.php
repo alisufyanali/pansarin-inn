@@ -195,13 +195,19 @@ class WhatsAppController extends Controller
         ]);
 
         try {
+            Log::info('WHATSAPP CONTROLLER SEND START', [
+                'phone' => $request->phone,
+                'clean_phone' => preg_replace('/\D+/', '', $request->phone),
+                'message' => $request->message,
+            ]);
+
             $response = $this->whatsappService->sendTextMessage(
                 $request->phone,
                 $request->message
             );
 
             WhatsappMessageLog::create([
-                'phone' => $request->phone,
+                'phone' => preg_replace('/\D+/', '', $request->phone),
                 'customer_name' => 'Manual',
                 'order_id' => 'Manual-'.mt_rand(1000, 9999),
                 'order_total' => 0,
@@ -209,6 +215,8 @@ class WhatsAppController extends Controller
                 'messages' => $request->message,
                 'api_response' => json_encode($response),
             ]);
+
+            Log::info('WHATSAPP CONTROLLER SEND RESPONSE', ['response' => $response]);
 
             // If Inertia request, redirect back with success
             if (request()->header('X-Inertia')) {

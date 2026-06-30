@@ -50,7 +50,14 @@ class SendOrderWhatsAppNotification implements ShouldQueue
             $deliveryAddress = $this->order->shipping_address ?? 'N/A';
 
             // Send WhatsApp message using template
-            $whatsappService->sendTemplateMessage(
+            Log::info('WHATSAPP JOB START: send order template', [
+                'order_id' => $this->order->id,
+                'phone' => $this->order->customer->phone,
+                'clean_phone' => preg_replace('/\D+/', '', $this->order->customer->phone),
+                'template' => 'order_confirmation',
+            ]);
+
+            $response = $whatsappService->sendTemplateMessage(
                 $this->order->customer->phone,
                 $customerName,
                 $orderNumber,
@@ -59,9 +66,9 @@ class SendOrderWhatsAppNotification implements ShouldQueue
                 'order_confirmation' // Your WhatsApp template name
             );
 
-            Log::info('Order WhatsApp sent', [
+            Log::info('WHATSAPP JOB RESPONSE: order template sent', [
                 'order_id' => $this->order->id,
-                'phone' => $this->order->customer->phone,
+                'response' => $response,
             ]);
 
         } catch (\Exception $e) {

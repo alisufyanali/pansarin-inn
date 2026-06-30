@@ -35,6 +35,13 @@ class SendSaleReviewWhatsApp implements ShouldQueue
             . "{$link}\n\n"
             . "JazakAllah Khair 🙏";
 
+        Log::info('WHATSAPP JOB START: send sale review message', [
+            'sale_id' => $this->sale->id,
+            'phone' => $customer->phone,
+            'clean_phone' => preg_replace('/\D+/', '', $customer->phone),
+            'message' => $message,
+        ]);
+
         $response = $whatsapp->sendTextMessage($customer->phone, $message);
 
         // Save to WhatsApp message log so it appears in chat UI
@@ -48,6 +55,6 @@ class SendSaleReviewWhatsApp implements ShouldQueue
             'api_response'     => json_encode($response),
         ]);
 
-        Log::info('Review WhatsApp sent', ['sale_id' => $this->sale->id]);
+        Log::info('WHATSAPP JOB RESPONSE: sale review message sent', ['sale_id' => $this->sale->id, 'response' => $response]);
     }
 }

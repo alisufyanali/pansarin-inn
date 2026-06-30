@@ -14,11 +14,20 @@ class WhatsAppService
     protected $phoneNumberId;
 
     protected $accessToken;
+    protected $apiUrl;
 
     public function __construct()
     {
         $this->phoneNumberId = config('services.whatsapp.phone_number_id');
         $this->accessToken = config('services.whatsapp.access_token');
+        $this->apiUrl = rtrim(config('services.whatsapp.api_url', 'https://graph.facebook.com'), '/');
+
+        if (! $this->phoneNumberId || ! $this->accessToken) {
+            Log::warning('WhatsAppService configuration missing', [
+                'phone_number_id' => $this->phoneNumberId,
+                'access_token_present' => ! empty($this->accessToken),
+            ]);
+        }
     }
 
     /**
@@ -32,7 +41,7 @@ class WhatsAppService
         string $deliveryAddress,
         string $templateName = 'order_confirmation'
     ) {
-        $url = "https://graph.facebook.com/v22.0/{$this->phoneNumberId}/messages";
+        $url = "{$this->apiUrl}/v22.0/{$this->phoneNumberId}/messages";
 
         $data = [
             'messaging_product' => 'whatsapp',
@@ -56,12 +65,35 @@ class WhatsAppService
         ];
 
         try {
+            $maskedToken = $this->maskToken($this->accessToken);
+
+            Log::info('WHATSAPP SEND START (template)', [
+                'phone' => $recipientPhone,
+                'clean_phone' => $this->cleanPhone($recipientPhone),
+                'template' => $templateName,
+                'payload' => $data,
+                'api_url' => $url,
+                'access_token_masked' => $maskedToken,
+            ]);
+
+            // basic E.164-ish validation
+            $cleanPhone = $this->cleanPhone($recipientPhone);
+            if (! preg_match('/^[1-9]\d{7,14}$/', $cleanPhone)) {
+                Log::warning('WHATSAPP PHONE FORMAT WARNING (template)', [
+                    'phone' => $recipientPhone,
+                    'clean_phone' => $cleanPhone,
+                ]);
+            }
+
             $response = Http::withToken($this->accessToken)
+                ->timeout(15)
                 ->post($url, $data);
 
+            $status = $response->status();
+            $body = $response->body();
             $responseData = $response->json();
 
-            // Save to log
+            // Save to log table
             $this->saveMessageLog(
                 $recipientPhone,
                 $customerName,
@@ -69,8 +101,14 @@ class WhatsAppService
                 $orderTotal,
                 $deliveryAddress,
                 "Order: $orderId - Total: $orderTotal",
-                $response->body()
+                $body
             );
+
+            Log::info('WHATSAPP SEND RESPONSE (template)', [
+                'phone' => $recipientPhone,
+                'status' => $status,
+                'response_body' => $body,
+            ]);
 
             // Check for errors
             if (isset($responseData['error'])) {
@@ -79,9 +117,14 @@ class WhatsAppService
 
             return $responseData;
         } catch (\Exception $e) {
-            Log::error('WhatsApp Template Message Error', [
-                'error' => $e->getMessage(),
+            Log::error('WHATSAPP EXCEPTION (template)', [
                 'phone' => $recipientPhone,
+                'clean_phone' => $this->cleanPhone($recipientPhone),
+                'template' => $templateName,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
             ]);
             throw $e;
         }
@@ -92,7 +135,7 @@ class WhatsAppService
      */
     public function sendTextMessage(string $recipientPhone, string $message)
     {
-        $url = "https://graph.facebook.com/v19.0/{$this->phoneNumberId}/messages";
+        $url = "{$this->apiUrl}/v19.0/{$this->phoneNumberId}/messages";
 
         $data = [
             'messaging_product' => 'whatsapp',
@@ -104,14 +147,49 @@ class WhatsAppService
         ];
 
         try {
+            $maskedToken = $this->maskToken($this->accessToken);
+
+            Log::info('WHATSAPP SEND START (text)', [
+                'phone' => $recipientPhone,
+                'clean_phone' => $this->cleanPhone($recipientPhone),
+                'message' => $message,
+                'payload' => $data,
+                'api_url' => $url,
+                'access_token_masked' => $maskedToken,
+            ]);
+
+            // basic E.164-ish validation
+            $cleanPhone = $this->cleanPhone($recipientPhone);
+            if (! preg_match('/^[1-9]\d{7,14}$/', $cleanPhone)) {
+                Log::warning('WHATSAPP PHONE FORMAT WARNING (text)', [
+                    'phone' => $recipientPhone,
+                    'clean_phone' => $cleanPhone,
+                ]);
+            }
+
             $response = Http::withToken($this->accessToken)
+                ->timeout(15)
                 ->post($url, $data);
 
-            return $response->json();
-        } catch (\Exception $e) {
-            Log::error('WhatsApp Text Message Error', [
-                'error' => $e->getMessage(),
+            $status = $response->status();
+            $body = $response->body();
+            $responseData = $response->json();
+
+            Log::info('WHATSAPP SEND RESPONSE (text)', [
                 'phone' => $recipientPhone,
+                'status' => $status,
+                'response_body' => $body,
+            ]);
+
+            return $responseData;
+        } catch (\Exception $e) {
+            Log::error('WHATSAPP EXCEPTION (text)', [
+                'phone' => $recipientPhone,
+                'clean_phone' => $this->cleanPhone($recipientPhone),
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
             ]);
             throw $e;
         }
@@ -130,7 +208,7 @@ class WhatsAppService
         string $apiResponse
     ) {
         WhatsappMessageLog::create([
-            'phone' => $phone,
+            'phone' => preg_replace('/\D+/', '', $phone),
             'customer_name' => $customerName,
             'order_id' => $orderId,
             'order_total' => $orderTotal,
@@ -138,6 +216,17 @@ class WhatsAppService
             'messages' => $message,
             'api_response' => $apiResponse,
         ]);
+    }
+
+    /**
+     * Mask sensitive token for logs
+     */
+    protected function maskToken(?string $token): ?string
+    {
+        if (! $token) return null;
+        $len = strlen($token);
+        if ($len <= 10) return substr($token, 0, 3) . '***';
+        return substr($token, 0, 6) . '***' . substr($token, -4);
     }
 
     /**
