@@ -1,72 +1,59 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to Pansari Inn</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .header {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-            border-radius: 10px 10px 0 0;
-        }
-        .content {
-            background: #f9f9f9;
-            padding: 30px;
-            border: 1px solid #ddd;
-            border-radius: 0 0 10px 10px;
-        }
-        .details {
-            background: white;
-            padding: 20px;
-            margin: 20px 0;
-            border-radius: 5px;
-            border-left: 4px solid #10b981;
-        }
-        .footer {
-            text-align: center;
-            padding: 20px;
-            color: #666;
-            font-size: 0.85em;
-        }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>Welcome to Pansari Inn! 🌿</h1>
-        <p>Your journey to pure wellness starts here.</p>
-    </div>
+<x-mail-layout
+    title="Welcome to Pansari Inn!"
+    heading="Welcome to Pansari Inn! 🌿"
+    subheading="Your journey to pure wellness starts here."
+>
 
-    <div class="content">
-        <p>Dear {{ $customer->first_name }} {{ $customer->last_name }},</p>
-        
-        <p>Thank you for registering an account with Pansari Inn. We are thrilled to welcome you to our family!</p>
+    <p style="margin:0 0 16px;font-size:14px;color:#1f2d1f;">
+        Dear <strong>{{ $customer->first_name }} {{ $customer->last_name }}</strong>,
+    </p>
+    <p style="margin:0 0 20px;font-size:14px;color:#374151;line-height:1.7;">
+        Thank you for registering an account with <strong>Pansari Inn</strong>.
+        We are thrilled to welcome you to our family!
+    </p>
 
-        <div class="details">
-            <p><strong>Your Account Details:</strong></p>
-            <p><strong>Name:</strong> {{ $customer->first_name }} {{ $customer->last_name }}</p>
-            <p><strong>Email:</strong> {{ $customer->email }}</p>
-            <p><strong>Phone:</strong> {{ $customer->phone }}</p>
-        </div>
+    <!-- Account details card -->
+    <table width="100%" cellpadding="10" cellspacing="0" border="0"
+           style="background-color:#f1f8f1;border:1px solid #c8e6c8;border-left:4px solid #2e7d32;
+                  border-radius:6px;margin-bottom:24px;">
+        <tr>
+            <td colspan="2" style="font-size:13px;font-weight:700;color:#1b5e20;padding-bottom:6px;
+                                   border-bottom:1px solid #dcedc8;padding:10px 12px;">
+                Your Account Details
+            </td>
+        </tr>
+        <tr>
+            <td style="font-size:13px;color:#374151;padding:8px 12px;border-bottom:1px solid #e8f5e9;width:120px;">
+                <strong>Name:</strong>
+            </td>
+            <td style="font-size:13px;color:#374151;padding:8px 12px;border-bottom:1px solid #e8f5e9;">
+                {{ $customer->first_name }} {{ $customer->last_name }}
+            </td>
+        </tr>
+        <tr>
+            <td style="font-size:13px;color:#374151;padding:8px 12px;border-bottom:1px solid #e8f5e9;">
+                <strong>Email:</strong>
+            </td>
+            <td style="font-size:13px;color:#374151;padding:8px 12px;border-bottom:1px solid #e8f5e9;">
+                {{ $customer->email }}
+            </td>
+        </tr>
+        <tr>
+            <td style="font-size:13px;color:#374151;padding:8px 12px;">
+                <strong>Phone:</strong>
+            </td>
+            <td style="font-size:13px;color:#374151;padding:8px 12px;">
+                {{ $customer->phone }}
+            </td>
+        </tr>
+    </table>
 
-        <p>You can now log in to your account, track your orders, manage your shipping addresses, and explore our wide range of products.</p>
+    <p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.7;">
+        You can now log in to your account, track your orders, manage your shipping addresses,
+        and explore our wide range of products.
+    </p>
+    <p style="margin:0;font-size:13px;color:#4a4a4a;line-height:1.7;">
+        If you have any questions or need assistance, feel free to reply to this email or contact us.
+    </p>
 
-        <p>If you have any questions or need assistance, feel free to reply to this email or contact us.</p>
-    </div>
-
-    <div class="footer">
-        <p>Best regards,<br>The Pansari Inn Team</p>
-        <p>&copy; {{ date('Y') }} Pansari Inn. All rights reserved.</p>
-    </div>
-</body>
-</html>
+</x-mail-layout>

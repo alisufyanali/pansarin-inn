@@ -111,8 +111,24 @@ return [
     */
 
     'from' => [
-        'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
-        'name' => env('MAIL_FROM_NAME', 'Example'),
+        'address' => env('MAIL_FROM_ADDRESS', 'pansariinn@gmail.com'),
+        'name' => env('MAIL_FROM_NAME', 'Pansari Inn'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Markdown Mail Settings
+    |--------------------------------------------------------------------------
+    |
+    | The theme name must match a CSS file in resources/views/vendor/mail/html/themes/
+    |
+    */
+
+    'markdown' => [
+        'theme' => 'pansari',
+        'paths' => [
+            resource_path('views/vendor/mail'),
+        ],
     ],
 
 ];

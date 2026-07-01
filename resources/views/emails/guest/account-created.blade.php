@@ -1,58 +1,89 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Your Pansari Inn Account</title>
-    <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 20px; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-        .header { background: linear-gradient(90deg, #1b4332, #2d6a4f); padding: 30px 40px; text-align: center; }
-        .header h1 { color: #fff; margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 1px; }
-        .header p { color: #95d5b2; margin: 6px 0 0; font-size: 13px; }
-        .body { padding: 32px 40px; }
-        .body p { color: #374151; font-size: 14px; line-height: 1.7; }
-        .credentials { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 20px 24px; margin: 20px 0; }
-        .credentials p { margin: 6px 0; font-size: 14px; }
-        .credentials strong { color: #1b4332; }
-        .credentials .value { font-family: monospace; background: #dcfce7; padding: 2px 8px; border-radius: 4px; color: #166534; font-weight: 600; }
-        .btn { display: block; width: fit-content; margin: 24px auto; background: linear-gradient(90deg, #1b4332, #2d6a4f); color: #fff; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-weight: 700; font-size: 14px; }
-        .order-badge { text-align: center; margin: 16px 0; }
-        .order-badge span { background: #dcfce7; color: #166534; padding: 4px 14px; border-radius: 20px; font-weight: 700; font-size: 13px; }
-        .footer { text-align: center; padding: 16px; font-size: 11px; color: #9ca3af; border-top: 1px solid #f3f4f6; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🌿 Pansari Inn</h1>
-            <p>Order Confirmed &amp; Account Created</p>
-        </div>
-        <div class="body">
-            <p>Hi <strong>{{ $customerName }}</strong>,</p>
-            <p>Your order has been placed successfully!</p>
+<x-mail-layout
+    title="Your Pansari Inn Account"
+    heading="Order Confirmed &amp; Account Created"
+    subheading="Welcome to Pansari Inn!"
+>
 
-            <div class="order-badge">
-                <span>Order #{{ $orderNumber }}</span>
-            </div>
+    <p style="margin:0 0 16px;font-size:14px;color:#1f2d1f;">
+        Hi <strong>{{ $customerName }}</strong>,
+    </p>
+    <p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.7;">
+        Your order has been placed successfully!
+    </p>
 
-            <p>We have also created an account for you on <strong>Pansari Inn</strong> so you can track your orders anytime.</p>
+    <!-- Order badge -->
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:20px;">
+        <tr>
+            <td align="center">
+                <span style="display:inline-block;background-color:#e8f5e9;color:#1b5e20;
+                             padding:6px 20px;border-radius:20px;font-size:13px;font-weight:700;
+                             border:1px solid #a5d6a7;">
+                    Order #{{ $orderNumber }}
+                </span>
+            </td>
+        </tr>
+    </table>
 
-            <div class="credentials">
-                <p><strong>Your Login Credentials:</strong></p>
-                <p>Email: <span class="value">{{ $customerEmail }}</span></p>
-                <p>Password: <span class="value">{{ $customerPhone }}</span> <em style="font-size:12px;color:#6b7280;">(your phone number)</em></p>
-            </div>
+    <p style="margin:0 0 20px;font-size:14px;color:#374151;line-height:1.7;">
+        We have also created an account for you on <strong>Pansari Inn</strong>
+        so you can track your orders anytime.
+    </p>
 
-            <p>You can use these credentials to login and view your order history, track deliveries, and manage your account.</p>
+    <!-- Credentials -->
+    <table width="100%" cellpadding="10" cellspacing="0" border="0"
+           style="background-color:#f1f8f1;border:1px solid #c8e6c8;border-radius:6px;margin-bottom:24px;">
+        <tr>
+            <td colspan="2" style="font-size:13px;font-weight:700;color:#1b5e20;
+                                   border-bottom:1px solid #dcedc8;padding:10px 12px;">
+                Your Login Credentials
+            </td>
+        </tr>
+        <tr>
+            <td style="font-size:13px;color:#374151;padding:8px 12px;border-bottom:1px solid #e8f5e9;width:80px;">
+                <strong>Email:</strong>
+            </td>
+            <td style="font-size:13px;padding:8px 12px;border-bottom:1px solid #e8f5e9;">
+                <span style="font-family:monospace;background-color:#dcfce7;color:#166534;
+                             padding:2px 8px;border-radius:4px;font-weight:600;">
+                    {{ $customerEmail }}
+                </span>
+            </td>
+        </tr>
+        <tr>
+            <td style="font-size:13px;color:#374151;padding:8px 12px;">
+                <strong>Password:</strong>
+            </td>
+            <td style="font-size:13px;padding:8px 12px;">
+                <span style="font-family:monospace;background-color:#dcfce7;color:#166534;
+                             padding:2px 8px;border-radius:4px;font-weight:600;">
+                    {{ $customerPhone }}
+                </span>
+                <em style="font-size:12px;color:#757575;"> (your phone number)</em>
+            </td>
+        </tr>
+    </table>
 
-            <a href="{{ url('/login') }}" class="btn">Login to Your Account</a>
+    <p style="margin:0 0 24px;font-size:14px;color:#374151;line-height:1.7;">
+        You can use these credentials to log in and view your order history, track deliveries,
+        and manage your account.
+    </p>
 
-            <p style="font-size:13px;color:#6b7280;">If you did not place this order, please contact us immediately at <a href="mailto:pansariinn@gmail.com">pansariinn@gmail.com</a></p>
-        </div>
-        <div class="footer">
-            &copy; {{ date('Y') }} Pansari Inn. All rights reserved.
-        </div>
-    </div>
-</body>
-</html>
+    <!-- CTA -->
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px;">
+        <tr>
+            <td align="center">
+                <a href="{{ url('/login') }}"
+                   style="display:inline-block;background-color:#2e7d32;color:#ffffff;text-decoration:none;
+                          padding:13px 36px;border-radius:6px;font-size:14px;font-weight:700;">
+                    Login to Your Account
+                </a>
+            </td>
+        </tr>
+    </table>
+
+    <p style="font-size:12px;color:#9e9e9e;text-align:center;margin:0;">
+        If you did not place this order, please contact us immediately at
+        <a href="mailto:pansariinn@gmail.com" style="color:#2e7d32;text-decoration:none;">pansariinn@gmail.com</a>
+    </p>
+
+</x-mail-layout>

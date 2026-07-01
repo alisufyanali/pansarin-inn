@@ -1,156 +1,143 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sale Confirmation</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .header {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-            border-radius: 10px 10px 0 0;
-        }
-        .content {
-            background: #f9f9f9;
-            padding: 30px;
-            border: 1px solid #ddd;
-        }
-        .details {
-            background: white;
-            padding: 20px;
-            margin: 20px 0;
-            border-radius: 5px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-        }
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-        th {
-            background: #f5f5f5;
-            font-weight: bold;
-        }
-        .total-row {
-            font-weight: bold;
-            font-size: 1.2em;
-            background: #f0f0f0;
-        }
-        .footer {
-            text-align: center;
-            padding: 20px;
-            color: #666;
-            font-size: 0.9em;
-        }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>Purchase Confirmation</h1>
-        <p>Thank you for your purchase!</p>
-    </div>
+<x-mail-layout
+    title="Purchase Confirmation — {{ $sale->sale_code }}"
+    heading="Purchase Confirmation"
+    subheading="Thank you for your purchase!"
+>
 
-    <div class="content">
-        <p>Dear {{ $sale->customer->first_name }} {{ $sale->customer->last_name }},</p>
-        
-        <p>We're excited to confirm your purchase. Here are the details:</p>
+    <p style="margin:0 0 16px;font-size:14px;color:#1f2d1f;">
+        Dear <strong>{{ $sale->customer->first_name }} {{ $sale->customer->last_name }}</strong>,
+    </p>
+    <p style="margin:0 0 20px;font-size:14px;color:#374151;line-height:1.7;">
+        We're excited to confirm your purchase. Here are the details:
+    </p>
 
-        <div class="details">
-            <p><strong>Sale Code:</strong> {{ $sale->sale_code }}</p>
-            <p><strong>Date:</strong> {{ $sale->created_at->format('d M, Y h:i A') }}</p>
-            <p><strong>Payment Status:</strong> {{ ucfirst(str_replace('_', ' ', $sale->payment_status)) }}</p>
-            <p><strong>Delivery Status:</strong> {{ ucfirst($sale->delivery_status) }}</p>
-        </div>
+    <!-- Sale meta -->
+    <table width="100%" cellpadding="10" cellspacing="0" border="0"
+           style="background-color:#f1f8f1;border:1px solid #c8e6c8;border-radius:6px;margin-bottom:24px;">
+        <tr>
+            <td style="font-size:13px;color:#374151;border-bottom:1px solid #dcedc8;">
+                <strong style="color:#1b5e20;">Sale Code:</strong>
+            </td>
+            <td style="font-size:13px;color:#374151;border-bottom:1px solid #dcedc8;text-align:right;">
+                {{ $sale->sale_code }}
+            </td>
+        </tr>
+        <tr>
+            <td style="font-size:13px;color:#374151;border-bottom:1px solid #dcedc8;">
+                <strong style="color:#1b5e20;">Date:</strong>
+            </td>
+            <td style="font-size:13px;color:#374151;border-bottom:1px solid #dcedc8;text-align:right;">
+                {{ $sale->created_at->format('d M, Y h:i A') }}
+            </td>
+        </tr>
+        <tr>
+            <td style="font-size:13px;color:#374151;border-bottom:1px solid #dcedc8;">
+                <strong style="color:#1b5e20;">Payment Status:</strong>
+            </td>
+            <td style="font-size:13px;color:#374151;border-bottom:1px solid #dcedc8;text-align:right;">
+                {{ ucfirst(str_replace('_', ' ', $sale->payment_status)) }}
+            </td>
+        </tr>
+        <tr>
+            <td style="font-size:13px;color:#374151;">
+                <strong style="color:#1b5e20;">Delivery Status:</strong>
+            </td>
+            <td style="font-size:13px;color:#374151;text-align:right;">
+                {{ ucfirst($sale->delivery_status) }}
+            </td>
+        </tr>
+    </table>
 
-        <h3>Items Purchased:</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Product</th>
-                    <th>Quantity</th>
-                    <th>Price</th>
-                    <th>Subtotal</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($sale->items as $item)
-                <tr>
-                    <td>
-                        {{ $item->meta['product_name'] ?? ($item->product?->name ?? '—') }}
-                        @if(isset($item->meta['variant_name']))
-                            <br><small>({{ $item->meta['variant_name'] }})</small>
-                        @endif
-                    </td>
-                    <td>{{ $item->quantity }}</td>
-                    <td>PKR {{ number_format($item->price, 2) }}</td>
-                    <td>PKR {{ number_format($item->subtotal, 2) }}</td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
+    <!-- Items table -->
+    <p style="margin:0 0 10px;font-size:14px;font-weight:700;color:#1b5e20;">Items Purchased:</p>
+    <table width="100%" cellpadding="10" cellspacing="0" border="0"
+           style="border-collapse:collapse;margin-bottom:20px;font-size:13px;">
+        <thead>
+            <tr style="background-color:#2e7d32;">
+                <th style="color:#ffffff;text-align:left;padding:10px 12px;">Product</th>
+                <th style="color:#ffffff;text-align:center;padding:10px 12px;">Qty</th>
+                <th style="color:#ffffff;text-align:right;padding:10px 12px;">Price</th>
+                <th style="color:#ffffff;text-align:right;padding:10px 12px;">Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($sale->items as $index => $item)
+            <tr style="background-color:{{ $index % 2 === 0 ? '#f9fdf9' : '#ffffff' }};">
+                <td style="padding:10px 12px;color:#374151;border-bottom:1px solid #e8f5e9;">
+                    {{ $item->meta['product_name'] ?? ($item->product?->name ?? '—') }}
+                    @if(isset($item->meta['variant_name']))
+                        <br /><small style="color:#757575;">({{ $item->meta['variant_name'] }})</small>
+                    @endif
+                </td>
+                <td style="padding:10px 12px;color:#374151;border-bottom:1px solid #e8f5e9;text-align:center;">
+                    {{ $item->quantity }}
+                </td>
+                <td style="padding:10px 12px;color:#374151;border-bottom:1px solid #e8f5e9;text-align:right;">
+                    PKR {{ number_format($item->price, 2) }}
+                </td>
+                <td style="padding:10px 12px;color:#374151;border-bottom:1px solid #e8f5e9;text-align:right;">
+                    PKR {{ number_format($item->subtotal, 2) }}
+                </td>
+            </tr>
+            @endforeach
+        </tbody>
+    </table>
 
-        <table>
-            <tr>
-                <td style="text-align: right;"><strong>Subtotal:</strong></td>
-                <td style="text-align: right;">PKR {{ number_format($sale->subtotal, 2) }}</td>
-            </tr>
-            @if($sale->product_discount > 0)
-            <tr>
-                <td style="text-align: right;"><strong>Product Discount:</strong></td>
-                <td style="text-align: right; color: red;">- PKR {{ number_format($sale->product_discount, 2) }}</td>
-            </tr>
-            @endif
-            @if($sale->invoice_discount > 0)
-            <tr>
-                <td style="text-align: right;"><strong>Invoice Discount:</strong></td>
-                <td style="text-align: right; color: red;">- PKR {{ number_format($sale->invoice_discount, 2) }}</td>
-            </tr>
-            @endif
-            @if($sale->shipping_charges > 0)
-            <tr>
-                <td style="text-align: right;"><strong>Shipping Charges:</strong></td>
-                <td style="text-align: right;">+ PKR {{ number_format($sale->shipping_charges, 2) }}</td>
-            </tr>
-            @endif
-            @if($sale->vat > 0)
-            <tr>
-                <td style="text-align: right;"><strong>VAT:</strong></td>
-                <td style="text-align: right;">+ PKR {{ number_format($sale->vat, 2) }}</td>
-            </tr>
-            @endif
-            <tr class="total-row">
-                <td style="text-align: right;"><strong>Grand Total:</strong></td>
-                <td style="text-align: right;">PKR {{ number_format($sale->grand_total, 2) }}</td>
-            </tr>
-        </table>
-
-        @if($sale->shipping_address)
-        <div class="details">
-            <h4>Shipping Address:</h4>
-            <p>{{ $sale->shipping_address }}</p>
-        </div>
+    <!-- Totals -->
+    <table width="100%" cellpadding="8" cellspacing="0" border="0"
+           style="font-size:13px;margin-bottom:24px;">
+        <tr>
+            <td style="text-align:right;color:#374151;"><strong>Subtotal:</strong></td>
+            <td style="text-align:right;color:#374151;width:130px;">PKR {{ number_format($sale->subtotal, 2) }}</td>
+        </tr>
+        @if($sale->product_discount > 0)
+        <tr>
+            <td style="text-align:right;color:#374151;"><strong>Product Discount:</strong></td>
+            <td style="text-align:right;color:#c62828;">− PKR {{ number_format($sale->product_discount, 2) }}</td>
+        </tr>
         @endif
+        @if($sale->invoice_discount > 0)
+        <tr>
+            <td style="text-align:right;color:#374151;"><strong>Invoice Discount:</strong></td>
+            <td style="text-align:right;color:#c62828;">− PKR {{ number_format($sale->invoice_discount, 2) }}</td>
+        </tr>
+        @endif
+        @if($sale->shipping_charges > 0)
+        <tr>
+            <td style="text-align:right;color:#374151;"><strong>Shipping:</strong></td>
+            <td style="text-align:right;color:#374151;">+ PKR {{ number_format($sale->shipping_charges, 2) }}</td>
+        </tr>
+        @endif
+        @if($sale->vat > 0)
+        <tr>
+            <td style="text-align:right;color:#374151;"><strong>VAT:</strong></td>
+            <td style="text-align:right;color:#374151;">+ PKR {{ number_format($sale->vat, 2) }}</td>
+        </tr>
+        @endif
+        <tr style="background-color:#e8f5e9;">
+            <td style="text-align:right;padding:10px 8px;font-size:15px;font-weight:700;color:#1b5e20;">
+                <strong>Grand Total:</strong>
+            </td>
+            <td style="text-align:right;padding:10px 8px;font-size:15px;font-weight:700;color:#1b5e20;">
+                PKR {{ number_format($sale->grand_total, 2) }}
+            </td>
+        </tr>
+    </table>
 
-        <p>If you have any questions, please feel free to reach out to us.</p>
-    </div>
+    @if($sale->shipping_address)
+    <table width="100%" cellpadding="12" cellspacing="0" border="0"
+           style="background-color:#f1f8f1;border-left:4px solid #2e7d32;margin-bottom:20px;font-size:13px;">
+        <tr>
+            <td>
+                <strong style="color:#1b5e20;">Shipping Address:</strong><br />
+                <span style="color:#374151;">{{ $sale->shipping_address }}</span>
+            </td>
+        </tr>
+    </table>
+    @endif
 
-    <div class="footer">
-        <p>Thank you for shopping with Pansari Inn!</p>
-        <p>&copy; {{ date('Y') }} Pansari Inn. All rights reserved.</p>
-    </div>
-</body>
-</html>
+    <p style="margin:0;font-size:13px;color:#4a4a4a;line-height:1.7;">
+        If you have any questions, feel free to reach out to us.
+    </p>
+
+</x-mail-layout>
