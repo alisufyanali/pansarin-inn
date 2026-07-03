@@ -76,15 +76,6 @@ class WhatsAppService
                 'access_token_masked' => $maskedToken,
             ]);
 
-            // basic E.164-ish validation
-            $cleanPhone = $this->cleanPhone($recipientPhone);
-            if (! preg_match('/^[1-9]\d{7,14}$/', $cleanPhone)) {
-                Log::warning('WHATSAPP PHONE FORMAT WARNING (template)', [
-                    'phone' => $recipientPhone,
-                    'clean_phone' => $cleanPhone,
-                ]);
-            }
-
             $response = Http::withToken($this->accessToken)
                 ->timeout(15)
                 ->post($url, $data);
@@ -157,15 +148,6 @@ class WhatsAppService
                 'api_url' => $url,
                 'access_token_masked' => $maskedToken,
             ]);
-
-            // basic E.164-ish validation
-            $cleanPhone = $this->cleanPhone($recipientPhone);
-            if (! preg_match('/^[1-9]\d{7,14}$/', $cleanPhone)) {
-                Log::warning('WHATSAPP PHONE FORMAT WARNING (text)', [
-                    'phone' => $recipientPhone,
-                    'clean_phone' => $cleanPhone,
-                ]);
-            }
 
             $response = Http::withToken($this->accessToken)
                 ->timeout(15)
@@ -251,10 +233,15 @@ class WhatsAppService
     }
 
     /**
-     * Clean phone number
+     * Clean phone number to E.164 format (without leading +)
+     * e.g. 03172159160 → 923172159160
      */
     protected function cleanPhone(string $phone): string
     {
-        return preg_replace('/\D+/', '', $phone);
+        $clean = preg_replace('/[^0-9]/', '', $phone);
+        if (str_starts_with($clean, '0')) {
+            $clean = '92' . substr($clean, 1);
+        }
+        return $clean;
     }
 }
