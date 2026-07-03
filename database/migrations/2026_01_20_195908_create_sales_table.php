@@ -37,6 +37,8 @@ return new class extends Migration
             $table->string('shipping_method')->nullable(); // e.g., leopard, tcs, etc.
             $table->text('shipping_response')->nullable(); // Response from shipping API
             $table->dateTime('delivery_datetime')->nullable();
+            $table->unsignedBigInteger('city_id')->nullable();
+            $table->foreign('city_id')->references('id')->on('cities')->onDelete('set null');
 
             // Payment Details
             $table->string('payment_type')->nullable(); // e.g., cash_on_delivery, card, etc.

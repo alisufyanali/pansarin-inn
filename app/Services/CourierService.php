@@ -3,18 +3,28 @@
 namespace App\Services;
 
 use App\Models\Order;
+use App\Models\Sale;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class CourierService
 {
     /**
-     * Book shipment based on order's shipping_method
-     * Returns tracking number or response string
+     * Book shipment based on order's shipping_method.
+     * If $sale is provided, city is resolved from sale first (sale may have its own city_id).
+     * Returns tracking number or response string.
      */
-    public function book(Order $order): ?string
+    public function book(Order $order, ?Sale $sale = null): ?string
     {
-        $order->loadMissing(['customer', 'city', 'items.product']);
+        $order->loadMissing(['customer', 'items.product']);
+
+        // Resolve city: prefer sale's city, fall back to order's city
+        if ($sale && $sale->city_id) {
+            $sale->loadMissing('city');
+            $order->setRelation('city', $sale->city);
+        } else {
+            $order->loadMissing('city');
+        }
 
         $method = $order->shipping_method;
 
@@ -111,9 +121,17 @@ class CourierService
             'bookingWeight'        => $order->courier_weight ?? 0.5,
         ]);
 
-        $tracking = $response->json('dist.trackingNumber');
+        $tracking = $response->json('dist.0.trackingNumber')
+            ?? $response->json('dist.trackingNumber')
+            ?? $response->json('trackingNumber')
+            ?? $response->json('data.trackingNumber');
 
-        Log::info('PostEx booked', ['order' => $order->order_number, 'tracking' => $tracking]);
+        Log::info('PostEx full response', [
+            'order'   => $order->order_number,
+            'status'  => $response->status(),
+            'body'    => $response->json(),
+            'tracking' => $tracking,
+        ]);
 
         return $tracking;
     }

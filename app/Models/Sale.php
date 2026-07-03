@@ -4,13 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-
 class Sale extends Model
 {
     use SoftDeletes;
 
     protected $fillable = [
         'order_id', 'customer_id', 'sale_code',
+        'city_id',
         'subtotal', 'product_discount', 'invoice_discount',
         'vat', 'vat_percent', 'shipping_charges', 'grand_total',
         'delivery_status', 'remarks', 'review', 'viewed',
@@ -44,6 +44,11 @@ class Sale extends Model
     public function customer()
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function city()
+    {
+        return $this->belongsTo(City::class);
     }
 
     public function items()

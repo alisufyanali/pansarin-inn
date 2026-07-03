@@ -38,6 +38,7 @@ class SaleRequest extends FormRequest
             'payment_timestamp' => 'nullable|date',
             'shipping_method' => 'nullable|in:leopard,cc,pp,px,movex,tcs,trax,rider',
             'courier_weight'  => 'nullable|numeric|min:0.1',
+            'city_id'         => 'nullable|exists:cities,id',
             'shipping_address' => 'nullable|string',
             'shipping_response' => 'nullable|string',
             'delivery_datetime' => 'nullable|date',

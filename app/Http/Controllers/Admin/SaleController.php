@@ -70,7 +70,7 @@ class SaleController extends Controller
                         'id'           => $s->order->id,
                         'order_number' => $s->order->order_number,
                     ] : null,
-                    'city'            => $s->customer?->city ? ['name' => $s->customer->city->name] : null,
+                    'city'            => $s->city ? ['name' => $s->city->name] : ($s->customer?->city ? ['name' => $s->customer->city->name] : null),
                     'items'           => $s->items->map(fn ($item) => [
                         'product_name' => $item->meta['product_name'] ?? $item->product?->name ?? '—',
                         'variant_name' => $item->meta['variant_name'] ?? null,
@@ -113,6 +113,7 @@ class SaleController extends Controller
                     'id'              => $order->id,
                     'order_number'    => $order->order_number,
                     'customer_id'     => $order->customer_id,
+                    'city_id'         => $order->city_id,
                     'shipping_address'=> $order->shipping_address,
                     'billing_address' => $order->billing_address,
                     'shipping_method' => $order->shipping_method,
@@ -159,7 +160,7 @@ class SaleController extends Controller
                 }
 
                 // Load order relationship for courier booking and notifications
-                $sale->load('order.customer', 'order.city', 'order.items');
+                $sale->load('order.customer', 'order.city', 'order.items', 'city');
 
                 // Book courier AFTER sale is created, OUTSIDE the transaction
                 try {
@@ -195,7 +196,7 @@ class SaleController extends Controller
                         ]);
 
                         if ($order->shipping_method && in_array($order->shipping_method, ['movex', 'px', 'leopard', 'cc', 'tcs', 'trax', 'rider'])) {
-                            $tracking = app(\App\Services\CourierService::class)->book($order);
+                            $tracking = app(\App\Services\CourierService::class)->book($order, $sale);
                             if ($tracking) {
                                 $order->update(['shipping_response' => $tracking]);
                             }

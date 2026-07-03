@@ -48,12 +48,19 @@ class SendSaleWhatsAppNotification implements ShouldQueue
 
             $message = "Hello {$customerName},\n\nThank you for your purchase! 🌿\n\nYour purchase details:\nSale Code: {$saleCode}\nTotal: {$grandTotal}\nDelivery Address: {$deliveryAddress}\n\nWe appreciate your business!\n\nBest regards,\nPansari Inn Team";
 
+            // Normalize phone to E.164 (without +): 03xxx → 923xxx
+            $rawPhone = $this->sale->customer->phone;
+            $cleanPhone = preg_replace('/[^0-9]/', '', $rawPhone);
+            if (str_starts_with($cleanPhone, '0')) {
+                $cleanPhone = '92' . substr($cleanPhone, 1);
+            }
+
             // Send WhatsApp message using custom text
             Log::info('WHATSAPP JOB START: send sale message', [
-                'sale_id' => $this->sale->id,
-                'phone' => $this->sale->customer->phone,
-                'clean_phone' => preg_replace('/\D+/', '', $this->sale->customer->phone),
-                'message' => $message,
+                'sale_id'     => $this->sale->id,
+                'phone'       => $rawPhone,
+                'clean_phone' => $cleanPhone,
+                'message'     => $message,
             ]);
 
             $response = $whatsappService->sendTextMessage(
@@ -62,13 +69,13 @@ class SendSaleWhatsAppNotification implements ShouldQueue
             );
 
             \App\Models\WhatsappMessageLog::create([
-                'phone' => preg_replace('/\D+/', '', $this->sale->customer->phone),
-                'customer_name' => $customerName,
-                'order_id' => $saleCode,
-                'order_total' => $this->sale->grand_total,
+                'phone'            => $cleanPhone,
+                'customer_name'    => $customerName,
+                'order_id'         => $saleCode,
+                'order_total'      => $this->sale->grand_total,
                 'delivery_address' => $deliveryAddress,
-                'messages' => $message,
-                'api_response' => json_encode($response),
+                'messages'         => $message,
+                'api_response'     => json_encode($response),
             ]);
 
             Log::info('WHATSAPP JOB RESPONSE: sale message sent', [

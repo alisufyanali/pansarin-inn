@@ -54,6 +54,7 @@ type PrefilledOrder = {
     id: number;
     order_number: string;
     customer_id: number;
+    city_id: number | null;
     shipping_address: string | null;
     billing_address: string | null;
     shipping_method: string | null;
@@ -78,6 +79,7 @@ type SaleItem = {
 type SaleFormData = {
     order_id: string | number;
     customer_id: string | number;
+    city_id: string | number;
     items: SaleItem[];
     invoice_discount: string | number;
     vat: string | number;
@@ -157,6 +159,7 @@ export default function SaleForm({
     const { data, setData, errors, post, put, processing } = useForm<SaleFormData>({
         order_id:          sale?.order_id          ?? order?.id              ?? '',
         customer_id:       sale?.customer_id        ?? order?.customer_id    ?? '',
+        city_id:           sale?.city_id            ?? order?.city_id        ?? '',
         items:             initialItems,
         invoice_discount:  sale?.invoice_discount   ?? order?.invoice_discount ?? 0,
         vat:               sale?.vat                ?? 0,
