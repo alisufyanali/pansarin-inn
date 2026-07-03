@@ -116,6 +116,7 @@ class SaleController extends Controller
                     'shipping_address'=> $order->shipping_address,
                     'billing_address' => $order->billing_address,
                     'shipping_method' => $order->shipping_method,
+                    'courier_weight'  => $order->courier_weight,
                     'payment_method'  => $order->payment_method,
                     'payment_status'  => $order->payment_status,
                     'shipping_charges'=> $order->shipping_charges,
@@ -163,20 +164,47 @@ class SaleController extends Controller
                 // Book courier AFTER sale is created, OUTSIDE the transaction
                 try {
                     $order = $sale->order;
-                    if ($order && $order->shipping_method && in_array($order->shipping_method, ['movex', 'px', 'leopard', 'cc', 'tcs', 'trax', 'rider'])) {
-                        // Write courier_weight to order if provided in sale form
-                        $validated = $request->validated();
+                    $validated = $request->validated();
+
+                    Log::info('SALE ORDER CHECK', [
+                        'sale_id'   => $sale->id,
+                        'order_id'  => $sale->order_id ?? 'NULL',
+                        'has_order' => isset($sale->order),
+                    ]);
+
+                    if ($order) {
+                        // Sync shipping_method and courier_weight from sale form → order
+                        // (order may have been created without these, or form overrides them)
+                        $orderUpdates = [];
+                        if (!empty($validated['shipping_method'])) {
+                            $orderUpdates['shipping_method'] = $validated['shipping_method'];
+                        }
                         if (!empty($validated['courier_weight'])) {
-                            $order->update(['courier_weight' => $validated['courier_weight']]);
+                            $orderUpdates['courier_weight'] = $validated['courier_weight'];
+                        }
+                        if (!empty($orderUpdates)) {
+                            $order->update($orderUpdates);
                             $order->refresh();
                         }
-                        $tracking = app(\App\Services\CourierService::class)->book($order);
-                        if ($tracking) {
-                            $order->update(['shipping_response' => $tracking]);
+
+                        Log::info('COURIER ATTEMPT', [
+                            'sale_id'         => $sale->id,
+                            'order_id'        => $sale->order_id,
+                            'shipping_method' => $order->shipping_method ?? 'NULL',
+                            'courier_weight'  => $order->courier_weight ?? 'NULL',
+                        ]);
+
+                        if ($order->shipping_method && in_array($order->shipping_method, ['movex', 'px', 'leopard', 'cc', 'tcs', 'trax', 'rider'])) {
+                            $tracking = app(\App\Services\CourierService::class)->book($order);
+                            if ($tracking) {
+                                $order->update(['shipping_response' => $tracking]);
+                            }
                         }
                     }
                 } catch (\Exception $e) {
-                    Log::warning('Courier booking failed: ' . $e->getMessage());
+                    Log::warning('Courier booking failed: ' . $e->getMessage(), [
+                        'trace' => $e->getTraceAsString(),
+                    ]);
                     // Don't fail sale creation if courier fails
                 }
 

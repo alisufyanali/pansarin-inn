@@ -57,6 +57,7 @@ type PrefilledOrder = {
     shipping_address: string | null;
     billing_address: string | null;
     shipping_method: string | null;
+    courier_weight: string | number | null;
     payment_method: string | null;
     payment_status: string | null;
     shipping_charges: number;
@@ -166,7 +167,7 @@ export default function SaleForm({
         payment_type:      sale?.payment_type       ?? (order?.payment_method ? mapPaymentMethod(order.payment_method) : ''),
         payment_timestamp: sale?.payment_timestamp  ?? '',
         shipping_method:   sale?.shipping_method    ?? order?.shipping_method  ?? '',
-        courier_weight:    sale?.courier_weight     ?? '',
+        courier_weight:    sale?.courier_weight     ?? order?.courier_weight   ?? '',
         shipping_address:  sale?.shipping_address   ?? order?.shipping_address ?? '',
         shipping_response: sale?.shipping_response  ?? '',
         delivery_datetime: sale?.delivery_datetime  ?? '',
