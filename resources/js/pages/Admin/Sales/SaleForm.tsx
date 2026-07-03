@@ -87,6 +87,7 @@ type SaleFormData = {
     payment_type: string;
     payment_timestamp: string;
     shipping_method: string;
+    courier_weight: string | number;
     shipping_address: string;
     shipping_response: string;
     delivery_datetime: string;
@@ -165,6 +166,7 @@ export default function SaleForm({
         payment_type:      sale?.payment_type       ?? (order?.payment_method ? mapPaymentMethod(order.payment_method) : ''),
         payment_timestamp: sale?.payment_timestamp  ?? '',
         shipping_method:   sale?.shipping_method    ?? order?.shipping_method  ?? '',
+        courier_weight:    sale?.courier_weight     ?? '',
         shipping_address:  sale?.shipping_address   ?? order?.shipping_address ?? '',
         shipping_response: sale?.shipping_response  ?? '',
         delivery_datetime: sale?.delivery_datetime  ?? '',
@@ -377,6 +379,20 @@ export default function SaleForm({
                                         <option key={o.value} value={o.value}>{o.label}</option>
                                     ))}
                                 </select>
+                                {COURIERS_WITH_WEIGHT.includes(data.shipping_method as any) && (
+                                    <div className="mt-2">
+                                        <label className={LABEL}>Courier Weight (kg)</label>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            step="0.5"
+                                            className={INPUT}
+                                            value={data.courier_weight}
+                                            onChange={e => setData('courier_weight', e.target.value)}
+                                            placeholder="0.5"
+                                        />
+                                    </div>
+                                )}
                             </div>
                             <div className="col-span-2">
                                 <label className={LABEL}>Payment Date</label>

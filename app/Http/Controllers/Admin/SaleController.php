@@ -157,6 +157,29 @@ class SaleController extends Controller
                     \App\Models\Order::where('id', $sale->order_id)->update(['status' => 'processing']);
                 }
 
+                // Load order relationship for courier booking and notifications
+                $sale->load('order.customer', 'order.city', 'order.items');
+
+                // Book courier AFTER sale is created, OUTSIDE the transaction
+                try {
+                    $order = $sale->order;
+                    if ($order && $order->shipping_method && in_array($order->shipping_method, ['movex', 'px', 'leopard', 'cc', 'tcs', 'trax', 'rider'])) {
+                        // Write courier_weight to order if provided in sale form
+                        $validated = $request->validated();
+                        if (!empty($validated['courier_weight'])) {
+                            $order->update(['courier_weight' => $validated['courier_weight']]);
+                            $order->refresh();
+                        }
+                        $tracking = app(\App\Services\CourierService::class)->book($order);
+                        if ($tracking) {
+                            $order->update(['shipping_response' => $tracking]);
+                        }
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('Courier booking failed: ' . $e->getMessage());
+                    // Don't fail sale creation if courier fails
+                }
+
                 // Send Sale Confirmation Email (Queued)
                 if ($sale->customer && !empty($sale->customer->email)) {
                     try {

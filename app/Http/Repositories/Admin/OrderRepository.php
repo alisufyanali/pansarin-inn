@@ -81,15 +81,6 @@ class OrderRepository
             $this->syncItems($order, $data['items']);
             $order->calculateTotals();
 
-            // Auto-book courier if shipping method is set
-            if (!empty($data['shipping_method']) && in_array($data['shipping_method'], ['movex', 'px', 'leopard'])) {
-                $order->refresh();
-                $tracking = app(\App\Services\CourierService::class)->book($order);
-                if ($tracking) {
-                    $order->update(['shipping_response' => $tracking]);
-                }
-            }
-
             return $order;
         });
     }
