@@ -24,8 +24,10 @@ Route::get('/products/{slug}',      [ProductApiController::class, 'show']);
 Route::get('/categories',           [ProductApiController::class, 'categories']);
 
 // Homepage dynamic sections
+Route::get('/homepage',                   [HomepageApiController::class, 'index']);
 Route::get('/homepage/category-products', [ProductApiController::class, 'homepageCategoryProducts']);
 Route::get('/homepage/reviews',           [HomepageApiController::class, 'reviews']);
+Route::get('/slides',                     [HomepageApiController::class, 'slides']);
 
 Route::get('/blogs',         [BlogApiController::class, 'index']);
 Route::get('/blogs/{slug}',  [BlogApiController::class, 'show']);
