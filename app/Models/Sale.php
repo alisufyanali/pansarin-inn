@@ -58,9 +58,44 @@ class Sale extends Model
 
     // ── Helpers ───────────────────────────────────────────────────
 
-    public static function generateSaleCode(string $orderNumber): string
+    /**
+     * Derive sale_code from an order_number.
+     * ORDER-50001 → SALE-50001
+     * If multiple sales for same order: SALE-50001-2, SALE-50001-3 ...
+     */
+    public static function generateSaleCode(int $orderId, string $orderNumber): string
     {
-        return 'SALE-' . $orderNumber . '-' . strtoupper(substr(uniqid(), -4));
+        // Extract the numeric part: ORDER-50001 → 50001, ORD-XXXXX → use orderId fallback
+        if (preg_match('/^ORDER-(\d+)$/', $orderNumber, $m)) {
+            $num = $m[1];
+        } else {
+            // Legacy or unexpected format — use orderId as-is
+            $num = $orderId;
+        }
+
+        // Count existing (non-soft-deleted) sales for this order
+        $existingCount = static::withTrashed()
+            ->where('order_id', $orderId)
+            ->count();
+
+        return $existingCount === 0
+            ? 'SALE-' . $num
+            : 'SALE-' . $num . '-' . ($existingCount + 1);
+    }
+
+    // ── Events ────────────────────────────────────────────────────
+
+    protected static function booted(): void
+    {
+        // Auto-generate sale_code on creation if not already set
+        static::creating(function (Sale $sale) {
+            if (empty($sale->sale_code) && $sale->order_id) {
+                $order = \App\Models\Order::find($sale->order_id);
+                if ($order) {
+                    $sale->sale_code = static::generateSaleCode($order->id, $order->order_number);
+                }
+            }
+        });
     }
 
     public function calculateTotals(): void

@@ -47,7 +47,6 @@ class SaleRepository
                 'order_id'         => $data['order_id'],
                 'customer_id'      => $data['customer_id'],
                 'city_id'          => $data['city_id'] ?? null,
-                'sale_code'        => Sale::generateSaleCode($data['order_number'] ?? $data['order_id']),
                 'invoice_discount' => $data['invoice_discount'] ?? 0,
                 'vat'              => $data['vat'] ?? 0,
                 'vat_percent'      => $data['vat_percent'] ?? null,

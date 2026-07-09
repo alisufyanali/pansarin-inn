@@ -62,7 +62,6 @@ class OrderRepository
             $order = Order::create([
                 'customer_id'      => $data['customer_id'],
                 'city_id'          => $data['city_id'] ?? null,
-                'order_number'     => Order::generateOrderNumber(),
                 'invoice_discount' => $data['invoice_discount'] ?? 0,
                 'shipping_charges' => $data['shipping_charges'] ?? 0,
                 'tax'              => $data['tax'] ?? 0,

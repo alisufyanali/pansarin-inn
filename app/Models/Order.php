@@ -71,9 +71,12 @@ class Order extends Model
 
     // ── Helpers ───────────────────────────────────────────────────
 
+    /**
+     * @deprecated Use booted() creating hook instead — order_number is now auto-generated.
+     */
     public static function generateOrderNumber(): string
     {
-        return 'ORD-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -4));
+        return 'ORDER-' . \App\Helpers\SequenceGenerator::next('order_number');
     }
 
     public function calculateTotals(): void
@@ -123,6 +126,13 @@ class Order extends Model
 
     protected static function booted(): void
     {
+        // Auto-generate sequential order_number on creation
+        static::creating(function (Order $order) {
+            if (empty($order->order_number)) {
+                $order->order_number = 'ORDER-' . \App\Helpers\SequenceGenerator::next('order_number');
+            }
+        });
+
         static::updated(function (Order $order) {
             if ($order->wasChanged('status') && $order->status === 'delivered') {
                 $order->reduceStock();
