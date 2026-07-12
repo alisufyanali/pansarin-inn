@@ -198,16 +198,20 @@ class OrderRepository
     // ── Products for Form ─────────────────────────────────────────
     public function getProductsForForm(): \Illuminate\Support\Collection
     {
-        // Eager load all stocks in one query to avoid N+1
-        $allStocks = ProductStock::all()->groupBy(function ($s) {
-            return $s->product_id . '_' . ($s->product_variant_id ?? 'null');
-        });
-
-        return Product::with(['variants'])
+        $products = Product::with(['variants'])
             ->where('status', true)
             ->orderBy('name')
-            ->get(['id', 'name', 'sku', 'unit', 'price', 'sale_price', 'quantity'])
-            ->map(function ($p) use ($allStocks) {
+            ->get(['id', 'name', 'sku', 'unit', 'price', 'sale_price', 'quantity']);
+
+        // Scope stock query to only the fetched product IDs — avoids loading entire table
+        $productIds = $products->pluck('id');
+        $allStocks = ProductStock::whereIn('product_id', $productIds)
+            ->get()
+            ->groupBy(function ($s) {
+                return $s->product_id . '_' . ($s->product_variant_id ?? 'null');
+            });
+
+        return $products->map(function ($p) use ($allStocks) {
                 $hasVariants = $p->variants->isNotEmpty();
 
                 if ($hasVariants) {
