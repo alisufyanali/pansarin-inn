@@ -251,18 +251,26 @@ class ProductController extends Controller
                     ->orWhere('sku', 'like', "%{$search}%");
             })
             ->limit(20)
-            ->get(['id', 'name', 'sku', 'unit'])
-            ->map(function ($p) {
+            ->get(['id', 'name', 'sku', 'unit']);
+
+        // Pre-load all stocks in ONE query — avoids N+1 inside the loop
+        $productIds = $products->pluck('id');
+        $allStocks  = \App\Models\ProductStock::whereIn('product_id', $productIds)
+            ->get()
+            ->groupBy(function ($s) {
+                return $s->product_id . '_' . ($s->product_variant_id ?? 'null');
+            });
+
+        return response()->json(
+            $products->map(function ($p) use ($allStocks) {
                 $hasVariants = $p->variants->isNotEmpty();
 
                 if ($hasVariants) {
-                    $baseStock = \App\Models\ProductStock::where('product_id', $p->id)
-                        ->whereNotNull('product_variant_id')
-                        ->sum('quantity');
+                    $baseStock = $allStocks
+                        ->filter(fn ($g, $k) => str_starts_with($k, $p->id . '_') && !str_ends_with($k, '_null'))
+                        ->sum(fn ($g) => $g->sum('quantity'));
                 } else {
-                    $baseStock = \App\Models\ProductStock::where('product_id', $p->id)
-                        ->whereNull('product_variant_id')
-                        ->value('quantity') ?? 0;
+                    $baseStock = $allStocks->get($p->id . '_null')?->first()?->quantity ?? 0;
                 }
 
                 return [
@@ -277,13 +285,10 @@ class ProductController extends Controller
                         'name'  => collect($v->attributes ?? [])->values()->join(' / ') ?: $v->value,
                         'sku'   => $v->sku,
                         'price' => $v->sale_price ?? $v->price ?? 0,
-                        'stock' => (int) (\App\Models\ProductStock::where('product_id', $p->id)
-                                       ->where('product_variant_id', $v->id)
-                                       ->value('quantity') ?? 0),
+                        'stock' => (int) ($allStocks->get($p->id . '_' . $v->id)?->first()?->quantity ?? 0),
                     ]),
                 ];
-            });
-
-        return response()->json($products);
+            })
+        );
     }
 }

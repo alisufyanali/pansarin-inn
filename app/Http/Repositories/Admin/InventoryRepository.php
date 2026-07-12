@@ -223,35 +223,37 @@ class InventoryRepository
     // ── Products for form ─────────────────────────────────────────
     public function getProductsForForm(): \Illuminate\Support\Collection
     {
-        return Product::with('variants')
+        $products = Product::with('variants')
             ->where('status', true)
             ->orderBy('name')
-            ->get(['id', 'name', 'sku', 'unit'])
-            ->map(function ($product) {
-                // Get stock from product_stocks
-                $stock = ProductStock::where('product_id', $product->id)
-                    ->whereNull('product_variant_id')
-                    ->value('quantity') ?? 0;
+            ->get(['id', 'name', 'sku', 'unit']);
 
-                return [
-                    'id'          => $product->id,
-                    'name'        => $product->name,
-                    'sku'         => $product->sku,
-                    'stock_qty'   => $stock,
-                    'stock_alert' => 5,
-                    'price'       => 0,
-                    'unit'        => $product->unit,
-                    'variants'    => $product->variants->map(fn ($v) => [
-                        'id'          => $v->id,
-                        'sku'         => $v->sku,
-                        'value'       => $v->value,
-                        'attributes'  => $v->attributes,
-                        'stock_qty'   => ProductStock::where('product_id', $product->id)
-                                            ->where('product_variant_id', $v->id)
-                                            ->value('quantity') ?? 0,
-                    ]),
-                ];
+        // Pre-load all stocks in ONE query — avoids N+1 inside the loop
+        $productIds = $products->pluck('id');
+        $allStocks  = ProductStock::whereIn('product_id', $productIds)
+            ->get()
+            ->groupBy(function ($s) {
+                return $s->product_id . '_' . ($s->product_variant_id ?? 'null');
             });
+
+        return $products->map(function ($product) use ($allStocks) {
+            return [
+                'id'          => $product->id,
+                'name'        => $product->name,
+                'sku'         => $product->sku,
+                'stock_qty'   => (int) ($allStocks->get($product->id . '_null')?->first()?->quantity ?? 0),
+                'stock_alert' => 5,
+                'price'       => 0,
+                'unit'        => $product->unit,
+                'variants'    => $product->variants->map(fn ($v) => [
+                    'id'         => $v->id,
+                    'sku'        => $v->sku,
+                    'value'      => $v->value,
+                    'attributes' => $v->attributes,
+                    'stock_qty'  => (int) ($allStocks->get($product->id . '_' . $v->id)?->first()?->quantity ?? 0),
+                ]),
+            ];
+        });
     }
 
 

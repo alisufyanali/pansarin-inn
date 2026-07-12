@@ -51,11 +51,12 @@ class ProductApiController extends Controller
         $sortOrder = $request->get('sort_order', 'desc') === 'asc' ? 'asc' : 'desc';
         $query->orderBy($sortBy, $sortOrder);
 
-        $products = $query->paginate($request->get('per_page', 15));
+        $products = $query->paginate(min((int) $request->get('per_page', 15), 100));
+        $stocks   = $this->preloadStocks($products->getCollection());
 
         return response()->json([
             'success' => true,
-            'data'    => $products->map(fn ($p) => $this->formatProduct($p)),
+            'data'    => $products->map(fn ($p) => $this->formatProduct($p, false, $stocks)),
             'meta'    => [
                 'total'        => $products->total(),
                 'per_page'     => $products->perPage(),
@@ -75,9 +76,11 @@ class ProductApiController extends Controller
             ->take(12)
             ->get();
 
+        $stocks = $this->preloadStocks($products);
+
         return response()->json([
             'success' => true,
-            'data'    => $products->map(fn ($p) => $this->formatProduct($p)),
+            'data'    => $products->map(fn ($p) => $this->formatProduct($p, false, $stocks)),
         ]);
     }
 
@@ -89,9 +92,11 @@ class ProductApiController extends Controller
             ->where('status', true)
             ->firstOrFail();
 
+        $stocks = $this->preloadStocks(collect([$product]));
+
         return response()->json([
             'success' => true,
-            'data'    => $this->formatProduct($product, detailed: true),
+            'data'    => $this->formatProduct($product, true, $stocks),
         ]);
     }
 
@@ -107,10 +112,12 @@ class ProductApiController extends Controller
             ->take(12)
             ->get();
 
+        $stocks = $this->preloadStocks($products);
+
         return response()->json([
             'success' => true,
             'data'    => $products->map(fn ($p) => array_merge(
-                $this->formatProduct($p),
+                $this->formatProduct($p, false, $stocks),
                 ['video' => $p->video]
             )),
         ]);
@@ -144,7 +151,6 @@ class ProductApiController extends Controller
         ]);
     }
 
-    // ── Format Helper ─────────────────────────────────────────────
     // GET /api/homepage/category-products
     public function homepageCategoryProducts()
     {
@@ -157,10 +163,13 @@ class ProductApiController extends Controller
             ->orderBy('sort_order')
             ->get();
 
-        // Group by category, preserving sort_order within each category
+        // Pre-load stocks for all products in one query
+        $products = $rows->map(fn ($r) => $r->product)->filter();
+        $stocks   = $this->preloadStocks($products);
+
         $grouped = $rows->groupBy('category_id');
 
-        $data = $grouped->map(function ($items) {
+        $data = $grouped->map(function ($items) use ($stocks) {
             $firstItem = $items->first();
             $category  = $firstItem->category;
 
@@ -170,7 +179,10 @@ class ProductApiController extends Controller
                     'name' => $category->name,
                     'slug' => $category->slug,
                 ],
-                'products' => $items->map(fn ($item) => $this->formatProduct($item->product))->values(),
+                'products' => $items
+                    ->filter(fn ($item) => $item->product !== null)
+                    ->map(fn ($item) => $this->formatProduct($item->product, false, $stocks))
+                    ->values(),
             ];
         })->values();
 
@@ -180,9 +192,29 @@ class ProductApiController extends Controller
         ]);
     }
 
-    // ── Format Helper ─────────────────────────────────────────────
-    private function formatProduct(Product $p, bool $detailed = false): array
+    // ── Stock pre-loader — single query for a collection of products ──
+    private function preloadStocks(\Illuminate\Support\Collection $products): \Illuminate\Support\Collection
     {
+        $productIds = $products->pluck('id')->filter()->unique();
+        if ($productIds->isEmpty()) {
+            return collect();
+        }
+
+        return ProductStock::whereIn('product_id', $productIds)
+            ->get()
+            ->groupBy(function ($s) {
+                return $s->product_id . '_' . ($s->product_variant_id ?? 'null');
+            });
+    }
+
+    // ── Format Helper ─────────────────────────────────────────────
+    private function formatProduct(Product $p, bool $detailed = false, ?\Illuminate\Support\Collection $stocks = null): array
+    {
+        // Fall back to live query only for single-product show() calls
+        if ($stocks === null) {
+            $stocks = $this->preloadStocks(collect([$p]));
+        }
+
         $base = [
             'id'          => $p->id,
             'name'        => $p->name,
@@ -199,17 +231,17 @@ class ProductApiController extends Controller
                 'name'       => collect($v->attributes ?? [])->values()->join(' / ') ?: $v->value,
                 'sku'        => $v->sku,
                 'price'      => (float) ($v->sale_price ?? $v->price ?? $p->price),
-                'stock'      => (int) (ProductStock::where('product_id', $p->id)->where('product_variant_id', $v->id)->value('quantity') ?? 0),
+                'stock'      => (int) ($stocks->get($p->id . '_' . $v->id)?->first()?->quantity ?? 0),
                 'is_default' => (bool) $v->is_default,
             ]),
         ];
 
         if ($detailed) {
-            $stockRecord = ProductStock::where('product_id', $p->id)->whereNull('product_variant_id')->first();
+            $baseStock = $stocks->get($p->id . '_null')?->first()?->quantity;
             $base['description']  = $p->description;
             $base['excerpt']      = $p->excerpt ?? null;
             $base['gallery']      = collect($p->gallery ?? [])->map(fn ($img) => asset('storage/' . $img));
-            $base['stock']        = $stockRecord ? (int) $stockRecord->quantity : (int) ($p->quantity ?? 0);
+            $base['stock']        = $baseStock !== null ? (int) $baseStock : (int) ($p->quantity ?? 0);
             $base['meta_title']   = $p->meta_title ?? $p->name;
             $base['meta_desc']    = $p->meta_description ?? null;
         }
