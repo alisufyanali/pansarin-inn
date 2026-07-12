@@ -37,9 +37,6 @@ class SendSaleReviewWhatsApp implements ShouldQueue
 
         Log::info('WHATSAPP JOB START: send sale review message', [
             'sale_id' => $this->sale->id,
-            'phone' => $customer->phone,
-            'clean_phone' => preg_replace('/\D+/', '', $customer->phone),
-            'message' => $message,
         ]);
 
         $response = $whatsapp->sendTextMessage($customer->phone, $message);

@@ -43,13 +43,11 @@ class SendOrderConfirmationEmail implements ShouldQueue
 
                 Log::info('Order confirmation email sent', [
                     'order_id' => $this->order->id,
-                    'customer_email' => $this->order->customer->email,
                 ]);
             }
         } catch (\Exception $e) {
             Log::error('MAIL FAILED: Failed to send order confirmation email', [
                 'order_id' => $this->order->id,
-                'customer_email' => $this->order->customer?->email,
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'file' => $e->getFile(),

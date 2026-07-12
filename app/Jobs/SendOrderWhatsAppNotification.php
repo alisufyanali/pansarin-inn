@@ -52,8 +52,6 @@ class SendOrderWhatsAppNotification implements ShouldQueue
             // Send WhatsApp message using template
             Log::info('WHATSAPP JOB START: send order template', [
                 'order_id' => $this->order->id,
-                'phone' => $this->order->customer->phone,
-                'clean_phone' => preg_replace('/\D+/', '', $this->order->customer->phone),
                 'template' => 'order_confirmation',
             ]);
 
