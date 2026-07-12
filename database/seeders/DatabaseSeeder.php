@@ -39,6 +39,7 @@ class DatabaseSeeder extends Seeder
             CountrySeeder::class,
             StateSeeder::class,
             CitySeeder::class,
+            HomepageDummyDataSeeder::class,
         ]);
     }
 }
