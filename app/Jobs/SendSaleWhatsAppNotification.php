@@ -57,10 +57,7 @@ class SendSaleWhatsAppNotification implements ShouldQueue
 
             // Send WhatsApp message using custom text
             Log::info('WHATSAPP JOB START: send sale message', [
-                'sale_id'     => $this->sale->id,
-                'phone'       => $rawPhone,
-                'clean_phone' => $cleanPhone,
-                'message'     => $message,
+                'sale_id' => $this->sale->id,
             ]);
 
             $response = $whatsappService->sendTextMessage(

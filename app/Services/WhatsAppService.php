@@ -68,11 +68,8 @@ class WhatsAppService
             $maskedToken = $this->maskToken($this->accessToken);
 
             Log::info('WHATSAPP SEND START (template)', [
-                'phone' => $recipientPhone,
-                'clean_phone' => $this->cleanPhone($recipientPhone),
-                'template' => $templateName,
-                'payload' => $data,
-                'api_url' => $url,
+                'template'            => $templateName,
+                'api_url'             => $url,
                 'access_token_masked' => $maskedToken,
             ]);
 
@@ -137,11 +134,7 @@ class WhatsAppService
             $maskedToken = $this->maskToken($this->accessToken);
 
             Log::info('WHATSAPP SEND START (text)', [
-                'phone' => $recipientPhone,
-                'clean_phone' => $this->cleanPhone($recipientPhone),
-                'message' => $message,
-                'payload' => $data,
-                'api_url' => $url,
+                'api_url'             => $url,
                 'access_token_masked' => $maskedToken,
             ]);
 
