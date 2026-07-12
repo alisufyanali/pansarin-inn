@@ -13,7 +13,8 @@ return [
     'allowed_methods' => ['*'],
 
     'allowed_origins' => [
-        'http://localhost:3000',  // Next.js dev
+        env('FRONTEND_URL', 'https://pansarii-frontend.vercel.app'),
+        'http://localhost:3000',
         'http://localhost:3001',
     ],
 

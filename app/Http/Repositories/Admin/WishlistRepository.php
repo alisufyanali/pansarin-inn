@@ -30,7 +30,7 @@ class WishlistRepository
         $allowed   = ['id', 'user_id', 'product_id', 'created_at'];
         $query->orderBy(in_array($sortBy, $allowed) ? $sortBy : 'created_at', $sortOrder);
 
-        $perPage   = (int) $request->get('perPage', 10);
+        $perPage   = min((int) $request->get('perPage', 10), 100);
         $page      = (int) $request->get('page', 1);
         $paginated = $query->paginate($perPage, ['*'], 'page', $page);
 

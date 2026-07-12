@@ -42,7 +42,7 @@ class SaleController extends Controller
     {
         try {
             $query = $this->saleRepository->getAllForDataTable($request);
-            $sales = $query->paginate($request->get('perPage', 10));
+            $sales = $query->paginate(min((int) $request->get('perPage', 10), 100));
 
             return response()->json([
                 'data'         => $sales->map(fn ($s) => [
@@ -215,10 +215,8 @@ class SaleController extends Controller
                         \Illuminate\Support\Facades\Mail::to($sale->customer->email)->send(new \App\Mail\SaleConfirmationMail($sale));
                     } catch (\Exception $e) {
                         \Illuminate\Support\Facades\Log::error('MAIL FAILED: Sale confirmation email queue failed', [
-                            'sale_id' => $sale->id,
-                            'sale_code' => $sale->sale_code,
-                            'email' => $sale->customer->email,
-                            'message' => $e->getMessage(),
+                            'sale_id'   => $sale->id,
+                            'message'   => $e->getMessage(),
                             'trace' => $e->getTraceAsString(),
                             'file' => $e->getFile(),
                             'line' => $e->getLine(),

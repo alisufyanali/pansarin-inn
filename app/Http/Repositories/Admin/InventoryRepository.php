@@ -51,7 +51,7 @@ class InventoryRepository
         if ($request->filled('date_to'))   $query->whereDate('created_at', '<=', $request->date_to);
 
         $query->orderBy($request->get('sortBy', 'created_at'), $request->get('sortOrder', 'desc'));
-        $inventories = $query->paginate($request->get('perPage', 10));
+        $inventories = $query->paginate(min((int) $request->get('perPage', 10), 100));
 
         return response()->json([
             'data'         => $inventories->map(fn ($inv) => $this->formatRow($inv)),

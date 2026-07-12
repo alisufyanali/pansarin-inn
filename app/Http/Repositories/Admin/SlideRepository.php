@@ -29,7 +29,7 @@ class SlideRepository
             $query->where('is_active', $request->is_active);
         }
 
-        $slides = $query->paginate($request->get('perPage', 10));
+        $slides = $query->paginate(min((int) $request->get('perPage', 10), 100));
 
         return response()->json([
             'data'         => $slides->items(),

@@ -35,7 +35,7 @@ class OrderReviewRepository
             $query->where('rating', $request->rating);
         }
 
-        $reviews = $query->paginate($request->get('perPage', 10));
+        $reviews = $query->paginate(min((int) $request->get('perPage', 10), 100));
 
         return response()->json([
             'data'         => $reviews->map(fn ($r) => $this->format($r)),

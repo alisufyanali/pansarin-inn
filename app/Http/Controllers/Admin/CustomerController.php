@@ -87,11 +87,7 @@ class CustomerController extends Controller
                     } catch (\Exception $e) {
                         \Illuminate\Support\Facades\Log::error('MAIL FAILED: Customer welcome email queue failed', [
                             'customer_id' => $customer->id,
-                            'email' => $customer->email,
                             'message' => $e->getMessage(),
-                            'trace' => $e->getTraceAsString(),
-                            'file' => $e->getFile(),
-                            'line' => $e->getLine(),
                         ]);
                     }
                 }
@@ -108,11 +104,7 @@ class CustomerController extends Controller
                     } catch (\Exception $e) {
                         \Illuminate\Support\Facades\Log::error('WHATSAPP DISPATCH FAILED: Customer welcome WhatsApp failed to dispatch', [
                             'customer_id' => $customer->id,
-                            'phone' => $customer->phone,
                             'message' => $e->getMessage(),
-                            'trace' => $e->getTraceAsString(),
-                            'file' => $e->getFile(),
-                            'line' => $e->getLine(),
                         ]);
                     }
                 }

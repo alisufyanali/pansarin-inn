@@ -33,7 +33,7 @@ class OrderController extends Controller
     {
         try {
             $query = $this->orderRepository->getAllForDataTable($request)->withCount('sales');
-            $orders = $query->paginate($request->get('perPage', 10));
+            $orders = $query->paginate(min((int) $request->get('perPage', 10), 100));
 
             return response()->json([
                 'data'         => $orders->map(fn ($o) => [

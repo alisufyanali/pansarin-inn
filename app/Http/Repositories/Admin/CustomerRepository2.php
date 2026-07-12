@@ -54,7 +54,7 @@ class CustomerRepository2
                 $query->where('country', $request->country);
             }
 
-            $perPage   = (int) $request->get('perPage', $request->get('per_page', 10));
+            $perPage   = min((int) $request->get('perPage', $request->get('per_page', 10)), 100);
             $page      = (int) $request->get('page', 1);
             $paginated = $query->paginate($perPage, ['*'], 'page', $page);
 

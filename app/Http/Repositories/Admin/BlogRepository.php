@@ -43,7 +43,7 @@ class BlogRepository
         $query->orderBy($sortBy, $sortOrder);
 
         // Pagination
-        $perPage = $request->get('perPage', 10);
+        $perPage = min((int) $request->get('perPage', 10), 100);
         $page = $request->get('page', 1);
 
         $blogs = $query->paginate($perPage, ['*'], 'page', $page);

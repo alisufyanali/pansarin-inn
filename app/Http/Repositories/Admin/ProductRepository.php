@@ -37,7 +37,7 @@ class ProductRepository
 
         $query->orderBy($request->get('sortBy', 'created_at'), $request->get('sortOrder', 'desc'));
 
-        $products = $query->paginate($request->get('perPage', 10), ['*'], 'page', $request->get('page', 1));
+        $products = $query->paginate(min((int) $request->get('perPage', 10), 100), ['*'], 'page', $request->get('page', 1));
 
         return response()->json([
             'data'         => $products->map(fn ($p) => [

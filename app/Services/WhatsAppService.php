@@ -109,13 +109,9 @@ class WhatsAppService
             return $responseData;
         } catch (\Exception $e) {
             Log::error('WHATSAPP EXCEPTION (template)', [
-                'phone' => $recipientPhone,
-                'clean_phone' => $this->cleanPhone($recipientPhone),
+                'order_id' => $orderId ?? null,
                 'template' => $templateName,
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
+                'message'  => $e->getMessage(),
             ]);
             throw $e;
         }
@@ -166,12 +162,7 @@ class WhatsAppService
             return $responseData;
         } catch (\Exception $e) {
             Log::error('WHATSAPP EXCEPTION (text)', [
-                'phone' => $recipientPhone,
-                'clean_phone' => $this->cleanPhone($recipientPhone),
                 'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
             ]);
             throw $e;
         }

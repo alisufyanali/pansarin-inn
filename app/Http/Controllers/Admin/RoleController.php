@@ -115,7 +115,7 @@ class RoleController extends Controller
         }
 
         // Pagination
-        $perPage = $request->get('perPage', 10);
+        $perPage = min((int) $request->get('perPage', 10), 100);
         $roles = $query->paginate($perPage);
 
         return response()->json([
