@@ -161,6 +161,7 @@ class ProductApiController extends Controller
             ])
             ->orderBy('category_id')
             ->orderBy('sort_order')
+            ->limit(50)
             ->get();
 
         // Pre-load stocks for all products in one query
