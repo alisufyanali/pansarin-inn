@@ -48,12 +48,14 @@ class CourierService
 
     private function bookMovex(Order $order): ?string
     {
+        $movexToken = config('services.movex.api_token');
+
         // Get Movex city ID by matching city name
         $cityId = 0;
         $cityName = strtolower($order->city?->name ?? '');
 
         if ($cityName) {
-            $res = Http::withHeaders(['Authorization' => 'q8Z5AzFH4fPCKnbOjlaJDYmi'])
+            $res = Http::withHeaders(['Authorization' => $movexToken])
                 ->get('https://tracking.movexpk.com/api/cities');
 
             if ($res->successful()) {
@@ -73,7 +75,7 @@ class CourierService
 
         $response = Http::withHeaders([
             'Content-Type'  => 'application/json',
-            'Authorization' => 'q8Z5AzFH4fPCKnbOjlaJDYmi',
+            'Authorization' => $movexToken,
         ])->post('https://tracking.movexpk.com/api/shipment/book', [
             'consignee_mobile_number'    => $customer?->phone,
             'consignee_email'            => $customer?->email ?? '',
@@ -103,7 +105,7 @@ class CourierService
         $customer = $order->customer;
 
         $response = Http::withHeaders([
-            'token'        => 'NTAxYjE0MGU1Y2EzNGRmZjk0NDFmMTdhNGRjMTBiODk6Mjg4MmE0MTM4ODc3NDFmYzk3ZmU4ZjRlNDc3YTRiYzg=',
+            'token'        => config('services.postex.api_token'),
             'Content-Type' => 'application/json',
         ])->post('https://api.postex.pk/services/integration/api/order/v3/create-order', [
             'orderRefNumber'       => $order->order_number,
@@ -145,8 +147,8 @@ class CourierService
 
         $response = Http::withHeaders(['Content-Type' => 'application/json'])
             ->post('https://merchantapi.leopardscourier.com/api/bookPacket/format/json/', [
-                'api_key'                    => '487F7B22F68312D2C1BBC93B1AEA445B1719824256',
-                'api_password'               => 'Admin123@',
+                'api_key'                    => config('services.leopard.api_key'),
+                'api_password'               => config('services.leopard.api_password'),
                 'booked_packet_weight'       => $order->courier_weight ?? 0.5,
                 'booked_packet_no_piece'     => 1,
                 'booked_packet_collect_amount' => $order->grand_total,
@@ -154,13 +156,13 @@ class CourierService
                 'booked_packet_vol_weight_l' => 0,
                 'booked_packet_vol_weight_h' => 0,
                 'booked_packet_order_id'     => $order->order_number,
-                'origin_city'                => 592,
+                'origin_city'                => config('services.leopard.origin_city', 592),
                 'destination_city'           => $cityId,
-                'shipment_id'                => 606673,
+                'shipment_id'                => config('services.leopard.shipment_id'),
                 'shipment_name_eng'          => 'Self',
-                'shipment_email'             => 'pansariinn@gmail.com',
-                'shipment_phone'             => '03045779900',
-                'shipment_address'           => 'SHOP NO NP/56 ABDULLAH STREET NEAR AL KHAIR HOTEL NAPIER ROAD KARACHI.',
+                'shipment_email'             => config('services.leopard.shipment_email'),
+                'shipment_phone'             => config('services.leopard.shipment_phone'),
+                'shipment_address'           => config('services.leopard.shipment_address'),
                 'consignment_name_eng'       => $customer?->full_name ?? $customer?->first_name,
                 'consignment_email'          => $customer?->email ?? '',
                 'consignment_phone'          => $customer?->phone,
@@ -169,8 +171,8 @@ class CourierService
                 'consignment_address'        => $order->shipping_address ?? '',
                 'special_instructions'       => 'CALL ZAROOR KARIEN AND DELIVER ZAROOR KAREIN',
                 'shipment_type'              => 'overnight',
-                'return_address'             => 'PANSARI SHOP NO NP/56 KUNDAN STREET KHAJOOR BAZAAR LEE MARKET NEAR AL KHAIR HOTEL NAWAB MAHABAT KHANJI ROAD KARACHI.',
-                'return_city'                => 592,
+                'return_address'             => config('services.leopard.return_address'),
+                'return_city'                => config('services.leopard.return_city', 592),
                 'is_vpc'                     => 0,
             ]);
 

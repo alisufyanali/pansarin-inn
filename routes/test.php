@@ -1,5 +1,12 @@
 <?php
 
+// Test/seeder routes are only available in local development.
+// This guard prevents them from being registered in production,
+// staging, or any other environment.
+if (! app()->environment('local')) {
+    return;
+}
+
 use App\Http\Controllers\TestController;
 use Illuminate\Support\Facades\Route;
 

@@ -242,30 +242,42 @@ class OrderRepository
     // ── Private Helpers ───────────────────────────────────────────
     private function syncItems(Order $order, array $items): void
     {
+        // Pre-load all products, variants, and stocks in 3 queries — eliminates N+1
+        $productIds = collect($items)->pluck('product_id')->filter()->unique();
+        $variantIds = collect($items)->pluck('product_variant_id')->filter()->unique();
+
+        $products = Product::whereIn('id', $productIds)
+            ->get(['id', 'name', 'sku', 'purchase_price_per_unit'])
+            ->keyBy('id');
+
+        $variants = ProductVariant::whereIn('id', $variantIds)
+            ->get(['id', 'value', 'attributes', 'purchase_price'])
+            ->keyBy('id');
+
+        $stocks = ProductStock::whereIn('product_id', $productIds)
+            ->get()
+            ->groupBy(fn ($s) => $s->product_id . '_' . ($s->product_variant_id ?? 'null'));
+
         // FIRST: Validate stock availability for all items before creating any
         foreach ($items as $item) {
             if (empty($item['product_id'])) continue;
 
-            $qty = (int) $item['quantity'];
+            $qty       = (int) $item['quantity'];
             $variantId = $item['product_variant_id'] ?? null;
+            $stockKey  = $item['product_id'] . '_' . ($variantId ?? 'null');
 
-            // Get current stock
-            $stockRecord = ProductStock::where('product_id', $item['product_id'])
-                ->when($variantId, fn($q) => $q->where('product_variant_id', $variantId))
-                ->when(!$variantId, fn($q) => $q->whereNull('product_variant_id'))
-                ->first();
+            $availableStock = (int) ($stocks->get($stockKey)?->first()?->quantity ?? 0);
 
-            $availableStock = $stockRecord ? $stockRecord->quantity : 0;
-
-            // Validate stock
             if ($qty > $availableStock) {
-                $product = Product::find($item['product_id']);
-                $variant = $variantId ? ProductVariant::find($variantId) : null;
-                
+                $product = $products->get($item['product_id']);
+                $variant = $variantId ? $variants->get($variantId) : null;
+
                 $productName = $product?->name ?? 'Unknown Product';
-                $variantName = $variant ? (collect($variant->attributes ?? [])->values()->join(' / ') ?: $variant->value) : null;
+                $variantName = $variant
+                    ? (collect($variant->attributes ?? [])->values()->join(' / ') ?: $variant->value)
+                    : null;
                 $fullName = $variantName ? "{$productName} ({$variantName})" : $productName;
-                
+
                 throw \Illuminate\Validation\ValidationException::withMessages([
                     'items' => "Insufficient stock for {$fullName}. Requested: {$qty}, Available: {$availableStock}",
                 ]);
@@ -276,9 +288,9 @@ class OrderRepository
         foreach ($items as $item) {
             if (empty($item['product_id'])) continue;
 
-            $product = Product::find($item['product_id']);
+            $product = $products->get($item['product_id']);
             $variant = !empty($item['product_variant_id'])
-                ? ProductVariant::find($item['product_variant_id'])
+                ? $variants->get($item['product_variant_id'])
                 : null;
 
             $qty      = (int) $item['quantity'];

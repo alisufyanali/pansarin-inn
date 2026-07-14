@@ -42,4 +42,25 @@ return [
         'api_url' => env('WHATSAPP_API_URL', 'https://graph.facebook.com'),
     ],
 
+    // ── Courier services ──────────────────────────────────────────
+    'movex' => [
+        'api_token' => env('MOVEX_API_TOKEN'),
+    ],
+
+    'postex' => [
+        'api_token' => env('POSTEX_API_TOKEN'),
+    ],
+
+    'leopard' => [
+        'api_key'          => env('LEOPARD_API_KEY'),
+        'api_password'     => env('LEOPARD_API_PASSWORD'),
+        'shipment_id'      => env('LEOPARD_SHIPMENT_ID'),
+        'shipment_email'   => env('LEOPARD_SHIPMENT_EMAIL'),
+        'shipment_phone'   => env('LEOPARD_SHIPMENT_PHONE'),
+        'shipment_address' => env('LEOPARD_SHIPMENT_ADDRESS'),
+        'return_address'   => env('LEOPARD_RETURN_ADDRESS'),
+        'origin_city'      => env('LEOPARD_ORIGIN_CITY', 592),
+        'return_city'      => env('LEOPARD_RETURN_CITY', 592),
+    ],
+
 ];
