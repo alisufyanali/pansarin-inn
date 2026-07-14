@@ -103,8 +103,11 @@ class HomepageApiController extends Controller
             ->orderBy('sort_order')
             ->get();
 
+        $products = $rows->map(fn ($r) => $r->product)->filter();
+        $stocks   = $this->preloadStocks($products);
+
         return $rows->groupBy('category_id')
-            ->map(function ($items) {
+            ->map(function ($items) use ($stocks) {
                 $category = $items->first()->category;
 
                 return [
@@ -115,7 +118,7 @@ class HomepageApiController extends Controller
                     ],
                     'products' => $items
                         ->filter(fn ($item) => $item->product !== null)
-                        ->map(fn ($item) => $this->formatProduct($item->product))
+                        ->map(fn ($item) => $this->formatProduct($item->product, $stocks))
                         ->values()
                         ->toArray(),
                 ];
@@ -126,27 +129,33 @@ class HomepageApiController extends Controller
 
     private function getFeaturedProducts(): array
     {
-        return Product::with(['category:id,name,slug', 'variants'])
+        $products = Product::with(['category:id,name,slug', 'variants'])
             ->where('status', true)
             ->where('featured', true)
             ->latest()
             ->take(12)
-            ->get()
-            ->map(fn ($p) => $this->formatProduct($p))
-            ->toArray();
+            ->get();
+
+        $stocks = $this->preloadStocks($products);
+
+        return $products->map(fn ($p) => $this->formatProduct($p, $stocks))->toArray();
     }
 
     private function getVideoProducts(): array
     {
-        return Product::with(['category:id,name,slug', 'variants'])
+        $products = Product::with(['category:id,name,slug', 'variants'])
             ->where('status', true)
             ->whereNotNull('video')
             ->where('video', '!=', '')
             ->orderByDesc('featured')
             ->latest()
             ->take(12)
-            ->get()
-            ->map(fn ($p) => array_merge($this->formatProduct($p), ['video' => $p->video]))
+            ->get();
+
+        $stocks = $this->preloadStocks($products);
+
+        return $products
+            ->map(fn ($p) => array_merge($this->formatProduct($p, $stocks), ['video' => $p->video]))
             ->toArray();
     }
 
@@ -199,8 +208,28 @@ class HomepageApiController extends Controller
             ->toArray();
     }
 
-    private function formatProduct(Product $p): array
+    // ── Stock pre-loader ─────────────────────────────────────────
+    private function preloadStocks(\Illuminate\Support\Collection $products): \Illuminate\Support\Collection
     {
+        $productIds = $products->pluck('id')->filter()->unique();
+        if ($productIds->isEmpty()) {
+            return collect();
+        }
+
+        return ProductStock::whereIn('product_id', $productIds)
+            ->get()
+            ->groupBy(function ($s) {
+                return $s->product_id . '_' . ($s->product_variant_id ?? 'null');
+            });
+    }
+
+    private function formatProduct(Product $p, ?\Illuminate\Support\Collection $stocks = null): array
+    {
+        // Lazy fallback for single-product calls (should rarely happen in this controller)
+        if ($stocks === null) {
+            $stocks = $this->preloadStocks(collect([$p]));
+        }
+
         return [
             'id'         => $p->id,
             'name'       => $p->name,
@@ -221,9 +250,7 @@ class HomepageApiController extends Controller
                 'name'       => collect($v->attributes ?? [])->values()->join(' / ') ?: $v->value,
                 'sku'        => $v->sku,
                 'price'      => (float) ($v->sale_price ?? $v->price ?? $p->price),
-                'stock'      => (int) (ProductStock::where('product_id', $p->id)
-                    ->where('product_variant_id', $v->id)
-                    ->value('quantity') ?? 0),
+                'stock'      => (int) ($stocks->get($p->id . '_' . $v->id)?->first()?->quantity ?? 0),
                 'is_default' => (bool) $v->is_default,
             ])->toArray(),
         ];

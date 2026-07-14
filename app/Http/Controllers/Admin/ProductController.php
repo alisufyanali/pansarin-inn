@@ -149,17 +149,22 @@ class ProductController extends Controller
     {
         $product = $this->productRepository->find($id);
 
+        // Pre-load all variant stocks for this product in ONE query
+        $variantIds   = $product->variants->pluck('id')->filter();
+        $variantStocks = \App\Models\ProductStock::where('product_id', $product->id)
+            ->whereIn('product_variant_id', $variantIds)
+            ->get()
+            ->keyBy('product_variant_id');
+
         // Map DB variants → form's "variations" shape
         $variations = $product->variants->map(fn ($v) => [
             'combination'    => $v->value ?? '',
             'attributes'     => $v->attributes ?? [],
-            'purchase_price' => (string) ($v->price ?? ''),           // price = purchase_price
-            'sale_price'     => (string) ($v->sale_price ?? ''),      // sale_price = sale_price
+            'purchase_price' => (string) ($v->price ?? ''),
+            'sale_price'     => (string) ($v->sale_price ?? ''),
             'stock_alert'    => (string) ($v->stock_alert ?? '5'),
             'additional'     => (string) ($v->additional ?? '0'),
-            'current_stock'  => (string) (\App\Models\ProductStock::where('product_id', $product->id)
-                ->where('product_variant_id', $v->id)
-                ->value('quantity') ?? 0),
+            'current_stock'  => (string) ($variantStocks->get($v->id)?->quantity ?? 0),
         ])->values()->toArray();
 
         $productData = $product->toArray();

@@ -53,8 +53,16 @@ class InventoryRepository
         $query->orderBy($request->get('sortBy', 'created_at'), $request->get('sortOrder', 'desc'));
         $inventories = $query->paginate(min((int) $request->get('perPage', 10), 100));
 
+        // Pre-load stocks for this page's products in ONE query — avoids N+1 in formatRow()
+        $productIds   = $inventories->pluck('product_id')->filter()->unique();
+        $pageStocks   = ProductStock::whereIn('product_id', $productIds)
+            ->get()
+            ->groupBy(function ($s) {
+                return $s->product_id . '_' . ($s->product_variant_id ?? 'null');
+            });
+
         return response()->json([
-            'data'         => $inventories->map(fn ($inv) => $this->formatRow($inv)),
+            'data'         => $inventories->map(fn ($inv) => $this->formatRow($inv, $pageStocks)),
             'total'        => $inventories->total(),
             'per_page'     => $inventories->perPage(),
             'current_page' => $inventories->currentPage(),
@@ -62,17 +70,12 @@ class InventoryRepository
         ]);
     }
 
-    private function formatRow(Inventory $inv): array
+    private function formatRow(Inventory $inv, \Illuminate\Support\Collection $pageStocks): array
     {
-        // Get current stock from product_stocks
-        $stockQuery = ProductStock::where('product_id', $inv->product_id);
-        if ($inv->product_variant_id) {
-            $stockQuery->where('product_variant_id', $inv->product_variant_id);
-        } else {
-            $stockQuery->whereNull('product_variant_id');
-        }
-        $currentStock = $stockQuery->value('quantity') ?? 0;
-        $stockAlert   = 10; // products table mein stock_alert nahi — variant ka use hoga future mein
+        // Look up current stock from pre-loaded collection — zero DB queries
+        $key          = $inv->product_id . '_' . ($inv->product_variant_id ?? 'null');
+        $currentStock = (int) ($pageStocks->get($key)?->first()?->quantity ?? 0);
+        $stockAlert   = 10;
 
         return [
             'id'                 => $inv->id,
