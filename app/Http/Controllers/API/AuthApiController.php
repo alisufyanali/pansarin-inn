@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 
 class AuthApiController extends Controller
@@ -51,7 +52,7 @@ class AuthApiController extends Controller
             $request->validate([
                 'name'     => 'required|string|max:255',
                 'email'    => 'required|email|unique:users,email',
-                'password' => 'required|string|min:8|confirmed',
+                'password' => ['required', 'confirmed', Password::defaults()],
                 'phone'    => 'nullable|string|max:20',
             ]);
         } catch (ValidationException $e) {

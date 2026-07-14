@@ -84,9 +84,3 @@ class SendOrderWhatsAppNotification implements ShouldQueue
         }
     }
 }
-
-// Update your OrderController.php store method:
-// Add at top: use App\Jobs\SendOrderWhatsAppNotification;
-
-// In store method, after SendOrderConfirmationEmail::dispatch($order);
-// Add: SendOrderWhatsAppNotification::dispatch($order);

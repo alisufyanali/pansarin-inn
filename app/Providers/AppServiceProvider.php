@@ -6,6 +6,7 @@ use App\Services\WhatsAppService;
 use Illuminate\Routing\Router;
 // Spatie middlewares (alias registration)
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
@@ -29,6 +30,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Strong password policy — applies wherever Password::defaults() is used
+        Password::defaults(function () {
+            return Password::min(8)->mixedCase()->numbers()->symbols();
+        });
+
         // Register Spatie permission middleware aliases so controllers can use 'permission' and 'role'
         $router = $this->app->make(Router::class);
         $router->aliasMiddleware('permission', PermissionMiddleware::class);

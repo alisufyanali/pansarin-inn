@@ -196,9 +196,7 @@ class WhatsAppController extends Controller
 
         try {
             Log::info('WHATSAPP CONTROLLER SEND START', [
-                'phone' => $request->phone,
-                'clean_phone' => preg_replace('/\D+/', '', $request->phone),
-                'message' => $request->message,
+                'timestamp' => now()->toIso8601String(),
             ]);
 
             $response = $this->whatsappService->sendTextMessage(

@@ -10,6 +10,7 @@ use app\Models\AffiliateCommission;
 use App\Models\Referral;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
@@ -141,7 +142,7 @@ class AffiliateController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|min:8|confirmed',
+            'password' => ['required', 'confirmed', Password::defaults()],
             'affiliate_code' => 'nullable|string|exists:affiliates,affiliate_code',
         ]);
 
