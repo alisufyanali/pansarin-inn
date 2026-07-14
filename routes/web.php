@@ -15,7 +15,7 @@ Route::get('/privacy_policy', function () {
     return '<h1>Privacy Policy</h1><p>This app uses WhatsApp Business API to receive and respond to messages. We do not collect or store any personal information except the WhatsApp message content necessary for service functionality.</p>';
 })->name('privacy_policy');
 
-Route::match(['get', 'post'], '/whatsapp/webhook', [WhatsAppController::class, 'webhook'])->name('whatsapp.webhook');
+Route::match(['get', 'post'], '/whatsapp/webhook', [WhatsAppController::class, 'webhook'])->middleware('throttle:30,1')->name('whatsapp.webhook');
 
 // TODO: Add Spatie permission `run-maintenance` to the database, assign to admin roles, then use:
 Route::middleware(['auth', 'permission:run-maintenance'])->group(function () {

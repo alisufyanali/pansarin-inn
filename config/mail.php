@@ -117,6 +117,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Admin Notification Email
+    |--------------------------------------------------------------------------
+    |
+    | The address that receives internal alerts (e.g. WhatsApp API errors).
+    | Set ADMIN_EMAIL in your .env. If not set, alert emails are skipped and
+    | a warning is written to the log instead.
+    |
+    */
+
+    'admin_email' => env('ADMIN_EMAIL'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Markdown Mail Settings
     |--------------------------------------------------------------------------
     |

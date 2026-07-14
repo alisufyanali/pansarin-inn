@@ -198,14 +198,24 @@ class WhatsAppService
      */
     protected function sendErrorEmail(array $errorData)
     {
+        $adminEmail = config('mail.admin_email');
+
+        if (! $adminEmail) {
+            Log::warning('WhatsApp error email skipped — ADMIN_EMAIL is not configured.', [
+                'whatsapp_error' => $errorData['error']['message'] ?? 'unknown',
+            ]);
+
+            return;
+        }
+
         $errorMessage = $errorData['error']['message'] ?? 'Unknown error';
         $errorCode = $errorData['error']['code'] ?? 'N/A';
 
         try {
             Mail::raw(
                 "WhatsApp API Error:\nMessage: {$errorMessage}\nCode: {$errorCode}\n\nFull Response:\n".json_encode($errorData, JSON_PRETTY_PRINT),
-                function ($message) use ($errorCode) {
-                    $message->to(config('mail.admin_email', 'alisufyan2410@gmail.com'))
+                function ($message) use ($adminEmail, $errorCode) {
+                    $message->to($adminEmail)
                         ->subject("WhatsApp API Error - Code {$errorCode}");
                 }
             );

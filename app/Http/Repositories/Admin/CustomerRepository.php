@@ -90,12 +90,21 @@ class CustomerRepository
             $fullName = $data['first_name'] . ' ' . ($data['last_name'] ?? '');
 
             // 1. Create User Account
+            $passwordProvided = isset($data['password']) && $data['password'] !== '';
+            if (! $passwordProvided) {
+                // Admin created customer without a password — generate a random one.
+                // The customer cannot log in until they use "Forgot Password" or the admin
+                // sends them a password-reset link. Log a warning so the admin is aware.
+                Log::warning('Customer created without a password — random password generated. Send a password-reset link.', [
+                    'email' => $data['email'],
+                ]);
+            }
             $user = User::create([
                 'name'        => $fullName,
                 'email'       => $data['email'],
                 'phone'       => $data['phone'],
                 'username'    => \Str::slug($fullName) . '-' . rand(1000, 9999),
-                'password'    => \Hash::make($data['password'] ?? 'password123'),
+                'password'    => \Hash::make($data['password'] ?? Str::random(16)),
                 'status'      => 1,
                 'referred_by' => $data['referred_by'] ?? null,
             ]);
