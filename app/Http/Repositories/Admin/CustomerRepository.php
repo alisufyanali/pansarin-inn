@@ -151,35 +151,6 @@ class CustomerRepository
         });
     }
 
-    // public function update(Customer $customer, array $data) {
-    //     return DB::transaction(function () use ($customer, $data) {
-    //         $fullName = $data['first_name'] . ' ' . ($data['last_name'] ?? '');
-
-    //         // 1. Update User Account
-    //         $customer->user->update([
-    //             'name'        => $fullName,
-    //             'email'       => $data['email'],
-    //             'phone'       => $data['phone'],
-    //             'referred_by' => $data['referred_by'] ?? null,
-    //         ]);
-
-    //         // 2. Update Customer Profile
-    //         $customer->update([
-    //             'first_name'        => $data['first_name'],
-    //             'last_name'         => $data['last_name'] ?? null,
-    //             'email'             => $data['email'],
-    //             'phone'             => $data['phone'],
-    //             'address'           => $data['address'],
-    //             'city_id'           => $data['city_id'],
-    //             'customer_group_id' => $data['customer_group_id'] ?: null,
-    //             'status'            => $data['status'],
-    //             'referred_by'       => $data['referred_by'] ?? null,
-    //         ]);
-
-    //         return $customer;
-    //     });
-    // }
-
     public function update(Customer $customer, array $data) {
         return DB::transaction(function () use ($customer, $data) {
             $fullName = $data['first_name'] . ' ' . ($data['last_name'] ?? '');

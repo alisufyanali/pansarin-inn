@@ -82,81 +82,6 @@ class UserController extends Controller
         ]);
     }
 
-    // public function store(Request $request) {
-    //     $request->validate([
-    //         'name' => 'required|string|max:255',
-    //         'username' => 'string|max:255',
-    //         'email' => 'required|string|email|max:255|unique:users,email',
-    //         'phone' => 'string|max:20',
-    //         'password' => 'required|string|min:8|confirmed',
-    //         'roles' => 'required|array|min:1',
-    //         'roles.*' => 'string|exists:roles,name',
-    //     ]);
-
-    //     // Create user
-    //     $user = User::create([
-    //         'name' => $request->name,
-    //         'email' => $request->email,
-    //         'phone' => $request->phone,
-    //         'password' => Hash::make($request->password),
-    //         'username' => $request->username ?? Str::slug($request->name) . '-' . rand(10, 99),
-    //         'status' => $request->status ?? 1,
-    //     ]);
-
-
-    //     // Assign multiple roles via Spatie
-    //     $user->syncRoles($request->roles);
-    //     $selectedRoles = array_map('strtolower', $request->roles);
-        
-    //     if (in_array('customer', $selectedRoles) || in_array('affiliate', $selectedRoles)) {
-    //         // Customer Create
-    //         $customer = Customer::create([
-    //             'user_id'    => $user->id,
-    //             'first_name' => $user->name,
-    //             'email'      => $user->email,
-    //             'phone'      => $user->phone ?? '0000000000',
-    //         ]);
-
-    //         // Wallet Create
-    //         $customer->wallet()->create(['balance' => 0]);
-
-    //         // Loyalty Points Account Opening
-    //         $customer->loyaltyPoints()->create(['balance' => 0]);
-    //     }
-
-    //     // Affiliate Create
-    //     if (in_array('affiliate', $selectedRoles)) {
-    //         Affiliate::firstOrCreate(
-    //             ['user_id' => $user->id],
-    //             [
-    //                 'affiliate_code'  => strtoupper(Str::random(10)),
-    //                 'status'          => 'active',
-    //                 'commission_rate' => 5.00,
-    //                 'joined_at'       => now(),
-    //             ]
-    //         );
-    //     }
-
-    //     if ($user->referred_by) {
-    //         $referrerAffiliate = Affiliate::where('user_id', $user->referred_by)->first();
-
-    //         if ($referrerAffiliate) {
-    //             Referral::create([
-    //                 'affiliate_id'             => $referrerAffiliate->id,
-    //                 'customer_id'              => $user->id,
-    //                 'order_amount'             => 0,
-    //                 'commission_rate_snapshot' => $referrerAffiliate->commission_rate,
-    //                 'commission_amount'        => 0,
-    //                 'status'                   => 'pending',
-    //                 'level'                    => 1,
-    //                 'referral_type'            => 'direct',
-    //             ]);
-    //         }
-    //     }
-
-    //     return redirect()->route('admin.users.index')->with('success', 'User successfully created!');
-    // }
-
     public function store(Request $request) {
         $request->validate([
             'name' => 'required|string|max:255',
@@ -230,14 +155,6 @@ class UserController extends Controller
             return back()->withErrors(['error' => 'Registration failed: ' . $e->getMessage()]);
         }
     }
-
-    // public function show(string $id) {
-    //     $user = User::with('roles')->findOrFail($id);
-
-    //     return Inertia::render('Users/Show', [
-    //         'user' => $user,
-    //     ]);
-    // }
 
     public function show(string $id) {
         $user = User::with([
@@ -321,7 +238,6 @@ class UserController extends Controller
             );
         } else {
             Affiliate::where('user_id', $user->id)->delete();
-            // Affiliate::where('user_id', $user->id)->update(['status' => 'inactive']);
         }
 
         return redirect()->route('admin.users.index')->with('success', 'User updated!');

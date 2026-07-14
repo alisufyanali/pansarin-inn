@@ -37,15 +37,7 @@ class ProductReview extends Model
         static::creating(function ($review) {
             // Agar user logged in hai aur usne order number dala hai
             if ($review->user_id && $review->order_number) {
-                // Check karein ke is user ka is product ke liye koi successful order hai?
-                // Example check (Aapke Order model ke mutabiq):
-                // $hasPurchased = Order::where('id', $review->order_number)
-                //    ->where('user_id', $review->user_id)
-                //    ->whereHas('items', function($q) use ($review) {
-                //        $q->where('product_id', $review->product_id);
-                //    })->exists();
-
-                // $review->is_verified = $hasPurchased;
+                // Purchase verification can be added here when order structure is finalised.
             }
         });
     }

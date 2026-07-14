@@ -24,17 +24,7 @@ return new class extends Migration
             }
         });
 
-        Schema::table('whatsapp_message_logs', function (Blueprint $table) {
-            if (! $this->hasIndex('whatsapp_message_logs', 'whatsapp_message_logs_phone_index')) {
-                $table->index('phone', 'whatsapp_message_logs_phone_index');
-            }
-        });
-
-        Schema::table('whatsapp_messages', function (Blueprint $table) {
-            if (! $this->hasIndex('whatsapp_messages', 'whatsapp_messages_from_number_index')) {
-                $table->index('from_number', 'whatsapp_messages_from_number_index');
-            }
-        });
+ 
     }
 
     public function down(): void
@@ -42,14 +32,6 @@ return new class extends Migration
         Schema::table('customers', function (Blueprint $table) {
             $table->dropIndexIfExists('customers_email_index');
             $table->dropIndexIfExists('customers_phone_index');
-        });
-
-        Schema::table('whatsapp_message_logs', function (Blueprint $table) {
-            $table->dropIndexIfExists('whatsapp_message_logs_phone_index');
-        });
-
-        Schema::table('whatsapp_messages', function (Blueprint $table) {
-            $table->dropIndexIfExists('whatsapp_messages_from_number_index');
         });
     }
 
