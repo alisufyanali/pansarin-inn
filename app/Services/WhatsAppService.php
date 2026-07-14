@@ -93,9 +93,8 @@ class WhatsAppService
             );
 
             Log::info('WHATSAPP SEND RESPONSE (template)', [
-                'phone' => $recipientPhone,
-                'status' => $status,
-                'response_body' => $body,
+                'phone_tail' => '****' . substr(preg_replace('/\D/', '', $recipientPhone), -4),
+                'status'     => $status,
             ]);
 
             // Check for errors
@@ -147,9 +146,8 @@ class WhatsAppService
             $responseData = $response->json();
 
             Log::info('WHATSAPP SEND RESPONSE (text)', [
-                'phone' => $recipientPhone,
-                'status' => $status,
-                'response_body' => $body,
+                'phone_tail' => '****' . substr(preg_replace('/\D/', '', $recipientPhone), -4),
+                'status'     => $status,
             ]);
 
             return $responseData;

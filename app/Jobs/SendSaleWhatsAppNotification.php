@@ -89,6 +89,7 @@ class SendSaleWhatsAppNotification implements ShouldQueue
                 'sale_id' => $this->sale->id,
                 'error' => $e->getMessage(),
             ]);
+            throw $e;
         }
     }
 }

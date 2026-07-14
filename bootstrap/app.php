@@ -21,6 +21,11 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
+        // Exclude WhatsApp webhook from CSRF — incoming POSTs come from Meta's servers
+        $middleware->validateCsrfTokens(except: [
+            '/whatsapp/webhook',
+        ]);
+
         $middleware->web(append: [
             HandleAppearance::class,
             HandleInertiaRequests::class,

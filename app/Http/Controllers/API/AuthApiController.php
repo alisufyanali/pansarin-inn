@@ -69,7 +69,7 @@ class AuthApiController extends Controller
                 'email'    => $request->email,
                 'password' => Hash::make($request->password),
                 'phone'    => $request->phone ?? null,
-                'username' => \Illuminate\Support\Str::slug($request->name) . '-' . rand(1000, 9999),
+                'username' => \Illuminate\Support\Str::slug($request->name) . '-' . \Illuminate\Support\Str::random(6),
                 'status'   => 1,
             ]);
 

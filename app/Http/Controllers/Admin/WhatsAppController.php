@@ -214,7 +214,7 @@ class WhatsAppController extends Controller
                 'api_response' => json_encode($response),
             ]);
 
-            Log::info('WHATSAPP CONTROLLER SEND RESPONSE', ['response' => $response]);
+            Log::info('WHATSAPP CONTROLLER SEND RESPONSE', ['status' => 'sent']);
 
             // If Inertia request, redirect back with success
             if (request()->header('X-Inertia')) {
