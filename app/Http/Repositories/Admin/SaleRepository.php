@@ -194,12 +194,27 @@ class SaleRepository
 
     private function syncItems(Sale $sale, array $items): void
     {
+        // Pre-load all products and variants in 2 batch queries — eliminates N+1.
+        // Sales do not deduct inventory (only Orders do), so no stock pre-load needed.
+        $productIds = collect($items)->pluck('product_id')->filter()->unique();
+        $variantIds = collect($items)->pluck('product_variant_id')->filter()->unique();
+
+        $products = Product::whereIn('id', $productIds)
+            ->get(['id', 'name', 'sku'])
+            ->keyBy('id');
+
+        $variants = $variantIds->isNotEmpty()
+            ? ProductVariant::whereIn('id', $variantIds)
+                ->get(['id', 'value', 'attributes'])
+                ->keyBy('id')
+            : collect();
+
         foreach ($items as $item) {
             if (empty($item['product_id'])) continue;
 
-            $product = Product::find($item['product_id']);
-            $variant = !empty($item['product_variant_id'])
-                ? ProductVariant::find($item['product_variant_id'])
+            $product  = $products->get($item['product_id']);
+            $variant  = !empty($item['product_variant_id'])
+                ? $variants->get($item['product_variant_id'])
                 : null;
 
             $qty      = (int) $item['quantity'];
