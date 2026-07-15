@@ -59,6 +59,11 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
+    public function sale()
+    {
+        return $this->hasOne(Sale::class);
+    }
+
     public function sales()
     {
         return $this->hasMany(Sale::class);
@@ -131,6 +136,15 @@ class Order extends Model
         static::updated(function (Order $order) {
             if ($order->wasChanged('status') && $order->status === 'delivered') {
                 $order->reduceStock();
+                // Process affiliate commission — runs after stock reduction, idempotent guard inside service
+                try {
+                    $order->loadMissing('customer.user');
+                    app(\App\Services\AffiliateService::class)->updateReferral($order);
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::error('Affiliate commission failed for order #' . $order->order_number, [
+                        'error' => $e->getMessage(),
+                    ]);
+                }
             }
         });
     }

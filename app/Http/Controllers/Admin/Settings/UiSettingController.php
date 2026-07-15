@@ -128,6 +128,8 @@ class UiSettingController extends Controller
             'parallax_vendor_title',
         ]);
 
+        \Illuminate\Support\Facades\Cache::forget('homepage_data');
+
         return redirect()->route('admin.ui-settings.index')->with('success', 'Homepage updated!');
     }
 
@@ -139,6 +141,8 @@ class UiSettingController extends Controller
             'home_categories',
             'top_slide_categories',
         ]);
+
+        \Illuminate\Support\Facades\Cache::forget('homepage_data');
 
         return redirect()->route('admin.ui-settings.index')->with('success', 'Categories updated!');
     }
@@ -208,6 +212,8 @@ class UiSettingController extends Controller
                 'sort_order'  => $index,
             ]);
         }
+
+        \Illuminate\Support\Facades\Cache::forget('homepage_data');
 
         return response()->json([
             'success' => true,

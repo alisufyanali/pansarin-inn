@@ -50,6 +50,8 @@ class CategoryController extends Controller
                 $request->file('social_image')
             );
 
+            \Illuminate\Support\Facades\Cache::forget('homepage_data');
+
             return to_route('admin.categories.index')
                 ->with('success', 'Category successfully created!');
 
@@ -89,6 +91,8 @@ class CategoryController extends Controller
                 $request->file('social_image')
             );
 
+            \Illuminate\Support\Facades\Cache::forget('homepage_data');
+
             return to_route('admin.categories.index')
                 ->with('success', 'Category successfully updated!');
 
@@ -103,6 +107,8 @@ class CategoryController extends Controller
     {
         try {
             $this->categoryRepo->delete($id);
+
+            \Illuminate\Support\Facades\Cache::forget('homepage_data');
 
             return redirect()->route('admin.categories.index')
                 ->with('success', 'Category successfully deleted!');

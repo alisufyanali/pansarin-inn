@@ -10,15 +10,15 @@ use App\Models\Product;
 use App\Models\ProductReview;
 use App\Models\ProductStock;
 use App\Models\Slide;
+use Illuminate\Support\Facades\Cache;
 
 class HomepageApiController extends Controller
 {
     // GET /api/homepage — single combined endpoint
     public function index()
     {
-        return response()->json([
-            'success' => true,
-            'data'    => [
+        $data = Cache::remember('homepage_data', 300, function () {
+            return [
                 'banners'           => $this->getBanners(),
                 'categories'        => $this->getCategories(),
                 'category_products' => $this->getCategoryProducts(),
@@ -26,17 +26,18 @@ class HomepageApiController extends Controller
                 'video_products'    => $this->getVideoProducts(),
                 'reviews'           => $this->getReviewsData(),
                 'blogs'             => $this->getBlogs(),
-            ],
-        ]);
+            ];
+        });
+
+        return response()->json(['success' => true, 'data' => $data]);
     }
 
     // GET /api/slides — public banners/slides endpoint
     public function slides()
     {
-        return response()->json([
-            'success' => true,
-            'data'    => $this->getBanners(),
-        ]);
+        $data = Cache::remember('slides_data', 300, fn () => $this->getBanners());
+
+        return response()->json(['success' => true, 'data' => $data]);
     }
 
     // GET /api/homepage/reviews

@@ -48,6 +48,8 @@ class SlideController extends Controller
             $data['is_active']  = $request->boolean('is_active', true);
             $data['sort_order'] = (int) $request->input('sort_order', 0);
             $this->repo->store($data, $request->file('image'));
+            \Illuminate\Support\Facades\Cache::forget('homepage_data');
+            \Illuminate\Support\Facades\Cache::forget('slides_data');
             return to_route('admin.slides.index')->with('success', 'Slide created successfully!');
         } catch (\Exception $e) {
             Log::error('Slide store: '.$e->getMessage());
@@ -76,6 +78,8 @@ class SlideController extends Controller
             $data['is_active']  = $request->boolean('is_active', true);
             $data['sort_order'] = (int) $request->input('sort_order', 0);
             $this->repo->update($id, $data, $request->file('image'));
+            \Illuminate\Support\Facades\Cache::forget('homepage_data');
+            \Illuminate\Support\Facades\Cache::forget('slides_data');
             return to_route('admin.slides.index')->with('success', 'Slide updated successfully!');
         } catch (\Exception $e) {
             Log::error('Slide update: '.$e->getMessage());
@@ -87,6 +91,8 @@ class SlideController extends Controller
     {
         try {
             $this->repo->delete($id);
+            \Illuminate\Support\Facades\Cache::forget('homepage_data');
+            \Illuminate\Support\Facades\Cache::forget('slides_data');
             return redirect()->route('admin.slides.index')->with('success', 'Slide deleted successfully!');
         } catch (\Exception $e) {
             return redirect()->route('admin.slides.index')->with('error', 'Failed to delete slide.');
@@ -97,6 +103,8 @@ class SlideController extends Controller
     {
         try {
             $this->repo->toggleStatus($id);
+            \Illuminate\Support\Facades\Cache::forget('homepage_data');
+            \Illuminate\Support\Facades\Cache::forget('slides_data');
             return back()->with('success', 'Slide status updated!');
         } catch (\Exception $e) {
             return back()->with('error', 'Failed to update status.');
