@@ -16,7 +16,6 @@
         "laravel/framework": "^12.0",
         "laravel/reverb": "^1.6",
         "laravel/sanctum": "^4.2",
-        "laravel/socialite": "^5.24",
         "laravel/telescope": "^5.17",
         "laravel/tinker": "^2.10.1",
         "laravel/wayfinder": "^0.1.12",
@@ -24,8 +23,7 @@
         "pusher/pusher-php-server": "^7.2",
         "spatie/laravel-medialibrary": "^11.17",
         "spatie/laravel-permission": "^6.23",
-        "tightenco/ziggy": "^2.6",
-        "yajra/laravel-datatables-oracle": "^12.6"
+        "tightenco/ziggy": "^2.6"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

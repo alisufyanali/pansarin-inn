@@ -7,14 +7,6 @@ use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Api\FrontendController;
 use Illuminate\Support\Facades\Route;
 
-// Route::get('/index', [FrontendController::class, 'index']);
-
-// Route::middleware(['auth'])->prefix('admin/pages')->name('admin.')->group(function () {
-//     Route::resource('business-settings', BusinessSettingController::class)->only(['index', 'store']);
-//     Route::resource('pages', PageController::class);
-//     Route::get('admin/pages-data', [PageController::class, 'getPagesData'])->name('admin.pages.data');
-// });
-
 Route::middleware(['auth', 'verified', 'permission:view.settings'])->prefix('admin/settings/ui')->name('admin.ui-settings.')->group(function () {
     Route::get('/', [UiSettingController::class, 'index'])->name('index');
 });
