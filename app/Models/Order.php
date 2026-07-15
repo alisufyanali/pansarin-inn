@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasTotals;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Order extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, HasTotals;
 
     protected $fillable = [
         'customer_id',
@@ -79,16 +80,12 @@ class Order extends Model
         return 'ORDER-' . \App\Helpers\SequenceGenerator::next('order_number');
     }
 
-    public function calculateTotals(): void
+    /**
+     * Order carries a `tax` field as its extra charge component.
+     */
+    protected function totalsExtraCharge(): float
     {
-        $this->subtotal         = $this->items->sum('subtotal');
-        $this->product_discount = $this->items->sum('discount');
-        $this->grand_total      = $this->subtotal
-                                - $this->product_discount
-                                - $this->invoice_discount
-                                + $this->shipping_charges
-                                + $this->tax;
-        $this->save();
+        return (float) ($this->tax ?? 0);
     }
 
     public function hasSale(): bool

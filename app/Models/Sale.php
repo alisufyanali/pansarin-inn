@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasTotals;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+
 class Sale extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, HasTotals;
 
     protected $fillable = [
         'order_id', 'customer_id', 'sale_code',
@@ -98,15 +100,11 @@ class Sale extends Model
         });
     }
 
-    public function calculateTotals(): void
+    /**
+     * Sale carries a `vat` field as its extra charge component.
+     */
+    protected function totalsExtraCharge(): float
     {
-        $this->subtotal         = $this->items->sum('subtotal');
-        $this->product_discount = $this->items->sum('discount');
-        $this->grand_total      = $this->subtotal
-                                - $this->product_discount
-                                - $this->invoice_discount
-                                + $this->shipping_charges
-                                + $this->vat;
-        $this->save();
+        return (float) ($this->vat ?? 0);
     }
 }

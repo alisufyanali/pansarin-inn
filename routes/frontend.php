@@ -2,7 +2,6 @@
 use App\Http\Controllers\Admin\Settings\GeneralSettingController;
 use App\Http\Controllers\Admin\Settings\UiSettingController;
 use App\Http\Controllers\Admin\Settings\BusinessSettingController;
-use App\Http\Controllers\Admin\PageController;
 
 use App\Http\Controllers\Api\FrontendController;
 use Illuminate\Support\Facades\Route;
