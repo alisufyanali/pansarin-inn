@@ -59,11 +59,6 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
-    public function sale()
-    {
-        return $this->hasOne(Sale::class);
-    }
-
     public function sales()
     {
         return $this->hasMany(Sale::class);
@@ -93,7 +88,7 @@ class Order extends Model
 
     public function hasSale(): bool
     {
-        return $this->sale()->exists();
+        return $this->sales()->exists();
     }
 
     // ── Accessors ─────────────────────────────────────────────────

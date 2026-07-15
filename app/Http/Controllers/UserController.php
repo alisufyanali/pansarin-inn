@@ -23,19 +23,20 @@ class UserController extends Controller
         $this->middleware('permission:delete.users')->only(['destroy']);
     }
 
-    // List users with stats
+    // List users with stats — 'users' prop intentionally omitted here.
+    // The paginated user list is fetched client-side via DataTableWrapper → GET /admin/users-data.
+    // Passing all users here would load the entire users table into the Inertia page payload.
     public function index() {
         $totalUsers = User::count();
 
-        $admins = Role::where('name', 'admin')->exists() ? User::role('admin')->count() : 0;
+        $admins    = Role::where('name', 'admin')->exists()     ? User::role('admin')->count()     : 0;
         $affiliate = Role::where('name', 'affiliate')->exists() ? User::role('affiliate')->count() : 0;
-        $customers = Role::where('name', 'customer')->exists() ? User::role('customer')->count() : 0;
+        $customers = Role::where('name', 'customer')->exists()  ? User::role('customer')->count()  : 0;
 
         return Inertia::render('Users/Index', [
-            'users' => User::with('roles')->get(),
             'stats' => [
-                'total' => $totalUsers,
-                'admins' => $admins,
+                'total'     => $totalUsers,
+                'admins'    => $admins,
                 'affiliate' => $affiliate,
                 'customers' => $customers,
             ],

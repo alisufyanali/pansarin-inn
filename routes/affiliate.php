@@ -14,7 +14,7 @@ use Inertia\Inertia;
 */
 // Referral Registration: e.g., pansariinn.pk/register-affiliate?ref=CODE123
 Route::get('/register-affiliate', [AffiliateController::class, 'showRegisterForm'])->name('affiliate.customer.register');
-Route::post('/affiliate/register-customer', [AffiliateController::class, 'registerCustomer'])->name('affiliate.customer.store');
+Route::post('/affiliate/register-customer', [AffiliateController::class, 'registerCustomer'])->middleware('throttle:10,1')->name('affiliate.customer.store');
 
 
 /*
