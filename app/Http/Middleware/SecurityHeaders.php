@@ -23,7 +23,8 @@ class SecurityHeaders
             "img-src 'self' data: https:; " .
             "script-src 'self' 'unsafe-inline'; " .
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " .
-            "font-src 'self' https://fonts.gstatic.com;"
+            "font-src 'self' https://fonts.gstatic.com; " .
+            "connect-src 'self' https://custom.pansariinn.pk wss://*.pusher.com https://*.pusherapp.com;"
         );
 
         return $response;

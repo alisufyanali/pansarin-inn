@@ -212,14 +212,11 @@ class SaleController extends Controller
                 // Send Sale Confirmation Email (Queued)
                 if ($sale->customer && !empty($sale->customer->email)) {
                     try {
-                        \Illuminate\Support\Facades\Mail::to($sale->customer->email)->send(new \App\Mail\SaleConfirmationMail($sale));
+                        \App\Jobs\SendSaleConfirmationEmail::dispatch($sale);
                     } catch (\Exception $e) {
-                        \Illuminate\Support\Facades\Log::error('MAIL FAILED: Sale confirmation email queue failed', [
+                        \Illuminate\Support\Facades\Log::error('MAIL FAILED: Sale confirmation email dispatch failed', [
                             'sale_id'   => $sale->id,
                             'message'   => $e->getMessage(),
-                            'trace' => $e->getTraceAsString(),
-                            'file' => $e->getFile(),
-                            'line' => $e->getLine(),
                         ]);
                     }
                 }
