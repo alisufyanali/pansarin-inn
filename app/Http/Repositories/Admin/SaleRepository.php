@@ -14,7 +14,7 @@ class SaleRepository
 {
     public function getAllForDataTable($request)
     {
-        $query = Sale::with(['customer', 'city', 'order', 'items', 'customer.city'])->latest();
+        $query = Sale::with(['customer.city', 'city', 'order', 'items'])->latest();
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -44,7 +44,7 @@ class SaleRepository
         return DB::transaction(function () use ($data) {
             Cache::forget('sale_stats');
             $sale = Sale::create([
-                'order_id'         => $data['order_id'],
+                'order_id'         => $data['order_id'] ?? null,
                 'customer_id'      => $data['customer_id'],
                 'city_id'          => $data['city_id'] ?? null,
                 'invoice_discount' => $data['invoice_discount'] ?? 0,
@@ -79,7 +79,7 @@ class SaleRepository
             $sale = Sale::findOrFail($id);
 
             $sale->update([
-                'order_id'         => $data['order_id'],
+                'order_id'         => $data['order_id'] ?? null,
                 'customer_id'      => $data['customer_id'],
                 'city_id'          => $data['city_id'] ?? null,
                 'invoice_discount' => $data['invoice_discount'] ?? 0,

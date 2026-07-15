@@ -1,19 +1,24 @@
 <?php
 
 use App\Http\Controllers\Admin\WhatsAppController;
+use App\Http\Middleware\TrackAffiliate;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
 
-Route::get('/', function () {
-    return Inertia::render('welcome', [
-        'canRegister' => Features::enabled(Features::registration()),
-    ]);
-})->name('home');
+// Public storefront routes — TrackAffiliate runs here so ?ref= cookies are set
+// for visitors landing on the homepage or any public page via an affiliate link.
+Route::middleware([TrackAffiliate::class])->group(function () {
+    Route::get('/', function () {
+        return Inertia::render('welcome', [
+            'canRegister' => Features::enabled(Features::registration()),
+        ]);
+    })->name('home');
 
-Route::get('/privacy_policy', function () {
-    return '<h1>Privacy Policy</h1><p>This app uses WhatsApp Business API to receive and respond to messages. We do not collect or store any personal information except the WhatsApp message content necessary for service functionality.</p>';
-})->name('privacy_policy');
+    Route::get('/privacy_policy', function () {
+        return '<h1>Privacy Policy</h1><p>This app uses WhatsApp Business API to receive and respond to messages. We do not collect or store any personal information except the WhatsApp message content necessary for service functionality.</p>';
+    })->name('privacy_policy');
+});
 
 Route::match(['get', 'post'], '/whatsapp/webhook', [WhatsAppController::class, 'webhook'])->middleware('throttle:30,1')->name('whatsapp.webhook');
 

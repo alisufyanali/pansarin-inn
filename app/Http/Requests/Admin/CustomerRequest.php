@@ -48,6 +48,7 @@ class CustomerRequest extends FormRequest
             'address2' => 'nullable|string|max:255',
             'city_id'  => 'nullable|exists:cities,id',
             'country'  => 'nullable|string|max:100',
+            'password' => 'nullable|string|min:8',
         ];
     }
 

@@ -20,7 +20,7 @@ class SaleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'order_id' => 'required|exists:orders,id',
+            'order_id' => 'nullable|exists:orders,id',
             'customer_id' => 'required|exists:customers,id',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
@@ -53,7 +53,6 @@ class SaleRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'order_id.required' => 'Order is required',
             'order_id.exists' => 'Selected order does not exist',
             'customer_id.required' => 'Customer is required',
             'customer_id.exists' => 'Selected customer does not exist',
