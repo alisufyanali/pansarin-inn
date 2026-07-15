@@ -255,7 +255,7 @@ class OrderApiController extends Controller
             // Re-queue welcome email with real order number for new guests
             if ($accountCreated) {
                 try {
-                    Mail::to($request->email)->send(
+                    Mail::to($request->email)->queue(
                         new GuestAccountCreatedMail(
                             $request->name,
                             $request->email,
