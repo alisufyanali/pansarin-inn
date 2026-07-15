@@ -214,17 +214,6 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     // Sales CRUD
     Route::resource('sales', SaleController::class);
 
-    // Sales DataTable endpoint
-    // Route::get('sales-data', [SaleController::class, 'getData'])->name('sales.data');
-
-    // Update delivery status
-    Route::patch('sales/{sale}/delivery-status', [SaleController::class, 'updateDeliveryStatus'])
-        ->name('sales.update-delivery-status');
-
-    // Update payment status
-    Route::patch('sales/{sale}/payment-status', [SaleController::class, 'updatePaymentStatus'])
-        ->name('sales.update-payment-status');
-
     // Contact Routes
 
     // Contacts CRUD

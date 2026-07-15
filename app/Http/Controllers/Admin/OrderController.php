@@ -108,7 +108,7 @@ class OrderController extends Controller
 
                 // Send Order Confirmation WhatsApp (Queued)
                 try {
-                    if (config('queue.default') === 'sync' || env('QUEUE_CONNECTION') === 'sync') {
+                    if (config('queue.default') === 'sync') {
                         (new \App\Jobs\SendOrderWhatsAppNotification($order))->handle(app(\App\Services\WhatsAppService::class));
                     } else {
                         \App\Jobs\SendOrderWhatsAppNotification::dispatch($order);
@@ -217,7 +217,7 @@ class OrderController extends Controller
             $sent = 0;
             foreach ($orders as $order) {
                 if ($order->customer?->phone) {
-                    if (config('queue.default') === 'sync' || env('QUEUE_CONNECTION') === 'sync') {
+                    if (config('queue.default') === 'sync') {
                         (new \App\Jobs\SendOrderWhatsAppNotification($order))->handle(app(\App\Services\WhatsAppService::class));
                     } else {
                         \App\Jobs\SendOrderWhatsAppNotification::dispatch($order);

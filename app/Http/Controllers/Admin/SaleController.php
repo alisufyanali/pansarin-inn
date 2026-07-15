@@ -226,7 +226,7 @@ class SaleController extends Controller
 
                 // Send Sale Confirmation WhatsApp (Queued)
                 try {
-                    if (config('queue.default') === 'sync' || env('QUEUE_CONNECTION') === 'sync') {
+                    if (config('queue.default') === 'sync') {
                         (new \App\Jobs\SendSaleWhatsAppNotification($sale))->handle(app(\App\Services\WhatsAppService::class));
                     } else {
                         \App\Jobs\SendSaleWhatsAppNotification::dispatch($sale);

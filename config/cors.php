@@ -12,11 +12,11 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => [
+    'allowed_origins' => array_values(array_filter([
         env('FRONTEND_URL', 'https://pansarii-frontend.vercel.app'),
-        'http://localhost:3000',
-        'http://localhost:3001',
-    ],
+        env('APP_ENV') !== 'production' ? 'http://localhost:3000' : null,
+        env('APP_ENV') !== 'production' ? 'http://localhost:3001' : null,
+    ])),
 
     'allowed_origins_patterns' => [],
 

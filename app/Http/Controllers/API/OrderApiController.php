@@ -212,11 +212,13 @@ class OrderApiController extends Controller
                 ]);
             }
         } else {
-            // New guest — create User
+            // New guest — create User with a secure random password.
+            // The guest cannot log in until they set their own password via "Forgot Password".
+            // GuestAccountCreatedMail (sent below) instructs them to use Forgot Password.
             $newUser = User::create([
                 'name'     => $request->name,
                 'email'    => $request->email,
-                'password' => Hash::make($request->phone),
+                'password' => Hash::make(Str::random(16)),
                 'phone'    => $request->phone,
                 'username' => Str::slug($request->name) . '-' . rand(1000, 9999),
                 'status'   => 1,
