@@ -6,7 +6,21 @@ use Illuminate\Database\Eloquent\Model;
 
 class PointTransaction extends Model
 {
-    protected $fillable = ['customer_id', 'points', 'reason'];
+    protected $fillable = [
+        'customer_id',
+        'points',
+        'type',       // earned | redeemed | admin_adjustment
+        'reason',
+        'reference',  // order_number or admin note
+    ];
 
-    public function customer() { return $this->belongsTo(Customer::class); }
+    protected $casts = [
+        'points' => 'integer',
+    ];
+
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class);
+    }
 }
+

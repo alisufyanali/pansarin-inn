@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\Order;
+use App\Observers\OrderObserver;
 use App\Services\WhatsAppService;
 use Illuminate\Routing\Router;
 // Spatie middlewares (alias registration)
@@ -30,6 +32,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Register model observers
+        Order::observe(OrderObserver::class);
+
         // Strong password policy — applies wherever Password::defaults() is used
         Password::defaults(function () {
             return Password::min(8)->mixedCase()->numbers()->symbols();

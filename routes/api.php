@@ -7,8 +7,15 @@ use App\Http\Controllers\API\ContactApiController;
 use App\Http\Controllers\API\CouponApiController;
 use App\Http\Controllers\API\HomepageApiController;
 use App\Http\Controllers\API\NewsletterApiController;
+use App\Http\Controllers\API\NotificationApiController;
+use App\Http\Controllers\API\OffersApiController;
 use App\Http\Controllers\API\OrderApiController;
 use App\Http\Controllers\API\ProductApiController;
+use App\Http\Controllers\API\ProductReviewApiController;
+use App\Http\Controllers\API\ProfileApiController;
+use App\Http\Controllers\API\ReturnApiController;
+use App\Http\Controllers\API\RewardsApiController;
+use App\Http\Controllers\API\SupportApiController;
 use App\Http\Controllers\API\WishlistApiController;
 use Illuminate\Support\Facades\Route;
 
@@ -28,6 +35,9 @@ Route::middleware('throttle:60,1')->group(function () {
     Route::get('/products/{slug}',     [ProductApiController::class, 'show']);
     Route::get('/categories',          [ProductApiController::class, 'categories']);
 
+    // Product reviews — public read, protected write (see below)
+    Route::get('/products/{slug}/reviews', [ProductReviewApiController::class, 'index']);
+
     // Homepage
     Route::get('/homepage',                   [HomepageApiController::class, 'index']);
     Route::get('/homepage/category-products', [ProductApiController::class, 'homepageCategoryProducts']);
@@ -37,6 +47,9 @@ Route::middleware('throttle:60,1')->group(function () {
     // Blogs
     Route::get('/blogs',        [BlogApiController::class, 'index']);
     Route::get('/blogs/{slug}', [BlogApiController::class, 'show']);
+
+    // Offers / active coupons (public — shows available promotions)
+    Route::get('/offers', [OffersApiController::class, 'index']);
 
     // Misc public
     Route::post('/contact',              [ContactApiController::class, 'store']);
@@ -51,6 +64,10 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::post('/logout', [AuthApiController::class, 'logout']);
     Route::get('/user',    [AuthApiController::class, 'user']);
 
+    // Profile
+    Route::put('/profile',         [ProfileApiController::class, 'update']);
+    Route::post('/change-password', [ProfileApiController::class, 'changePassword']);
+
     // Cart
     Route::get('/cart',         [CartApiController::class, 'index']);
     Route::post('/cart',        [CartApiController::class, 'store']);
@@ -59,12 +76,32 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::delete('/cart',      [CartApiController::class, 'clear']);
 
     // Orders
-    Route::get('/orders',      [OrderApiController::class, 'index']);
-    Route::post('/orders',     [OrderApiController::class, 'store']);
-    Route::get('/orders/{id}', [OrderApiController::class, 'show']);
+    Route::get('/orders',              [OrderApiController::class, 'index']);
+    Route::post('/orders',             [OrderApiController::class, 'store']);
+    Route::get('/orders/{id}',         [OrderApiController::class, 'show']);
+    Route::patch('/orders/{id}/cancel',[OrderApiController::class, 'cancel']);
 
     // Wishlist
     Route::get('/wishlist',         [WishlistApiController::class, 'index']);
     Route::post('/wishlist',        [WishlistApiController::class, 'store']);
     Route::delete('/wishlist/{id}', [WishlistApiController::class, 'destroy']);
+
+    // Rewards (loyalty points)
+    Route::get('/rewards', [RewardsApiController::class, 'index']);
+
+    // Returns
+    Route::get('/returns',  [ReturnApiController::class, 'index']);
+    Route::post('/returns', [ReturnApiController::class, 'store']);
+
+    // Support tickets
+    Route::get('/support',  [SupportApiController::class, 'index']);
+    Route::post('/support', [SupportApiController::class, 'store']);
+
+    // Notifications
+    Route::get('/notifications',               [NotificationApiController::class, 'index']);
+    Route::patch('/notifications/{id}/read',   [NotificationApiController::class, 'markRead']);
+    Route::post('/notifications/read-all',     [NotificationApiController::class, 'markAllRead']);
+
+    // Product reviews — write requires auth
+    Route::post('/products/{slug}/reviews', [ProductReviewApiController::class, 'store']);
 });

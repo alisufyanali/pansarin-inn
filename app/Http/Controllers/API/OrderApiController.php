@@ -19,6 +19,37 @@ class OrderApiController extends Controller
 {
     public function __construct(protected OrderRepository $orderRepo) {}
 
+    // PATCH /api/orders/{id}/cancel
+    public function cancel(Request $request, string $id)
+    {
+        $customer = $request->user()->customer;
+
+        if (! $customer) {
+            return response()->json(['success' => false, 'message' => 'Customer profile not found.'], 404);
+        }
+
+        $order = Order::where('customer_id', $customer->id)->findOrFail($id);
+
+        // Only pending or processing orders can be cancelled by the customer
+        if (! in_array($order->status, ['pending', 'processing'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This order cannot be cancelled. Only pending or processing orders are eligible.',
+            ], 422);
+        }
+
+        $order->update(['status' => 'cancelled']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Order cancelled successfully.',
+            'data'    => [
+                'order_number' => $order->order_number,
+                'status'       => $order->status,
+            ],
+        ]);
+    }
+
     // GET /api/orders
     public function index(Request $request)
     {
