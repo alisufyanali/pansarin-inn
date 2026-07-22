@@ -22,6 +22,7 @@ use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductsDealController;
 use App\Http\Controllers\Admin\ProductsReviewsController;
 use App\Http\Controllers\Admin\ProductVariantController;
+use App\Http\Controllers\Admin\ReturnRequestController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SaleController;
 use App\Http\Controllers\Admin\CityController;
@@ -247,5 +248,14 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::post('wishlist/bulk-delete', [WishlistController::class, 'bulkDelete'])->name('wishlist.bulk-delete');
     Route::get('wishlist-data', [WishlistController::class, 'getData'])->name('wishlist.data');
     Route::resource('wishlist', WishlistController::class)->except(['edit', 'update']);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Return Requests
+    |--------------------------------------------------------------------------
+    */
+    Route::get('returns-data', [ReturnRequestController::class, 'getData'])->name('returns.data');
+    Route::post('returns/{id}/status', [ReturnRequestController::class, 'updateStatus'])->name('returns.status');
+    Route::resource('returns', ReturnRequestController::class)->only(['index', 'show', 'destroy']);
 
 });
