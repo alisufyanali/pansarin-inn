@@ -18,6 +18,7 @@ import { LayoutGrid, Image, Monitor } from 'lucide-react';
 import { usePermissionChecks } from '@/hooks/use-permission-checks';
 import { BlogSection } from '@/components/sidebar-sections/blog-section';
 import { ProductsSection } from '@/components/sidebar-sections/products-section';
+import { ReportsSection } from '@/components/sidebar-sections/reports-section';
 import { ShopSection } from '@/components/sidebar-sections/shop-section';
 import { MessagingSection } from '@/components/sidebar-sections/messaging-section';
 import { UserManagementSection } from '@/components/sidebar-sections/user-management-section';
@@ -70,6 +71,8 @@ export function AppSidebar() {
         hasAnyCitiesPerm: permissions.hasAnyCitiesPerm,
         hasAnyCouponPerm: permissions.hasAnyCouponPerm,
         hasAnyOrderReviewPerm: permissions.hasAnyOrderReviewPerm,
+        hasAnyReturnRequestPerm: permissions.hasAnyReturnRequestPerm,
+        hasAnyLoyaltyPerm: permissions.hasAnyLoyaltyPerm,
     });
     if (shopSection) {
         mainNavItems.push(shopSection);
@@ -106,6 +109,14 @@ export function AppSidebar() {
     });
     if (affiliateSection) {
         mainNavItems.push(affiliateSection);
+    }
+
+    // Reports Section — permission-gated
+    const reportsSection = ReportsSection({
+        hasAnyReportsPerm: permissions.hasAnyReportsPerm,
+    });
+    if (reportsSection) {
+        mainNavItems.push(reportsSection);
     }
 
     // Slides — permission-gated

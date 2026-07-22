@@ -89,7 +89,7 @@ class RolePermissionSeeder extends Seeder
             'view.settings', 'edit.settings', 'create.settings', 'delete.settings',
 
             // Reports / Analytics
-            'view.reports', 'create.reports', 'edit.reports', 'delete.reports',
+            'view.reports', 'create.reports', 'edit.reports', 'delete.reports', 'export.reports',
             'view.analytics', 'create.analytics', 'edit.analytics', 'delete.analytics',
 
             // FAQs
@@ -113,6 +113,12 @@ class RolePermissionSeeder extends Seeder
 
             // Refunds
             'view.refunds', 'create.refunds', 'edit.refunds', 'delete.refunds',
+
+            // Return Requests
+            'view.return-requests', 'edit.return-requests', 'delete.return-requests',
+
+            // Loyalty Points
+            'view.loyalty', 'edit.loyalty', 'view.loyalty-settings', 'edit.loyalty-settings',
 
             // Affiliates
             'view.affiliates', 'create.affiliates', 'edit.affiliates', 'delete.affiliates',
@@ -174,6 +180,10 @@ class RolePermissionSeeder extends Seeder
             'view.cities',
             'view.order-reviews', 'edit.order-reviews',
 
+            // Returns & Loyalty (view/edit — daily ops, no delete)
+            'view.return-requests', 'edit.return-requests',
+            'view.loyalty', 'edit.loyalty',
+
             // Content
             'view.blogs', 'create.blogs', 'edit.blogs',
             'view.blog-categories', 'create.blog-categories', 'edit.blog-categories',
@@ -189,7 +199,7 @@ class RolePermissionSeeder extends Seeder
             'view.notifications',
 
             // Reports
-            'view.reports', 'view.analytics',
+            'view.reports', 'view.analytics', 'export.reports',
 
             // Affiliates (view only — admin can see affiliate management panel)
             'view.payout.requests',

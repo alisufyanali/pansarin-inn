@@ -180,6 +180,22 @@ export function usePermissionChecks() {
     const canViewFrontend = can('view.frontend');
     const hasAnyFrontendPerm = canViewFrontend || can('create.frontend') || can('edit.frontend') || can('delete.frontend');
 
+    // Returns
+    const canViewReturnRequests = can('view.return-requests');
+    const canEditReturnRequests = can('edit.return-requests');
+    const hasAnyReturnRequestPerm = canViewReturnRequests || canEditReturnRequests || can('delete.return-requests');
+
+    // Loyalty Points
+    const canViewLoyalty = can('view.loyalty');
+    const canEditLoyalty = can('edit.loyalty');
+    const canViewLoyaltySettings = can('view.loyalty-settings');
+    const hasAnyLoyaltyPerm = canViewLoyalty || canEditLoyalty || canViewLoyaltySettings || can('edit.loyalty-settings');
+
+    // Reports
+    const canViewReports = can('view.reports');
+    const canExportReports = can('export.reports');
+    const hasAnyReportsPerm = canViewReports || canExportReports;
+
     return {
         // Aggregate flags
         hasAnyProductPerm,
@@ -213,6 +229,9 @@ export function usePermissionChecks() {
         hasAnyPayoutPerm,
         hasAnyVendorPerm,
         hasAnyFrontendPerm,
+        hasAnyReturnRequestPerm,
+        hasAnyLoyaltyPerm,
+        hasAnyReportsPerm,
 
         // Individual view permissions
         canViewProduct,
@@ -250,5 +269,15 @@ export function usePermissionChecks() {
         canApprovePayout,
         canViewVendor,
         canViewFrontend,
+        // Returns
+        canViewReturnRequests,
+        canEditReturnRequests,
+        // Loyalty
+        canViewLoyalty,
+        canEditLoyalty,
+        canViewLoyaltySettings,
+        // Reports
+        canViewReports,
+        canExportReports,
     };
 }

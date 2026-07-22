@@ -1,5 +1,5 @@
 // components/sidebar-sections/shop-section.tsx
-import { ShoppingCart, User, DollarSign, TicketPercent, Star, MapPin } from 'lucide-react';
+import { ShoppingCart, User, DollarSign, TicketPercent, Star, MapPin, RotateCcw, Coins } from 'lucide-react';
 import { type NavItem } from '@/types';
 
 interface ShopSectionProps {
@@ -9,6 +9,8 @@ interface ShopSectionProps {
     hasAnyCitiesPerm: boolean;
     hasAnyCouponPerm: boolean;
     hasAnyOrderReviewPerm: boolean;
+    hasAnyReturnRequestPerm?: boolean;
+    hasAnyLoyaltyPerm?: boolean;
 }
 
 export function ShopSection({
@@ -18,6 +20,8 @@ export function ShopSection({
     hasAnyCitiesPerm,
     hasAnyCouponPerm,
     hasAnyOrderReviewPerm,
+    hasAnyReturnRequestPerm = false,
+    hasAnyLoyaltyPerm = false,
 }: ShopSectionProps): NavItem | null {
     if (
         !hasAnyCustomerPerm &&
@@ -25,7 +29,9 @@ export function ShopSection({
         !hasAnySalePerm &&
         !hasAnyCitiesPerm &&
         !hasAnyCouponPerm &&
-        !hasAnyOrderReviewPerm
+        !hasAnyOrderReviewPerm &&
+        !hasAnyReturnRequestPerm &&
+        !hasAnyLoyaltyPerm
     ) {
         return null;
     }
@@ -74,6 +80,22 @@ export function ShopSection({
             title: 'Order Reviews',
             href: '/admin/order-reviews',
             icon: Star,
+        });
+    }
+
+    if (hasAnyReturnRequestPerm) {
+        shopSubmenu.push({
+            title: 'Returns',
+            href: '/admin/returns',
+            icon: RotateCcw,
+        });
+    }
+
+    if (hasAnyLoyaltyPerm) {
+        shopSubmenu.push({
+            title: 'Loyalty Points',
+            href: '/admin/loyalty',
+            icon: Coins,
         });
     }
 
