@@ -23,6 +23,7 @@ use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductsDealController;
 use App\Http\Controllers\Admin\ProductsReviewsController;
 use App\Http\Controllers\Admin\ProductVariantController;
+use App\Http\Controllers\Admin\ReportsController;
 use App\Http\Controllers\Admin\ReturnRequestController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SaleController;
@@ -273,5 +274,23 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::post('loyalty/{customerId}/adjust', [LoyaltyController::class, 'adjust'])->name('loyalty.adjust');
     Route::get('loyalty/{customerId}', [LoyaltyController::class, 'show'])->name('loyalty.show');
     Route::get('loyalty', [LoyaltyController::class, 'index'])->name('loyalty.index');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Reports & Analytics
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('reports')->name('reports.')->group(function () {
+        Route::get('/',                    [ReportsController::class, 'index'])->name('index');
+        Route::get('/export',              [ReportsController::class, 'export'])->name('export');
+        Route::get('/summary',             [ReportsController::class, 'summary'])->name('summary');
+        Route::get('/sales-over-time',     [ReportsController::class, 'salesOverTime'])->name('sales-over-time');
+        Route::get('/top-products',        [ReportsController::class, 'topProducts'])->name('top-products');
+        Route::get('/top-customers',       [ReportsController::class, 'topCustomers'])->name('top-customers');
+        Route::get('/category-sales',      [ReportsController::class, 'categorySales'])->name('category-sales');
+        Route::get('/payment-breakdown',   [ReportsController::class, 'paymentBreakdown'])->name('payment-breakdown');
+        Route::get('/returns-rate',        [ReportsController::class, 'returnsRate'])->name('returns-rate');
+        Route::get('/affiliate-performance',[ReportsController::class, 'affiliatePerformance'])->name('affiliate-performance');
+    });
 
 });
