@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Models\GeneralSetting;
 use App\Models\LoyaltyPoint;
 use App\Models\Order;
 use App\Models\PointTransaction;
@@ -38,7 +39,17 @@ class OrderObserver
             return;
         }
 
-        $pointsToEarn = (int) floor($order->grand_total / 100);
+        // Read earning rate from settings — fallback to 0.01 (1 pt per Rs.100)
+        $rateRaw     = GeneralSetting::where('type', 'loyalty_points_per_rupee')->value('value');
+        $rate        = $rateRaw !== null ? (float) $rateRaw : 0.01;
+
+        // Respect minimum order amount setting
+        $minAmount   = (float) (GeneralSetting::where('type', 'loyalty_min_order_amount')->value('value') ?? 0);
+        if ($minAmount > 0 && $order->grand_total < $minAmount) {
+            return;
+        }
+
+        $pointsToEarn = (int) floor($order->grand_total * $rate);
 
         if ($pointsToEarn <= 0) {
             return;

@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\FrontendContentController;
 use App\Http\Controllers\Admin\InventoryController;
+use App\Http\Controllers\Admin\LoyaltyController;
 use App\Http\Controllers\Admin\NewsletterController;
 use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\OrderController;
@@ -257,5 +258,20 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('returns-data', [ReturnRequestController::class, 'getData'])->name('returns.data');
     Route::post('returns/{id}/status', [ReturnRequestController::class, 'updateStatus'])->name('returns.status');
     Route::resource('returns', ReturnRequestController::class)->only(['index', 'show', 'destroy']);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Loyalty Points
+    |--------------------------------------------------------------------------
+    */
+    // Settings must come before resource routes to avoid {customerId} wildcard catching 'settings'
+    Route::get('loyalty/settings',  [LoyaltyController::class, 'settings'])->name('loyalty.settings');
+    Route::post('loyalty/settings', [LoyaltyController::class, 'updateSettings'])->name('loyalty.settings.update');
+
+    Route::get('loyalty-data', [LoyaltyController::class, 'getData'])->name('loyalty.data');
+    Route::get('loyalty/{customerId}/history', [LoyaltyController::class, 'customerHistory'])->name('loyalty.history');
+    Route::post('loyalty/{customerId}/adjust', [LoyaltyController::class, 'adjust'])->name('loyalty.adjust');
+    Route::get('loyalty/{customerId}', [LoyaltyController::class, 'show'])->name('loyalty.show');
+    Route::get('loyalty', [LoyaltyController::class, 'index'])->name('loyalty.index');
 
 });
