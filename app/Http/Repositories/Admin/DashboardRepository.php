@@ -58,7 +58,7 @@ class DashboardRepository
             ->whereDate('created_at', $today)
             ->count();
 
-        // 7. Top selling product (last 7 days) — uses JSON_UNQUOTE for product name from meta
+        // 7. Top selling product (last 7 days)
         $topProduct = DB::table('order_items as oi')
             ->join('orders as o', 'oi.order_id', '=', 'o.id')
             ->join('products as p', 'oi.product_id', '=', 'p.id')
@@ -66,8 +66,8 @@ class DashboardRepository
             ->whereNull('oi.deleted_at')
             ->whereDate('o.created_at', '>=', $weekAgo)
             ->whereNotIn('o.status', ['cancelled', 'refunded'])
-            ->selectRaw("oi.product_id, COALESCE(JSON_UNQUOTE(JSON_EXTRACT(oi.meta, '$.product_name')), p.name) as product_name, SUM(oi.quantity) as units_sold, SUM(oi.subtotal) as revenue")
-            ->groupBy('oi.product_id', 'product_name')
+            ->selectRaw('oi.product_id, p.name as product_name, SUM(oi.quantity) as units_sold, SUM(oi.subtotal) as revenue')
+            ->groupBy('oi.product_id', 'p.name')
             ->orderByDesc('revenue')
             ->first();
 

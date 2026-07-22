@@ -90,12 +90,11 @@ class ReportsRepository
             ->whereNull('oi.deleted_at')
             ->select([
                 'oi.product_id',
-                // Use meta JSON when available (snapshot), fall back to products.name
-                DB::raw("COALESCE(JSON_UNQUOTE(JSON_EXTRACT(oi.meta, '$.product_name')), p.name) as product_name"),
+                'p.name as product_name',
                 DB::raw('SUM(oi.quantity) as units_sold'),
                 DB::raw('SUM(oi.subtotal) as revenue'),
             ])
-            ->groupBy('oi.product_id', 'product_name')
+            ->groupBy('oi.product_id', 'p.name')
             ->orderByDesc('revenue')
             ->limit($limit);
 
@@ -114,11 +113,11 @@ class ReportsRepository
             ->when($categoryId, fn ($q) => $q->where('p.category_id', $categoryId))
             ->select([
                 'oi.product_id',
-                DB::raw("COALESCE(JSON_UNQUOTE(JSON_EXTRACT(oi.meta, '$.product_name')), p.name) as product_name"),
+                'p.name as product_name',
                 DB::raw('SUM(oi.quantity) as units_sold'),
                 DB::raw('SUM(oi.subtotal) as revenue'),
             ])
-            ->groupBy('oi.product_id', 'product_name')
+            ->groupBy('oi.product_id', 'p.name')
             ->orderByDesc('revenue')
             ->limit($limit)
             ->get()
