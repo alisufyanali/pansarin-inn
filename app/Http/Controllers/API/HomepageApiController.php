@@ -17,12 +17,15 @@ class HomepageApiController extends Controller
     // GET /api/homepage — single combined endpoint
     public function index()
     {
-        $data = Cache::remember('homepage_data', 300, function () {
+        // Cache key includes a version suffix so adding new keys doesn't serve
+        // stale responses that are missing the new_arrivals field.
+        $data = Cache::remember('homepage_data_v2', 300, function () {
             return [
                 'banners'           => $this->getBanners(),
                 'categories'        => $this->getCategories(),
                 'category_products' => $this->getCategoryProducts(),
                 'featured_products' => $this->getFeaturedProducts(),
+                'new_arrivals'      => $this->getNewArrivals(),
                 'video_products'    => $this->getVideoProducts(),
                 'reviews'           => $this->getReviewsData(),
                 'blogs'             => $this->getBlogs(),
@@ -135,6 +138,22 @@ class HomepageApiController extends Controller
             ->where('featured', true)
             ->latest()
             ->take(12)
+            ->get();
+
+        $stocks = $this->preloadStocks($products);
+
+        return $products->map(fn ($p) => $this->formatProduct($p, $stocks))->toArray();
+    }
+
+    private function getNewArrivals(int $limit = 12): array
+    {
+        // New arrivals = most recently created active products.
+        // Intentionally separate from featured_products (which are curated picks).
+        // $limit is passed from the caller so it can be overridden without touching this method.
+        $products = Product::with(['category:id,name,slug', 'variants'])
+            ->where('status', true)
+            ->latest()           // ORDER BY created_at DESC
+            ->take($limit)
             ->get();
 
         $stocks = $this->preloadStocks($products);

@@ -51,7 +51,6 @@ class OldProductsImportSeeder extends Seeder
         $skipped          = [];  // [slug => reason]
 
         // ── Step 1: Pre-build category map ─────────────────────────
-        // Collect unique category names and firstOrCreate them upfront
         $categoryMap = []; // name => Category
 
         $uniqueCategoryNames = collect($items)
@@ -105,16 +104,21 @@ class OldProductsImportSeeder extends Seeder
                     }
 
                     // ── a. Find or create Attribute + AttributeValues ─
-                    $variants   = $item['variants'] ?? [];
-                    $attrMap    = []; // label => Attribute
-                    $avMap      = []; // "{label}|{value}" => AttributeValue
+                    // JSON variants use label_1/value_1 ... label_5/value_5 format
+                    // (multi-attribute variants), not a single label/value pair.
+                    $variants = $item['variants'] ?? [];
+                    $attrMap  = []; // label => Attribute
+                    $avMap    = []; // "{label}|{value}" => AttributeValue
 
-                    if (! empty($variants)) {
-                        foreach ($variants as $v) {
-                            $label = trim($v['label'] ?? 'Weight');
-                            $val   = (string) ($v['value'] ?? '');
+                    foreach ($variants as $v) {
+                        for ($i = 1; $i <= 5; $i++) {
+                            $label = trim($v["label_$i"] ?? '');
+                            $value = trim($v["value_$i"] ?? '');
 
-                            // Attribute
+                            if ($label === '' || $value === '') {
+                                continue;
+                            }
+
                             if (! isset($attrMap[$label])) {
                                 $attrMap[$label] = Attribute::firstOrCreate(
                                     ['category_id' => $category->id, 'name' => $label],
@@ -122,12 +126,11 @@ class OldProductsImportSeeder extends Seeder
                                 );
                             }
 
-                            // AttributeValue
-                            $avKey = "{$label}|{$val}";
+                            $avKey = "{$label}|{$value}";
                             if (! isset($avMap[$avKey])) {
                                 $avMap[$avKey] = AttributeValue::firstOrCreate(
-                                    ['attribute_id' => $attrMap[$label]->id, 'value' => $val],
-                                    ['slug' => Str::slug($val)]
+                                    ['attribute_id' => $attrMap[$label]->id, 'value' => $value],
+                                    ['slug' => Str::slug($value)]
                                 );
                             }
                         }
@@ -218,12 +221,26 @@ class OldProductsImportSeeder extends Seeder
 
                     if (! empty($variants)) {
                         foreach ($variants as $vIndex => $v) {
-                            $label    = trim($v['label'] ?? 'Weight');
-                            $val      = (string) ($v['value'] ?? '');
-                            $avKey    = "{$label}|{$val}";
-                            $av       = $avMap[$avKey] ?? null;
-                            $unit     = $item['unit'] ?? '';
-                            $varLabel = trim("{$val} {$unit}"); // e.g. "30 ml"
+                            $attributes       = [];
+                            $attributeValueId = null;
+
+                            foreach (range(1, 5) as $i) {
+                                $label = trim($v["label_$i"] ?? '');
+                                $value = trim($v["value_$i"] ?? '');
+
+                                if ($label === '' || $value === '') {
+                                    continue;
+                                }
+
+                                $attributes[$label] = $value;
+
+                                if ($attributeValueId === null) {
+                                    $key = "{$label}|{$value}";
+                                    $attributeValueId = $avMap[$key]->id ?? null;
+                                }
+                            }
+
+                            $varLabel = $v['combined_value'] ?? implode(' - ', array_values($attributes));
 
                             $varSku = $v['sku'] ?? ($sku . '-V' . str_pad($vIndex + 1, 2, '0', STR_PAD_LEFT));
                             // Guard against duplicate variant SKU
@@ -234,9 +251,9 @@ class OldProductsImportSeeder extends Seeder
                             $variant = ProductVariant::create([
                                 'product_id'         => $product->id,
                                 'sku'                => $varSku,
-                                'attribute_value_id' => $av?->id,
+                                'attribute_value_id' => $attributeValueId,
                                 'value'              => $varLabel,
-                                'attributes'         => [$label => $val],
+                            'attributes'         => $attributes,
                                 'price'              => (float) ($v['price'] ?? 0),
                                 'sale_price'         => null,
                                 'is_default'         => ($vIndex === 0),
