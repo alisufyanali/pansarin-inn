@@ -3,9 +3,14 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SendOrderConfirmationEmail;
+use App\Mail\CustomerWelcomeMail;
+use App\Models\Customer;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 
@@ -87,6 +92,20 @@ class AuthApiController extends Controller
                 'phone'      => $customerPhone,
                 'status'     => 'active',
             ]);
+
+            // Send welcome email — runs after both User and Customer are persisted.
+            // Wrapped in its own try/catch so a mail failure never blocks registration.
+            try {
+                $customer = $user->customer()->latest()->first();
+                if ($customer) {
+                    Mail::to($user->email)->queue(new CustomerWelcomeMail($customer));
+                }
+            } catch (\Throwable $mailEx) {
+                Log::error('CustomerWelcomeMail dispatch failed', [
+                    'user_id' => $user->id,
+                    'error'   => $mailEx->getMessage(),
+                ]);
+            }
 
             $token = $user->createToken('api-token')->plainTextToken;
 

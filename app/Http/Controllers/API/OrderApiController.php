@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Http\Repositories\Admin\OrderRepository;
+use App\Jobs\SendOrderConfirmationEmail;
 use App\Mail\GuestAccountCreatedMail;
 use App\Models\Customer;
 use App\Models\Order;
@@ -132,6 +133,17 @@ class OrderApiController extends Controller
                 'status'         => 'pending',
                 'payment_status' => 'unpaid',
             ]));
+
+            // Dispatch confirmation email — only reached if order was saved successfully.
+            // Wrapped independently so a mail failure never rolls back the order response.
+            try {
+                SendOrderConfirmationEmail::dispatch($order);
+            } catch (\Throwable $mailEx) {
+                Log::error('SendOrderConfirmationEmail dispatch failed', [
+                    'order_id' => $order->id,
+                    'error'    => $mailEx->getMessage(),
+                ]);
+            }
 
             return response()->json([
                 'success' => true,
@@ -283,7 +295,8 @@ class OrderApiController extends Controller
                 'tax'            => 0,
             ]));
 
-            // Re-queue welcome email with real order number for new guests
+            // New guest account: send account-created notice (with order number) + order confirmation.
+            // Returning customer: send order confirmation only — no account mail.
             if ($accountCreated) {
                 try {
                     Mail::to($request->email)->queue(
@@ -295,8 +308,18 @@ class OrderApiController extends Controller
                         )
                     );
                 } catch (\Throwable $e) {
-                    Log::error('GuestAccountCreatedMail (with order number) send failed: ' . $e->getMessage());
+                    Log::error('GuestAccountCreatedMail dispatch failed: ' . $e->getMessage());
                 }
+            }
+
+            // Order confirmation email — dispatched for every guest order regardless of account status.
+            try {
+                SendOrderConfirmationEmail::dispatch($order);
+            } catch (\Throwable $mailEx) {
+                Log::error('SendOrderConfirmationEmail dispatch failed (guest)', [
+                    'order_id' => $order->id,
+                    'error'    => $mailEx->getMessage(),
+                ]);
             }
 
             $responseData = array_merge(
