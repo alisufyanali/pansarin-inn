@@ -19,7 +19,7 @@ class HomepageApiController extends Controller
     {
         // Cache key includes a version suffix so adding new keys doesn't serve
         // stale responses that are missing the new_arrivals field.
-        $data = Cache::remember('homepage_data_v2', 300, function () {
+        $data = Cache::remember('homepage_data_v3', 300, function () {
             return [
                 'banners'           => $this->getBanners(),
                 'categories'        => $this->getCategories(),
@@ -250,22 +250,33 @@ class HomepageApiController extends Controller
             $stocks = $this->preloadStocks(collect([$p]));
         }
 
+        // Gallery: cast to array (already cast on model), then prefix storage path on each image.
+        $gallery = collect($p->gallery ?? [])
+            ->map(fn ($img) => asset('storage/' . $img))
+            ->values()
+            ->toArray();
+
         return [
-            'id'         => $p->id,
-            'name'       => $p->name,
-            'slug'       => $p->slug,
-            'sku'        => $p->sku,
-            'price'      => (float) $p->price,
-            'sale_price' => $p->sale_price ? (float) $p->sale_price : null,
-            'unit'       => $p->unit,
-            'featured'   => (bool) $p->featured,
-            'thumbnail'  => $p->thumbnail ? asset('storage/' . $p->thumbnail) : null,
-            'category'   => $p->category ? [
+            'id'            => $p->id,
+            'name'          => $p->name,
+            'urdu_name'     => $p->urdu_name,
+            'slug'          => $p->slug,
+            'sku'           => $p->sku,
+            'price'         => (float) $p->price,
+            'sale_price'    => $p->sale_price ? (float) $p->sale_price : null,
+            'unit'          => $p->unit,
+            'featured'      => (bool) $p->featured,
+            'thumbnail'     => $p->thumbnail ? asset('storage/' . $p->thumbnail) : null,
+            'gallery'       => $gallery,
+            'description'   => $p->short_description ?? $p->long_description ?? null,
+            'rating'        => 4.5,   // Default — live per-product average not yet aggregated
+            'reviews_count' => 0,     // Default — use /products/{slug}/reviews for live counts
+            'category'      => $p->category ? [
                 'id'   => $p->category->id,
                 'name' => $p->category->name,
                 'slug' => $p->category->slug,
             ] : null,
-            'variants'   => $p->variants->map(fn ($v) => [
+            'variants'      => $p->variants->map(fn ($v) => [
                 'id'         => $v->id,
                 'name'       => collect($v->attributes ?? [])->values()->join(' / ') ?: $v->value,
                 'sku'        => $v->sku,
