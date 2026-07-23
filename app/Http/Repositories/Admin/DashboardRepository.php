@@ -98,7 +98,7 @@ class DashboardRepository
             ->whereNull('deleted_at')
             ->whereDate('created_at', '>=', $from)
             ->whereNotIn('status', ['cancelled', 'refunded'])
-            ->selectRaw("DATE_FORMAT(created_at, '%Y-%m-%d') as day, SUM(grand_total) as revenue, COUNT(*) as orders")
+            ->selectRaw("strftime('%Y-%m-%d', created_at) as day, SUM(grand_total) as revenue, COUNT(*) as orders")
             ->groupBy('day')
             ->orderBy('day')
             ->get()
@@ -132,7 +132,7 @@ class DashboardRepository
                 'o.status',
                 'o.grand_total',
                 'o.created_at',
-                DB::raw("CONCAT(IFNULL(c.first_name,''), ' ', IFNULL(c.last_name,'')) as customer_name"),
+                DB::raw("COALESCE(c.first_name, '') || ' ' || COALESCE(c.last_name, '') as customer_name"),
                 'c.phone as customer_phone',
             ])
             ->orderByDesc('o.created_at')
