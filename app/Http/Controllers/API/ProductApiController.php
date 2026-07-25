@@ -39,17 +39,48 @@ class ProductApiController extends Controller
             $query->where('featured', true);
         }
 
-        if ($request->filled('min_price')) {
-            $query->where('price', '>=', $request->min_price);
+        if ($request->filled('min_price') || $request->filled('max_price')) {
+            $query->where(function ($q) use ($request) {
+                // Check if any active variant fits the price range
+                $q->whereHas('variants', function ($sub) use ($request) {
+                    $sub->where('status', true);
+                    if ($request->filled('min_price')) {
+                        $sub->where('price', '>=', $request->min_price);
+                    }
+                    if ($request->filled('max_price')) {
+                        $sub->where('price', '<=', $request->max_price);
+                    }
+                })->orWhere(function ($sub) use ($request) {
+                    // Fall back to product price if it has no variants
+                    $sub->whereDoesntHave('variants');
+                    if ($request->filled('min_price')) {
+                        $sub->where('price', '>=', $request->min_price);
+                    }
+                    if ($request->filled('max_price')) {
+                        $sub->where('price', '<=', $request->max_price);
+                    }
+                });
+            });
         }
 
-        if ($request->filled('max_price')) {
-            $query->where('price', '<=', $request->max_price);
-        }
-
-        $sortBy    = in_array($request->get('sort_by'), ['price', 'name', 'created_at']) ? $request->get('sort_by') : 'created_at';
+        $sortBy    = in_array($request->get('sort_by'), ['price', 'name', 'created_at', 'rating']) ? $request->get('sort_by') : 'created_at';
         $sortOrder = $request->get('sort_order', 'desc') === 'asc' ? 'asc' : 'desc';
-        $query->orderBy($sortBy, $sortOrder);
+
+        if ($sortBy === 'price') {
+            $query->orderBy(
+                \App\Models\ProductVariant::select('price')
+                    ->whereColumn('product_id', 'products.id')
+                    ->where('status', true)
+                    ->orderBy('price', 'asc')
+                    ->limit(1),
+                $sortOrder
+            );
+        } elseif ($sortBy === 'rating') {
+            $query->withAvg('reviews', 'rating')
+                ->orderBy('reviews_avg_rating', $sortOrder);
+        } else {
+            $query->orderBy($sortBy, $sortOrder);
+        }
 
         $products = $query->paginate(min((int) $request->get('per_page', 15), 100));
         $stocks   = $this->preloadStocks($products->getCollection());
