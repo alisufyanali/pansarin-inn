@@ -72,6 +72,15 @@ class Product extends Model
         return $this->hasMany(ProductVariant::class);
     }
 
+    /**
+     * Approved reviews visible in public product ratings.
+     */
+    public function reviews()
+    {
+        return $this->hasMany(ProductReview::class)
+            ->where('status', true);
+    }
+
     public function inventories()
     {
         return $this->hasMany(Inventory::class);

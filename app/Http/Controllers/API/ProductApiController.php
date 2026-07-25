@@ -226,6 +226,12 @@ class ProductApiController extends Controller
             'unit'        => $p->unit,
             'featured'    => (bool) $p->featured,
             'thumbnail'   => $p->thumbnail ? asset('storage/' . $p->thumbnail) : null,
+             'urdu_name'      => $p->urdu_name,
+            'description'    => $p->short_description,
+            'rating'         => round($p->reviews()->avg('rating'), 1),
+            'reviews_count'  => $p->reviews()->count(),
+            'gallery'        => collect($p->gallery ?? [])->map(fn($img)=>asset('storage/'.$img)),
+            'hover_image'    => isset($p->gallery[1]) ? asset('storage/'.$p->gallery[1]) : null,
             'category'    => $p->category ? ['id' => $p->category->id, 'name' => $p->category->name, 'slug' => $p->category->slug] : null,
             'variants'    => $p->variants->map(fn ($v) => [
                 'id'         => $v->id,

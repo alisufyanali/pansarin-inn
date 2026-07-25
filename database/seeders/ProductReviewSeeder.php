@@ -3,39 +3,97 @@
 namespace Database\Seeders;
 
 use App\Models\Product;
+use App\Models\ProductReview;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 
 class ProductReviewSeeder extends Seeder
 {
+    /** @var array<int, array{name: string, email: string}> */
+    private array $customers = [
+        ['name' => 'Ayesha Khan', 'email' => 'ayesha.khan@example.test'],
+        ['name' => 'Muhammad Usman', 'email' => 'usman.ahmed@example.test'],
+        ['name' => 'Fatima Noor', 'email' => 'fatima.noor@example.test'],
+        ['name' => 'Hassan Raza', 'email' => 'hassan.raza@example.test'],
+        ['name' => 'Maryam Siddiqui', 'email' => 'maryam.s@example.test'],
+        ['name' => 'Ali Hamza', 'email' => 'ali.hamza@example.test'],
+        ['name' => 'Zainab Iqbal', 'email' => 'zainab.iqbal@example.test'],
+        ['name' => 'Bilal Sheikh', 'email' => 'bilal.sheikh@example.test'],
+        ['name' => 'Hira Javed', 'email' => 'hira.javed@example.test'],
+        ['name' => 'Saad Ahmed', 'email' => 'saad.ahmed@example.test'],
+        ['name' => 'Mehwish Tariq', 'email' => 'mehwish.tariq@example.test'],
+        ['name' => 'Danish Ali', 'email' => 'danish.ali@example.test'],
+    ];
+
     public function run(): void
     {
-        $products = Product::take(5)->pluck('id')->toArray();
-        if (empty($products)) {
-            $this->command->warn('No products found. Run ProductsSeeder first.');
+        $products = Product::with('category:id,name')->get();
+
+        if ($products->isEmpty()) {
+            $this->command->warn('No products found. Seed products before product reviews.');
+
             return;
         }
 
-        $reviews = [
-            ['customer_name' => 'Ali Hassan',      'customer_email' => 'ali@gmail.com',    'rating' => 5, 'comment' => 'Excellent quality! Very fresh and effective herbs. Highly recommended.', 'is_verified' => true,  'status' => true],
-            ['customer_name' => 'Sara Ahmed',       'customer_email' => 'sara@yahoo.com',   'rating' => 4, 'comment' => 'Good product, fast delivery. Will order again.',                         'is_verified' => true,  'status' => true],
-            ['customer_name' => 'Usman Khan',       'customer_email' => 'usman@gmail.com',  'rating' => 5, 'comment' => 'Mashallah, very pure and natural. Noticed results within a week.',       'is_verified' => true,  'status' => true],
-            ['customer_name' => 'Fatima Malik',     'customer_email' => 'fatima@gmail.com', 'rating' => 3, 'comment' => 'Average product. Packaging could be better.',                            'is_verified' => false, 'status' => false],
-            ['customer_name' => 'Bilal Raza',       'customer_email' => 'bilal@gmail.com',  'rating' => 5, 'comment' => 'Best herbal store in Pakistan! Quality is top notch.',                   'is_verified' => true,  'status' => true],
-            ['customer_name' => 'Ayesha Siddiqui',  'customer_email' => 'ayesha@gmail.com', 'rating' => 4, 'comment' => 'Very satisfied with the product. Natural and effective.',                 'is_verified' => true,  'status' => true],
-            ['customer_name' => 'Hamza Tariq',      'customer_email' => 'hamza@yahoo.com',  'rating' => 2, 'comment' => 'Not as described. Expected better quality.',                              'is_verified' => false, 'status' => false],
-            ['customer_name' => 'Zainab Noor',      'customer_email' => 'zainab@gmail.com', 'rating' => 5, 'comment' => 'Amazing! My whole family uses Pansari Inn products now.',                'is_verified' => true,  'status' => true],
-        ];
+        $created = 0;
 
-        foreach ($reviews as $i => $review) {
-            DB::table('product_reviews')->insertOrIgnore(array_merge($review, [
-                'product_id'   => $products[$i % count($products)],
-                'order_number' => 'ORD-SEED-' . str_pad($i + 1, 4, '0', STR_PAD_LEFT),
-                'created_at'   => now()->subDays(rand(1, 60)),
-                'updated_at'   => now(),
-            ]));
+        foreach ($products as $product) {
+            // A deterministic target keeps re-runs idempotent: every product has 3 or 4 reviews.
+            $targetReviews = 3 + ($product->id % 2);
+            $existingReviews = ProductReview::where('product_id', $product->id)->count();
+
+            for ($slot = $existingReviews + 1; $slot <= $targetReviews; $slot++) {
+                $customer = $this->customers[($product->id + $slot) % count($this->customers)];
+                $rating = $this->weightedRating();
+                $review = ProductReview::firstOrCreate(
+                    [
+                        'product_id' => $product->id,
+                        'order_number' => "DUMMY-REVIEW-{$product->id}-{$slot}",
+                    ],
+                    [
+                        'user_id' => null,
+                        'customer_name' => $customer['name'],
+                        'customer_email' => $customer['email'],
+                        'rating' => $rating,
+                        'comment' => $this->commentFor($product, $rating, $slot),
+                        'is_verified' => random_int(1, 10) <= 8,
+                        'status' => true,
+                        'created_at' => now()->subDays(random_int(1, 180))->subMinutes(random_int(0, 1439)),
+                        'updated_at' => now(),
+                    ],
+                );
+
+                if ($review->wasRecentlyCreated) {
+                    $created++;
+                }
+            }
         }
 
-        $this->command->info('Product reviews seeded successfully!');
+        $this->command->info("Created {$created} realistic product reviews.");
+    }
+
+    private function weightedRating(): int
+    {
+        // 79% four- or five-star, 14% three-star, 7% one- or two-star.
+        return fake()->randomElement([5, 5, 5, 5, 5, 4, 4, 4, 4, 4, 4, 3, 3, 2, 1]);
+    }
+
+    private function commentFor(Product $product, int $rating, int $slot): string
+    {
+        $category = $product->category?->name ?? 'herbal wellness';
+        $productName = $product->name;
+        $usage = [
+            "I have added {$productName} to my regular {$category} routine and the quality feels fresh.",
+            "Used this {$category} item at home for a few weeks. {$productName} was neatly packed and easy to use.",
+            "The aroma and texture of {$productName} were what I expected from a good {$category} product.",
+            "Bought {$productName} for our family’s {$category} needs. It arrived fresh and the instructions were clear.",
+        ][($product->id + $slot) % 4];
+
+        return match (true) {
+            $rating === 5 => "{$usage} Mashallah, it has become a repeat purchase for us.",
+            $rating === 4 => "{$usage} Very satisfied overall; I would order it again.",
+            $rating === 3 => "{$usage} It was decent, though I would have preferred slightly better packaging.",
+            $rating === 2 => "{$usage} The product was usable, but delivery took longer than expected.",
+            default => "I ordered {$productName} for {$category} use, but this batch did not suit my expectations. Hoping the next one is fresher.",
+        };
     }
 }
