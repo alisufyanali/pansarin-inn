@@ -44,6 +44,10 @@ class Product extends Model
         'schema_markup',
         'social_image',
         'social_description',
+        'ingredients',
+        'how_to_use',
+        'benefits',
+        'key_features',
     ];
 
     protected $casts = [
@@ -59,6 +63,10 @@ class Product extends Model
         'tags' => 'array',
         'gallery' => 'array',
         'affiliate_commission' => 'decimal:2',
+        'ingredients' => 'array',
+        'how_to_use' => 'array',
+        'benefits' => 'array',
+        'key_features' => 'array',
     ];
 
     // Relationships

@@ -32,6 +32,11 @@ export type ProductFormData = {
     schema_markup: string; social_description: string; tags: string;
     // Variants
     selected_attributes: Record<number, number[]>; variations: Variation[];
+    // Details
+    ingredients: Array<{ label: string; value: string }>;
+    how_to_use: { steps: string[]; notes: string[] };
+    benefits: string[];
+    key_features: Array<{ icon: string; title: string; sub: string; color: string }>;
 };
 
 interface ProductFormProps {
@@ -160,6 +165,10 @@ export default function ProductForm({ product, categories, attributes = [], isEd
         tags:                 product?.tags ? (Array.isArray(product.tags) ? product.tags.join(', ') : product.tags) : '',
         selected_attributes:  product?.selected_attributes  || {},
         variations:           product?.variations           || [],
+        ingredients:          product?.ingredients          || [],
+        how_to_use:           product?.how_to_use           || { steps: [], notes: [] },
+        benefits:             product?.benefits             || [],
+        key_features:         product?.key_features         || [],
     });
 
     // Track initial mount to avoid clearing variations on edit load
@@ -541,6 +550,185 @@ export default function ProductForm({ product, categories, attributes = [], isEd
                                         </div>
                                     )}
                                 </Field>
+                            </div>
+                        </Card>
+
+                        {/* ── Detail Tabs & Cards ── */}
+                        <Card color="bg-emerald-600" title="Product Detail Tabs">
+                            <div className="space-y-6">
+                                {/* Benefits */}
+                                <div>
+                                    <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2">Key Benefits</h4>
+                                    <div className="flex gap-2 mb-3">
+                                        <input type="text" id="new-benefit-input" placeholder="e.g. 100% Organic Ingredients" className={cx.inputSm} onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault();
+                                                const val = (e.target as HTMLInputElement).value.trim();
+                                                if (val) {
+                                                    setData('benefits', [...(data.benefits || []), val]);
+                                                    (e.target as HTMLInputElement).value = '';
+                                                }
+                                            }
+                                        }} />
+                                        <button type="button" onClick={() => {
+                                            const el = document.getElementById('new-benefit-input') as HTMLInputElement;
+                                            const val = el?.value.trim();
+                                            if (val) {
+                                                setData('benefits', [...(data.benefits || []), val]);
+                                                el.value = '';
+                                            }
+                                        }} className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg">Add</button>
+                                    </div>
+                                    <ul className="space-y-1.5 max-h-40 overflow-y-auto">
+                                        {(data.benefits || []).map((b, idx) => (
+                                            <li key={idx} className="flex items-center justify-between bg-gray-50 dark:bg-gray-900 px-3 py-1.5 rounded-lg text-xs">
+                                                <span className="text-gray-700 dark:text-gray-300">{b}</span>
+                                                <button type="button" onClick={() => setData('benefits', data.benefits.filter((_, i) => i !== idx))} className="text-red-500 hover:text-red-700"><X className="w-3.5 h-3.5" /></button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+
+                                {/* Ingredients */}
+                                <div>
+                                    <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2">Ingredients</h4>
+                                    <div className="grid grid-cols-2 gap-2 mb-2">
+                                        <input type="text" id="new-ing-label" placeholder="Label (e.g. Main Extract)" className={cx.inputSm} />
+                                        <input type="text" id="new-ing-value" placeholder="Value (e.g. Pure organic)" className={cx.inputSm} />
+                                    </div>
+                                    <button type="button" onClick={() => {
+                                        const labelEl = document.getElementById('new-ing-label') as HTMLInputElement;
+                                        const valEl = document.getElementById('new-ing-value') as HTMLInputElement;
+                                        const label = labelEl?.value.trim();
+                                        const value = valEl?.value.trim();
+                                        if (label && value) {
+                                            setData('ingredients', [...(data.ingredients || []), { label, value }]);
+                                            labelEl.value = '';
+                                            valEl.value = '';
+                                        }
+                                    }} className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg mb-3">Add Ingredient</button>
+                                    <ul className="space-y-1.5 max-h-40 overflow-y-auto">
+                                        {(data.ingredients || []).map((ing, idx) => (
+                                            <li key={idx} className="flex items-center justify-between bg-gray-50 dark:bg-gray-900 px-3 py-1.5 rounded-lg text-xs">
+                                                <span className="text-gray-700 dark:text-gray-300"><strong>{ing.label}:</strong> {ing.value}</span>
+                                                <button type="button" onClick={() => setData('ingredients', data.ingredients.filter((_, i) => i !== idx))} className="text-red-500 hover:text-red-700"><X className="w-3.5 h-3.5" /></button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+
+                                {/* How to Use */}
+                                <div>
+                                    <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2">How to Use (Steps)</h4>
+                                    <div className="flex gap-2 mb-3">
+                                        <input type="text" id="new-step-input" placeholder="e.g. Apply 2-3 drops..." className={cx.inputSm} />
+                                        <button type="button" onClick={() => {
+                                            const el = document.getElementById('new-step-input') as HTMLInputElement;
+                                            const val = el?.value.trim();
+                                            if (val) {
+                                                const current = data.how_to_use || { steps: [], notes: [] };
+                                                setData('how_to_use', {
+                                                    ...current,
+                                                    steps: [...(current.steps || []), val]
+                                                });
+                                                el.value = '';
+                                            }
+                                        }} className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg">Add</button>
+                                    </div>
+                                    <ul className="space-y-1.5 max-h-40 overflow-y-auto mb-4">
+                                        {((data.how_to_use?.steps) || []).map((step, idx) => (
+                                            <li key={idx} className="flex items-start justify-between bg-gray-50 dark:bg-gray-900 px-3 py-1.5 rounded-lg text-xs">
+                                                <span className="text-gray-700 dark:text-gray-300 mr-2 flex-1"><strong className="mr-1">Step {idx + 1}:</strong>{step}</span>
+                                                <button type="button" onClick={() => {
+                                                    const current = data.how_to_use;
+                                                    setData('how_to_use', {
+                                                        ...current,
+                                                        steps: current.steps.filter((_, i) => i !== idx)
+                                                    });
+                                                }} className="text-red-500 hover:text-red-700 mt-0.5"><X className="w-3.5 h-3.5" /></button>
+                                            </li>
+                                        ))}
+                                    </ul>
+
+                                    <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2">Important Notes</h4>
+                                    <div className="flex gap-2 mb-3">
+                                        <input type="text" id="new-note-input" placeholder="e.g. Store in a cool, dry place." className={cx.inputSm} />
+                                        <button type="button" onClick={() => {
+                                            const el = document.getElementById('new-note-input') as HTMLInputElement;
+                                            const val = el?.value.trim();
+                                            if (val) {
+                                                const current = data.how_to_use || { steps: [], notes: [] };
+                                                setData('how_to_use', {
+                                                    ...current,
+                                                    notes: [...(current.notes || []), val]
+                                                });
+                                                el.value = '';
+                                            }
+                                        }} className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg">Add</button>
+                                    </div>
+                                    <ul className="space-y-1.5 max-h-40 overflow-y-auto">
+                                        {((data.how_to_use?.notes) || []).map((note, idx) => (
+                                            <li key={idx} className="flex items-center justify-between bg-gray-50 dark:bg-gray-900 px-3 py-1.5 rounded-lg text-xs">
+                                                <span className="text-gray-700 dark:text-gray-300">{note}</span>
+                                                <button type="button" onClick={() => {
+                                                    const current = data.how_to_use;
+                                                    setData('how_to_use', {
+                                                        ...current,
+                                                        notes: current.notes.filter((_, i) => i !== idx)
+                                                    });
+                                                }} className="text-red-500 hover:text-red-700"><X className="w-3.5 h-3.5" /></button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+
+                                {/* Key Features */}
+                                <div>
+                                    <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2">Key Features (Feature Cards, Max 4)</h4>
+                                    <div className="grid grid-cols-2 gap-2 mb-2">
+                                        <input type="text" id="new-feat-title" placeholder="Title (e.g. 100% Natural)" className={cx.inputSm} />
+                                        <input type="text" id="new-feat-sub" placeholder="Subtitle (e.g. Organic ingredients)" className={cx.inputSm} />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2 mb-2">
+                                        <select id="new-feat-icon" className={cx.inputSm}>
+                                            <option value="leaf">Leaf</option>
+                                            <option value="shield">Shield</option>
+                                            <option value="check">Check</option>
+                                            <option value="bolt">Bolt</option>
+                                        </select>
+                                        <select id="new-feat-color" className={cx.inputSm}>
+                                            <option value="green">Green</option>
+                                            <option value="blue">Blue</option>
+                                            <option value="amber">Amber</option>
+                                            <option value="purple">Purple</option>
+                                        </select>
+                                    </div>
+                                    <button type="button" disabled={(data.key_features || []).length >= 4} onClick={() => {
+                                        const titleEl = document.getElementById('new-feat-title') as HTMLInputElement;
+                                        const subEl = document.getElementById('new-feat-sub') as HTMLInputElement;
+                                        const iconEl = document.getElementById('new-feat-icon') as HTMLSelectElement;
+                                        const colorEl = document.getElementById('new-feat-color') as HTMLSelectElement;
+                                        const title = titleEl?.value.trim();
+                                        const sub = subEl?.value.trim();
+                                        const icon = iconEl?.value;
+                                        const color = colorEl?.value;
+                                        if (title && sub && icon && color) {
+                                            setData('key_features', [...(data.key_features || []), { title, sub, icon, color }]);
+                                            titleEl.value = '';
+                                            subEl.value = '';
+                                        }
+                                    }} className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg mb-3 disabled:opacity-40">Add Feature Card</button>
+                                    <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+                                        {(data.key_features || []).map((feat, idx) => (
+                                            <div key={idx} className="flex flex-col bg-gray-50 dark:bg-gray-900 p-2.5 rounded-lg text-xs relative">
+                                                <button type="button" onClick={() => setData('key_features', data.key_features.filter((_, i) => i !== idx))} className="absolute top-1.5 right-1.5 text-red-500 hover:text-red-700"><X className="w-3.5 h-3.5" /></button>
+                                                <span className="font-semibold text-gray-900 dark:text-white">{feat.title}</span>
+                                                <span className="text-gray-500 text-[10px] mt-0.5">{feat.sub}</span>
+                                                <span className="text-[10px] text-indigo-500 mt-1 font-mono uppercase">{feat.icon} / {feat.color}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
                         </Card>
                     </div>

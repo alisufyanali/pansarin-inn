@@ -282,6 +282,10 @@ class ProductApiController extends Controller
             $base['stock']        = $baseStock !== null ? (int) $baseStock : (int) ($p->quantity ?? 0);
             $base['meta_title']   = $p->meta_title ?? $p->name;
             $base['meta_desc']    = $p->meta_description ?? null;
+            $base['ingredients']  = $p->ingredients;
+            $base['how_to_use']   = $p->how_to_use;
+            $base['benefits']     = $p->benefits;
+            $base['key_features'] = $p->key_features;
         }
 
         return $base;

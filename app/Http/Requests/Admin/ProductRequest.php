@@ -58,6 +58,10 @@ class ProductRequest extends FormRequest
             'variations.*.stock_alert' => 'nullable|numeric|min:0',
             'variations.*.additional' => 'nullable|numeric|min:0',
             'variations.*.current_stock' => 'nullable|numeric|min:0',
+            'ingredients' => 'nullable|array',
+            'how_to_use' => 'nullable|array',
+            'benefits' => 'nullable|array',
+            'key_features' => 'nullable|array',
             // 'affiliate_commission' => 'required|numeric|min:0|max:100',
         ];
     }
