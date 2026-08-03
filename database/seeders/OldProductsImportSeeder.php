@@ -137,7 +137,9 @@ class OldProductsImportSeeder extends Seeder
                     }
 
                     // ── b. Create Product ─────────────────────────────
-                    $slug = $item['slug'] ?? Str::slug($item['name']);
+                    // $slug = $item['slug'] ?? Str::slug($item['name']);
+                    $slug = !empty($item['slug']) ? $item['slug'] : Str::slug($item['name']);
+                    $this->command->info("Product: {$item['name']} | JSON slug: " . ($item['slug'] ?? 'NULL') . " | Final slug: $slug");
 
                     if (Product::where('slug', $slug)->exists()) {
                         $skipped[$slug] = 'Duplicate slug — already exists';
