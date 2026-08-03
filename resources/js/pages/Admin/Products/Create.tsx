@@ -10,15 +10,17 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Create', href: '/admin/products/create' },
 ];
 
-type Category = { id: number; name: string };
-type Attribute = { id: number; name: string; slug: string; category_id: number; values: any[] };
+type Category      = { id: number; name: string };
+type Attribute     = { id: number; name: string; slug: string; category_id: number; values: any[] };
+type HealthConcern = { id: number; name: string };
 
 interface CreateProps {
-    categories: Category[];
-    attributes: Attribute[];
+    categories:     Category[];
+    attributes:     Attribute[];
+    healthConcerns: HealthConcern[];
 }
 
-export default function Create({ categories, attributes }: CreateProps) {
+export default function Create({ categories, attributes, healthConcerns }: CreateProps) {
     const { flash } = usePage<{ flash: { success?: string; error?: string } }>().props;
 
     useEffect(() => {
@@ -33,7 +35,7 @@ export default function Create({ categories, attributes }: CreateProps) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Create Product" />
-            <ProductForm categories={categories} attributes={attributes} isEdit={false} />
+            <ProductForm categories={categories} attributes={attributes} healthConcerns={healthConcerns} isEdit={false} />
         </AppLayout>
     );
 }

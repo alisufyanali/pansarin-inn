@@ -20,7 +20,7 @@ class ProductApiController extends Controller
     // GET /api/products
     public function index(Request $request)
     {
-        $query = Product::with(['category:id,name,slug', 'variants'])
+        $query = Product::with(['category:id,name,slug', 'variants', 'healthConcerns:id,name,slug'])
             ->where('status', true);
 
         if ($request->filled('search')) {
@@ -33,6 +33,12 @@ class ProductApiController extends Controller
 
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->category_id);
+        }
+
+        if ($request->filled('health_concern_id')) {
+            $query->whereHas('healthConcerns', function ($q) use ($request) {
+                $q->where('health_concerns.id', $request->health_concern_id);
+            });
         }
 
         if ($request->filled('featured')) {
@@ -100,7 +106,7 @@ class ProductApiController extends Controller
     // GET /api/products/featured
     public function featured()
     {
-        $products = Product::with(['category:id,name,slug', 'variants'])
+        $products = Product::with(['category:id,name,slug', 'variants', 'healthConcerns:id,name,slug'])
             ->where('status', true)
             ->where('featured', true)
             ->latest()
@@ -118,7 +124,7 @@ class ProductApiController extends Controller
     // GET /api/products/{slug}
     public function show(string $slug)
     {
-        $product = Product::with(['category:id,name,slug', 'variants'])
+        $product = Product::with(['category:id,name,slug', 'variants', 'healthConcerns:id,name,slug'])
             ->where('slug', $slug)
             ->where('status', true)
             ->firstOrFail();
@@ -134,7 +140,7 @@ class ProductApiController extends Controller
     // GET /api/products/with-video
     public function withVideo()
     {
-        $products = Product::with(['category:id,name,slug', 'variants'])
+        $products = Product::with(['category:id,name,slug', 'variants', 'healthConcerns:id,name,slug'])
             ->where('status', true)
             ->whereNotNull('video')
             ->where('video', '!=', '')
@@ -264,6 +270,9 @@ class ProductApiController extends Controller
             'gallery'        => collect($p->gallery ?? [])->map(fn($img)=>asset('storage/'.$img)),
             'hover_image'    => isset($p->gallery[1]) ? asset('storage/'.$p->gallery[1]) : null,
             'category'    => $p->category ? ['id' => $p->category->id, 'name' => $p->category->name, 'slug' => $p->category->slug] : null,
+            'health_concerns' => $p->relationLoaded('healthConcerns')
+                ? $p->healthConcerns->map(fn ($hc) => ['id' => $hc->id, 'name' => $hc->name, 'slug' => $hc->slug])->values()
+                : [],
             'variants'    => $p->variants->map(fn ($v) => [
                 'id'         => $v->id,
                 'name'       => collect($v->attributes ?? [])->values()->join(' / ') ?: $v->value,

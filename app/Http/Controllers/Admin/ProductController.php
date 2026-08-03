@@ -7,6 +7,7 @@ use App\Http\Repositories\Admin\ProductRepository;
 use App\Http\Requests\Admin\ProductRequest;
 use App\Models\Attribute;
 use App\Models\Category;
+use App\Models\HealthConcern;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -53,9 +54,9 @@ class ProductController extends Controller
     public function create()
     {
         return Inertia::render('Admin/Products/Create', [
-            'categories' => Category::orderBy('name')->get(['id', 'name']),
-            // Sare attributes pass karo — frontend category change pe filter karega
-            'attributes' => Attribute::with('values')->get(['id', 'name', 'slug', 'category_id']),
+            'categories'     => Category::orderBy('name')->get(['id', 'name']),
+            'attributes'     => Attribute::with('values')->get(['id', 'name', 'slug', 'category_id']),
+            'healthConcerns' => HealthConcern::active()->orderBy('sort_order')->orderBy('name')->get(['id', 'name']),
         ]);
     }
 
@@ -122,7 +123,10 @@ class ProductController extends Controller
             $socialImageFile = $request->hasFile('social_image') ? $request->file('social_image') : null;
             $galleryFiles    = $request->hasFile('gallery')      ? $request->file('gallery')      : [];
 
-            $this->productRepository->store($validated, $thumbnailFile, $socialImageFile, $galleryFiles);
+            $product = $this->productRepository->store($validated, $thumbnailFile, $socialImageFile, $galleryFiles);
+
+            // Sync health concerns pivot
+            $product->healthConcerns()->sync($validated['health_concern_ids'] ?? []);
 
             return to_route('admin.products.index')->with('success', 'Product successfully created!');
 
@@ -169,11 +173,14 @@ class ProductController extends Controller
 
         $productData = $product->toArray();
         $productData['variations'] = $variations;
+        // Pass current health concern IDs for pre-selecting in form
+        $productData['health_concern_ids'] = $product->healthConcerns()->pluck('health_concerns.id')->toArray();
 
         return Inertia::render('Admin/Products/Edit', [
-            'product'    => $productData,
-            'categories' => Category::orderBy('name')->get(['id', 'name']),
-            'attributes' => Attribute::with('values')->get(['id', 'name', 'slug', 'category_id']),
+            'product'        => $productData,
+            'categories'     => Category::orderBy('name')->get(['id', 'name']),
+            'attributes'     => Attribute::with('values')->get(['id', 'name', 'slug', 'category_id']),
+            'healthConcerns' => HealthConcern::active()->orderBy('sort_order')->orderBy('name')->get(['id', 'name']),
         ]);
     }
 
@@ -218,7 +225,10 @@ class ProductController extends Controller
             $socialImageFile = $request->hasFile('social_image') ? $request->file('social_image') : null;
             $galleryFiles    = $request->hasFile('gallery')      ? $request->file('gallery')      : [];
 
-            $this->productRepository->update($id, $validated, $thumbnailFile, $socialImageFile, $galleryFiles);
+            $product = $this->productRepository->update($id, $validated, $thumbnailFile, $socialImageFile, $galleryFiles);
+
+            // Sync health concerns pivot
+            $product->healthConcerns()->sync($validated['health_concern_ids'] ?? []);
 
             return to_route('admin.products.index')->with('success', 'Product successfully updated!');
 

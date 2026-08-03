@@ -5,20 +5,22 @@ import ProductForm, { type ProductFormData } from './Form';
 import { useEffect } from 'react';
 import toast from 'react-hot-toast';
 
-type Category  = { id: number; name: string };
-type Attribute = { id: number; name: string; slug: string; category_id: number; values: any[] };
+type Category      = { id: number; name: string };
+type Attribute     = { id: number; name: string; slug: string; category_id: number; values: any[] };
+type HealthConcern = { id: number; name: string };
 
 interface Product extends ProductFormData {
     id: number;
 }
 
 interface Props {
-    product:    Product;
-    categories: Category[];
-    attributes: Attribute[];
+    product:        Product;
+    categories:     Category[];
+    attributes:     Attribute[];
+    healthConcerns: HealthConcern[];
 }
 
-export default function Edit({ product, categories, attributes }: Props) {
+export default function Edit({ product, categories, attributes, healthConcerns }: Props) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Products',          href: '/admin/products' },
         { title: `Edit: ${product.name}`, href: '#' },
@@ -56,6 +58,7 @@ export default function Edit({ product, categories, attributes }: Props) {
                 product={normalizedProduct}
                 categories={categories}
                 attributes={attributes}
+                healthConcerns={healthConcerns}
                 isEdit={true}
             />
         </AppLayout>

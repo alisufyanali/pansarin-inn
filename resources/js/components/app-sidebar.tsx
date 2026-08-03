@@ -58,6 +58,7 @@ export function AppSidebar() {
         hasAnyInventoryPerm: permissions.hasAnyInventoryPerm,
         hasAnyWishlistPerm: permissions.hasAnyWishlistPerm,
         hasAnyReviewPerm: permissions.hasAnyReviewPerm,
+        hasAnyHealthConcernPerm: permissions.hasAnyHealthConcernPerm,
     });
     if (productsSection) {
         mainNavItems.push(productsSection);

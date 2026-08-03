@@ -8,6 +8,7 @@ import {
     Star,
     Warehouse,
     Heart,
+    Activity,
 } from 'lucide-react';
 import { type NavItem } from '@/types';
 
@@ -20,6 +21,7 @@ interface ProductsSectionProps {
     hasAnyInventoryPerm: boolean;
     hasAnyWishlistPerm: boolean;
     hasAnyReviewPerm: boolean;
+    hasAnyHealthConcernPerm: boolean;
 }
 
 export function ProductsSection({
@@ -31,6 +33,7 @@ export function ProductsSection({
     hasAnyInventoryPerm,
     hasAnyWishlistPerm,
     hasAnyReviewPerm,
+    hasAnyHealthConcernPerm,
 }: ProductsSectionProps): NavItem | null {
     if (
         !hasAnyProductPerm &&
@@ -40,7 +43,8 @@ export function ProductsSection({
         !hasAnyDealPerm &&
         !hasAnyInventoryPerm &&
         !hasAnyWishlistPerm &&
-        !hasAnyReviewPerm
+        !hasAnyReviewPerm &&
+        !hasAnyHealthConcernPerm
     ) {
         return null;
     }
@@ -52,6 +56,14 @@ export function ProductsSection({
             title: 'Categories',
             href: '/admin/categories',
             icon: Tag,
+        });
+    }
+
+    if (hasAnyHealthConcernPerm) {
+        productSubmenu.push({
+            title: 'Health Concerns',
+            href: '/admin/health-concerns',
+            icon: Activity,
         });
     }
 

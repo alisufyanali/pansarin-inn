@@ -1,11 +1,12 @@
 import { Link, router, useForm } from '@inertiajs/react';
 import React, { useEffect, useState } from 'react';
-import { ArrowLeft, Check, Upload, X, Search, Loader2, Zap, Trash2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Check, Upload, X, Search, Loader2, Zap, Trash2, AlertCircle, Activity } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-type Category  = { id: number; name: string };
-type AttrValue = { id: number; value: string; slug: string };
-type Attribute = { id: number; name: string; slug: string; category_id: number; values: AttrValue[] };
+type Category      = { id: number; name: string };
+type HealthConcern = { id: number; name: string };
+type AttrValue     = { id: number; value: string; slug: string };
+type Attribute     = { id: number; name: string; slug: string; category_id: number; values: AttrValue[] };
 type Variation = {
     combination: string; attributes: Record<string, string>;
     purchase_price: string; sale_price: string;
@@ -20,10 +21,10 @@ export type ProductFormData = {
     short_description: string; long_description: string;
     // Pricing/Stock (product level)
     stock_qty: string | number; stock_alert: string | number;
-    affiliate_commission: string | number;            // ← NEW
-    sort_order: string | number;                      // ← NEW
+    affiliate_commission: string | number;
+    sort_order: string | number;
     // Media
-    video: string;                                    // ← NEW
+    video: string;
     thumbnail: File | string | null; social_image: File | string | null; gallery: File[] | string[];
     // Flags
     status: boolean; featured: boolean;
@@ -37,10 +38,16 @@ export type ProductFormData = {
     how_to_use: { steps: string[]; notes: string[] };
     benefits: string[];
     key_features: Array<{ icon: string; title: string; sub: string; color: string }>;
+    // Health Concerns (many-to-many)
+    health_concern_ids: number[];
 };
 
 interface ProductFormProps {
-    product?: any; categories: Category[]; attributes?: Attribute[]; isEdit?: boolean;
+    product?: any;
+    categories: Category[];
+    attributes?: Attribute[];
+    healthConcerns?: HealthConcern[];
+    isEdit?: boolean;
 }
 
 // ─── CSS ─────────────────────────────────────────────────────────────────────
@@ -115,7 +122,7 @@ const toSlug  = (s: string) => s.toLowerCase().replace(/[^\w\s-]/g, '').replace(
 const readFile = (f: File, cb: (r: string) => void) => { const r = new FileReader(); r.onloadend = () => cb(r.result as string); r.readAsDataURL(f); };
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
-export default function ProductForm({ product, categories, attributes = [], isEdit = false }: ProductFormProps) {
+export default function ProductForm({ product, categories, attributes = [], healthConcerns = [], isEdit = false }: ProductFormProps) {
     // ── Normalize storage path to URL ──
     const toUrl = (path: any): string | null => {
         if (!path || path instanceof File) return null;
@@ -169,6 +176,7 @@ export default function ProductForm({ product, categories, attributes = [], isEd
         how_to_use:           product?.how_to_use           || { steps: [], notes: [] },
         benefits:             product?.benefits             || [],
         key_features:         product?.key_features         || [],
+        health_concern_ids:   product?.health_concern_ids   || [],
     });
 
     // Track initial mount to avoid clearing variations on edit load
@@ -301,13 +309,14 @@ export default function ProductForm({ product, categories, attributes = [], isEd
         const gallery      = (data.gallery as any[]).filter((f) => f instanceof File);
 
         // Ensure variations are included in submit data
-        const submitData = { 
-            ...data, 
-            tags, 
-            thumbnail, 
-            social_image, 
+        const submitData = {
+            ...data,
+            tags,
+            thumbnail,
+            social_image,
             gallery,
-            variations: data.variations  // Explicitly include variations
+            variations:        data.variations,         // Explicitly include variations
+            health_concern_ids: data.health_concern_ids, // Many-to-many pivot
         };
 
         if (isEdit && product?.id) {
@@ -376,6 +385,48 @@ export default function ProductForm({ product, categories, attributes = [], isEd
                                 </Field>
                             </div>
                         </Card>
+
+                        {/* ── Health Concerns ── */}
+                        {healthConcerns.length > 0 && (
+                            <Card color="bg-green-600" title="Health Concerns" icon={<Activity className="w-4 h-4 text-gray-500 dark:text-gray-400" />}>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                                    Select all health concerns this product addresses (zero or more).
+                                </p>
+                                <div className="flex flex-wrap gap-2">
+                                    {healthConcerns.map((hc) => {
+                                        const selected = data.health_concern_ids.includes(hc.id);
+                                        return (
+                                            <button
+                                                key={hc.id}
+                                                type="button"
+                                                onClick={() => {
+                                                    const ids = data.health_concern_ids;
+                                                    setData(
+                                                        'health_concern_ids',
+                                                        selected
+                                                            ? ids.filter((id) => id !== hc.id)
+                                                            : [...ids, hc.id]
+                                                    );
+                                                }}
+                                                className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium border-2 transition-all ${
+                                                    selected
+                                                        ? 'bg-green-600 border-green-600 text-white'
+                                                        : 'bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-green-400'
+                                                }`}
+                                            >
+                                                {selected && <Check className="w-3.5 h-3.5" />}
+                                                {hc.name}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                                {data.health_concern_ids.length > 0 && (
+                                    <p className="mt-3 text-xs text-green-600 dark:text-green-400">
+                                        {data.health_concern_ids.length} concern{data.health_concern_ids.length > 1 ? 's' : ''} selected
+                                    </p>
+                                )}
+                            </Card>
+                        )}
 
                         {/* ── Step 1: Attributes ── */}
                         {data.category_id && (

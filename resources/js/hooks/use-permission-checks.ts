@@ -169,6 +169,13 @@ export function usePermissionChecks() {
     const canApprovePayout = can('approve.payout.requests');
     const hasAnyPayoutPerm = canViewPayout || canApprovePayout;
 
+    // Health Concerns
+    const canViewHealthConcern   = can('view.health-concerns');
+    const canCreateHealthConcern = can('create.health-concerns');
+    const canEditHealthConcern   = can('edit.health-concerns');
+    const canDeleteHealthConcern = can('delete.health-concerns');
+    const hasAnyHealthConcernPerm = canViewHealthConcern || canCreateHealthConcern || canEditHealthConcern || canDeleteHealthConcern;
+
     // Vendors
     const canCreateVendor = can('create.vendors');
     const canEditVendor = can('edit.vendors');
@@ -213,6 +220,7 @@ export function usePermissionChecks() {
         hasAnyDealPerm,
         hasAnyInventoryPerm,
         hasAnyWishlistPerm,
+        hasAnyHealthConcernPerm,
         hasAnyBlogPerm,
         hasAnyBlogCategoryPerm,
         hasAnyBlogCommentPerm,
@@ -249,6 +257,7 @@ export function usePermissionChecks() {
         canViewDeal,
         canViewInventory,
         canViewWishlist,
+        canViewHealthConcern,
         canViewBlog,
         canViewBlogCategory,
         canViewBlogComment,

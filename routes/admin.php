@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\BlogCategoryController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\HealthConcernController;
 use App\Http\Controllers\Admin\WishlistController;
 use App\Http\Controllers\Admin\BlogController;
 // Controllers
@@ -74,6 +75,14 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     */
     Route::resource('categories', CategoryController::class);
     Route::get('categories-data', [CategoryController::class, 'getData'])->name('categories-data');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Health Concerns
+    |--------------------------------------------------------------------------
+    */
+    Route::resource('health-concerns', HealthConcernController::class);
+    Route::get('health-concerns-data', [HealthConcernController::class, 'getData'])->name('health-concerns.data');
     // Route::delete('/categories/{id}', [CategoryController::class, 'destroy'])->name('categories.destroy');
 
     // Product Management resource Controllers

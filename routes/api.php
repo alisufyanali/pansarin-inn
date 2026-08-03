@@ -5,6 +5,7 @@ use App\Http\Controllers\API\BlogApiController;
 use App\Http\Controllers\API\CartApiController;
 use App\Http\Controllers\API\ContactApiController;
 use App\Http\Controllers\API\CouponApiController;
+use App\Http\Controllers\API\HealthConcernApiController;
 use App\Http\Controllers\API\HomepageApiController;
 use App\Http\Controllers\API\NewsletterApiController;
 use App\Http\Controllers\API\NotificationApiController;
@@ -34,6 +35,9 @@ Route::middleware('throttle:60,1')->group(function () {
     Route::get('/products',            [ProductApiController::class, 'index']);
     Route::get('/products/{slug}',     [ProductApiController::class, 'show']);
     Route::get('/categories',          [ProductApiController::class, 'categories']);
+
+    // Health Concerns
+    Route::get('/health-concerns',     [HealthConcernApiController::class, 'index']);
 
     // Product reviews — public read, protected write (see below)
     Route::get('/products/{slug}/reviews', [ProductReviewApiController::class, 'index']);

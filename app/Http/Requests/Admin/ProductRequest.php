@@ -62,6 +62,8 @@ class ProductRequest extends FormRequest
             'how_to_use' => 'nullable|array',
             'benefits' => 'nullable|array',
             'key_features' => 'nullable|array',
+            'health_concern_ids'   => 'nullable|array',
+            'health_concern_ids.*' => 'integer|exists:health_concerns,id',
             // 'affiliate_commission' => 'required|numeric|min:0|max:100',
         ];
     }

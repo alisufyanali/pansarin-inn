@@ -132,6 +132,9 @@ class RolePermissionSeeder extends Seeder
             // Customers
             'view.customers', 'create.customers', 'edit.customers', 'delete.customers',
 
+            // Health Concerns
+            'view.health-concerns', 'create.health-concerns', 'edit.health-concerns', 'delete.health-concerns',
+
             // Sales
             'view.sales', 'create.sales', 'edit.sales', 'delete.sales',
 
@@ -165,6 +168,7 @@ class RolePermissionSeeder extends Seeder
             // Products
             'view.products', 'create.products', 'edit.products',
             'view.categories', 'create.categories', 'edit.categories',
+            'view.health-concerns', 'edit.health-concerns',
             'view.variants', 'create.variants', 'edit.variants',
             'view.attributes', 'create.attributes', 'edit.attributes',
             'view.deals', 'create.deals', 'edit.deals',

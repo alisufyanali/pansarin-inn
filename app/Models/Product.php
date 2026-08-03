@@ -100,6 +100,11 @@ class Product extends Model
             ->withPivot('price_adjustment');
     }
 
+    public function healthConcerns(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(HealthConcern::class, 'product_health_concern');
+    }
+
     // Accessors
     public function getThumbnailUrlAttribute()
     {
