@@ -30,12 +30,14 @@ Route::middleware('throttle:10,1')->group(function () {
 // ── Public routes — generous rate limit (60 requests/minute) ──────
 Route::middleware('throttle:60,1')->group(function () {
 
-    // Products — with-video must come before {slug} wildcard
-    Route::get('/products/featured',   [ProductApiController::class, 'featured']);
-    Route::get('/products/with-video', [ProductApiController::class, 'withVideo']);
-    Route::get('/products',            [ProductApiController::class, 'index']);
-    Route::get('/products/{slug}',     [ProductApiController::class, 'show']);
-    Route::get('/categories',          [ProductApiController::class, 'categories']);
+    // Products — with-video and recommended must come before {slug} wildcard
+    Route::get('/products/featured',     [ProductApiController::class, 'featured']);
+    Route::get('/products/with-video',   [ProductApiController::class, 'withVideo']);
+    Route::get('/products/recommended',  [ProductApiController::class, 'recommended']);
+    Route::get('/products',              [ProductApiController::class, 'index']);
+    Route::get('/products/{slug}',       [ProductApiController::class, 'show']);
+    Route::get('/products/{slug}/related', [ProductApiController::class, 'related']);
+    Route::get('/categories',            [ProductApiController::class, 'categories']);
 
     // Health Concerns
     Route::get('/health-concerns',     [HealthConcernApiController::class, 'index']);

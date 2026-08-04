@@ -188,7 +188,97 @@ class ProductApiController extends Controller
         ]);
     }
 
-    // GET /api/homepage/category-products
+    // GET /api/products/recommended?exclude_id={product_id}
+    public function recommended(Request $request)
+    {
+        $excludeId  = (int) $request->get('exclude_id', 0);
+        $limit      = 8;
+        $categoryId = null;
+
+        // If exclude_id is provided, resolve the category of that product
+        // so we can prefer same-category results.
+        if ($excludeId > 0) {
+            $categoryId = Product::where('id', $excludeId)
+                ->where('status', true)
+                ->value('category_id');
+        }
+
+        $baseQuery = fn () => Product::with(['category:id,name,slug', 'variants', 'healthConcerns:id,name,slug'])
+            ->withAvg('reviews as rating_avg', 'rating')
+            ->withCount('reviews as reviews_total')
+            ->where('status', true)
+            ->when($excludeId > 0, fn ($q) => $q->where('id', '!=', $excludeId));
+
+        // ── Phase 1: same-category products ──────────────────────
+        $sameCat = collect();
+        if ($categoryId) {
+            $sameCat = $baseQuery()
+                ->where('category_id', $categoryId)
+                ->inRandomOrder()
+                ->limit($limit)
+                ->get();
+        }
+
+        // ── Phase 2: fill remaining slots from other categories ──
+        $products = $sameCat;
+        $remaining = $limit - $sameCat->count();
+
+        if ($remaining > 0) {
+            $excludeIds = collect([$excludeId])
+                ->merge($sameCat->pluck('id'))
+                ->filter()
+                ->unique()
+                ->values();
+
+            $others = $baseQuery()
+                ->whereNotIn('id', $excludeIds)
+                ->inRandomOrder()
+                ->limit($remaining)
+                ->get();
+
+            $products = $sameCat->concat($others);
+        }
+
+        $stocks = $this->preloadStocks($products);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $products->map(fn ($p) => $this->formatProductWithAggregates($p, $stocks)),
+        ]);
+    }
+
+    // GET /api/products/{slug}/related
+    public function related(string $slug)
+    {
+        $product = Product::where('slug', $slug)
+            ->where('status', true)
+            ->select(['id', 'category_id'])
+            ->first();
+
+        if (! $product) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Product not found.',
+            ], 404);
+        }
+
+        $related = Product::with(['category:id,name,slug', 'variants', 'healthConcerns:id,name,slug'])
+            ->withAvg('reviews as rating_avg', 'rating')
+            ->withCount('reviews as reviews_total')
+            ->where('status', true)
+            ->where('category_id', $product->category_id)
+            ->where('id', '!=', $product->id)
+            ->latest()
+            ->limit(8)
+            ->get();
+
+        $stocks = $this->preloadStocks($related);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $related->map(fn ($p) => $this->formatProductWithAggregates($p, $stocks)),
+        ]);
+    }
     public function homepageCategoryProducts()
     {
         $rows = HomepageCategoryProduct::with([
@@ -228,6 +318,20 @@ class ProductApiController extends Controller
             'success' => true,
             'data'    => $data,
         ]);
+    }
+
+    // ── Format wrapper for pre-aggregated queries ─────────────────
+    // Used by recommended() and related() which load rating_avg and
+    // reviews_total via withAvg/withCount — avoiding per-row N+1 queries.
+    private function formatProductWithAggregates(Product $p, ?\Illuminate\Support\Collection $stocks = null): array
+    {
+        $formatted = $this->formatProduct($p, false, $stocks);
+
+        // Override the N+1 fields with the batch-loaded aggregates.
+        $formatted['rating']        = round((float) ($p->rating_avg ?? 0), 1);
+        $formatted['reviews_count'] = (int) ($p->reviews_total ?? 0);
+
+        return $formatted;
     }
 
     // ── Stock pre-loader — single query for a collection of products ──
