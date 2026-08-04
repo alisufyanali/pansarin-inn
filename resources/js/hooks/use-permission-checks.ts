@@ -133,6 +133,10 @@ export function usePermissionChecks() {
     const canViewReview = can('view.reviews');
     const hasAnyReviewPerm = canViewReview || can('create.reviews') || can('edit.reviews') || can('delete.reviews');
 
+    // Site-wide Reviews
+    const canViewSiteReview = can('view.site-reviews');
+    const hasAnySiteReviewPerm = canViewSiteReview || can('edit.site-reviews') || can('delete.site-reviews');
+
     // Slides
     const canViewSlide = can('view.slides');
     const hasAnySlidePerm = canViewSlide || can('create.slides') || can('edit.slides') || can('delete.slides');
@@ -227,6 +231,7 @@ export function usePermissionChecks() {
         hasAnyBlogTagPerm,
         hasAnyOrderReviewPerm,
         hasAnyReviewPerm,
+        hasAnySiteReviewPerm,
         hasAnySlidePerm,
         hasAnyNewsletterPerm,
         hasAnyContactMsgPerm,
@@ -264,6 +269,7 @@ export function usePermissionChecks() {
         canViewBlogTag,
         canViewOrderReview,
         canViewReview,
+        canViewSiteReview,
         canViewSlide,
         canViewNewsletter,
         canViewContact,

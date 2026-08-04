@@ -16,6 +16,7 @@ use App\Http\Controllers\API\ProductReviewApiController;
 use App\Http\Controllers\API\ProfileApiController;
 use App\Http\Controllers\API\ReturnApiController;
 use App\Http\Controllers\API\RewardsApiController;
+use App\Http\Controllers\API\SiteReviewApiController;
 use App\Http\Controllers\API\SupportApiController;
 use App\Http\Controllers\API\WishlistApiController;
 use Illuminate\Support\Facades\Route;
@@ -47,6 +48,10 @@ Route::middleware('throttle:60,1')->group(function () {
     Route::get('/homepage/category-products', [ProductApiController::class, 'homepageCategoryProducts']);
     Route::get('/homepage/reviews',           [HomepageApiController::class, 'reviews']);
     Route::get('/slides',                     [HomepageApiController::class, 'slides']);
+
+    // Site-wide reviews — public read, public write (order-verified)
+    Route::get('/reviews',  [SiteReviewApiController::class, 'index']);
+    Route::post('/reviews', [SiteReviewApiController::class, 'store']);
 
     // Blogs
     Route::get('/blogs',        [BlogApiController::class, 'index']);

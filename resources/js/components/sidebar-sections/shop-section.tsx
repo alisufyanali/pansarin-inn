@@ -1,5 +1,5 @@
 // components/sidebar-sections/shop-section.tsx
-import { ShoppingCart, User, DollarSign, TicketPercent, Star, MapPin, RotateCcw, Coins } from 'lucide-react';
+import { ShoppingCart, User, DollarSign, TicketPercent, Star, MapPin, RotateCcw, Coins, MessageSquare } from 'lucide-react';
 import { type NavItem } from '@/types';
 
 interface ShopSectionProps {
@@ -11,6 +11,7 @@ interface ShopSectionProps {
     hasAnyOrderReviewPerm: boolean;
     hasAnyReturnRequestPerm?: boolean;
     hasAnyLoyaltyPerm?: boolean;
+    hasAnySiteReviewPerm?: boolean;
 }
 
 export function ShopSection({
@@ -22,6 +23,7 @@ export function ShopSection({
     hasAnyOrderReviewPerm,
     hasAnyReturnRequestPerm = false,
     hasAnyLoyaltyPerm = false,
+    hasAnySiteReviewPerm = false,
 }: ShopSectionProps): NavItem | null {
     if (
         !hasAnyCustomerPerm &&
@@ -31,7 +33,8 @@ export function ShopSection({
         !hasAnyCouponPerm &&
         !hasAnyOrderReviewPerm &&
         !hasAnyReturnRequestPerm &&
-        !hasAnyLoyaltyPerm
+        !hasAnyLoyaltyPerm &&
+        !hasAnySiteReviewPerm
     ) {
         return null;
     }
@@ -80,6 +83,14 @@ export function ShopSection({
             title: 'Order Reviews',
             href: '/admin/order-reviews',
             icon: Star,
+        });
+    }
+
+    if (hasAnySiteReviewPerm) {
+        shopSubmenu.push({
+            title: 'Customer Reviews',
+            href: '/admin/site-reviews',
+            icon: MessageSquare,
         });
     }
 

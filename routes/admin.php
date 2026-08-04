@@ -31,6 +31,7 @@ use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SaleController;
 use App\Http\Controllers\Admin\CityController;
 use App\Http\Controllers\Admin\WhatsAppController;
+use App\Http\Controllers\Admin\SiteReviewController;
 use App\Http\Controllers\Admin\SlideController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -122,6 +123,13 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::resource('order-reviews', OrderReviewController::class);
     Route::get('order-reviews-data', [OrderReviewController::class, 'getData'])->name('order-reviews.data');
     Route::patch('order-reviews/{review}/status', [OrderReviewController::class, 'updateStatus'])->name('order-reviews.status');
+
+    // Site-wide Customer Reviews
+    Route::get('site-reviews',                          [SiteReviewController::class, 'index'])->name('site-reviews.index');
+    Route::get('site-reviews-data',                     [SiteReviewController::class, 'getData'])->name('site-reviews.data');
+    Route::get('site-reviews/{id}',                     [SiteReviewController::class, 'show'])->name('site-reviews.show');
+    Route::patch('site-reviews/{id}/status',            [SiteReviewController::class, 'updateStatus'])->name('site-reviews.status');
+    Route::delete('site-reviews/{id}',                  [SiteReviewController::class, 'destroy'])->name('site-reviews.destroy');
 
     /*
     |--------------------------------------------------------------------------
