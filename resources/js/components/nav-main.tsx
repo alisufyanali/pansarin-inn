@@ -21,7 +21,19 @@ interface NavMainProps {
 
 export function NavMain({ items = [] }: { items: NavItem[] }) {
     const page = usePage();
-    const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+
+    // Auto-expand any section whose child URL matches the current page on first render.
+    const initialExpanded = new Set<string>(
+        items
+            .filter((item) =>
+                (item.children ?? []).some(
+                    (child) => !!child.href && page.url.startsWith(resolveUrl(child.href)),
+                ),
+            )
+            .map((item) => item.title),
+    );
+
+    const [expandedItems, setExpandedItems] = useState<Set<string>>(initialExpanded);
 
     const toggleExpanded = (title: string) => {
         setExpandedItems(prev => {
