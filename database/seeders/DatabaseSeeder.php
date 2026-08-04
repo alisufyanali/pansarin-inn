@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             CustomerSeeder::class,
             GeneralSettingSeeder::class,
             // ProductsSeeder::class,
+            HealthConcernSeeder::class,
             OldProductsImportSeeder::class,
             OrderSeeder::class,
             SaleSeeder::class,
