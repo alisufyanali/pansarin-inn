@@ -168,7 +168,7 @@ class OrderApiController extends Controller
         try {
             $request->validate([
                 'order_number' => 'required|string',
-                'email'        => 'required|email',
+                'email'        => 'nullable|email',
             ]);
         } catch (ValidationException $e) {
             return response()->json([
@@ -178,10 +178,15 @@ class OrderApiController extends Controller
             ], 422);
         }
 
-        $order = Order::with(['items.product', 'items.variant', 'city:id,name', 'customer'])
-            ->where('order_number', $request->order_number)
-            ->whereHas('customer', fn ($q) => $q->where('email', $request->email))
-            ->first();
+        $query = Order::with(['items.product', 'items.variant', 'city:id,name', 'customer'])
+            ->where('order_number', $request->order_number);
+        if ($request->filled('email')) {
+            $query->whereHas('customer', function ($q) use ($request) {
+                $q->where('email', $request->email);
+            });
+        }
+
+        $order = $query->first();
 
         if (! $order) {
             return response()->json([
