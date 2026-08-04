@@ -90,25 +90,61 @@ class FrontendController extends Controller
     // 2. Single Product Detail
     public function productDetail($slug)
     {
-        $product = Product::with(['category'])
+        $product = Product::with(['category', 'healthConcerns:id,name'])
             ->where('slug', $slug)
             ->where('status', true)
             ->firstOrFail();
 
-        // Related Products (Same category, but not this product)
-        $relatedProducts = Product::where('category_id', $product->category_id)
+        // ── Related Products ──────────────────────────────────────
+        // Same category, exclude self.
+        // Priority: featured first, then most-viewed, then newest.
+        $relatedProducts = Product::with(['category:id,name,slug'])
+            ->where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
             ->where('status', true)
+            ->orderByDesc('featured')
+            ->orderByDesc('number_of_view')
+            ->orderByDesc('created_at')
             ->take(4)
-            ->get();
+            ->get(['id', 'name', 'slug', 'thumbnail', 'price', 'sale_price', 'featured', 'number_of_view']);
+
+        // ── Recommended For You ───────────────────────────────────
+        // Products sharing at least one health concern with this product.
+        // Falls back to same-category if the product has no health concerns.
+        // Priority: featured first, then most-viewed, then newest.
+        $healthConcernIds = $product->healthConcerns->pluck('id');
+
+        if ($healthConcernIds->isNotEmpty()) {
+            $recommendedProducts = Product::with(['category:id,name,slug'])
+                ->whereHas('healthConcerns', fn ($q) => $q->whereIn('health_concerns.id', $healthConcernIds))
+                ->where('id', '!=', $product->id)
+                ->where('status', true)
+                ->orderByDesc('featured')
+                ->orderByDesc('number_of_view')
+                ->orderByDesc('created_at')
+                ->take(4)
+                ->get(['id', 'name', 'slug', 'thumbnail', 'price', 'sale_price', 'featured', 'number_of_view']);
+        } else {
+            // No health concerns — fallback: exclude products already in related, use same category
+            $excludeIds = $relatedProducts->pluck('id')->push($product->id);
+            $recommendedProducts = Product::with(['category:id,name,slug'])
+                ->where('category_id', $product->category_id)
+                ->whereNotIn('id', $excludeIds)
+                ->where('status', true)
+                ->orderByDesc('featured')
+                ->orderByDesc('number_of_view')
+                ->take(4)
+                ->get(['id', 'name', 'slug', 'thumbnail', 'price', 'sale_price', 'featured', 'number_of_view']);
+        }
 
         // Increment Views
         $product->increment('number_of_view');
 
         return Inertia::render('Frontend/SingleProduct', [
-            'siteData' => $this->getSiteSettings(),
-            'product'  => $product,
-            'relatedProducts' => $relatedProducts
+            'siteData'             => $this->getSiteSettings(),
+            'product'              => $product,
+            'relatedProducts'      => $relatedProducts,
+            'recommendedProducts'  => $recommendedProducts,
         ]);
     }
 }
