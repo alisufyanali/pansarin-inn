@@ -125,15 +125,21 @@ class ProductApiController extends Controller
     public function show(string $slug)
     {
         $product = Product::with(['category:id,name,slug', 'variants', 'healthConcerns:id,name,slug'])
+            ->withCount(['reviews as review_count' => fn ($q) => $q->where('status', true)])
+            ->withAvg(['reviews as avg_rating' => fn ($q) => $q->where('status', true)], 'rating')
             ->where('slug', $slug)
             ->where('status', true)
             ->firstOrFail();
 
         $stocks = $this->preloadStocks(collect([$product]));
 
+        $data                  = $this->formatProduct($product, true, $stocks);
+        $data['review_count']  = (int) ($product->review_count ?? 0);
+        $data['avg_rating']    = round((float) ($product->avg_rating ?? 0), 1);
+
         return response()->json([
             'success' => true,
-            'data'    => $this->formatProduct($product, true, $stocks),
+            'data'    => $data,
         ]);
     }
 

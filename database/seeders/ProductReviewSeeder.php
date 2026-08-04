@@ -46,19 +46,27 @@ class ProductReviewSeeder extends Seeder
                 $rating = $this->weightedRating();
                 $review = ProductReview::firstOrCreate(
                     [
-                        'product_id' => $product->id,
+                        'product_id'   => $product->id,
                         'order_number' => "DUMMY-REVIEW-{$product->id}-{$slot}",
                     ],
                     [
-                        'user_id' => null,
-                        'customer_name' => $customer['name'],
+                        'user_id'        => null,
+                        'customer_name'  => $customer['name'],
                         'customer_email' => $customer['email'],
-                        'rating' => $rating,
-                        'comment' => $this->commentFor($product, $rating, $slot),
-                        'is_verified' => random_int(1, 10) <= 8,
-                        'status' => true,
-                        'created_at' => now()->subDays(random_int(1, 180))->subMinutes(random_int(0, 1439)),
-                        'updated_at' => now(),
+                        'title'          => $this->titleFor($rating),
+                        'rating'         => $rating,
+                        'comment'        => $this->commentFor($product, $rating, $slot),
+                        'images'         => null,
+                        'helpful_count'  => random_int(0, 24),
+                        'is_verified'    => random_int(1, 10) <= 8,
+                        'status'         => true,
+                        // ~30% of approved reviews get an admin reply
+                        'admin_reply'      => (($product->id + $slot) % 10 < 3)
+                            ? 'Thank you for your feedback! We appreciate you taking the time to share your experience with us.'
+                            : null,
+                        'admin_replied_at' => (($product->id + $slot) % 10 < 3) ? now()->subDays(random_int(1, 30)) : null,
+                        'created_at'       => now()->subDays(random_int(1, 180))->subMinutes(random_int(0, 1439)),
+                        'updated_at'       => now(),
                     ],
                 );
 
@@ -75,6 +83,30 @@ class ProductReviewSeeder extends Seeder
     {
         // 79% four- or five-star, 14% three-star, 7% one- or two-star.
         return fake()->randomElement([5, 5, 5, 5, 5, 4, 4, 4, 4, 4, 4, 3, 3, 2, 1]);
+    }
+
+    private function titleFor(int $rating): ?string
+    {
+        // ~60% of reviews include a title
+        if (random_int(1, 10) <= 4) return null;
+
+        return match (true) {
+            $rating === 5 => fake()->randomElement([
+                'Absolutely love it!', 'Exceeded my expectations', 'Highly recommended', 'Will buy again!',
+            ]),
+            $rating === 4 => fake()->randomElement([
+                'Great product', 'Very happy with this', 'Good quality', 'Solid purchase',
+            ]),
+            $rating === 3 => fake()->randomElement([
+                'Decent but could be better', 'Average quality', 'Okay for the price',
+            ]),
+            $rating === 2 => fake()->randomElement([
+                'Disappointed', 'Not what I expected',
+            ]),
+            default => fake()->randomElement([
+                'Not satisfied', 'Would not recommend',
+            ]),
+        };
     }
 
     private function commentFor(Product $product, int $rating, int $slot): string

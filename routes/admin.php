@@ -101,10 +101,12 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::resource('deals', ProductsDealController::class);
     Route::get('deals-data', [ProductsDealController::class, 'getData'])->name('deals.data');
 
-    Route::resource('reviews', ProductsReviewsController::class);
-    Route::get('reviews-data', [ProductsReviewsController::class, 'getData'])->name('reviews.data');
-    Route::patch('reviews/{review}/status', [ProductsReviewsController::class, 'updateStatus'])->name('reviews.status');
-    Route::patch('reviews/{id}/toggle-homepage', [ProductsReviewsController::class, 'toggleHomepage'])->name('reviews.toggle-homepage');
+    Route::resource('reviews', ProductsReviewsController::class)->only(['index', 'show', 'destroy']);
+    Route::get('reviews-data',                      [ProductsReviewsController::class, 'getData'])->name('reviews.data');
+    Route::patch('reviews/{review}/status',         [ProductsReviewsController::class, 'updateStatus'])->name('reviews.status');
+    Route::post('reviews/bulk-action',              [ProductsReviewsController::class, 'bulkAction'])->name('reviews.bulk-action');
+    Route::post('reviews/{id}/reply',               [ProductsReviewsController::class, 'reply'])->name('reviews.reply');
+    Route::patch('reviews/{id}/toggle-homepage',    [ProductsReviewsController::class, 'toggleHomepage'])->name('reviews.toggle-homepage');
 
     /*
     |--------------------------------------------------------------------------

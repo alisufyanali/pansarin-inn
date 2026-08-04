@@ -42,8 +42,10 @@ Route::middleware('throttle:60,1')->group(function () {
     // Health Concerns
     Route::get('/health-concerns',     [HealthConcernApiController::class, 'index']);
 
-    // Product reviews — public read, protected write (see below)
-    Route::get('/products/{slug}/reviews', [ProductReviewApiController::class, 'index']);
+    // Product reviews — public read, public write (guest-allowed), helpful vote
+    Route::get('/products/{slug}/reviews',  [ProductReviewApiController::class, 'index']);
+    Route::post('/products/{slug}/reviews', [ProductReviewApiController::class, 'store']);
+    Route::post('/reviews/{id}/helpful',    [ProductReviewApiController::class, 'helpful']);
 
     // Homepage
     Route::get('/homepage',                   [HomepageApiController::class, 'index']);
@@ -113,6 +115,6 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::patch('/notifications/{id}/read',   [NotificationApiController::class, 'markRead']);
     Route::post('/notifications/read-all',     [NotificationApiController::class, 'markAllRead']);
 
-    // Product reviews — write requires auth
-    Route::post('/products/{slug}/reviews', [ProductReviewApiController::class, 'store']);
+    // Product reviews — write still available while authenticated (keeps backward compat)
+    // POST is also available publicly above; auth version adds user_id automatically
 });

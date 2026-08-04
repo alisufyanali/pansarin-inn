@@ -82,11 +82,14 @@ class Product extends Model
 
     /**
      * Approved reviews visible in public product ratings.
+     * withoutTrashed() ensures soft-deleted reviews are excluded
+     * even though the global scope is only applied at query time.
      */
     public function reviews()
     {
         return $this->hasMany(ProductReview::class)
-            ->where('status', true);
+            ->where('status', true)
+            ->withoutTrashed();
     }
 
     public function inventories()

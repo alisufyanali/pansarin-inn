@@ -4,196 +4,115 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Repositories\Admin\ProductReviewRepository;
-use App\Http\Requests\Admin\ProductReviewRequest;
-use App\Models\Product;
-use App\Models\Review;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class ProductsReviewsController extends Controller
 {
-    protected $reviewRepository;
-
-    public function __construct(ProductReviewRepository $reviewRepository)
+    public function __construct(protected ProductReviewRepository $repo)
     {
-        $this->reviewRepository = $reviewRepository;
+        $this->middleware('permission:reviews.view')->only(['index', 'getData']);
+        $this->middleware('permission:reviews.moderate')->only(['updateStatus', 'bulkAction', 'reply', 'toggleHomepage']);
+        $this->middleware('permission:reviews.delete')->only(['destroy', 'bulkAction']);
     }
 
+    // GET /admin/reviews
     public function index()
     {
-        $stats = $this->reviewRepository->getStats();
-
         return Inertia::render('Admin/ProductsReviews/Index', [
-            'stats' => $stats,
+            'stats' => $this->repo->getStats(),
         ]);
     }
 
+    // GET /admin/reviews-data  (DataTable AJAX)
     public function getData(Request $request)
     {
         try {
-            return $this->reviewRepository->getAllForDataTable($request);
+            return $this->repo->getAllForDataTable($request);
         } catch (\Exception $e) {
-            Log::error('Reviews getData error: '.$e->getMessage());
-
-            return response()->json([
-                'error' => 'Failed to load data',
-                'message' => $e->getMessage(),
-                'data' => [],
-                'total' => 0,
-            ], 500);
+            Log::error('Reviews getData: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to load data', 'data' => [], 'total' => 0], 500);
         }
     }
 
-    public function create()
-    {
-        $products = $this->getFormattedProducts();
-        $users    = User::orderBy('name')->get(['id', 'name', 'email']);
-
-        return Inertia::render('Admin/ProductsReviews/Create', [
-            'products' => $products,
-            'users'    => $users,
-        ]);
-    }
-
-    public function store(ProductReviewRequest $request)
+    // PATCH /admin/reviews/{review}/status
+    public function updateStatus(Request $request, string $id)
     {
         try {
-            $validated = $request->validated();
-
-            $this->reviewRepository->store($validated);
-
-            return redirect()
-                ->route('admin.reviews.index')
-                ->with('success', 'Review created successfully!');
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return back()
-                ->withErrors($e->errors())
-                ->withInput();
+            $request->validate(['status' => 'required|in:approved,pending']);
+            $this->repo->updateStatus($id, $request->status === 'approved');
+            return back()->with('success', 'Review status updated.');
         } catch (\Exception $e) {
-            Log::error('Review creation error: '.$e->getMessage());
-
-            return back()
-                ->withInput()
-                ->with('error', 'Failed to create review.');
+            Log::error('Reviews updateStatus: ' . $e->getMessage());
+            return back()->with('error', 'Failed to update status.');
         }
     }
 
-    public function edit(Review $review)
-    {
-        $review->load('product:id,name,thumbnail', 'user:id,name,email');
-
-        $products = $this->getFormattedProducts();
-        $users    = User::orderBy('name')->get(['id', 'name', 'email']);
-
-        return Inertia::render('Admin/ProductsReviews/Edit', [
-            'review'   => $review,
-            'products' => $products,
-            'users'    => $users,
-        ]);
-    }
-
-    public function update(ProductReviewRequest $request, Review $review)
+    // POST /admin/reviews/bulk-action
+    // Body: { action: 'approve'|'reject'|'delete', ids: int[] }
+    public function bulkAction(Request $request)
     {
         try {
-            $validated = $request->validated();
-
-            $this->reviewRepository->update($review->id, $validated);
-
-            return redirect()
-                ->route('admin.reviews.index')
-                ->with('success', 'Review updated successfully!');
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return back()
-                ->withErrors($e->errors())
-                ->withInput();
-        } catch (\Exception $e) {
-            Log::error('Review update error: '.$e->getMessage());
-
-            return back()
-                ->withInput()
-                ->with('error', 'Failed to update review.');
-        }
-    }
-
-    public function updateStatus(Request $request, Review $review)
-    {
-        try {
-            $this->reviewRepository->updateStatus($review->id, $request->status);
-
-            return back()->with('success', 'Review status updated!');
-        } catch (\Exception $e) {
-            Log::error('Review status update error: '.$e->getMessage());
-
-            return back()->with('error', 'Failed to update review status.');
-        }
-    }
-
-    public function toggleHomepage(Request $request, $id)
-    {
-        try {
-            $review = \App\Models\ProductReview::findOrFail($id);
-            $review->update(['show_on_homepage' => (bool) $request->show_on_homepage]);
-
-            return response()->json([
-                'success'          => true,
-                'show_on_homepage' => $review->show_on_homepage,
+            $request->validate([
+                'action' => 'required|in:approve,reject,delete',
+                'ids'    => 'required|array|min:1',
+                'ids.*'  => 'integer',
             ]);
-        } catch (\Exception $e) {
-            Log::error('Review toggleHomepage error: ' . $e->getMessage());
 
+            $ids    = $request->ids;
+            $action = $request->action;
+
+            if ($action === 'delete') {
+                $count = $this->repo->bulkDelete($ids);
+                return back()->with('success', "{$count} review(s) deleted.");
+            }
+
+            $status = $action === 'approve';
+            $count  = $this->repo->bulkUpdateStatus($ids, $status);
+            $label  = $status ? 'approved' : 'rejected';
+            return back()->with('success', "{$count} review(s) {$label}.");
+        } catch (\Exception $e) {
+            Log::error('Reviews bulkAction: ' . $e->getMessage());
+            return back()->with('error', 'Bulk action failed.');
+        }
+    }
+
+    // POST /admin/reviews/{id}/reply
+    public function reply(Request $request, string $id)
+    {
+        try {
+            $request->validate(['reply' => 'required|string|max:2000']);
+            $this->repo->reply($id, $request->reply);
+            return back()->with('success', 'Reply saved.');
+        } catch (\Exception $e) {
+            Log::error('Reviews reply: ' . $e->getMessage());
+            return back()->with('error', 'Failed to save reply.');
+        }
+    }
+
+    // PATCH /admin/reviews/{id}/toggle-homepage
+    public function toggleHomepage(Request $request, string $id)
+    {
+        try {
+            $review = $this->repo->find($id);
+            $review->update(['show_on_homepage' => (bool) $request->show_on_homepage]);
+            return response()->json(['success' => true, 'show_on_homepage' => $review->show_on_homepage]);
+        } catch (\Exception $e) {
+            Log::error('Reviews toggleHomepage: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Failed to update.'], 500);
         }
     }
 
-    public function destroy(Review $review)
+    // DELETE /admin/reviews/{id}
+    public function destroy(string $id)
     {
         try {
-            $this->reviewRepository->delete($review->id);
-
-            return redirect()
-                ->route('admin.reviews.index')
-                ->with('success', 'Review deleted successfully!');
+            $this->repo->delete($id);
+            return redirect()->route('admin.reviews.index')->with('success', 'Review deleted.');
         } catch (\Exception $e) {
-            Log::error('Review deletion error: '.$e->getMessage());
-
-            return back()->with('error', 'Failed to delete review.');
+            Log::error('Reviews destroy: ' . $e->getMessage());
+            return redirect()->route('admin.reviews.index')->with('error', 'Failed to delete review.');
         }
-    }
-
-    public function bulkDelete(Request $request)
-    {
-        try {
-            $request->validate([
-                'ids' => 'required|array',
-                'ids.*' => 'exists:reviews,id',
-            ]);
-
-            $count = $this->reviewRepository->bulkDelete($request->ids);
-
-            return back()->with('success', $count.' reviews deleted!');
-        } catch (\Exception $e) {
-            Log::error('Bulk delete error: '.$e->getMessage());
-
-            return back()->with('error', 'Failed to delete reviews.');
-        }
-    }
-
-    private function getFormattedProducts()
-    {
-        $products = Product::where('status', true)->orderBy('name')->get(['id', 'name', 'thumbnail']);
-        if ($products->isEmpty()) {
-            $products = Product::orderBy('name')->get(['id', 'name', 'thumbnail']);
-        }
-
-        return $products->map(function ($product) {
-            $imagePath = $product->thumbnail ? public_path('storage/'.$product->thumbnail) : null;
-            return [
-                'id'    => $product->id,
-                'name'  => $product->name,
-                'image' => ($imagePath && file_exists($imagePath)) ? asset('storage/'.$product->thumbnail) : null,
-            ];
-        })->values();
     }
 }

@@ -45,6 +45,8 @@ class RolePermissionSeeder extends Seeder
 
             // Reviews (Product)
             'view.reviews', 'create.reviews', 'edit.reviews', 'delete.reviews',
+            // Product reviews moderation (new action-based permissions)
+            'reviews.view', 'reviews.moderate', 'reviews.delete',
 
             // Inventory
             'view.inventory', 'create.inventory', 'edit.inventory', 'delete.inventory',
@@ -174,6 +176,7 @@ class RolePermissionSeeder extends Seeder
             'view.deals', 'create.deals', 'edit.deals',
             'view.inventory', 'create.inventory', 'edit.inventory',
             'view.reviews', 'edit.reviews',
+            'reviews.view', 'reviews.moderate', 'reviews.delete',
             'view.wishlists',
 
             // Shop
