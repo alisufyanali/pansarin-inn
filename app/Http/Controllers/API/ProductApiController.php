@@ -364,39 +364,62 @@ class ProductApiController extends Controller
         }
 
         $base = [
-            'id'          => $p->id,
-            'name'        => $p->name,
-            'slug'        => $p->slug,
-            'sku'         => $p->sku,
-            'price'       => (float) $p->price,
-            'sale_price'  => $p->sale_price ? (float) $p->sale_price : null,
-            'unit'        => $p->unit,
-            'featured'    => (bool) $p->featured,
-            'thumbnail'   => $p->thumbnail ? asset('storage/' . $p->thumbnail) : null,
-             'urdu_name'      => $p->urdu_name,
-            'description'    => $p->short_description,
-            'rating'         => round($p->reviews()->avg('rating'), 1),
-            'reviews_count'  => $p->reviews()->count(),
-            'gallery'        => collect($p->gallery ?? [])->map(fn($img)=>asset('storage/'.$img)),
-            'hover_image'    => isset($p->gallery[1]) ? asset('storage/'.$p->gallery[1]) : null,
-            'category'    => $p->category ? ['id' => $p->category->id, 'name' => $p->category->name, 'slug' => $p->category->slug] : null,
+            'id'              => $p->id,
+            'name'            => $p->name,
+            'slug'            => $p->slug,
+            'sku'             => $p->sku,
+            'scientific_name' => $p->scientific_name,
+            'price'           => (float) $p->price,
+            'sale_price'      => $p->sale_price ? (float) $p->sale_price : null,
+            'unit'            => $p->unit,
+            'featured'        => (bool) $p->featured,
+            'thumbnail'       => $p->thumbnail ? asset('storage/' . $p->thumbnail) : null,
+            'urdu_name'       => $p->urdu_name,
+            // 'description' = short overview text (used on cards / list views)
+            'description'     => $p->short_description,
+            // 'long_description' = full admin-written content (used on detail page)
+            'long_description' => $p->long_description,
+            'rating'          => round($p->reviews()->avg('rating'), 1),
+            'reviews_count'   => $p->reviews()->count(),
+            'gallery'         => collect($p->gallery ?? [])->map(fn ($img) => asset('storage/' . $img)),
+            'hover_image'     => isset($p->gallery[1]) ? asset('storage/' . $p->gallery[1]) : null,
+            'category'        => $p->category ? [
+                'id'   => $p->category->id,
+                'name' => $p->category->name,
+                'slug' => $p->category->slug,
+            ] : null,
             'health_concerns' => $p->relationLoaded('healthConcerns')
-                ? $p->healthConcerns->map(fn ($hc) => ['id' => $hc->id, 'name' => $hc->name, 'slug' => $hc->slug])->values()
+                ? $p->healthConcerns->map(fn ($hc) => [
+                    'id'   => $hc->id,
+                    'name' => $hc->name,
+                    'slug' => $hc->slug,
+                ])->values()
                 : [],
-            'variants'    => $p->variants->map(fn ($v) => [
-                'id'         => $v->id,
-                'name'       => collect($v->attributes ?? [])->values()->join(' / ') ?: $v->value,
-                'sku'        => $v->sku,
-                'price'      => (float) ($v->sale_price ?? $v->price ?? $p->price),
-                'stock'      => (int) ($stocks->get($p->id . '_' . $v->id)?->first()?->quantity ?? 0),
-                'is_default' => (bool) $v->is_default,
+            'variants' => $p->variants->map(fn ($v) => [
+                'id'          => $v->id,
+                // 'name' = human-readable combined string e.g. "50 / Powder"
+                'name'        => collect($v->attributes ?? [])->values()->join(' / ') ?: $v->value,
+                // 'attributes' = structured object e.g. {"Weight":"50","Form":"Powder"}
+                'attributes'  => $v->attributes ?? [],
+                'sku'         => $v->sku,
+                'unit'        => $p->unit,
+                // base price before any additional charge
+                'price'       => (float) ($v->sale_price ?? $v->price ?? $p->price),
+                // additional surcharge for this variant (e.g. grinding fee) — 0 if none
+                'additional'  => (int) ($v->additional ?? 0),
+                // final_price = what the customer actually pays; frontend should use this
+                'final_price' => (float) ($v->sale_price ?? $v->price ?? $p->price) + (int) ($v->additional ?? 0),
+                'stock'       => (int) ($stocks->get($p->id . '_' . $v->id)?->first()?->quantity ?? 0),
+                'is_default'  => (bool) $v->is_default,
             ]),
         ];
 
         if ($detailed) {
             $baseStock = $stocks->get($p->id . '_null')?->first()?->quantity;
-            $base['description']  = $p->description;
-            $base['excerpt']      = $p->excerpt ?? null;
+            // In detailed mode, 'description' returns the full long description
+            // for backward compatibility with any frontend already using the 'description' key.
+            $base['description']  = $p->long_description;
+            $base['excerpt']      = $p->short_description;
             $base['gallery']      = collect($p->gallery ?? [])->map(fn ($img) => asset('storage/' . $img));
             $base['stock']        = $baseStock !== null ? (int) $baseStock : (int) ($p->quantity ?? 0);
             $base['meta_title']   = $p->meta_title ?? $p->name;

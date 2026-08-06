@@ -19,7 +19,7 @@ class HomepageApiController extends Controller
     {
         // Cache key includes a version suffix so adding new keys doesn't serve
         // stale responses that are missing the new_arrivals field.
-        $data = Cache::remember('homepage_data_v3', 300, function () {
+        $data = Cache::remember('homepage_data_v4', 300, function () {
             return [
                 'banners'           => $this->getBanners(),
                 'categories'        => $this->getCategories(),
@@ -257,32 +257,40 @@ class HomepageApiController extends Controller
             ->toArray();
 
         return [
-            'id'            => $p->id,
-            'name'          => $p->name,
-            'urdu_name'     => $p->urdu_name,
-            'slug'          => $p->slug,
-            'sku'           => $p->sku,
-            'price'         => (float) $p->price,
-            'sale_price'    => $p->sale_price ? (float) $p->sale_price : null,
-            'unit'          => $p->unit,
-            'featured'      => (bool) $p->featured,
-            'thumbnail'     => $p->thumbnail ? asset('storage/' . $p->thumbnail) : null,
-            'gallery'       => $gallery,
-            'description'   => $p->short_description ?? $p->long_description ?? null,
-            'rating'        => 4.5,   // Default — live per-product average not yet aggregated
-            'reviews_count' => 0,     // Default — use /products/{slug}/reviews for live counts
-            'category'      => $p->category ? [
+            'id'               => $p->id,
+            'name'             => $p->name,
+            'urdu_name'        => $p->urdu_name,
+            'scientific_name'  => $p->scientific_name,
+            'slug'             => $p->slug,
+            'sku'              => $p->sku,
+            'price'            => (float) $p->price,
+            'sale_price'       => $p->sale_price ? (float) $p->sale_price : null,
+            'unit'             => $p->unit,
+            'featured'         => (bool) $p->featured,
+            'thumbnail'        => $p->thumbnail ? asset('storage/' . $p->thumbnail) : null,
+            'gallery'          => $gallery,
+            // 'description' = short overview (cards / list views)
+            'description'      => $p->short_description ?? null,
+            // 'long_description' = full admin content (detail page)
+            'long_description' => $p->long_description ?? null,
+            'rating'           => 4.5,  // Default — batch-aggregate not available in homepage context
+            'reviews_count'    => 0,    // Use /products/{slug}/reviews for live counts
+            'category'         => $p->category ? [
                 'id'   => $p->category->id,
                 'name' => $p->category->name,
                 'slug' => $p->category->slug,
             ] : null,
-            'variants'      => $p->variants->map(fn ($v) => [
-                'id'         => $v->id,
-                'name'       => collect($v->attributes ?? [])->values()->join(' / ') ?: $v->value,
-                'sku'        => $v->sku,
-                'price'      => (float) ($v->sale_price ?? $v->price ?? $p->price),
-                'stock'      => (int) ($stocks->get($p->id . '_' . $v->id)?->first()?->quantity ?? 0),
-                'is_default' => (bool) $v->is_default,
+            'variants' => $p->variants->map(fn ($v) => [
+                'id'          => $v->id,
+                'name'        => collect($v->attributes ?? [])->values()->join(' / ') ?: $v->value,
+                'attributes'  => $v->attributes ?? [],
+                'sku'         => $v->sku,
+                'unit'        => $p->unit,
+                'price'       => (float) ($v->sale_price ?? $v->price ?? $p->price),
+                'additional'  => (int) ($v->additional ?? 0),
+                'final_price' => (float) ($v->sale_price ?? $v->price ?? $p->price) + (int) ($v->additional ?? 0),
+                'stock'       => (int) ($stocks->get($p->id . '_' . $v->id)?->first()?->quantity ?? 0),
+                'is_default'  => (bool) $v->is_default,
             ])->toArray(),
         ];
     }
