@@ -250,18 +250,25 @@ class OldProductsImportSeeder extends Seeder
                                 $varSku = $varSku . '-' . substr(md5(uniqid()), 0, 6);
                             }
 
+                            // ── Business rule: Powder variants carry a +100 additional charge ──
+                            // This is intentional markup, not derived from the source JSON price data.
+                            $additional = 0;
+                            if (isset($attributes['Form']) && strtolower($attributes['Form']) === 'powder') {
+                                $additional = 100;
+                            }
+
                             $variant = ProductVariant::create([
                                 'product_id'         => $product->id,
                                 'sku'                => $varSku,
                                 'attribute_value_id' => $attributeValueId,
                                 'value'              => $varLabel,
-                            'attributes'         => $attributes,
+                                'attributes'         => $attributes,
                                 'price'              => (float) ($v['price'] ?? 0),
                                 'sale_price'         => null,
                                 'is_default'         => ($vIndex === 0),
                                 'status'             => true,
                                 'stock_alert'        => 5,
-                                'additional'         => 0,
+                                'additional'         => $additional,
                             ]);
 
                             $createdVariants[] = $variant;
