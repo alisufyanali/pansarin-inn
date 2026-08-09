@@ -3,6 +3,7 @@
 use App\Http\Controllers\API\AuthApiController;
 use App\Http\Controllers\API\BlogApiController;
 use App\Http\Controllers\API\CartApiController;
+use App\Http\Controllers\API\CityApiController;
 use App\Http\Controllers\API\ContactApiController;
 use App\Http\Controllers\API\CouponApiController;
 use App\Http\Controllers\API\HealthConcernApiController;
@@ -38,6 +39,7 @@ Route::middleware('throttle:60,1')->group(function () {
     Route::get('/products/{slug}',       [ProductApiController::class, 'show']);
     Route::get('/products/{slug}/related', [ProductApiController::class, 'related']);
     Route::get('/categories',            [ProductApiController::class, 'categories']);
+    Route::get('/cities',                [CityApiController::class, 'index']);
 
     // Health Concerns
     Route::get('/health-concerns',     [HealthConcernApiController::class, 'index']);
