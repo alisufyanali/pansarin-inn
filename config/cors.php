@@ -13,7 +13,8 @@ return [
     'allowed_methods' => ['*'],
 
     'allowed_origins' => array_values(array_filter([
-        env('FRONTEND_URL', 'https://pansarii-frontend.vercel.app'),
+        env('FRONTEND_URL',   'https://pansariinn.com'),
+        env('FRONTEND_URL_2', 'https://pansarii-frontend.vercel.app'),
         env('APP_ENV') !== 'production' ? 'http://localhost:3000' : null,
         env('APP_ENV') !== 'production' ? 'http://localhost:3001' : null,
     ])),
