@@ -247,11 +247,11 @@ class OrderRepository
         $variantIds = collect($items)->pluck('product_variant_id')->filter()->unique();
 
         $products = Product::whereIn('id', $productIds)
-            ->get(['id', 'name', 'sku', 'purchase_price_per_unit'])
+            ->get(['id', 'name', 'sku'])
             ->keyBy('id');
 
         $variants = ProductVariant::whereIn('id', $variantIds)
-            ->get(['id', 'value', 'attributes', 'purchase_price'])
+            ->get(['id', 'value', 'attributes', 'price'])
             ->keyBy('id');
 
         $stocks = ProductStock::whereIn('product_id', $productIds)
@@ -298,12 +298,11 @@ class OrderRepository
             $discount = (float) ($item['discount'] ?? 0);
             $subtotal = ($price * $qty) - $discount;
 
-            // Cost price: variant ka purchase price ya product ka purchase_price_per_unit
+            // Cost price: variant's price column is the purchase/cost price in this schema.
+            // Products table carries no cost column.
             $costPrice = 0;
-            if ($variant && isset($variant->purchase_price)) {
-                $costPrice = (float) $variant->purchase_price;
-            } elseif ($product) {
-                $costPrice = (float) ($product->purchase_price_per_unit ?? 0);
+            if ($variant) {
+                $costPrice = (float) $variant->price;
             }
 
             $order->items()->create([
