@@ -200,7 +200,7 @@ class HomepageApiController extends Controller
                         ? asset('storage/' . $r->product->thumbnail)
                         : null,
                 ] : null,
-                'created_at' => $r->created_at,
+                'created_at' => $r->created_at->toDateString(),
             ])
             ->toArray();
     }

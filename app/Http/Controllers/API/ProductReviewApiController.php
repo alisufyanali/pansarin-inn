@@ -78,16 +78,24 @@ class ProductReviewApiController extends Controller
     {
         $product = Product::where('slug', $slug)->where('status', true)->firstOrFail();
 
+        // ── Normalise field aliases sent by the frontend ──────────
+        // Frontend sends 'customer_name' and omits 'email'; support both
+        // naming conventions so neither old nor new clients break.
+        $input = $request->merge([
+            'name'  => $request->input('name')  ?? $request->input('customer_name'),
+            'email' => $request->input('email') ?? $request->input('customer_email'),
+        ])->all();
+
         try {
-            $validated = $request->validate([
+            $validated = validator($input, [
                 'name'         => 'required|string|max:100',
-                'email'        => 'required|email|max:255',
+                'email'        => 'nullable|email|max:255',
                 'title'        => 'nullable|string|max:150',
                 'rating'       => 'required|integer|min:1|max:5',
                 'comment'      => 'required|string|min:10|max:2000',
                 'order_number' => 'nullable|string|max:100',
                 'images.*'     => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
-            ]);
+            ])->validate();
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
@@ -108,8 +116,8 @@ class ProductReviewApiController extends Controller
                     'message' => 'You have already submitted a review for this product.',
                 ], 422);
             }
-        } else {
-            // Guest: one review per product per email
+        } elseif (! empty($validated['email'])) {
+            // Guest: one review per product per email (only when email is provided)
             if (ProductReview::where('product_id', $product->id)->where('customer_email', $validated['email'])->exists()) {
                 return response()->json([
                     'success' => false,
@@ -150,7 +158,7 @@ class ProductReviewApiController extends Controller
             'product_id'     => $product->id,
             'user_id'        => $user?->id,
             'customer_name'  => $validated['name'],
-            'customer_email' => $validated['email'],
+            'customer_email' => $validated['email'] ?? null,
             'order_number'   => $validated['order_number'] ?? null,
             'title'          => $validated['title'] ?? null,
             'rating'         => $validated['rating'],

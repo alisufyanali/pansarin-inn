@@ -58,15 +58,23 @@ class SiteReviewApiController extends Controller
      */
     public function store(Request $request)
     {
+        // ── Normalise field aliases sent by the frontend ──────────
+        // Frontend sends 'customer_name' and 'email'; accept both naming
+        // conventions so old and new clients continue to work.
+        $input = array_merge($request->all(), [
+            'reviewer_name'  => $request->input('reviewer_name')  ?? $request->input('customer_name'),
+            'reviewer_email' => $request->input('reviewer_email') ?? $request->input('email'),
+        ]);
+
         try {
-            $validated = $request->validate([
+            $validated = validator($input, [
                 'reviewer_name'  => 'required|string|max:255',
                 'reviewer_email' => 'required|email|max:255',
                 'order_number'   => 'required|string|max:100',
                 'rating'         => 'required|integer|min:1|max:5',
                 'comment'        => 'required|string|min:10|max:2000',
                 'image'          => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
-            ]);
+            ])->validate();
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
