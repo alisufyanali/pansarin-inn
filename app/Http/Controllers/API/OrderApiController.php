@@ -146,6 +146,28 @@ class OrderApiController extends Controller
                 ]);
             }
 
+            // Dispatch admin notification email
+            try {
+                Mail::to(config('mail.admin_email'))->queue(new \App\Mail\AdminNewOrderNotification($order));
+            } catch (\Throwable $mailEx) {
+                Log::error('AdminNewOrderNotification dispatch failed', [
+                    'order_id' => $order->id,
+                    'error'    => $mailEx->getMessage(),
+                ]);
+            }
+
+            // Dispatch WhatsApp notification if customer has phone
+            if ($customer->phone) {
+                try {
+                    \App\Jobs\SendOrderWhatsAppNotification::dispatch($order);
+                } catch (\Throwable $whatsappEx) {
+                    Log::error('SendOrderWhatsAppNotification dispatch failed', [
+                        'order_id' => $order->id,
+                        'error'    => $whatsappEx->getMessage(),
+                    ]);
+                }
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Order placed successfully.',
@@ -215,7 +237,7 @@ class OrderApiController extends Controller
             $request->validate([
                 'name'             => 'required|string|max:255',
                 'email'            => 'required|email|max:255',
-                'phone'            => 'required|string|max:30',
+                'phone'            => 'required|string|max:30|regex:/^(\+92|0092|92|0)?3[0-9]{9}$/',
                 'shipping_address' => 'required|string',
                 'billing_address'  => 'nullable|string',
                 'city_id'          => 'nullable|integer|exists:cities,id',
@@ -246,7 +268,18 @@ class OrderApiController extends Controller
         // then phone match, then create new account.
         // Wrapped in a transaction so concurrent checkouts with the same new
         // phone/email don't race into duplicate-key crashes.
-        $resolvedUser = \Illuminate\Support\Facades\DB::transaction(function () use ($request, &$accountCreated, &$token) {
+        
+        // Normalize phone number before any DB operations
+        $normalizedPhone = \App\Helpers\PhoneHelper::normalize($request->phone);
+        
+        if (!$normalizedPhone) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid phone number format. Please use Pakistani mobile format (03XXXXXXXXX).',
+            ], 422);
+        }
+        
+        $resolvedUser = \Illuminate\Support\Facades\DB::transaction(function () use ($request, $normalizedPhone, &$accountCreated, &$token) {
 
             // ── 1. Email match ─────────────────────────────────────
             $byEmail = User::where('email', $request->email)->first();
@@ -254,14 +287,14 @@ class OrderApiController extends Controller
             if ($byEmail) {
                 // If a DIFFERENT user already owns this phone, log a warning but
                 // do not crash — just proceed with the email-matched user as-is.
-                $phoneOwner = User::where('phone', $request->phone)
+                $phoneOwner = User::where('phone', $normalizedPhone)
                     ->where('id', '!=', $byEmail->id)
                     ->first();
 
                 if ($phoneOwner) {
                     Log::warning('Guest checkout phone conflict: phone belongs to a different user than the email match.', [
                         'email'          => $request->email,
-                        'phone'          => $request->phone,
+                        'phone'          => $normalizedPhone,
                         'email_user_id'  => $byEmail->id,
                         'phone_user_id'  => $phoneOwner->id,
                     ]);
@@ -273,7 +306,7 @@ class OrderApiController extends Controller
             }
 
             // ── 2. Phone match (email not found) ───────────────────
-            $byPhone = User::where('phone', $request->phone)->first();
+            $byPhone = User::where('phone', $normalizedPhone)->first();
 
             if ($byPhone) {
                 // Phone belongs to an existing account with a different email.
@@ -289,7 +322,7 @@ class OrderApiController extends Controller
                 [
                     'name'     => $request->name,
                     'password' => Hash::make(Str::random(16)),
-                    'phone'    => $request->phone,
+                    'phone'    => $normalizedPhone,
                     'username' => Str::slug($request->name) . '-' . rand(1000, 9999),
                     'status'   => 1,
                 ]
@@ -312,7 +345,7 @@ class OrderApiController extends Controller
             $customer = Customer::create([
                 'user_id'    => $resolvedUser->id,
                 'first_name' => $request->name,
-                'phone'      => $this->uniquePhone($request->phone),
+                'phone'      => $this->uniquePhone($normalizedPhone),
                 'email'      => $request->email,
                 'address'    => $request->shipping_address,
                 'city_id'    => $request->city_id ?? null,
@@ -340,7 +373,7 @@ class OrderApiController extends Controller
                         new GuestAccountCreatedMail(
                             $request->name,
                             $request->email,
-                            $request->phone,
+                            $normalizedPhone,
                             $order->order_number
                         )
                     );
@@ -357,6 +390,28 @@ class OrderApiController extends Controller
                     'order_id' => $order->id,
                     'error'    => $mailEx->getMessage(),
                 ]);
+            }
+
+            // Dispatch admin notification email
+            try {
+                Mail::to(config('mail.admin_email'))->queue(new \App\Mail\AdminNewOrderNotification($order));
+            } catch (\Throwable $mailEx) {
+                Log::error('AdminNewOrderNotification dispatch failed (guest)', [
+                    'order_id' => $order->id,
+                    'error'    => $mailEx->getMessage(),
+                ]);
+            }
+
+            // Dispatch WhatsApp notification if customer has phone
+            if ($customer->phone) {
+                try {
+                    \App\Jobs\SendOrderWhatsAppNotification::dispatch($order);
+                } catch (\Throwable $whatsappEx) {
+                    Log::error('SendOrderWhatsAppNotification dispatch failed (guest)', [
+                        'order_id' => $order->id,
+                        'error'    => $whatsappEx->getMessage(),
+                    ]);
+                }
             }
 
             $responseData = array_merge(

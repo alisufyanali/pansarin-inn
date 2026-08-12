@@ -1,46 +1,67 @@
 <x-mail-layout
-    title="Order Confirmation — {{ $order->order_number }}"
-    heading="Order Confirmation"
-    subheading="Thank you for your order!"
+    title="New Order — {{ $order->order_number }}"
+    heading="🔔 New Order Received"
+    subheading="A customer has placed a new order"
 >
 
     <p style="margin:0 0 16px;font-size:14px;color:#1f2d1f;">
-        Dear <strong>{{ $customer->first_name }} {{ $customer->last_name }}</strong>,
-    </p>
-    <p style="margin:0 0 20px;font-size:14px;color:#374151;line-height:1.7;">
-        We have received your order and are getting it ready. Here are your order details:
+        <strong>Alert:</strong> A new order has been placed on your website.
     </p>
 
     <!-- Order meta -->
     <table width="100%" cellpadding="10" cellspacing="0" border="0"
-           style="background-color:#f1f8f1;border:1px solid #c8e6c8;border-radius:6px;margin-bottom:24px;">
+           style="background-color:#fff3e0;border:1px solid #ffb74d;border-radius:6px;margin-bottom:24px;">
         <tr>
-            <td style="font-size:13px;color:#374151;border-bottom:1px solid #dcedc8;">
-                <strong style="color:#1b5e20;">Order Number:</strong>
+            <td style="font-size:13px;color:#374151;border-bottom:1px solid #ffe0b2;">
+                <strong style="color:#e65100;">Order Number:</strong>
             </td>
-            <td style="font-size:13px;color:#374151;border-bottom:1px solid #dcedc8;text-align:right;">
+            <td style="font-size:13px;color:#374151;border-bottom:1px solid #ffe0b2;text-align:right;">
                 {{ $order->order_number }}
             </td>
         </tr>
         <tr>
-            <td style="font-size:13px;color:#374151;border-bottom:1px solid #dcedc8;">
-                <strong style="color:#1b5e20;">Order Date:</strong>
+            <td style="font-size:13px;color:#374151;border-bottom:1px solid #ffe0b2;">
+                <strong style="color:#e65100;">Customer:</strong>
             </td>
-            <td style="font-size:13px;color:#374151;border-bottom:1px solid #dcedc8;text-align:right;">
+            <td style="font-size:13px;color:#374151;border-bottom:1px solid #ffe0b2;text-align:right;">
+                {{ $customer->first_name }} {{ $customer->last_name }}
+            </td>
+        </tr>
+        <tr>
+            <td style="font-size:13px;color:#374151;border-bottom:1px solid #ffe0b2;">
+                <strong style="color:#e65100;">Email:</strong>
+            </td>
+            <td style="font-size:13px;color:#374151;border-bottom:1px solid #ffe0b2;text-align:right;">
+                {{ $customer->email }}
+            </td>
+        </tr>
+        <tr>
+            <td style="font-size:13px;color:#374151;border-bottom:1px solid #ffe0b2;">
+                <strong style="color:#e65100;">Phone:</strong>
+            </td>
+            <td style="font-size:13px;color:#374151;border-bottom:1px solid #ffe0b2;text-align:right;">
+                {{ $customer->phone }}
+            </td>
+        </tr>
+        <tr>
+            <td style="font-size:13px;color:#374151;border-bottom:1px solid #ffe0b2;">
+                <strong style="color:#e65100;">Order Date:</strong>
+            </td>
+            <td style="font-size:13px;color:#374151;border-bottom:1px solid #ffe0b2;text-align:right;">
                 {{ $order->created_at->format('d M, Y h:i A') }}
             </td>
         </tr>
         <tr>
-            <td style="font-size:13px;color:#374151;border-bottom:1px solid #dcedc8;">
-                <strong style="color:#1b5e20;">Payment Status:</strong>
+            <td style="font-size:13px;color:#374151;border-bottom:1px solid #ffe0b2;">
+                <strong style="color:#e65100;">Payment Status:</strong>
             </td>
-            <td style="font-size:13px;color:#374151;border-bottom:1px solid #dcedc8;text-align:right;">
+            <td style="font-size:13px;color:#374151;border-bottom:1px solid #ffe0b2;text-align:right;">
                 {{ ucfirst(str_replace('_', ' ', $order->payment_status)) }}
             </td>
         </tr>
         <tr>
             <td style="font-size:13px;color:#374151;">
-                <strong style="color:#1b5e20;">Order Status:</strong>
+                <strong style="color:#e65100;">Order Status:</strong>
             </td>
             <td style="font-size:13px;color:#374151;text-align:right;">
                 {{ ucfirst($order->status) }}
@@ -49,11 +70,11 @@
     </table>
 
     <!-- Items table -->
-    <p style="margin:0 0 10px;font-size:14px;font-weight:700;color:#1b5e20;">Order Items:</p>
+    <p style="margin:0 0 10px;font-size:14px;font-weight:700;color:#e65100;">Order Items:</p>
     <table width="100%" cellpadding="10" cellspacing="0" border="0"
            style="border-collapse:collapse;margin-bottom:20px;font-size:13px;">
         <thead>
-            <tr style="background-color:#2e7d32;">
+            <tr style="background-color:#ff6f00;">
                 <th style="color:#ffffff;text-align:left;padding:10px 12px;">Product</th>
                 <th style="color:#ffffff;text-align:center;padding:10px 12px;">Qty</th>
                 <th style="color:#ffffff;text-align:right;padding:10px 12px;">Price</th>
@@ -62,20 +83,20 @@
         </thead>
         <tbody>
             @foreach($items as $index => $item)
-            <tr style="background-color:{{ $index % 2 === 0 ? '#f9fdf9' : '#ffffff' }};">
-                <td style="padding:10px 12px;color:#374151;border-bottom:1px solid #e8f5e9;">
+            <tr style="background-color:{{ $index % 2 === 0 ? '#fff8f0' : '#ffffff' }};">
+                <td style="padding:10px 12px;color:#374151;border-bottom:1px solid #ffe0b2;">
                     {{ $item->meta['product_name'] ?? $item->product->name }}
                     @if(isset($item->meta['variant_name']))
                         <br /><small style="color:#757575;">({{ $item->meta['variant_name'] }})</small>
                     @endif
                 </td>
-                <td style="padding:10px 12px;color:#374151;border-bottom:1px solid #e8f5e9;text-align:center;">
+                <td style="padding:10px 12px;color:#374151;border-bottom:1px solid #ffe0b2;text-align:center;">
                     {{ $item->quantity }}
                 </td>
-                <td style="padding:10px 12px;color:#374151;border-bottom:1px solid #e8f5e9;text-align:right;">
+                <td style="padding:10px 12px;color:#374151;border-bottom:1px solid #ffe0b2;text-align:right;">
                     PKR {{ number_format($item->price, 2) }}
                 </td>
-                <td style="padding:10px 12px;color:#374151;border-bottom:1px solid #e8f5e9;text-align:right;">
+                <td style="padding:10px 12px;color:#374151;border-bottom:1px solid #ffe0b2;text-align:right;">
                     PKR {{ number_format($item->subtotal, 2) }}
                 </td>
             </tr>
@@ -113,12 +134,12 @@
             <td style="text-align:right;color:#374151;"><strong>Tax:</strong></td>
             <td style="text-align:right;color:#374151;">+ PKR {{ number_format($order->tax, 2) }}</td>
         </tr>
-        @endif
-        <tr style="background-color:#e8f5e9;">
-            <td style="text-align:right;padding:10px 8px;font-size:15px;font-weight:700;color:#1b5e20;">
+        @endif>
+        <tr style="background-color:#ffe0b2;">
+            <td style="text-align:right;padding:10px 8px;font-size:15px;font-weight:700;color:#e65100;">
                 <strong>Grand Total:</strong>
             </td>
-            <td style="text-align:right;padding:10px 8px;font-size:15px;font-weight:700;color:#1b5e20;">
+            <td style="text-align:right;padding:10px 8px;font-size:15px;font-weight:700;color:#e65100;">
                 PKR {{ number_format($order->grand_total, 2) }}
             </td>
         </tr>
@@ -126,10 +147,10 @@
 
     @if($order->shipping_address)
     <table width="100%" cellpadding="12" cellspacing="0" border="0"
-           style="background-color:#f1f8f1;border-left:4px solid #2e7d32;margin-bottom:20px;font-size:13px;">
+           style="background-color:#fff3e0;border-left:4px solid #ff6f00;margin-bottom:20px;font-size:13px;">
         <tr>
             <td>
-                <strong style="color:#1b5e20;">Shipping Address:</strong><br />
+                <strong style="color:#e65100;">Shipping Address:</strong><br />
                 <span style="color:#374151;">{{ $order->shipping_address }}</span>
             </td>
         </tr>
@@ -138,33 +159,31 @@
 
     @if($order->order_note)
     <table width="100%" cellpadding="12" cellspacing="0" border="0"
-           style="background-color:#f1f8f1;border-left:4px solid #2e7d32;margin-bottom:20px;font-size:13px;">
+           style="background-color:#fff3e0;border-left:4px solid #ff6f00;margin-bottom:20px;font-size:13px;">
         <tr>
             <td>
-                <strong style="color:#1b5e20;">Note:</strong><br />
+                <strong style="color:#e65100;">Customer Note:</strong><br />
                 <span style="color:#374151;">{{ $order->order_note }}</span>
             </td>
         </tr>
     </table>
     @endif
 
-    <!-- Track Order Button -->
+    <!-- Admin Action Button -->
     <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px;">
         <tr>
             <td align="center">
-                <a href="{{ config('app.frontend_url') }}/track-order?order={{ $order->order_number }}" 
-                   style="display:inline-block;padding:12px 32px;background-color:#2e7d32;color:#ffffff;
+                <a href="{{ config('app.url') }}/admin/orders/{{ $order->id }}" 
+                   style="display:inline-block;padding:12px 32px;background-color:#ff6f00;color:#ffffff;
                           text-decoration:none;border-radius:6px;font-weight:700;font-size:14px;">
-                    Track Your Order
+                    View Order in Admin Panel
                 </a>
             </td>
         </tr>
     </table>
 
     <p style="margin:0;font-size:13px;color:#4a4a4a;line-height:1.7;">
-        We'll send you another email when your order ships. If you have any questions, 
-        <a href="{{ config('app.frontend_url') }}/contact" style="color:#2e7d32;text-decoration:none;">contact us</a> 
-        or visit our <a href="{{ config('app.frontend_url') }}" style="color:#2e7d32;text-decoration:none;">website</a>.
+        Please process this order as soon as possible. Log in to the admin panel to update the order status.
     </p>
 
 </x-mail-layout>

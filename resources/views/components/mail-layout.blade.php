@@ -25,14 +25,16 @@
                     {{-- ── HEADER ── --}}
                     <tr>
                         <td style="background-color:#1b5e20;padding:28px 32px;text-align:center;">
-                            <p style="margin:0;font-size:26px;font-weight:800;color:#ffffff;
-                                      letter-spacing:2px;line-height:1.2;">
-                                🌿 Pansari Inn
-                            </p>
-                            <p style="margin:6px 0 0;font-size:12px;color:#a5d6a7;
-                                      letter-spacing:1px;text-transform:uppercase;">
-                                {!! $headerTagline !!}
-                            </p>
+                            <a href="{{ config('app.frontend_url') }}" style="text-decoration:none;">
+                                <p style="margin:0;font-size:26px;font-weight:800;color:#ffffff;
+                                          letter-spacing:2px;line-height:1.2;">
+                                    🌿 Pansari Inn
+                                </p>
+                                <p style="margin:6px 0 0;font-size:12px;color:#a5d6a7;
+                                          letter-spacing:1px;text-transform:uppercase;">
+                                    {!! $headerTagline !!}
+                                </p>
+                            </a>
                         </td>
                     </tr>
 
@@ -70,6 +72,18 @@
                                 📧 <a href="mailto:pansariinn@gmail.com"
                                       style="color:#2e7d32;text-decoration:none;">
                                     pansariinn@gmail.com
+                                </a>
+                            </p>
+                            <p style="margin:0 0 4px;font-size:12px;color:#4a4a4a;">
+                                📞 <a href="tel:{{ config('services.contact.phone', '+92 300 1234567') }}"
+                                      style="color:#2e7d32;text-decoration:none;">
+                                    {{ config('services.contact.phone', '+92 300 1234567') }}
+                                </a>
+                            </p>
+                            <p style="margin:0 0 4px;font-size:12px;color:#4a4a4a;">
+                                💬 <a href="https://wa.me/{{ str_replace(['+', ' ', '-'], '', config('services.whatsapp.phone', '923001234567')) }}"
+                                      style="color:#2e7d32;text-decoration:none;">
+                                    WhatsApp: {{ config('services.whatsapp.phone', '+92 300 1234567') }}
                                 </a>
                             </p>
                             <p style="margin:8px 0 0;font-size:11px;color:#9e9e9e;">
