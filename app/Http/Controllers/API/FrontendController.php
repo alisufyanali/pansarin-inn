@@ -106,7 +106,7 @@ class FrontendController extends Controller
             ->orderByDesc('number_of_view')
             ->orderByDesc('created_at')
             ->take(4)
-            ->get(['id', 'name', 'slug', 'thumbnail', 'price', 'sale_price', 'featured', 'number_of_view']);
+            ->get(['id', 'name', 'slug', 'thumbnail', 'featured', 'number_of_view']);
 
         // ── Recommended For You ───────────────────────────────────
         // Products sharing at least one health concern with this product.
@@ -123,7 +123,7 @@ class FrontendController extends Controller
                 ->orderByDesc('number_of_view')
                 ->orderByDesc('created_at')
                 ->take(4)
-                ->get(['id', 'name', 'slug', 'thumbnail', 'price', 'sale_price', 'featured', 'number_of_view']);
+                ->get(['id', 'name', 'slug', 'thumbnail', 'featured', 'number_of_view']);
         } else {
             // No health concerns — fallback: exclude products already in related, use same category
             $excludeIds = $relatedProducts->pluck('id')->push($product->id);
@@ -134,7 +134,7 @@ class FrontendController extends Controller
                 ->orderByDesc('featured')
                 ->orderByDesc('number_of_view')
                 ->take(4)
-                ->get(['id', 'name', 'slug', 'thumbnail', 'price', 'sale_price', 'featured', 'number_of_view']);
+                ->get(['id', 'name', 'slug', 'thumbnail', 'featured', 'number_of_view']);
         }
 
         // Increment Views

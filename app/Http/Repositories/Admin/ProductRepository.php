@@ -18,9 +18,13 @@ class ProductRepository
 
     public function getAllForDataTable($request)
     {
-        $query = Product::with('category:id,name')
-            ->select('id', 'name', 'sku', 'price', 'sale_price', 'purchase_price_per_unit',
-                     'sale_price_per_unit', 'quantity', 'unit', 'status', 'featured',
+        // Only select columns that actually exist on the products table.
+        // Pricing lives on product_variants — eager-load the default variant.
+        $query = Product::with([
+                'category:id,name',
+                'variants' => fn ($q) => $q->where('is_default', true)->limit(1),
+            ])
+            ->select('id', 'name', 'sku', 'unit', 'status', 'featured',
                      'category_id', 'thumbnail', 'created_at', 'updated_at');
 
         if ($request->filled('search')) {
@@ -40,27 +44,27 @@ class ProductRepository
         $products = $query->paginate(min((int) $request->get('perPage', 10), 100), ['*'], 'page', $request->get('page', 1));
 
         return response()->json([
-            'data'         => $products->map(fn ($p) => [
-                'id'                      => $p->id,
-                'name'                    => $p->name,
-                'sku'                     => $p->sku,
-                'price'                   => $p->price,
-                'sale_price'              => $p->sale_price,
-                'purchase_price_per_unit' => $p->purchase_price_per_unit,
-                'sale_price_per_unit'     => $p->sale_price_per_unit,
-                'quantity'                => $p->quantity,
-                'unit'                    => $p->unit,
-                'status'                  => $p->status,
-                'featured'                => $p->featured,
-                'category_id'             => $p->category_id,
-                'category'                => $p->category,
-                // ── Thumbnail: simple asset() — no finfo needed ──
-                'thumbnail_url'           => $p->thumbnail
-                                                ? asset('storage/' . $p->thumbnail)
-                                                : null,
-                'created_at'              => $p->created_at,
-                'updated_at'              => $p->updated_at,
-            ]),
+            'data'         => $products->map(function ($p) {
+                // Default variant carries the representative price for the listing row.
+                $defaultVariant = $p->variants->first();
+
+                return [
+                    'id'            => $p->id,
+                    'name'          => $p->name,
+                    'sku'           => $p->sku,
+                    // Price from default variant; null when no variants exist yet.
+                    'price'         => $defaultVariant ? (float) $defaultVariant->price     : null,
+                    'sale_price'    => $defaultVariant ? $defaultVariant->sale_price        : null,
+                    'unit'          => $p->unit,
+                    'status'        => $p->status,
+                    'featured'      => $p->featured,
+                    'category_id'   => $p->category_id,
+                    'category'      => $p->category,
+                    'thumbnail_url' => $p->thumbnail ? asset('storage/' . $p->thumbnail) : null,
+                    'created_at'    => $p->created_at,
+                    'updated_at'    => $p->updated_at,
+                ];
+            }),
             'total'        => $products->total(),
             'per_page'     => $products->perPage(),
             'current_page' => $products->currentPage(),

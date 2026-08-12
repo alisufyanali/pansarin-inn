@@ -18,7 +18,7 @@ class WishlistApiController extends Controller
     public function index(Request $request)
     {
         $items = Wishlist::with([
-                'product:id,name,slug,thumbnail,price,sale_price',
+                'product:id,name,slug,thumbnail',
                 'variant:id,sku,value,attributes,price,sale_price,product_id',
             ])
             ->where('user_id', $request->user()->id)
@@ -42,8 +42,6 @@ class WishlistApiController extends Controller
                     'id'         => $w->product->id,
                     'name'       => $w->product->name,
                     'slug'       => $w->product->slug,
-                    'price'      => (float) $w->product->price,
-                    'sale_price' => $w->product->sale_price ? (float) $w->product->sale_price : null,
                     'thumbnail'  => $w->product->thumbnail ? asset('storage/' . $w->product->thumbnail) : null,
                 ] : null,
                 // Variant shape matches ProductApiController::formatProduct() exactly.

@@ -14,7 +14,7 @@ class CartApiController extends Controller
     public function index(Request $request)
     {
         $items = Cart::with([
-            'variant.product:id,name,slug,thumbnail,price,sale_price',
+            'variant.product:id,name,slug,thumbnail',
         ])->where('user_id', $request->user()->id)->get();
 
         return response()->json([
@@ -62,7 +62,7 @@ class CartApiController extends Controller
             ]);
         }
 
-        $cartItem->load('variant.product:id,name,slug,thumbnail,price,sale_price');
+        $cartItem->load('variant.product:id,name,slug,thumbnail');
 
         return response()->json([
             'success' => true,
@@ -92,7 +92,7 @@ class CartApiController extends Controller
         }
 
         $cartItem->update(['quantity' => $request->quantity]);
-        $cartItem->load('variant.product:id,name,slug,thumbnail,price,sale_price');
+        $cartItem->load('variant.product:id,name,slug,thumbnail');
 
         return response()->json([
             'success' => true,
@@ -128,7 +128,7 @@ class CartApiController extends Controller
     {
         $variant   = $c->variant;
         $product   = $variant?->product;
-        $unitPrice = (float) ($variant?->sale_price ?? $variant?->price ?? $product?->sale_price ?? $product?->price ?? 0);
+        $unitPrice = (float) ($variant?->sale_price ?? $variant?->price ?? 0);
 
         return [
             'id'         => $c->id,
