@@ -32,15 +32,23 @@ class WhatsAppService
 
     /**
      * Send template message (for orders)
+     *
+     * @param float  $orderTotal          Raw numeric total — stored in DB log (decimal column).
+     * @param string $orderTotalFormatted Display string e.g. "Rs. 1,150.00" — sent in WhatsApp template.
+     *                                    Falls back to formatting $orderTotal when omitted.
      */
     public function sendTemplateMessage(
         string $recipientPhone,
         string $customerName,
         string $orderId,
-        string $orderTotal,
-        string $deliveryAddress,
+        float  $orderTotal,
+        string $orderTotalFormatted = '',
+        string $deliveryAddress = '',
         string $templateName = 'order_confirmation'
     ) {
+        // Formatted display string for the WhatsApp template body
+        $displayTotal = $orderTotalFormatted !== '' ? $orderTotalFormatted : 'Rs. ' . number_format($orderTotal, 2);
+
         $url = "{$this->apiUrl}/v22.0/{$this->phoneNumberId}/messages";
 
         $data = [
@@ -56,7 +64,7 @@ class WhatsAppService
                         'parameters' => [
                             ['type' => 'text', 'text' => $customerName],
                             ['type' => 'text', 'text' => $orderId],
-                            ['type' => 'text', 'text' => $orderTotal],
+                            ['type' => 'text', 'text' => $displayTotal],   // formatted for display
                             ['type' => 'text', 'text' => $deliveryAddress],
                         ],
                     ],
@@ -81,14 +89,14 @@ class WhatsAppService
             $body = $response->body();
             $responseData = $response->json();
 
-            // Save to log table
+            // Save to log table — pass raw numeric total for the decimal DB column
             $this->saveMessageLog(
                 $recipientPhone,
                 $customerName,
                 $orderId,
-                $orderTotal,
+                $orderTotal,                        // float → decimal column ✓
                 $deliveryAddress,
-                "Order: $orderId - Total: $orderTotal",
+                "Order: $orderId - Total: $displayTotal",
                 $body
             );
 
@@ -166,7 +174,7 @@ class WhatsAppService
         string $phone,
         string $customerName,
         string $orderId,
-        string $orderTotal,
+        float  $orderTotal,         // numeric — matches decimal(10,2) DB column
         string $deliveryAddress,
         string $message,
         string $apiResponse

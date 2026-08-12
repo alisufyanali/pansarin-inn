@@ -48,9 +48,10 @@ class SendOrderWhatsAppNotification implements ShouldQueue
             }
 
             // Prepare message data
-            $customerName = $this->order->customer->full_name ?? $this->order->customer->first_name;
-            $orderNumber = $this->order->order_number;
-            $orderTotal = 'Rs. '.number_format($this->order->grand_total, 2);
+            $customerName    = $this->order->customer->full_name ?? $this->order->customer->first_name;
+            $orderNumber     = $this->order->order_number;
+            $grandTotal      = (float) $this->order->grand_total;          // raw numeric — for DB log
+            $orderTotalFormatted = 'Rs. ' . number_format($grandTotal, 2); // display string — for template
             $deliveryAddress = $this->order->shipping_address ?? 'N/A';
 
             // Send WhatsApp message using template
@@ -63,9 +64,10 @@ class SendOrderWhatsAppNotification implements ShouldQueue
                 $this->order->customer->phone,
                 $customerName,
                 $orderNumber,
-                $orderTotal,
+                $grandTotal,              // numeric for saveMessageLog → decimal column
+                $orderTotalFormatted,     // formatted string for WhatsApp template body
                 $deliveryAddress,
-                'order_confirmation' // Your WhatsApp template name
+                'order_confirmation'
             );
 
             Log::info('WHATSAPP JOB RESPONSE: order template sent', [
