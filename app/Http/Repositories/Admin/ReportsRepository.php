@@ -32,7 +32,7 @@ class ReportsRepository
         ?string $paymentMethod = null
     ): array {
         $format = match ($period) {
-            'weekly'  => '%Y-%W',
+            'weekly'  => '%Y-%u',   // MySQL: ISO week number
             'monthly' => '%Y-%m',
             default   => '%Y-%m-%d',
         };
@@ -47,7 +47,7 @@ class ReportsRepository
             ->whereNotIn('status', ['cancelled', 'refunded'])
             ->whereNull('deleted_at')
             ->select([
-                DB::raw("strftime('{$format}', created_at) as period"),
+                DB::raw("DATE_FORMAT(created_at, '{$format}') as period"),
                 DB::raw('COUNT(*) as orders'),
                 DB::raw('SUM(grand_total) as revenue'),
             ])
@@ -145,7 +145,7 @@ class ReportsRepository
             ->when($to,   fn ($q) => $q->whereDate('o.created_at', '<=', $to))
             ->select([
                 'o.customer_id',
-                DB::raw("c.first_name || ' ' || COALESCE(c.last_name, '') as customer_name"),
+                DB::raw("CONCAT(c.first_name, ' ', COALESCE(c.last_name, '')) as customer_name"),
                 'c.phone',
                 'c.email',
                 DB::raw('COUNT(o.id) as order_count'),

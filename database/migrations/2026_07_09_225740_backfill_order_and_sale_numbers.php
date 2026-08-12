@@ -82,7 +82,7 @@ return new class extends Migration
         // Update sequences table so next generated number is correct
         $maxOrder = DB::table('orders')
             ->where('order_number', 'LIKE', 'ORDER-%')
-            ->orderByRaw("CAST(SUBSTR(order_number, 7) AS INTEGER) DESC")
+            ->orderByRaw("CAST(SUBSTR(order_number, 7) AS UNSIGNED) DESC")
             ->value('order_number');
 
         if ($maxOrder) {
