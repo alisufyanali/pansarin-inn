@@ -10,6 +10,7 @@ use App\Models\Customer;
 use App\Models\Order;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -241,41 +242,75 @@ class OrderApiController extends Controller
         $token          = null;
 
         // ── Resolve or create User + Customer ─────────────────────
-        $existingUser = User::where('email', $request->email)->first();
+        // Priority: email match first (primary identifier the guest typed),
+        // then phone match, then create new account.
+        // Wrapped in a transaction so concurrent checkouts with the same new
+        // phone/email don't race into duplicate-key crashes.
+        $resolvedUser = \Illuminate\Support\Facades\DB::transaction(function () use ($request, &$accountCreated, &$token) {
 
-        if ($existingUser) {
-            // Existing user — use their customer profile
-            $customer = $existingUser->customer;
+            // ── 1. Email match ─────────────────────────────────────
+            $byEmail = User::where('email', $request->email)->first();
 
-            if (! $customer) {
-                // User exists but has no customer profile (edge case) — create one
-                $customer = Customer::create([
-                    'user_id'    => $existingUser->id,
-                    'first_name' => $request->name,
-                    'phone'      => $this->uniquePhone($request->phone),
-                    'email'      => $request->email,
-                    'address'    => $request->shipping_address,
-                    'city_id'    => $request->city_id ?? null,
-                    'status'     => 'active',
-                ]);
+            if ($byEmail) {
+                // If a DIFFERENT user already owns this phone, log a warning but
+                // do not crash — just proceed with the email-matched user as-is.
+                $phoneOwner = User::where('phone', $request->phone)
+                    ->where('id', '!=', $byEmail->id)
+                    ->first();
+
+                if ($phoneOwner) {
+                    Log::warning('Guest checkout phone conflict: phone belongs to a different user than the email match.', [
+                        'email'          => $request->email,
+                        'phone'          => $request->phone,
+                        'email_user_id'  => $byEmail->id,
+                        'phone_user_id'  => $phoneOwner->id,
+                    ]);
+                    // Do NOT update the email-matched user's phone.
+                    // Proceed with the email-matched user unchanged.
+                }
+
+                return $byEmail;
             }
-        } else {
-            // New guest — create User with a secure random password.
-            // The guest cannot log in until they set their own password via "Forgot Password".
-            // GuestAccountCreatedMail (sent below) instructs them to use Forgot Password.
-            $newUser = User::create([
-                'name'     => $request->name,
-                'email'    => $request->email,
-                'password' => Hash::make(Str::random(16)),
-                'phone'    => $request->phone,
-                'username' => Str::slug($request->name) . '-' . rand(1000, 9999),
-                'status'   => 1,
-            ]);
 
-            $newUser->assignRole('customer');
+            // ── 2. Phone match (email not found) ───────────────────
+            $byPhone = User::where('phone', $request->phone)->first();
 
+            if ($byPhone) {
+                // Phone belongs to an existing account with a different email.
+                // Attach the order to that account without modifying any fields.
+                return $byPhone;
+            }
+
+            // ── 3. Completely new guest — create account ───────────
+            // Use firstOrCreate keyed on email to be safe against
+            // the exact-same-email race condition.
+            $newUser = User::firstOrCreate(
+                ['email' => $request->email],
+                [
+                    'name'     => $request->name,
+                    'password' => Hash::make(Str::random(16)),
+                    'phone'    => $request->phone,
+                    'username' => Str::slug($request->name) . '-' . rand(1000, 9999),
+                    'status'   => 1,
+                ]
+            );
+
+            if ($newUser->wasRecentlyCreated) {
+                $newUser->assignRole('customer');
+                $accountCreated = true;
+                $token = $newUser->createToken('api-token')->plainTextToken;
+            }
+
+            return $newUser;
+        });
+
+        // ── Ensure Customer profile exists for resolved user ───────
+        $customer = $resolvedUser->customer;
+
+        if (! $customer) {
+            // User exists but has no customer profile (edge case) — create one.
             $customer = Customer::create([
-                'user_id'    => $newUser->id,
+                'user_id'    => $resolvedUser->id,
                 'first_name' => $request->name,
                 'phone'      => $this->uniquePhone($request->phone),
                 'email'      => $request->email,
@@ -283,9 +318,6 @@ class OrderApiController extends Controller
                 'city_id'    => $request->city_id ?? null,
                 'status'     => 'active',
             ]);
-
-            $token          = $newUser->createToken('api-token')->plainTextToken;
-            $accountCreated = true;
         }
 
         // ── Create Order via existing OrderRepository::store() ────
