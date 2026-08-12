@@ -24,13 +24,18 @@
 
                     {{-- ── HEADER ── --}}
                     <tr>
-                        <td style="background-color:#1b5e20;padding:28px 32px;text-align:center;">
-                            <a href="{{ config('app.frontend_url') }}" style="text-decoration:none;">
-                                <p style="margin:0;font-size:26px;font-weight:800;color:#ffffff;
-                                          letter-spacing:2px;line-height:1.2;">
-                                    🌿 Pansari Inn
-                                </p>
-                                <p style="margin:6px 0 0;font-size:12px;color:#a5d6a7;
+                        <td style="background-color:#1b5e20;padding:24px 32px;text-align:center;">
+                            <a href="{{ config('app.frontend_url', config('app.url')) }}"
+                               style="text-decoration:none;display:inline-block;">
+                                {{-- Logo image — absolute URL so email clients can fetch it --}}
+                                <img
+                                    src="{{ rtrim(config('app.url'), '/') }}/logo.png"
+                                    alt="Pansari Inn"
+                                    width="160"
+                                    height="auto"
+                                    style="display:block;height:60px;width:auto;max-width:200px;object-fit:contain;margin:0 auto 8px;"
+                                />
+                                <p style="margin:0;font-size:13px;color:#a5d6a7;
                                           letter-spacing:1px;text-transform:uppercase;">
                                     {!! $headerTagline !!}
                                 </p>
