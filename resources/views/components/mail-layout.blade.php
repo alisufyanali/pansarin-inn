@@ -86,7 +86,7 @@
                                 </a>
                             </p>
                             <p style="margin:0 0 4px;font-size:12px;color:#4a4a4a;">
-                                💬 <a href="https://wa.me/{{ str_replace(['+', ' ', '-'], '', config('services.whatsapp.phone', '923001234567')) }}"
+                                💬 <a href="https://wa.me/{{ str_replace(['+', ' ', '-'], '', config('services.whatsapp.phone', '923045779900')) }}"
                                       style="color:#2e7d32;text-decoration:none;">
                                     WhatsApp: {{ config('services.whatsapp.phone', '+92 304 5779900') }}
                                 </a>
