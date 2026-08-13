@@ -40,11 +40,11 @@ return [
         'access_token' => env('WHATSAPP_ACCESS_TOKEN'),
         'verify_token' => env('WHATSAPP_VERIFY_TOKEN'),
         'api_url' => env('WHATSAPP_API_URL', 'https://graph.facebook.com'),
-        'phone' => env('WHATSAPP_PHONE_NUMBER', '+92 300 1234567'), // Customer-facing WhatsApp contact
+        'phone' => env('WHATSAPP_PHONE_NUMBER', '+92 304 5779900'), // Customer-facing WhatsApp contact
     ],
 
     'contact' => [
-        'phone' => env('CONTACT_PHONE', '+92 300 1234567'),
+        'phone' => env('CONTACT_PHONE', '+92 304 5779900'),
         'email' => env('CONTACT_EMAIL', 'pansariinn@gmail.com'),
     ],
 

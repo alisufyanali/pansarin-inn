@@ -80,15 +80,15 @@
                                 </a>
                             </p>
                             <p style="margin:0 0 4px;font-size:12px;color:#4a4a4a;">
-                                📞 <a href="tel:{{ config('services.contact.phone', '+92 300 1234567') }}"
+                                📞 <a href="tel:{{ config('services.contact.phone', '+92 304 5779900') }}"
                                       style="color:#2e7d32;text-decoration:none;">
-                                    {{ config('services.contact.phone', '+92 300 1234567') }}
+                                    {{ config('services.contact.phone', '+92 304 5779900') }}
                                 </a>
                             </p>
                             <p style="margin:0 0 4px;font-size:12px;color:#4a4a4a;">
                                 💬 <a href="https://wa.me/{{ str_replace(['+', ' ', '-'], '', config('services.whatsapp.phone', '923001234567')) }}"
                                       style="color:#2e7d32;text-decoration:none;">
-                                    WhatsApp: {{ config('services.whatsapp.phone', '+92 300 1234567') }}
+                                    WhatsApp: {{ config('services.whatsapp.phone', '+92 304 5779900') }}
                                 </a>
                             </p>
                             <p style="margin:8px 0 0;font-size:11px;color:#9e9e9e;">

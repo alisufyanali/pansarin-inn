@@ -30,7 +30,7 @@ class UiSettingSeeder extends Seeder
             'top_slide_categories' => '[]',
 
             // Marketing
-            'whatsapp_number' => '+923001234567',
+            'whatsapp_number' => '+92 304 5779900',
             'affiliate_system' => 'no',
         ];
 

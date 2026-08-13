@@ -28,7 +28,7 @@ class AffiliateTestSeeder extends Seeder
             [
                 'first_name' => $user->name,
                 'email'      => $user->email,
-                'phone'      => '03001234567',
+                'phone'      => '+92 304 5779900',
                 'status'     => 'active'
             ]
         );

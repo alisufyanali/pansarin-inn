@@ -17,7 +17,7 @@ class GeneralSettingSeeder extends Seeder
 
             // --- Contact & Footer ---
             ['type' => 'contact_email', 'value' => 'info@pansariinn.com'],
-            ['type' => 'contact_phone', 'value' => '+92 300 1234567'],
+            ['type' => 'contact_phone', 'value' => '+92 304 5779900'],
             ['type' => 'contact_address', 'value' => 'Shop #12, Pansari Market, Karachi, Pakistan'],
             ['type' => 'facebook_url', 'value' => 'https://facebook.com/pansariinn'],
             ['type' => 'instagram_url', 'value' => 'https://instagram.com/pansariinn'],
