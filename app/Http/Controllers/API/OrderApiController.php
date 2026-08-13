@@ -237,7 +237,8 @@ class OrderApiController extends Controller
             $request->validate([
                 'name'             => 'required|string|max:255',
                 'email'            => 'required|email|max:255',
-                'phone'            => 'required|string|max:30|regex:/^(\+92|0092|92|0)?3[0-9]{9}$/',
+                // Use array syntax to prevent Laravel splitting the regex on | delimiters
+                'phone'            => ['required', 'string', 'max:30', 'regex:/^\+92[0-9]{10}$/'],
                 'shipping_address' => 'required|string',
                 'billing_address'  => 'nullable|string',
                 'city_id'          => 'nullable|integer|exists:cities,id',
