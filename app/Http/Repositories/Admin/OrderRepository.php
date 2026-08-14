@@ -201,7 +201,7 @@ class OrderRepository
         $products = Product::with(['variants'])
             ->where('status', true)
             ->orderBy('name')
-            ->get(['id', 'name', 'sku', 'unit', 'price', 'sale_price', 'quantity']);
+            ->get(['id', 'name', 'sku', 'unit']);
 
         // Scope stock query to only the fetched product IDs — avoids loading entire table
         $productIds = $products->pluck('id');
@@ -218,15 +218,18 @@ class OrderRepository
                     $baseStock = $allStocks->filter(fn($g, $k) => str_starts_with($k, $p->id . '_') && !str_ends_with($k, '_null'))->sum(fn($g) => $g->sum('quantity'));
                 } else {
                     $stockRecord = $allStocks->get($p->id . '_null')?->first();
-                    $baseStock   = $stockRecord ? $stockRecord->quantity : (float) ($p->quantity ?? 0);
+                    $baseStock   = $stockRecord ? $stockRecord->quantity : 0;
                 }
+
+                // Default price: use first variant's sale/price, or 0 if no variants
+                $defaultVariant = $p->variants->first();
 
                 return [
                     'id'       => $p->id,
                     'name'     => $p->name,
                     'sku'      => $p->sku,
                     'unit'     => $p->unit,
-                    'price'    => (float) ($p->sale_price ?: $p->price ?: 0),
+                    'price'    => $defaultVariant ? (float) ($defaultVariant->sale_price ?: $defaultVariant->price ?: 0) : 0,
                     'stock'    => (int) $baseStock,
                     'variants' => $p->variants->map(fn ($v) => [
                         'id'    => $v->id,
