@@ -107,6 +107,19 @@ class AuthApiController extends Controller
                 ]);
             }
 
+            // Notify all admins of the new registration
+            try {
+                $admins = \App\Models\User::role('admin')->get();
+                foreach ($admins as $admin) {
+                    $admin->notify(new \App\Notifications\NewUserNotification($user));
+                }
+            } catch (\Throwable $notifyEx) {
+                Log::error('NewUserNotification dispatch failed', [
+                    'user_id' => $user->id,
+                    'error'   => $notifyEx->getMessage(),
+                ]);
+            }
+
             $token = $user->createToken('api-token')->plainTextToken;
 
             return response()->json([

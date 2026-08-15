@@ -53,6 +53,22 @@ class NewsletterApiController extends Controller
             'user_agent' => $request->userAgent(),
         ]);
 
+        // Notify all admins of the new subscriber
+        try {
+            $admins = \App\Models\User::role('admin')->get();
+            foreach ($admins as $admin) {
+                $admin->notify(new \App\Notifications\NewNewsletterSubscriberNotification(
+                    $request->email,
+                    $request->name ?? null,
+                ));
+            }
+        } catch (\Throwable $notifyEx) {
+            \Illuminate\Support\Facades\Log::error('NewNewsletterSubscriberNotification failed', [
+                'email' => $request->email,
+                'error' => $notifyEx->getMessage(),
+            ]);
+        }
+
         try {
             \Illuminate\Support\Facades\Mail::to($request->email)
                 ->send(new \App\Mail\NewsletterWelcome($request->email, $request->name ?? ''));
