@@ -168,6 +168,19 @@ class ProductReviewApiController extends Controller
             'status'         => false, // pending admin approval
         ]);
 
+        // Notify all admins of the new product review submission
+        try {
+            $admins = \App\Models\User::role('admin')->get();
+            foreach ($admins as $admin) {
+                $admin->notify(new \App\Notifications\ProductReviewSubmittedNotification($review));
+            }
+        } catch (\Throwable $notifyEx) {
+            \Illuminate\Support\Facades\Log::error('ProductReviewSubmittedNotification dispatch failed', [
+                'product_review_id' => $review->id,
+                'error'             => $notifyEx->getMessage(),
+            ]);
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Thank you for your review! It will appear after admin approval.',

@@ -36,6 +36,19 @@ class SupportApiController extends Controller
             'status'  => 'open',
         ]);
 
+        // Notify all admins of the new support ticket
+        try {
+            $admins = \App\Models\User::role('admin')->get();
+            foreach ($admins as $admin) {
+                $admin->notify(new \App\Notifications\SupportTicketNotification($ticket));
+            }
+        } catch (\Throwable $notifyEx) {
+            \Illuminate\Support\Facades\Log::error('SupportTicketNotification dispatch failed', [
+                'ticket_id' => $ticket->id,
+                'error'     => $notifyEx->getMessage(),
+            ]);
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Support ticket submitted successfully. We will respond within 24 hours.',

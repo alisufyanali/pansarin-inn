@@ -134,6 +134,19 @@ class ReturnApiController extends Controller
                 return $return->load('items');
             });
 
+            // Notify all admins of the new return request
+            try {
+                $admins = \App\Models\User::role('admin')->get();
+                foreach ($admins as $admin) {
+                    $admin->notify(new \App\Notifications\ReturnRequestNotification($returnRequest));
+                }
+            } catch (\Throwable $notifyEx) {
+                Log::error('ReturnRequestNotification dispatch failed', [
+                    'return_request_id' => $returnRequest->id,
+                    'error'             => $notifyEx->getMessage(),
+                ]);
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Return request submitted successfully. Our team will review it within 2-3 business days.',

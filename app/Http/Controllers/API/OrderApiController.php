@@ -42,6 +42,19 @@ class OrderApiController extends Controller
 
         $order->update(['status' => 'cancelled']);
 
+        // Notify all admins of the customer-initiated order cancellation
+        try {
+            $admins = \App\Models\User::role('admin')->get();
+            foreach ($admins as $admin) {
+                $admin->notify(new \App\Notifications\OrderCancelledNotification($order));
+            }
+        } catch (\Throwable $notifyEx) {
+            Log::error('OrderCancelledNotification dispatch failed', [
+                'order_id' => $order->id,
+                'error'    => $notifyEx->getMessage(),
+            ]);
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Order cancelled successfully.',

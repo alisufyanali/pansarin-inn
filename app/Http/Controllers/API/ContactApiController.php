@@ -30,6 +30,19 @@ class ContactApiController extends Controller
             'status'  => 'new',
         ]);
 
+        // Notify all admins of the new contact message
+        try {
+            $admins = \App\Models\User::role('admin')->get();
+            foreach ($admins as $admin) {
+                $admin->notify(new \App\Notifications\ContactMessageNotification($contact));
+            }
+        } catch (\Throwable $notifyEx) {
+            \Illuminate\Support\Facades\Log::error('ContactMessageNotification dispatch failed', [
+                'contact_id' => $contact->id,
+                'error'      => $notifyEx->getMessage(),
+            ]);
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Your message has been sent successfully.',
