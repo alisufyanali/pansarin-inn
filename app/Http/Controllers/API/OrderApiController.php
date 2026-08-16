@@ -32,8 +32,10 @@ class OrderApiController extends Controller
 
         $order = Order::where('customer_id', $customer->id)->findOrFail($id);
 
+        $order->loadMissing('sale');
+
         // Only pending or processing orders can be cancelled by the customer
-        if (! in_array($order->status, ['pending', 'processing'])) {
+        if (! in_array($order->display_status, ['pending', 'processing'])) {
             return response()->json([
                 'success' => false,
                 'message' => 'This order cannot be cancelled. Only pending or processing orders are eligible.',
@@ -60,7 +62,7 @@ class OrderApiController extends Controller
             'message' => 'Order cancelled successfully.',
             'data'    => [
                 'order_number' => $order->order_number,
-                'status'       => $order->status,
+                'status'       => $order->display_status,
             ],
         ]);
     }
@@ -74,7 +76,7 @@ class OrderApiController extends Controller
             return response()->json(['success' => false, 'message' => 'Customer profile not found.'], 404);
         }
 
-        $orders = Order::with(['items', 'city:id,name'])
+        $orders = Order::with(['items', 'city:id,name', 'sale'])
             ->where('customer_id', $customer->id)
             ->latest()
             ->paginate($request->get('per_page', 10));
@@ -100,7 +102,7 @@ class OrderApiController extends Controller
             return response()->json(['success' => false, 'message' => 'Customer profile not found.'], 404);
         }
 
-        $order = Order::with(['items.product', 'items.variant', 'city:id,name'])
+        $order = Order::with(['items.product', 'items.variant', 'city:id,name', 'sale'])
             ->where('customer_id', $customer->id)
             ->findOrFail($id);
 
@@ -227,7 +229,8 @@ class OrderApiController extends Controller
             ], 422);
         }
 
-        $query = Order::with(['items.product', 'items.variant', 'city:id,name', 'customer'])
+        // ── Step 1: Look up by order_number in orders table ──────────
+        $query = Order::with(['items.product', 'items.variant', 'city:id,name', 'customer', 'sale'])
             ->where('order_number', $request->order_number);
         if ($request->filled('email')) {
             $query->whereHas('customer', function ($q) use ($request) {
@@ -237,22 +240,41 @@ class OrderApiController extends Controller
 
         $order = $query->first();
 
-        if (! $order) {
+        if ($order) {
+            $order->items->transform(function ($item) {
+                $item->product_name  = $item->meta['product_name'] ?? $item->product?->name;
+                $item->variant_label = $item->meta['variant_name'] ?? $item->variant?->value;
+                return $item;
+            });
+
+            return response()->json([
+                'success' => true,
+                'data'    => $this->formatOrder($order, detailed: true),
+            ]);
+        }
+
+        // ── Step 2: If not found, try sale_code in sales table ───────
+        // (Covers admin-created direct/orderless "phone" sales)
+        $saleQuery = \App\Models\Sale::with(['items.product', 'city:id,name', 'customer', 'order'])
+            ->where('sale_code', $request->order_number);
+        if ($request->filled('email')) {
+            $saleQuery->whereHas('customer', function ($q) use ($request) {
+                $q->where('email', $request->email);
+            });
+        }
+
+        $sale = $saleQuery->first();
+
+        if (! $sale) {
             return response()->json([
                 'success' => false,
                 'message' => 'Order not found.',
             ], 404);
         }
 
-        $order->items->transform(function ($item) {
-            $item->product_name  = $item->meta['product_name'] ?? $item->product?->name;
-            $item->variant_label = $item->meta['variant_name'] ?? $item->variant?->value;
-            return $item;
-        });
-
         return response()->json([
             'success' => true,
-            'data'    => $this->formatOrder($order, detailed: true),
+            'data'    => $this->formatSaleAsOrder($sale, detailed: true),
         ]);
     }
 
@@ -490,7 +512,7 @@ class OrderApiController extends Controller
         $base = [
             'id'              => $o->id,
             'order_number'    => $o->order_number,
-            'status'          => $o->status,
+            'status'          => $o->display_status,
             'payment_status'  => $o->payment_status,
             'payment_method'  => $o->payment_method,
             'grand_total'     => (float) $o->grand_total,
@@ -516,7 +538,48 @@ class OrderApiController extends Controller
             $base['shipping_address'] = $o->shipping_address;
             $base['billing_address']  = $o->billing_address;
             $base['order_note']       = $o->order_note;
-            $base['tracking']         = $o->shipping_response ?? null;
+            $trackingFromSale = $o->sale?->shipping_response;
+            $trackingFromOrder = $o->shipping_response ?? null;
+            $base['tracking']         = $trackingFromSale ?: $trackingFromOrder;
+        }
+
+        return $base;
+    }
+
+    private function formatSaleAsOrder(\App\Models\Sale $s, bool $detailed = false): array
+    {
+        $orderNumber = $s->order?->order_number ?? $s->sale_code;
+        $base = [
+            'id'              => $s->id,
+            'order_number'    => $orderNumber,
+            'sale_code'       => $s->sale_code,
+            'status'          => $s->display_status,
+            'payment_status'  => $s->payment_status,
+            'payment_method'  => $s->payment_type,
+            'grand_total'     => (float) $s->grand_total,
+            'subtotal'        => (float) ($s->subtotal ?? 0),
+            'shipping'        => (float) ($s->shipping_charges ?? 0),
+            'discount'        => (float) ($s->invoice_discount ?? 0),
+            'tax'             => (float) ($s->vat ?? 0),
+            'city'            => $s->city ? $s->city->name : ($s->customer?->city?->name ?? null),
+            'created_at'      => $s->sale_datetime ?? $s->created_at,
+            'account_created' => false,
+        ];
+
+        if ($detailed) {
+            $base['items']            = $s->items->map(fn ($item) => [
+                'id'           => $item->id,
+                'product_name' => $item->meta['product_name'] ?? $item->product?->name ?? null,
+                'variant'      => $item->meta['variant_name'] ?? null,
+                'quantity'     => $item->quantity,
+                'price'        => (float) $item->price,
+                'discount'     => (float) ($item->discount ?? 0),
+                'subtotal'     => (float) $item->subtotal,
+            ]);
+            $base['shipping_address'] = $s->shipping_address ?? $s->customer?->address ?? null;
+            $base['billing_address']  = null;
+            $base['order_note']       = $s->remarks ?? null;
+            $base['tracking']         = $s->shipping_response ?? null;
         }
 
         return $base;

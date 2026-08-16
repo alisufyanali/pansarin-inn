@@ -43,7 +43,7 @@
                 <strong style="color:#1b5e20;">Order Status:</strong>
             </td>
             <td style="font-size:13px;color:#374151;text-align:right;">
-                {{ ucfirst($order->status) }}
+                {{ ucfirst($order->display_status) }}
             </td>
         </tr>
     </table>

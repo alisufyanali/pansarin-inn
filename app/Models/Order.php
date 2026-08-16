@@ -93,11 +93,38 @@ class Order extends Model
         return $this->sales()->exists();
     }
 
+    // ── Status display mapping (Sale delivery_status → customer-facing label) ──
+    public static function mapDeliveryStatusToDisplay(string $deliveryStatus): string
+    {
+        return match ($deliveryStatus) {
+            'pending', 'processing', 'shipped', 'delivered', 'cancelled' => $deliveryStatus,
+            'returned' => 'cancelled',
+            default      => 'pending',
+        };
+    }
+
+    // ── Read-time customer-facing status: prefer Sale.delivery_status if Sale exists ──
+    public function getDisplayStatusAttribute(): string
+    {
+        if (isset($this->relations['sale']) && $this->sale) {
+            return static::mapDeliveryStatusToDisplay($this->sale->delivery_status);
+        }
+        if (isset($this->relations['sales']) && $this->sales->isNotEmpty()) {
+            $latestSale = $this->sales->sortByDesc('id')->first();
+            return static::mapDeliveryStatusToDisplay($latestSale->delivery_status);
+        }
+        $sale = $this->sale()->latest('id')->first();
+        if ($sale) {
+            return static::mapDeliveryStatusToDisplay($sale->delivery_status);
+        }
+        return $this->status;
+    }
+
     // ── Accessors ─────────────────────────────────────────────────
 
     public function getStatusColorAttribute(): string
     {
-        return match ($this->status) {
+        return match ($this->display_status) {
             'pending'    => 'yellow',
             'processing' => 'blue',
             'shipped'    => 'purple',

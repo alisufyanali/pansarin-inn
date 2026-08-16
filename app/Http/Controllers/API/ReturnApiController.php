@@ -61,8 +61,10 @@ class ReturnApiController extends Controller
             return response()->json(['success' => false, 'message' => 'This order does not belong to you.'], 403);
         }
 
+        $order->loadMissing('sale');
+
         // Must be delivered
-        if ($order->status !== 'delivered') {
+        if ($order->display_status !== 'delivered') {
             return response()->json([
                 'success' => false,
                 'message' => 'Returns can only be initiated for delivered orders.',

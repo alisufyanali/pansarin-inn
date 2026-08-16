@@ -107,4 +107,10 @@ class Sale extends Model
     {
         return (float) ($this->vat ?? 0);
     }
+
+    // ── Customer-facing display status — maps delivery_status to order-compatible label set ──
+    public function getDisplayStatusAttribute(): string
+    {
+        return \App\Models\Order::mapDeliveryStatusToDisplay($this->delivery_status);
+    }
 }
