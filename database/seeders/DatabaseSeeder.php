@@ -40,7 +40,13 @@ class DatabaseSeeder extends Seeder
             CountrySeeder::class,
             StateSeeder::class,
             CitySeeder::class,
-            HomepageDummyDataSeeder::class,
         ]);
+
+        // Only run dummy/demo data seeders in non-production environments
+        if (! app()->isProduction()) {
+            $this->call([
+                HomepageDummyDataSeeder::class,
+            ]);
+        }
     }
 }

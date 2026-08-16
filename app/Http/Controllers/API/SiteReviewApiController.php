@@ -83,13 +83,17 @@ class SiteReviewApiController extends Controller
             ], 422);
         }
 
-        // ── 1. Verify order exists ────────────────────────────────
-        $order = Order::where('order_number', $validated['order_number'])->first();
+        // ── 1. Verify order exists and was delivered ──────────────
+        // Only delivered orders can have a site review submitted.
+        // Cancelled, refunded, and pending orders are explicitly excluded.
+        $order = Order::where('order_number', $validated['order_number'])
+            ->where('status', 'delivered')
+            ->first();
 
         if (! $order) {
             return response()->json([
                 'success' => false,
-                'message' => 'No order found with this order number.',
+                'message' => 'No delivered order found with this order number. Only delivered orders are eligible for a review.',
             ], 422);
         }
 

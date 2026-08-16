@@ -35,6 +35,7 @@ class OffersApiController extends Controller
                   ->orWhereRaw('usage_count < usage_limit');
             })
             ->orderByDesc('created_at')
+            ->limit(50)
             ->get();
 
         return response()->json([

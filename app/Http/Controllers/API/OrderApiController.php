@@ -156,6 +156,19 @@ class OrderApiController extends Controller
                 ]);
             }
 
+            // Notify all admin users via the bell (database notification)
+            try {
+                $admins = \App\Models\User::role('admin')->get();
+                foreach ($admins as $admin) {
+                    $admin->notify(new \App\Notifications\NewOrderNotification($order));
+                }
+            } catch (\Throwable $notifyEx) {
+                Log::error('NewOrderNotification (bell) dispatch failed', [
+                    'order_id' => $order->id,
+                    'error'    => $notifyEx->getMessage(),
+                ]);
+            }
+
             // Dispatch WhatsApp notification if customer has phone
             if ($customer->phone) {
                 try {
@@ -400,6 +413,19 @@ class OrderApiController extends Controller
                 Log::error('AdminNewOrderNotification dispatch failed (guest)', [
                     'order_id' => $order->id,
                     'error'    => $mailEx->getMessage(),
+                ]);
+            }
+
+            // Notify all admin users via the bell (database notification)
+            try {
+                $admins = \App\Models\User::role('admin')->get();
+                foreach ($admins as $admin) {
+                    $admin->notify(new \App\Notifications\NewOrderNotification($order));
+                }
+            } catch (\Throwable $notifyEx) {
+                Log::error('NewOrderNotification (bell) dispatch failed (guest)', [
+                    'order_id' => $order->id,
+                    'error'    => $notifyEx->getMessage(),
                 ]);
             }
 

@@ -239,7 +239,28 @@ class OrderController extends Controller
             $validated = $request->validate([
                 'status' => 'required|in:pending,processing,shipped,delivered,cancelled,refunded',
             ]);
-            $this->orderRepository->updateStatus($id, $validated['status']);
+
+            $order = \App\Models\Order::findOrFail($id);
+            $from  = $order->status;
+            $to    = $validated['status'];
+
+            // ── Transition whitelist ──────────────────────────────
+            // Blocks semantically invalid jumps that could corrupt
+            // stock or payment records.
+            $blocked = [
+                // Cancelled orders cannot be re-activated
+                'cancelled' => ['pending', 'processing', 'shipped', 'delivered'],
+                // Delivered orders cannot go backward
+                'delivered' => ['pending', 'processing'],
+                // Refunded orders cannot be re-activated
+                'refunded'  => ['pending', 'processing', 'shipped', 'delivered'],
+            ];
+
+            if (isset($blocked[$from]) && in_array($to, $blocked[$from])) {
+                return back()->with('error', "Cannot change status from \"{$from}\" to \"{$to}\".");
+            }
+
+            $this->orderRepository->updateStatus($id, $to);
             return back()->with('success', 'Status updated!');
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
