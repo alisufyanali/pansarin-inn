@@ -84,16 +84,26 @@ class SiteReviewApiController extends Controller
         }
 
         // ── 1. Verify order exists and was delivered ──────────────
-        // Only delivered orders can have a site review submitted.
-        // Cancelled, refunded, and pending orders are explicitly excluded.
+        // We load the sale relationship so that display_status can check
+        // Sale.delivery_status — orders.status is often frozen at 'processing'
+        // even after the linked Sale has been marked delivered.
         $order = Order::where('order_number', $validated['order_number'])
-            ->where('status', 'delivered')
             ->first();
 
         if (! $order) {
             return response()->json([
                 'success' => false,
-                'message' => 'No delivered order found with this order number. Only delivered orders are eligible for a review.',
+                'message' => 'No order found with this order number.',
+            ], 422);
+        }
+
+        // Use display_status (Sale-aware) instead of raw orders.status
+        $order->loadMissing('sale');
+
+        if ($order->display_status !== 'delivered') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only delivered orders are eligible for a review.',
             ], 422);
         }
 
