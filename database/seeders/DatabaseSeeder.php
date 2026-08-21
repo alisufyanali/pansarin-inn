@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             // ProductsSeeder::class,
             HealthConcernSeeder::class,
             OldProductsImportSeeder::class,
+            HealthConcernProductSeeder::class,
             OrderSeeder::class,
             SaleSeeder::class,
             CouponSeeder::class,
