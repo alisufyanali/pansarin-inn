@@ -11,6 +11,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <title>{{ $title }}</title>
+
+    {{-- ── Responsive CSS (supported by most email clients) ── --}}
+    <style>
+        @media only screen and (max-width: 600px) {
+            .email-container {
+                width: 100% !important;
+            }
+        }
+        @media only screen and (min-width: 601px) {
+            .email-container {
+                width: 600px !important;
+            }
+        }
+        /* Outlook.com / Gmail fallback */
+        .email-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+    </style>
 </head>
 <body style="margin:0;padding:0;background-color:#f2f7f2;font-family:Arial,Helvetica,sans-serif;color:#1f2d1f;">
 
@@ -18,16 +37,16 @@
         <tr>
             <td align="center">
 
-                <table width="600" cellpadding="0" cellspacing="0" border="0"
-                       style="max-width:600px;width:100%;background-color:#ffffff;
-                              border-radius:10px;overflow:hidden;border:1px solid #c8e6c8;">
+                {{-- ── Inner email container – width controlled by CSS ── --}}
+                <table id="email-container" class="email-container"
+                       cellpadding="0" cellspacing="0" border="0"
+                       style="background-color:#ffffff;border-radius:10px;overflow:hidden;border:1px solid #c8e6c8;">
 
                     {{-- ── HEADER ── --}}
                     <tr>
                         <td style="background-color:#1b5e20;padding:24px 32px;text-align:center;">
                             <a href="{{ config('app.frontend_url', config('app.url')) }}"
                                style="text-decoration:none;display:inline-block;">
-                                {{-- Logo image — absolute URL so email clients can fetch it --}}
                                 <img
                                     src="{{ rtrim(config('app.url'), '/') }}/logo.png"
                                     alt="Pansari Inn"
@@ -97,7 +116,7 @@
                         </td>
                     </tr>
 
-                </table>
+                </table> {{-- end email-container --}}
 
             </td>
         </tr>
