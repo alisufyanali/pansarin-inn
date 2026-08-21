@@ -13,26 +13,36 @@ class CategorySeeder extends Seeder
             [
                 'name' => 'Herb',
                 'slug' => 'herb',
+                'image' => 'categories/herb.png',
                 'status' => true,
             ],
             [
                 'name' => "Oils",
                 'slug' => 'oils',
+                'image' => 'categories/oils.png',
                 'status' => true,
             ],
             [
                 'name' => "Supplements",
                 'slug' => 'supplements',
+                'image' => 'categories/supplements.png',
                 'status' => true,
             ],
             [
                 'name' => 'Beauty Corner',
                 'slug' => 'beauty-corner',
+                'image' => 'categories/beauty-corner.png',
                 'status' => true,
             ],
             [
                 'name' => 'Dawakhana',
                 'slug' => 'dawakhana',
+                'status' => true,
+            ],
+             [
+                'name' => 'Remedies',
+                'slug' => 'remedies',
+                'image' => 'categories/remedies.png',
                 'status' => true,
             ],
         ];
@@ -41,8 +51,9 @@ class CategorySeeder extends Seeder
             Category::firstOrCreate(
                 ['slug' => $category['slug']], // Slug se check karega taake duplicate na ho
                 [
-                    'name' => $category['name'],
+                    'name'   => $category['name'],
                     'status' => $category['status'],
+                    'image'  => $category['image'],
                 ]
             );
         }
