@@ -50,8 +50,8 @@ class AttributeSeeder extends Seeder
                 ['name' => 'Form']
             );
             $herbalForms = [
-                ['value' => 'Whole',  'slug' => 'whole'],
                 ['value' => 'Powder', 'slug' => 'powder'],
+                ['value' => 'Whole',  'slug' => 'whole'],
             ];
             foreach ($herbalForms as $f) {
                 AttributeValue::firstOrCreate(

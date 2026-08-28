@@ -37,6 +37,7 @@ class CategorySeeder extends Seeder
             [
                 'name' => 'Dawakhana',
                 'slug' => 'dawakhana',
+                'image' => 'categories/seeds.png',
                 'status' => true,
             ],
              [
