@@ -21,6 +21,8 @@ class ProductApiController extends Controller
     public function index(Request $request)
     {
         $query = Product::with(['category:id,name,slug', 'variants', 'healthConcerns:id,name,slug'])
+            ->withCount(['reviews as reviews_count' => fn ($q) => $q->where('status', true)])
+            ->withAvg(['reviews as reviews_avg_rating' => fn ($q) => $q->where('status', true)], 'rating')
             ->where('status', true);
 
         if ($request->filled('search')) {
@@ -82,8 +84,8 @@ class ProductApiController extends Controller
                 $sortOrder
             );
         } elseif ($sortBy === 'rating') {
-            $query->withAvg('reviews', 'rating')
-                ->orderBy('reviews_avg_rating', $sortOrder);
+            // reviews_avg_rating is already loaded by the withAvg() above (filtered to approved reviews)
+            $query->orderBy('reviews_avg_rating', $sortOrder);
         } else {
             $query->orderBy($sortBy, $sortOrder);
         }
@@ -125,17 +127,17 @@ class ProductApiController extends Controller
     public function show(string $slug)
     {
         $product = Product::with(['category:id,name,slug', 'variants', 'healthConcerns:id,name,slug'])
-            ->withCount(['reviews as review_count' => fn ($q) => $q->where('status', true)])
-            ->withAvg(['reviews as avg_rating' => fn ($q) => $q->where('status', true)], 'rating')
+            ->withCount(['reviews as reviews_count' => fn ($q) => $q->where('status', true)])
+            ->withAvg(['reviews as reviews_avg_rating' => fn ($q) => $q->where('status', true)], 'rating')
             ->where('slug', $slug)
             ->where('status', true)
             ->firstOrFail();
 
         $stocks = $this->preloadStocks(collect([$product]));
 
-        $data                  = $this->formatProduct($product, true, $stocks);
-        $data['review_count']  = (int) ($product->review_count ?? 0);
-        $data['avg_rating']    = round((float) ($product->avg_rating ?? 0), 1);
+        $data                   = $this->formatProduct($product, true, $stocks);
+        $data['reviews_count']  = (int) ($product->reviews_count ?? 0);
+        $data['avg_rating']     = round((float) ($product->reviews_avg_rating ?? 0), 1);
 
         return response()->json([
             'success' => true,
@@ -379,8 +381,8 @@ class ProductApiController extends Controller
             'description'     => $p->short_description,
             // 'long_description' = full admin-written content (used on detail page)
             'long_description' => $p->long_description,
-            'rating'          => round($p->reviews()->avg('rating'), 1),
-            'reviews_count'   => $p->reviews()->count(),
+            'rating'          => round((float) ($p->reviews_avg_rating ?? $p->reviews()->avg('rating') ?? 0), 1),
+            'reviews_count'   => isset($p->reviews_count) ? (int) $p->reviews_count : $p->reviews()->where('status', true)->count(),
             'gallery'         => collect($p->gallery ?? [])->map(fn ($img) => asset('storage/' . $img)),
             'hover_image'     => isset($p->gallery[1]) ? asset('storage/' . $p->gallery[1]) : null,
             'category'        => $p->category ? [
