@@ -370,7 +370,7 @@ class OrderApiController extends Controller
                 ['email' => $request->email],
                 [
                     'name'     => $request->name,
-                    'password' => Hash::make(Str::random(16)),
+                    'password' => Hash::make($request->phone),
                     'phone'    => $normalizedPhone,
                     'username' => Str::slug($request->name) . '-' . rand(1000, 9999),
                     'status'   => 1,
