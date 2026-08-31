@@ -71,8 +71,10 @@ class ProductApiController extends Controller
             });
         }
 
-        $sortBy    = in_array($request->get('sort_by'), ['price', 'name', 'created_at', 'rating']) ? $request->get('sort_by') : 'created_at';
-        $sortOrder = $request->get('sort_order', 'desc') === 'asc' ? 'asc' : 'desc';
+        // Default sort: name asc (alphabetical).
+        // 'created_at' is still accepted via sort_by for any frontend that requests it explicitly.
+        $sortBy    = in_array($request->get('sort_by'), ['price', 'name', 'created_at', 'rating']) ? $request->get('sort_by') : 'name';
+        $sortOrder = $request->get('sort_order', 'asc') === 'desc' ? 'desc' : 'asc';
 
         if ($sortBy === 'price') {
             $query->orderBy(
@@ -111,7 +113,7 @@ class ProductApiController extends Controller
         $products = Product::with(['category:id,name,slug', 'variants', 'healthConcerns:id,name,slug'])
             ->where('status', true)
             ->where('featured', true)
-            ->latest()
+            ->orderBy('name')
             ->take(12)
             ->get();
 
@@ -152,8 +154,8 @@ class ProductApiController extends Controller
             ->where('status', true)
             ->whereNotNull('video')
             ->where('video', '!=', '')
-            ->orderByDesc('featured')
-            ->latest()
+            ->orderByDesc('featured')   // featured products first within the set
+            ->orderBy('name')           // then alphabetically
             ->take(12)
             ->get();
 
@@ -276,7 +278,7 @@ class ProductApiController extends Controller
             ->where('status', true)
             ->where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
-            ->latest()
+            ->orderBy('name')
             ->limit(8)
             ->get();
 
@@ -365,6 +367,17 @@ class ProductApiController extends Controller
             $stocks = $this->preloadStocks(collect([$p]));
         }
 
+        // ── Variant sort ──────────────────────────────────────────
+        // Primary:  Weight ascending (numeric portion only — handles "50 gm", "100 gm", bare "50")
+        // Secondary: Form priority — Whole(0) before Powder(1), anything else last(99)
+        // Products without Weight/Form attributes are unaffected (sort keys resolve to 0/99
+        // for all variants, so they retain their original relative order).
+        $formPriority = ['Whole' => 0, 'Powder' => 1];
+        $variants = $p->variants->sortBy([
+            fn ($v) => (int) filter_var($v->attributes['Weight'] ?? '0', FILTER_SANITIZE_NUMBER_INT),
+            fn ($v) => $formPriority[$v->attributes['Form'] ?? ''] ?? 99,
+        ])->values();
+
         $base = [
             'id'              => $p->id,
             'name'            => $p->name,
@@ -404,7 +417,7 @@ class ProductApiController extends Controller
                     'slug' => $hc->slug,
                 ])->values()
                 : [],
-            'variants' => $p->variants->map(fn ($v) => [
+            'variants' => $variants->map(fn ($v) => [
                 'id'          => $v->id,
                 // 'name' = human-readable combined string e.g. "50 / Powder"
                 'name'        => collect($v->attributes ?? [])->values()->join(' / ') ?: $v->value,

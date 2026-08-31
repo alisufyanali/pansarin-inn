@@ -19,7 +19,7 @@ class HomepageApiController extends Controller
     {
         // Cache key includes a version suffix so adding new keys doesn't serve
         // stale responses that are missing the new_arrivals field.
-        $data = Cache::remember('homepage_data_v4', 300, function () {
+        $data = Cache::remember('homepage_data_v5', 300, function () {
             return [
                 'banners'           => $this->getBanners(),
                 'categories'        => $this->getCategories(),
@@ -136,7 +136,7 @@ class HomepageApiController extends Controller
         $products = Product::with(['category:id,name,slug', 'variants'])
             ->where('status', true)
             ->where('featured', true)
-            ->latest()
+            ->orderBy('name')
             ->take(12)
             ->get();
 
@@ -167,8 +167,8 @@ class HomepageApiController extends Controller
             ->where('status', true)
             ->whereNotNull('video')
             ->where('video', '!=', '')
-            ->orderByDesc('featured')
-            ->latest()
+            ->orderByDesc('featured')   // featured products first within the set
+            ->orderBy('name')           // then alphabetically
             ->take(12)
             ->get();
 
@@ -250,6 +250,15 @@ class HomepageApiController extends Controller
             $stocks = $this->preloadStocks(collect([$p]));
         }
 
+        // ── Variant sort ──────────────────────────────────────────
+        // Primary:  Weight ascending (numeric portion — handles "50 gm", "100 gm", bare "50")
+        // Secondary: Form priority — Whole(0) before Powder(1), anything else last(99)
+        $formPriority = ['Whole' => 0, 'Powder' => 1];
+        $variants = $p->variants->sortBy([
+            fn ($v) => (int) filter_var($v->attributes['Weight'] ?? '0', FILTER_SANITIZE_NUMBER_INT),
+            fn ($v) => $formPriority[$v->attributes['Form'] ?? ''] ?? 99,
+        ])->values();
+
         // Gallery: cast to array (already cast on model), then prefix storage path on each image.
         $gallery = collect($p->gallery ?? [])
             ->map(fn ($img) => asset('storage/' . $img))
@@ -283,7 +292,7 @@ class HomepageApiController extends Controller
                 'name' => $p->category->name,
                 'slug' => $p->category->slug,
             ] : null,
-            'variants' => $p->variants->map(fn ($v) => [
+            'variants' => $variants->map(fn ($v) => [
                 'id'          => $v->id,
                 'name'        => collect($v->attributes ?? [])->values()->join(' / ') ?: $v->value,
                 'attributes'  => $v->attributes ?? [],
