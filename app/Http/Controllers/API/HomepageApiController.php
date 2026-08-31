@@ -263,8 +263,11 @@ class HomepageApiController extends Controller
             'scientific_name'  => $p->scientific_name,
             'slug'             => $p->slug,
             'sku'              => $p->sku,
-            'price'            => (float) $p->price,
-            'sale_price'       => $p->sale_price ? (float) $p->sale_price : null,
+            'price'            => $p->variants->isNotEmpty()
+                ? (float) $p->variants->min(fn ($v) => ($v->sale_price ?? $v->price) + ($v->additional ?? 0))
+                : 0.0,
+            // sale_price has no column on products — variants carry their own sale_price below.
+            'sale_price'       => null,
             'unit'             => $p->unit,
             'featured'         => (bool) $p->featured,
             'thumbnail'        => $p->thumbnail ? asset('storage/' . $p->thumbnail) : null,
@@ -286,9 +289,9 @@ class HomepageApiController extends Controller
                 'attributes'  => $v->attributes ?? [],
                 'sku'         => $v->sku,
                 'unit'        => $p->unit,
-                'price'       => (float) ($v->sale_price ?? $v->price ?? $p->price),
+                'price'       => (float) ($v->sale_price ?? $v->price ?? 0),
                 'additional'  => (int) ($v->additional ?? 0),
-                'final_price' => (float) ($v->sale_price ?? $v->price ?? $p->price) + (int) ($v->additional ?? 0),
+                'final_price' => (float) ($v->sale_price ?? $v->price ?? 0) + (int) ($v->additional ?? 0),
                 'stock'       => (int) ($stocks->get($p->id . '_' . $v->id)?->first()?->quantity ?? 0),
                 'is_default'  => (bool) $v->is_default,
             ])->toArray(),

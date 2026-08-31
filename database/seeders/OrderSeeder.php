@@ -76,7 +76,7 @@ class OrderSeeder extends Seeder
         for ($j = 1; $j <= $itemsCount; $j++) {
             $product = $products->random();
             $quantity = rand(1, 3);
-            $price = (float) ($product->sale_price ?: $product->price ?: 100); // fallback to 100 if null
+            $price = (float) (ProductVariant::where('product_id', $product->id)->min('price') ?: 100); // derive from variants; fallback to 100
             $discount = rand(0, min(50, (int)($price * $quantity)));
 
             $itemSubtotal = ($price * $quantity) - $discount;

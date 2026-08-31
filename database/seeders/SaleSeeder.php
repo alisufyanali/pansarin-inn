@@ -57,7 +57,7 @@ class SaleSeeder extends Seeder
                 for ($j = 0; $j < $itemsCount; $j++) {
                     $product = $products->random();
                     $variant = $product->variants->isNotEmpty() ? $product->variants->random() : null;
-                    $price = $variant ? $variant->price : $product->price;
+                    $price = $variant ? $variant->price : ($product->variants->min('price') ?? 0);
                     $quantity = rand(1, 3);
                     $discount = rand(0, 100);
 

@@ -183,23 +183,32 @@ class Product extends Model
     {
         $deal = $this->best_deal;
 
+        // products table has no price column — derive base price from the default (or cheapest) variant.
+        $basePrice = (float) ($this->variants->firstWhere('is_default', true)?->price
+            ?? $this->variants->min('price')
+            ?? 0);
+
         if (! $deal) {
-            return $this->price;
+            return $basePrice;
         }
 
         $discount = $deal->pivot->custom_discount ?? $deal->discount_value;
 
         if ($deal->deal_type === 'percentage') {
-            return $this->price - (($this->price * $discount) / 100);
+            return $basePrice - (($basePrice * $discount) / 100);
         } elseif ($deal->deal_type === 'fixed') {
-            return max(0, $this->price - $discount);
+            return max(0, $basePrice - $discount);
         }
 
-        return $this->price;
+        return $basePrice;
     }
 
     public function getSavingsAttribute()
     {
-        return $this->price - $this->discounted_price;
+        $basePrice = (float) ($this->variants->firstWhere('is_default', true)?->price
+            ?? $this->variants->min('price')
+            ?? 0);
+
+        return $basePrice - $this->discounted_price;
     }
 }
