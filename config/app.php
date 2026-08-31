@@ -123,4 +123,19 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Build-Server API Token
+    |--------------------------------------------------------------------------
+    |
+    | Requests carrying this value in the X-Build-Token header receive a
+    | higher rate limit (1000 req/min) on public API routes, allowing the
+    | Next.js build server to fetch all static pages without hitting the
+    | standard 60 req/min throttle. Set BUILD_API_TOKEN in .env to a strong
+    | random string; leave it blank to disable the bypass entirely.
+    |
+    */
+
+    'build_api_token' => env('BUILD_API_TOKEN', ''),
+
 ];

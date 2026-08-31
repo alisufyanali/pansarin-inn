@@ -28,8 +28,10 @@ Route::middleware('throttle:10,1')->group(function () {
     Route::post('/register', [AuthApiController::class, 'register']);
 });
 
-// ── Public routes — generous rate limit (60 requests/minute) ──────
-Route::middleware('throttle:60,1')->group(function () {
+// ── Public routes — build-server aware rate limit (api.public limiter) ──
+// Normal traffic: 60 req/min per IP.
+// Next.js build server: 1000 req/min when X-Build-Token header matches BUILD_API_TOKEN.
+Route::middleware('throttle:api.public')->group(function () {
 
     // Products — with-video and recommended must come before {slug} wildcard
     Route::get('/products/featured',     [ProductApiController::class, 'featured']);

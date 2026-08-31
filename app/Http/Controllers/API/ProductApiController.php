@@ -371,8 +371,15 @@ class ProductApiController extends Controller
             'slug'            => $p->slug,
             'sku'             => $p->sku,
             'scientific_name' => $p->scientific_name,
-            'price'           => (float) $p->price,
-            'sale_price'      => $p->sale_price ? (float) $p->sale_price : null,
+            // products table has no price column — price lives entirely on variants.
+            // Return the lowest active variant final_price (sale_price ?? price + additional)
+            // so product cards always show a real "starting from" figure, never 0.
+            'price'           => $p->variants->isNotEmpty()
+                ? (float) $p->variants->min(fn ($v) => ($v->sale_price ?? $v->price) + ($v->additional ?? 0))
+                : 0.0,
+            // sale_price at product level is also not stored — expose null; individual
+            // variants carry their own sale_price already in the variants array below.
+            'sale_price'      => null,
             'unit'            => $p->unit,
             'featured'        => (bool) $p->featured,
             'thumbnail'       => $p->thumbnail ? asset('storage/' . $p->thumbnail) : null,
@@ -406,11 +413,11 @@ class ProductApiController extends Controller
                 'sku'         => $v->sku,
                 'unit'        => $p->unit,
                 // base price before any additional charge
-                'price'       => (float) ($v->sale_price ?? $v->price ?? $p->price),
+                'price'       => (float) ($v->sale_price ?? $v->price ?? 0),
                 // additional surcharge for this variant (e.g. grinding fee) — 0 if none
                 'additional'  => (int) ($v->additional ?? 0),
                 // final_price = what the customer actually pays; frontend should use this
-                'final_price' => (float) ($v->sale_price ?? $v->price ?? $p->price) + (int) ($v->additional ?? 0),
+                'final_price' => (float) ($v->sale_price ?? $v->price ?? 0) + (int) ($v->additional ?? 0),
                 'stock'       => (int) ($stocks->get($p->id . '_' . $v->id)?->first()?->quantity ?? 0),
                 'is_default'  => (bool) $v->is_default,
             ]),
