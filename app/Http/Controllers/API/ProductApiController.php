@@ -8,6 +8,7 @@ use App\Http\Repositories\Admin\ProductRepository;
 use App\Models\HomepageCategoryProduct;
 use App\Models\Product;
 use App\Models\ProductStock;
+use App\Models\ProductVariant;
 use Illuminate\Http\Request;
 
 class ProductApiController extends Controller
@@ -327,6 +328,60 @@ class ProductApiController extends Controller
         return response()->json([
             'success' => true,
             'data'    => $data,
+        ]);
+    }
+
+    // POST /api/products/check-stock
+    // Public endpoint — used by BOTH guest (localStorage) and logged-in carts to verify
+    // live stock for a set of variants in a single round-trip.
+    //
+    // Request:  { "variant_ids": [123, 456, 789] }
+    // Response: { "success": true, "data": [ { "variant_id": 123, "stock": 5, "in_stock": true }, ... ] }
+    public function checkStock(Request $request)
+    {
+        $request->validate([
+            'variant_ids'   => 'required|array|min:1|max:100',
+            'variant_ids.*' => 'required|integer|min:1',
+        ]);
+
+        $variantIds = array_unique(array_map('intval', $request->variant_ids));
+
+        // Confirm the requested variant IDs actually exist — unknown IDs are returned
+        // with stock: 0 / in_stock: false rather than being silently omitted, so the
+        // frontend always gets a complete 1-to-1 response for every ID it sent.
+        $existingIds = ProductVariant::whereIn('id', $variantIds)
+            ->where('status', true)
+            ->whereNull('deleted_at')
+            ->pluck('id')
+            ->flip(); // id => index map for O(1) lookup
+
+        // Single query for all stock records across the requested variants
+        $stocks = ProductStock::whereIn('product_variant_id', $variantIds)
+            ->get(['product_variant_id', 'quantity'])
+            ->keyBy('product_variant_id');
+
+        $data = array_map(function (int $variantId) use ($existingIds, $stocks) {
+            // If the variant doesn't exist or is inactive, treat as 0 stock
+            if (! $existingIds->has($variantId)) {
+                return [
+                    'variant_id' => $variantId,
+                    'stock'      => 0,
+                    'in_stock'   => false,
+                ];
+            }
+
+            $qty = (int) ($stocks->get($variantId)?->quantity ?? 0);
+
+            return [
+                'variant_id' => $variantId,
+                'stock'      => $qty,
+                'in_stock'   => $qty > 0,
+            ];
+        }, $variantIds);
+
+        return response()->json([
+            'success' => true,
+            'data'    => array_values($data),
         ]);
     }
 

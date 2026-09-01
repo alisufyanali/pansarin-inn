@@ -17,9 +17,15 @@ class CartApiController extends Controller
             'variant.product:id,name,slug,thumbnail',
         ])->where('user_id', $request->user()->id)->get();
 
+        // Batch-load stock for all variants in one query — avoids N+1
+        $variantIds = $items->pluck('product_variant_id')->filter()->unique();
+        $stocks = ProductStock::whereIn('product_variant_id', $variantIds)
+            ->get(['product_variant_id', 'quantity'])
+            ->keyBy('product_variant_id');
+
         return response()->json([
             'success' => true,
-            'data'    => $items->map(fn ($c) => $this->formatCartItem($c)),
+            'data'    => $items->map(fn ($c) => $this->formatCartItem($c, $stocks)),
         ]);
     }
 
@@ -35,15 +41,32 @@ class CartApiController extends Controller
         $variantId = $request->product_variant_id;
         $variant   = ProductVariant::with('product')->findOrFail($variantId);
 
-        // Stock check
+        // Stock check — use cumulative quantity (existing cart qty + new qty)
+        // so multiple add-to-cart calls on the same variant can't bypass the limit.
         $stock = ProductStock::where('product_id', $variant->product_id)
             ->where('product_variant_id', $variantId)
             ->value('quantity') ?? 0;
 
-        if ($request->quantity > $stock) {
+        $existingQty = Cart::where('user_id', $userId)
+            ->where('product_variant_id', $variantId)
+            ->value('quantity') ?? 0;
+
+        $totalQty = $existingQty + $request->quantity;
+
+        if ($totalQty > $stock) {
+            $remaining = max(0, $stock - $existingQty);
+
+            if ($existingQty > 0) {
+                $message = $remaining > 0
+                    ? "Only {$remaining} more available (you already have {$existingQty} in cart)."
+                    : "You already have {$existingQty} in cart and no more are available.";
+            } else {
+                $message = "Only {$stock} units available in stock.";
+            }
+
             return response()->json([
                 'success' => false,
-                'message' => "Only {$stock} units available in stock.",
+                'message' => $message,
             ], 422);
         }
 
@@ -124,17 +147,30 @@ class CartApiController extends Controller
     }
 
     // ── Format Helper ─────────────────────────────────────────────
-    private function formatCartItem(Cart $c): array
+    // $stocks: preloaded collection keyed by product_variant_id (from index()).
+    //          Pass null for single-item responses (store/update) — falls back
+    //          to a live single-row query so the caller always gets stock data.
+    private function formatCartItem(Cart $c, ?\Illuminate\Support\Collection $stocks = null): array
     {
         $variant   = $c->variant;
         $product   = $variant?->product;
         $unitPrice = (float) ($variant?->sale_price ?? $variant?->price ?? 0);
+
+        // Resolve stock — use preloaded collection when available, otherwise query live
+        if ($stocks !== null) {
+            $qty = (int) ($stocks->get($c->product_variant_id)?->quantity ?? 0);
+        } else {
+            $qty = (int) (ProductStock::where('product_variant_id', $c->product_variant_id)
+                ->value('quantity') ?? 0);
+        }
 
         return [
             'id'         => $c->id,
             'quantity'   => $c->quantity,
             'unit_price' => $unitPrice,
             'subtotal'   => round($unitPrice * $c->quantity, 2),
+            'stock'      => $qty,
+            'in_stock'   => $qty > 0,
             'product'    => $product ? [
                 'id'        => $product->id,
                 'name'      => $product->name,

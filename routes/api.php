@@ -37,6 +37,7 @@ Route::middleware('throttle:api.public')->group(function () {
     Route::get('/products/featured',     [ProductApiController::class, 'featured']);
     Route::get('/products/with-video',   [ProductApiController::class, 'withVideo']);
     Route::get('/products/recommended',  [ProductApiController::class, 'recommended']);
+    Route::post('/products/check-stock', [ProductApiController::class, 'checkStock']);
     Route::get('/products',              [ProductApiController::class, 'index']);
     Route::get('/products/{slug}',       [ProductApiController::class, 'show']);
     Route::get('/products/{slug}/related', [ProductApiController::class, 'related']);
