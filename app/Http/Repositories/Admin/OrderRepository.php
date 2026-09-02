@@ -79,6 +79,7 @@ class OrderRepository
 
             $this->syncItems($order, $data['items']);
             $order->calculateTotals();
+            $order->load('items.product', 'items.variant');
 
             return $order;
         });
