@@ -109,7 +109,7 @@ class OrderSeeder extends Seeder
             ]);
         }
 
-        $tax = $subtotal * 0.05;
+        $tax =  0;
         $grandTotal = $subtotal + $tax + $order->shipping_charges;
 
         $order->update([

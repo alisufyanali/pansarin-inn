@@ -72,7 +72,7 @@ class TestRunPlaceOrder extends Seeder
         ]);
 
         // 5. Totals Update
-        $tax = $price * 0.05;
+        $tax =  0;
         $order->update([
             'subtotal'    => $price,
             'tax'         => $tax,

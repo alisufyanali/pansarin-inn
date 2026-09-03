@@ -76,7 +76,7 @@ class OrderApiController extends Controller
             return response()->json(['success' => false, 'message' => 'Customer profile not found.'], 404);
         }
 
-        $orders = Order::with(['items', 'city:id,name', 'sale'])
+        $orders = Order::with(['items', 'city:id,name', 'sale', 'customer'])
             ->where('customer_id', $customer->id)
             ->latest()
             ->paginate($request->get('per_page', 10));
@@ -102,7 +102,7 @@ class OrderApiController extends Controller
             return response()->json(['success' => false, 'message' => 'Customer profile not found.'], 404);
         }
 
-        $order = Order::with(['items.product', 'items.variant', 'city:id,name', 'sale'])
+        $order = Order::with(['items.product', 'items.variant', 'city:id,name', 'sale', 'customer'])
             ->where('customer_id', $customer->id)
             ->findOrFail($id);
 
@@ -199,7 +199,7 @@ class OrderApiController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Order placed successfully.',
-                'data'    => $this->formatOrder($order),
+                'data'    => $this->formatOrder($order->load('customer')),
             ], 201);
         } catch (ValidationException $e) {
             return response()->json([
@@ -523,6 +523,9 @@ class OrderApiController extends Controller
             'city'            => $o->city ? $o->city->name : null,
             'created_at'      => $o->created_at,
             'account_created' => $accountCreated,
+            'customer_name'   => $o->customer?->full_name ?: null,
+            'customer_email'  => $o->customer?->email,
+            'customer_phone'  => $o->customer?->phone,
         ];
 
         if ($detailed) {
