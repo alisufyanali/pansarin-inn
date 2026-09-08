@@ -58,11 +58,17 @@ class ProductVariant extends Model
 
     public function getVariantNameAttribute(): string
     {
-        if (empty($this->attributes)) {
-            return $this->sku;
+        // IMPORTANT: $this->attributes is Eloquent's internal raw-attribute bag,
+        // NOT the cast JSON column. Use getAttribute() to get the cast value.
+        $attrs = $this->getAttribute('attributes');
+
+        if (!empty($attrs) && is_array($attrs)) {
+            // Same pattern used in OrderRepository::syncItems() and SaleRepository::syncItems()
+            return collect($attrs)->values()->join(' / ') ?: $this->value ?: $this->sku;
         }
 
-        return implode(' - ', array_values($this->attributes));
+        // No attributes JSON — fall back to the plain value string, then SKU
+        return $this->value ?: $this->sku;
     }
 
     public function getTotalStockAttribute(): int
