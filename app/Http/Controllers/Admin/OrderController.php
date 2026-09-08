@@ -66,6 +66,7 @@ class OrderController extends Controller
                         'price'        => (float) $item->price,
                         'subtotal'     => (float) $item->subtotal,
                     ]),
+                    'shipping_address' => $o->shipping_address,
                 ]),
                 'total'        => $orders->total(),
                 'per_page'     => $orders->perPage(),

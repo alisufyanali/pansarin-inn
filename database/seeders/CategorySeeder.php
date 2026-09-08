@@ -45,6 +45,24 @@ class CategorySeeder extends Seeder
                 'slug' => 'remedies',
                 'image' => 'categories/remedies.png',
                 'status' => true,
+            ],[
+                'name' => 'Dry Fruits',
+                'slug' => 'dry-fruits',
+                'status' => true,
+            ],
+             [
+                'name' => 'Herbal Tea',
+                'slug' => 'herbal-tea',
+                'status' => true,
+            ],
+             [
+                'name' => 'Combo Deals',
+                'slug' => 'combo-deals',
+                'status' => true,
+            ], [
+                'name' => 'Seeds',
+                'slug' => 'seeds',
+                'status' => true,
             ],
         ];
 

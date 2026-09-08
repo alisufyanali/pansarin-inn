@@ -40,6 +40,7 @@ interface Order {
     payment_status: string;
     payment_method: string | null;
     created_at: string;
+    shipping_address?: string | null;
     customer?: { id: number; first_name: string; last_name: string; phone: string; email?: string; address?: string };
     city?: { name: string } | null;
     items?: OrderItem[];
@@ -110,125 +111,113 @@ export default function Index({ stats, flash }: Props) {
             return;
         }
 
-        const phoneIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:4px;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.18 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6.29 6.29l.96-.96a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`;
-        const mailIcon  = `<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:4px;"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>`;
-        const pinIcon   = `<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:4px;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>`;
-        const cityIcon  = `<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:4px;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`;
+        // Build one row per order in the dispatch list table
+        const orderRows = selected.map(order => {
+            const customerName = order.customer
+                ? `${order.customer.first_name} ${order.customer.last_name}`.trim()
+                : '—';
+            const phone = order.customer?.phone ?? '—';
 
-        const invoices = selected.map(order => {
+            // City: prefer linked city object, fallback to shipping_address first word/line
+            let city = order.city?.name ?? '';
+            if (!city && (order as any).shipping_address) {
+                // shipping_address se pehli line ya last meaningful word nikaalo
+                const addr: string = (order as any).shipping_address;
+                const lines = addr.split(/[\n,]/).map((s: string) => s.trim()).filter(Boolean);
+                city = lines[lines.length - 1] ?? lines[0] ?? '';
+            }
+            if (!city) city = '—';
+
             const items = order.items ?? [];
-            const date  = new Date(order.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
-            const itemRows = items.map((item: any, i: number) => `
-                <tr style="background:${i % 2 === 0 ? '#ffffff' : '#f0fdf4'};">
-                    <td style="padding:7px 10px;border-bottom:1px solid #e8f5e9;text-align:center;color:#9ca3af;font-size:11px;">${i + 1}</td>
-                    <td style="padding:7px 10px;border-bottom:1px solid #e8f5e9;font-weight:500;color:#1a1a1a;">${item.product_name ?? '—'}</td>
-                    <td style="padding:7px 10px;border-bottom:1px solid #e8f5e9;text-align:center;color:#6b7280;font-size:11px;">${item.variant_name ?? '—'}</td>
-                    <td style="padding:7px 10px;border-bottom:1px solid #e8f5e9;text-align:center;font-weight:600;">${item.quantity}</td>
-                    <td style="padding:7px 10px;border-bottom:1px solid #e8f5e9;text-align:right;color:#374151;">Rs ${Number(item.price).toLocaleString()}</td>
-                    <td style="padding:7px 10px;border-bottom:1px solid #e8f5e9;text-align:right;font-weight:700;color:#166534;">Rs ${Number(item.subtotal).toLocaleString()}</td>
-                </tr>
-            `).join('');
+            // Product detail: nested table — product name + variant (gm/ml/unit) + qty
+            const productRows = items.length > 0
+                ? items.map(item => {
+                    // variant_name already contains the full label e.g. "100 gm", "50 gm Whole", "30 ml"
+                    const variantLabel = item.variant_name?.trim() ?? '';
+                    const variantCell  = variantLabel
+                        ? `<td style="padding:3px 6px;border:1px solid #ccc;font-size:11px;white-space:nowrap;color:#444;">${variantLabel}</td>`
+                        : `<td style="padding:3px 6px;border:1px solid #ccc;font-size:11px;color:#bbb;">—</td>`;
+                    return `
+                        <tr>
+                            <td style="padding:3px 6px;border:1px solid #ccc;font-size:11px;">${item.product_name ?? '—'}</td>
+                            ${variantCell}
+                            <td style="padding:3px 6px;border:1px solid #ccc;font-size:11px;text-align:center;white-space:nowrap;">${item.quantity} qty</td>
+                        </tr>`;
+                }).join('')
+                : `<tr><td colspan="3" style="padding:3px 6px;border:1px solid #ccc;font-size:11px;color:#aaa;font-style:italic;">No items</td></tr>`;
+
+            const productCell = `
+                <table style="border-collapse:collapse;width:100%;">
+                    <thead>
+                        <tr style="background:#636363;">
+                            <th style="padding:3px 6px;border:1px solid #ccc;font-size:10px;text-align:left;font-weight:600;">Product</th>
+                            <th style="padding:3px 6px;border:1px solid #ccc;font-size:10px;text-align:left;font-weight:600;white-space:nowrap;">Size / Unit</th>
+                            <th style="padding:3px 6px;border:1px solid #ccc;font-size:10px;text-align:center;font-weight:600;">Qty</th>
+                        </tr>
+                    </thead>
+                    <tbody>${productRows}</tbody>
+                </table>`;
 
             return `
-            <div style="break-inside:avoid;margin-bottom:16px;border-radius:10px;overflow:hidden;border:1px solid #d1fae5;font-family:'Segoe UI',Arial,sans-serif;font-size:12px;background:#fff;box-shadow:0 2px 8px rgba(45,106,79,0.08);">
-                <div style="height:5px;background:linear-gradient(90deg,#1b4332,#2d6a4f,#52b788,#95d5b2);"></div>
-                <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 20px 12px;background:linear-gradient(135deg,#f0fdf4,#ffffff);">
-                    <div><img src="/logo.png" style="height:46px;object-fit:contain;" onerror="this.style.display='none'" /></div>
-                    <div style="text-align:right;">
-                        <div style="font-size:18px;font-weight:800;color:#1b4332;letter-spacing:2px;text-transform:uppercase;">Invoice</div>
-                        <div style="font-size:11px;color:#6b7280;margin-top:3px;">
-                            <span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:20px;font-weight:600;">${order.order_number}</span>
-                        </div>
-                        <div style="font-size:11px;color:#9ca3af;margin-top:4px;">${date}</div>
-                    </div>
-                </div>
-                <div style="height:1px;background:linear-gradient(90deg,transparent,#d1fae5,transparent);margin:0 20px;"></div>
-                <div style="display:flex;gap:12px;padding:12px 20px;">
-                    <div style="flex:1;background:#f8fffe;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;">
-                        <div style="font-size:9px;font-weight:800;color:#2d6a4f;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;border-bottom:1px solid #d1fae5;padding-bottom:4px;">Bill To</div>
-                        <div style="font-size:13px;font-weight:700;color:#1a1a1a;margin-bottom:5px;">${order.customer?.first_name ?? ''} ${order.customer?.last_name ?? ''}</div>
-                        <div style="color:#555;font-size:11px;line-height:1.9;">
-                            <div>${phoneIcon}${order.customer?.phone ?? '—'}</div>
-                            ${order.customer?.email ? `<div>${mailIcon}${order.customer.email}</div>` : ''}
-                        </div>
-                    </div>
-                    <div style="flex:1;background:#f8f8ff;border:1px solid #c7d2fe;border-radius:8px;padding:10px 14px;">
-                        <div style="font-size:9px;font-weight:800;color:#4338ca;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;border-bottom:1px solid #e0e7ff;padding-bottom:4px;">Ship To</div>
-                        <div style="color:#555;font-size:11px;line-height:1.9;">
-                            ${order.customer?.address ? `<div>${pinIcon}${order.customer.address}</div>` : '<div style="color:#aaa;font-style:italic;">No address provided</div>'}
-                            ${order.city?.name ? `<div>${cityIcon}${order.city.name}</div>` : ''}
-                            <div>${phoneIcon}${order.customer?.phone ?? '—'}</div>
-                        </div>
-                    </div>
-                </div>
-                <div style="padding:0 20px 14px;">
-                    <table style="width:100%;border-collapse:collapse;font-size:11px;border-radius:8px;overflow:hidden;border:1px solid #d1fae5;">
-                        <thead>
-                            <tr style="background:linear-gradient(90deg,#1b4332,#2d6a4f);color:#fff;">
-                                <th style="padding:9px 10px;text-align:center;width:32px;font-weight:600;">#</th>
-                                <th style="padding:9px 10px;text-align:left;font-weight:600;">Item</th>
-                                <th style="padding:9px 10px;text-align:center;width:110px;font-weight:600;">Options</th>
-                                <th style="padding:9px 10px;text-align:center;width:50px;font-weight:600;">Qty</th>
-                                <th style="padding:9px 10px;text-align:right;width:85px;font-weight:600;">Unit Price</th>
-                                <th style="padding:9px 10px;text-align:right;width:85px;font-weight:600;">Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>${itemRows || '<tr><td colspan="6" style="text-align:center;padding:14px;color:#aaa;font-style:italic;">No items found</td></tr>'}</tbody>
-                    </table>
-                </div>
-                <div style="display:flex;justify-content:space-between;align-items:flex-end;padding:0 20px 16px;gap:12px;">
-                    <div style="font-size:10px;color:#9ca3af;font-style:italic;max-width:200px;line-height:1.6;">
-                        Thank you for your order!<br/>
-                        For queries contact: pansariinn@gmail.com
-                    </div>
-                    <div style="min-width:210px;border-radius:8px;overflow:hidden;border:1px solid #d1fae5;">
-                        <div style="display:flex;justify-content:space-between;padding:6px 12px;background:#f0fdf4;font-size:11px;border-bottom:1px solid #d1fae5;">
-                            <span style="color:#6b7280;">Subtotal</span>
-                            <span style="font-weight:500;">Rs ${Number(order.subtotal ?? 0).toLocaleString()}</span>
-                        </div>
-                        ${Number(order.product_discount ?? 0) > 0 ? `
-                        <div style="display:flex;justify-content:space-between;padding:6px 12px;background:#f0fdf4;font-size:11px;border-bottom:1px solid #d1fae5;">
-                            <span style="color:#6b7280;">Product Discount</span>
-                            <span style="font-weight:500;color:#dc2626;">- Rs ${Number(order.product_discount).toLocaleString()}</span>
-                        </div>` : ''}
-                        ${Number(order.invoice_discount ?? 0) > 0 ? `
-                        <div style="display:flex;justify-content:space-between;padding:6px 12px;background:#f0fdf4;font-size:11px;border-bottom:1px solid #d1fae5;">
-                            <span style="color:#6b7280;">Invoice Discount</span>
-                            <span style="font-weight:500;color:#dc2626;">- Rs ${Number(order.invoice_discount).toLocaleString()}</span>
-                        </div>` : ''}
-                        <div style="display:flex;justify-content:space-between;padding:6px 12px;background:#f0fdf4;font-size:11px;border-bottom:1px solid #d1fae5;">
-                            <span style="color:#6b7280;">Shipping</span>
-                            <span style="font-weight:500;">Rs ${Number(order.shipping_charges ?? 0).toLocaleString()}</span>
-                        </div>
-                        ${Number(order.tax ?? 0) > 0 ? `
-                        <div style="display:flex;justify-content:space-between;padding:6px 12px;background:#f0fdf4;font-size:11px;border-bottom:1px solid #d1fae5;">
-                            <span style="color:#6b7280;">Tax</span>
-                            <span style="font-weight:500;">Rs ${Number(order.tax).toLocaleString()}</span>
-                        </div>` : ''}
-                        <div style="display:flex;justify-content:space-between;padding:9px 12px;background:linear-gradient(90deg,#1b4332,#2d6a4f);color:#fff;">
-                            <span style="font-weight:700;font-size:12px;">Grand Total</span>
-                            <span style="font-weight:800;font-size:13px;">Rs ${Number(order.grand_total).toLocaleString()}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>`;
+                <tr>
+                    <td style="padding:8px 10px;border:1px solid #999;text-align:center;font-weight:700;font-size:12px;vertical-align:top;white-space:nowrap;">${order.order_number}</td>
+                    <td style="padding:8px 10px;border:1px solid #999;font-size:12px;vertical-align:top;white-space:nowrap;">${customerName}</td>
+                    <td style="padding:8px 10px;border:1px solid #999;font-size:12px;vertical-align:top;white-space:nowrap;">${phone}</td>
+                    <td style="padding:8px 10px;border:1px solid #999;font-size:12px;vertical-align:top;white-space:nowrap;">${city}</td>
+                    <td style="padding:4px 6px;border:1px solid #999;vertical-align:top;">${productCell}</td>
+                    <td style="padding:8px 10px;border:1px solid #999;font-size:12px;font-weight:700;vertical-align:top;text-align:right;white-space:nowrap;">Rs ${Number(order.grand_total ?? 0).toLocaleString()}</td>
+                </tr>`;
         }).join('');
 
+        const printDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+        const html = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>Orders Dispatch List</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; font-size: 12px; background: #fff; padding: 16px; }
+        h2  { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+        .meta { font-size: 11px; color: #555; margin-bottom: 12px; }
+        table.main { width: 100%; border-collapse: collapse; }
+        table.main thead tr { background: #222; color: #fff; }
+        table.main thead th { padding: 8px 10px; border: 1px solid #555; font-size: 12px; text-align: left; }
+        table.main thead th:last-child { text-align: right; }
+        table.main tbody tr:nth-child(even) { background: #f9f9f9; }
+        @media print {
+            body { padding: 0; }
+            @page { margin: 10mm; size: A4; }
+        }
+    </style>
+</head>
+<body>
+    <h2>Orders Dispatch List</h2>
+    <div class="meta">Printed: ${printDate} &nbsp;|&nbsp; Total orders: ${selected.length}</div>
+    <table class="main">
+        <thead>
+            <tr>
+                <th style="width:110px;">Order #</th>
+                <th style="width:120px;">Name</th>
+                <th style="width:110px;">Phone</th>
+                <th style="width:90px;">City</th>
+                <th>Product Detail</th>
+                <th style="width:100px;text-align:right;">Total Price</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${orderRows}
+        </tbody>
+    </table>
+    <script>window.onload = () => { window.print(); }<\/script>
+</body>
+</html>`;
+
         const win = window.open('', '_blank');
-        if (!win) return;
-        win.document.write(`
-            <!DOCTYPE html><html><head><title>Invoices</title>
-            <style>
-                * { box-sizing:border-box; margin:0; padding:0; }
-                body { background:#fff; padding:10px; font-family:'Segoe UI',Arial,sans-serif; }
-                @media print { body { padding:0; } @page { margin:8mm; size:A4; } }
-            </style>
-            </head><body>
-            ${invoices}
-            <script>window.onload = () => { window.print(); window.close(); }<\/script>
-            </body></html>
-        `);
+        if (!win) { toast.error('Popup blocked — please allow popups for this site.'); return; }
+        win.document.write(html);
         win.document.close();
     }
 
