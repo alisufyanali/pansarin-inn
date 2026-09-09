@@ -48,20 +48,24 @@ class CategorySeeder extends Seeder
             ],[
                 'name' => 'Dry Fruits',
                 'slug' => 'dry-fruits',
+                'image' => '',
                 'status' => true,
             ],
              [
                 'name' => 'Herbal Tea',
                 'slug' => 'herbal-tea',
+                'image' => '',
                 'status' => true,
             ],
              [
                 'name' => 'Combo Deals',
                 'slug' => 'combo-deals',
+                'image' => '',
                 'status' => true,
             ], [
                 'name' => 'Seeds',
                 'slug' => 'seeds',
+                'image' => '',
                 'status' => true,
             ],
         ];

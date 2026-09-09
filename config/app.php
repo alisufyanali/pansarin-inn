@@ -54,6 +54,10 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    // Customer-facing frontend URL (Next.js / separate domain).
+    // Used in emails and links that should point to the storefront, not this backend.
+    'frontend_url' => env('FRONTEND_URL', 'https://pansariinn.com'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

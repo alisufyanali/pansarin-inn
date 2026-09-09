@@ -64,9 +64,16 @@
             @foreach($items as $index => $item)
             <tr style="background-color:{{ $index % 2 === 0 ? '#f9fdf9' : '#ffffff' }};">
                 <td style="padding:10px 12px;color:#374151;border-bottom:1px solid #e8f5e9;">
-                    {{ $item->meta['product_name'] ?? $item->product->name }}
-                    @if(isset($item->meta['variant_name']))
-                        <br /><small style="color:#757575;">({{ $item->meta['variant_name'] }})</small>
+                    {{ $item->meta['product_name'] ?? $item->product?->name }}
+                    @php
+                        // variant_name from meta already contains the full size/unit label
+                        // e.g. "100 gm", "50 gm Whole", "30 ml", "1 Pc" — use it first.
+                        // Fall back to the product's unit column for products with no variant.
+                        $variantLabel = !empty($item->meta['variant_name']) ? $item->meta['variant_name'] : null;
+                        $unitLabel    = $variantLabel ?? ($item->product?->unit ?? null);
+                    @endphp
+                    @if($unitLabel)
+                        <br /><small style="color:#757575;">{{ $unitLabel }}</small>
                     @endif
                 </td>
                 <td style="padding:10px 12px;color:#374151;border-bottom:1px solid #e8f5e9;text-align:center;">

@@ -72,7 +72,7 @@
     <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px;">
         <tr>
             <td align="center">
-                <a href="{{ url('/login') }}"
+                <a href="{{ config('app.frontend_url') }}/login"
                    style="display:inline-block;background-color:#2e7d32;color:#ffffff;text-decoration:none;
                           padding:13px 36px;border-radius:6px;font-size:14px;font-weight:700;">
                     Login to Your Account

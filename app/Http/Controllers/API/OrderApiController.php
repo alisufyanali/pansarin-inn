@@ -370,7 +370,10 @@ class OrderApiController extends Controller
                 ['email' => $request->email],
                 [
                     'name'     => $request->name,
-                    'password' => Hash::make($request->phone),
+                    // Use $normalizedPhone (03XXXXXXXXX) — same string shown in the account-created email.
+                    // $request->phone arrives as +92XXXXXXXXXX from the frontend; normalizing ensures
+                    // the displayed password and the stored hash always use the identical string.
+                    'password' => Hash::make($normalizedPhone),
                     'phone'    => $normalizedPhone,
                     'username' => Str::slug($request->name) . '-' . rand(1000, 9999),
                     'status'   => 1,
