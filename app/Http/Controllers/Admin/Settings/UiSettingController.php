@@ -8,8 +8,8 @@ use App\Models\HomepageCategoryProduct;
 use App\Models\Product;
 use App\Models\UiSetting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
-use Illuminate\Support\Facades\Storage;
 
 class UiSettingController extends Controller
 {
@@ -31,12 +31,26 @@ class UiSettingController extends Controller
                 if ($request->hasFile($key)) {
                     $oldSetting = UiSetting::where('type', $key)->first();
                     if ($oldSetting && $oldSetting->value) {
-                        $oldPath = str_replace('/storage/', '', $oldSetting->value);
-                        Storage::disk('public')->delete($oldPath);
+                        // Strip the /storage/ prefix to get the relative path
+                        $oldRelative = ltrim(str_replace('/storage', '', parse_url($oldSetting->value, PHP_URL_PATH)), '/');
+                        $oldFull = public_path('storage/' . $oldRelative);
+                        if (file_exists($oldFull)) {
+                            unlink($oldFull);
+                        }
                     }
 
-                    $path = $request->file($key)->store('uploads/ui', 'public');
-                    $value = Storage::url($path);
+                    // Upload new file using native PHP — bypasses Flysystem/finfo
+                    $file      = $request->file($key);
+                    $extension = $file->getClientOriginalExtension();
+                    $filename  = Str::uuid() . '.' . $extension;
+                    $directory = public_path('storage/uploads/ui');
+                    if (!is_dir($directory)) {
+                        mkdir($directory, 0755, true);
+                    }
+                    $file->move($directory, $filename);
+
+                    $path  = 'uploads/ui/' . $filename;
+                    $value = '/storage/' . $path;
                 }
 
                 if ($value !== null) {

@@ -7,7 +7,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductReview;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class ProductReviewApiController extends Controller
@@ -148,8 +148,14 @@ class ProductReviewApiController extends Controller
         // ── Image uploads ─────────────────────────────────────────
         $imagePaths = [];
         if ($request->hasFile('images')) {
+            $directory = public_path('storage/product-reviews');
+            if (!is_dir($directory)) {
+                mkdir($directory, 0755, true);
+            }
             foreach ($request->file('images') as $file) {
-                $imagePaths[] = $file->store('product-reviews', 'public');
+                $filename     = Str::uuid() . '.' . $file->getClientOriginalExtension();
+                $file->move($directory, $filename);
+                $imagePaths[] = 'product-reviews/' . $filename;
             }
         }
 

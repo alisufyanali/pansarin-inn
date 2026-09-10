@@ -7,7 +7,7 @@ use App\Models\Customer;
 use App\Models\Order;
 use App\Models\SiteReview;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class SiteReviewApiController extends Controller
@@ -132,7 +132,14 @@ class SiteReviewApiController extends Controller
         // ── 4. Handle optional image upload ───────────────────────
         $imagePath = null;
         if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('site-reviews', 'public');
+            $file      = $request->file('image');
+            $directory = public_path('storage/site-reviews');
+            if (!is_dir($directory)) {
+                mkdir($directory, 0755, true);
+            }
+            $filename  = Str::uuid() . '.' . $file->getClientOriginalExtension();
+            $file->move($directory, $filename);
+            $imagePath = 'site-reviews/' . $filename;
         }
 
         // ── 5. Create review (pending — requires admin approval) ──

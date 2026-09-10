@@ -5,7 +5,7 @@ namespace App\Http\Repositories\Admin;
 use App\Models\Slide;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class SlideRepository
 {
@@ -48,7 +48,7 @@ class SlideRepository
     public function store(array $data, $imageFile = null): Slide
     {
         if ($imageFile) {
-            $data['image'] = $imageFile->store('slides', 'public');
+            $data['image'] = $this->moveUploadedFile($imageFile, 'slides');
         }
         return Slide::create($data);
     }
@@ -58,9 +58,12 @@ class SlideRepository
         $slide = $this->find($id);
 
         if ($imageFile) {
-            // Delete old image
-            if ($slide->image) Storage::disk('public')->delete($slide->image);
-            $data['image'] = $imageFile->store('slides', 'public');
+            // Upload new file first — only delete old one after success
+            $newPath = $this->moveUploadedFile($imageFile, 'slides');
+            if ($slide->image) {
+                $this->deleteUploadedFile($slide->image);
+            }
+            $data['image'] = $newPath;
         }
 
         $slide->update($data);
@@ -70,7 +73,9 @@ class SlideRepository
     public function delete($id): bool
     {
         $slide = $this->find($id);
-        if ($slide->image) Storage::disk('public')->delete($slide->image);
+        if ($slide->image) {
+            $this->deleteUploadedFile($slide->image);
+        }
         return $slide->delete();
     }
 
@@ -89,5 +94,38 @@ class SlideRepository
             'mobile'  => Slide::where('type', 'mobile')->count(),
             'active'  => Slide::where('is_active', true)->count(),
         ];
+    }
+
+    // ── Native-PHP file helpers (bypasses Flysystem / finfo) ──────
+
+    /**
+     * Move an UploadedFile to public/storage/{folder} using native PHP.
+     * Returns the relative path stored in the database, e.g. "slides/abc123.jpg".
+     */
+    private function moveUploadedFile($file, string $folder): string
+    {
+        $extension = $file->getClientOriginalExtension();
+        $filename  = Str::uuid() . '.' . $extension;
+        $directory = public_path('storage/' . $folder);
+
+        if (!is_dir($directory)) {
+            mkdir($directory, 0755, true);
+        }
+
+        $file->move($directory, $filename);
+
+        return $folder . '/' . $filename;
+    }
+
+    /**
+     * Delete a file stored via moveUploadedFile().
+     */
+    private function deleteUploadedFile(string $relativePath): void
+    {
+        $fullPath = public_path('storage/' . $relativePath);
+
+        if (file_exists($fullPath)) {
+            unlink($fullPath);
+        }
     }
 }

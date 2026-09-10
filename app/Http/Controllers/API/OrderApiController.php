@@ -375,7 +375,7 @@ class OrderApiController extends Controller
                     // the displayed password and the stored hash always use the identical string.
                     'password' => Hash::make($normalizedPhone),
                     'phone'    => $normalizedPhone,
-                    'username' => Str::slug($request->name) . '-' . rand(1000, 9999),
+                    'username' => Str::slug($request->name)  ,
                     'status'   => 1,
                 ]
             );
