@@ -263,7 +263,11 @@ class ProductController extends Controller
             ->where('status', true)
             ->where(function ($query) use ($search) {
                 $query->where('name', 'like', "%{$search}%")
-                    ->orWhere('sku', 'like', "%{$search}%");
+                    ->orWhere('sku', 'like', "%{$search}%")
+                    ->orWhere('scientific_name', 'like', "%{$search}%")
+                    ->orWhere('other_name', 'like', "%{$search}%")
+                    ->orWhere('alternative_name', 'like', "%{$search}%")
+                    ->orWhere('urdu_name', 'like', "%{$search}%");
             })
             ->limit(20)
             ->get(['id', 'name', 'sku', 'unit']);

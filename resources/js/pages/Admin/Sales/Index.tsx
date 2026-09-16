@@ -18,6 +18,7 @@ interface SaleItem {
     variant_name: string | null;
     quantity: number;
     price: number;
+    discount?: number;
     subtotal: number;
 }
 
@@ -128,6 +129,9 @@ export default function Index({ stats, flash }: Props) {
                     <td style="padding:7px 10px;border-bottom:1px solid #e8f5e9;text-align:center;color:#6b7280;font-size:11px;">${item.variant_name ?? '—'}</td>
                     <td style="padding:7px 10px;border-bottom:1px solid #e8f5e9;text-align:center;font-weight:600;">${item.quantity}</td>
                     <td style="padding:7px 10px;border-bottom:1px solid #e8f5e9;text-align:right;color:#374151;">Rs ${Number(item.price).toLocaleString()}</td>
+                    <td style="padding:7px 10px;border-bottom:1px solid #e8f5e9;text-align:right;font-weight:600;color:${Number(item.discount ?? 0) > 0 ? '#dc2626' : '#9ca3af'};">
+                        ${Number(item.discount ?? 0) > 0 ? `- Rs ${Number(item.discount).toLocaleString()}` : '—'}
+                    </td>
                     <td style="padding:7px 10px;border-bottom:1px solid #e8f5e9;text-align:right;font-weight:700;color:#166534;">Rs ${Number(item.subtotal).toLocaleString()}</td>
                 </tr>
             `).join('');
@@ -183,13 +187,14 @@ export default function Index({ stats, flash }: Props) {
                             <tr style="background:linear-gradient(90deg,#1b4332,#2d6a4f);color:#fff;">
                                 <th style="padding:9px 10px;text-align:center;width:32px;font-weight:600;">#</th>
                                 <th style="padding:9px 10px;text-align:left;font-weight:600;">Item</th>
-                                <th style="padding:9px 10px;text-align:center;width:110px;font-weight:600;">Options</th>
-                                <th style="padding:9px 10px;text-align:center;width:50px;font-weight:600;">Qty</th>
-                                <th style="padding:9px 10px;text-align:right;width:85px;font-weight:600;">Unit Price</th>
+                                <th style="padding:9px 10px;text-align:center;width:100px;font-weight:600;">Options</th>
+                                <th style="padding:9px 10px;text-align:center;width:45px;font-weight:600;">Qty</th>
+                                <th style="padding:9px 10px;text-align:right;width:80px;font-weight:600;">Unit Price</th>
+                                <th style="padding:9px 10px;text-align:right;width:80px;font-weight:600;">Discount</th>
                                 <th style="padding:9px 10px;text-align:right;width:85px;font-weight:600;">Total</th>
                             </tr>
                         </thead>
-                        <tbody>${itemRows || '<tr><td colspan="6" style="text-align:center;padding:14px;color:#aaa;font-style:italic;">No items found</td></tr>'}</tbody>
+                        <tbody>${itemRows || '<tr><td colspan="7" style="text-align:center;padding:14px;color:#aaa;font-style:italic;">No items found</td></tr>'}</tbody>
                     </table>
                 </div>
 

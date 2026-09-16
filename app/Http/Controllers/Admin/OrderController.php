@@ -64,6 +64,7 @@ class OrderController extends Controller
                         'variant_name' => $item->meta['variant_name'] ?? null,
                         'quantity'     => $item->quantity,
                         'price'        => (float) $item->price,
+                        'discount'     => (float) ($item->discount ?? 0),
                         'subtotal'     => (float) $item->subtotal,
                     ]),
                     'shipping_address' => $o->shipping_address,

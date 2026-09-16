@@ -24,6 +24,7 @@ interface OrderItem {
     variant_name: string | null;
     quantity: number;
     price: number;
+    discount?: number;
     subtotal: number;
 }
 
@@ -130,7 +131,7 @@ export default function Index({ stats, flash }: Props) {
 
             const items = order.items ?? [];
 
-            // Product detail: nested table — product name + variant (gm/ml/unit) + qty
+            // Product detail: nested table — product name + variant (gm/ml/unit) + qty + discount
             const productRows = items.length > 0
                 ? items.map(item => {
                     // variant_name already contains the full label e.g. "100 gm", "50 gm Whole", "30 ml"
@@ -138,14 +139,18 @@ export default function Index({ stats, flash }: Props) {
                     const variantCell  = variantLabel
                         ? `<td style="padding:3px 6px;border:1px solid #ccc;font-size:11px;white-space:nowrap;color:#444;">${variantLabel}</td>`
                         : `<td style="padding:3px 6px;border:1px solid #ccc;font-size:11px;color:#bbb;">—</td>`;
+                    const discountCell = Number(item.discount ?? 0) > 0
+                        ? `<td style="padding:3px 6px;border:1px solid #ccc;font-size:11px;text-align:right;white-space:nowrap;font-weight:600;color:#c62828;">- Rs ${Number(item.discount).toLocaleString()}</td>`
+                        : `<td style="padding:3px 6px;border:1px solid #ccc;font-size:11px;text-align:center;color:#bbb;">—</td>`;
                     return `
                         <tr>
                             <td style="padding:3px 6px;border:1px solid #ccc;font-size:11px;">${item.product_name ?? '—'}</td>
                             ${variantCell}
                             <td style="padding:3px 6px;border:1px solid #ccc;font-size:11px;text-align:center;white-space:nowrap;">${item.quantity} qty</td>
+                            ${discountCell}
                         </tr>`;
                 }).join('')
-                : `<tr><td colspan="3" style="padding:3px 6px;border:1px solid #ccc;font-size:11px;color:#aaa;font-style:italic;">No items</td></tr>`;
+                : `<tr><td colspan="4" style="padding:3px 6px;border:1px solid #ccc;font-size:11px;color:#aaa;font-style:italic;">No items</td></tr>`;
 
             const productCell = `
                 <table style="border-collapse:collapse;width:100%;">
@@ -154,6 +159,7 @@ export default function Index({ stats, flash }: Props) {
                             <th style="padding:3px 6px;border:1px solid #ccc;font-size:10px;text-align:left;font-weight:600;">Product</th>
                             <th style="padding:3px 6px;border:1px solid #ccc;font-size:10px;text-align:left;font-weight:600;white-space:nowrap;">Size / Unit</th>
                             <th style="padding:3px 6px;border:1px solid #ccc;font-size:10px;text-align:center;font-weight:600;">Qty</th>
+                            <th style="padding:3px 6px;border:1px solid #ccc;font-size:10px;text-align:right;font-weight:600;">Discount</th>
                         </tr>
                     </thead>
                     <tbody>${productRows}</tbody>
