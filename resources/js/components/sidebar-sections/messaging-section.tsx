@@ -37,9 +37,14 @@ export function MessagingSection({
 
     if (hasAnyWhatsapp) {
         messagingSubmenu.push({
-            title: 'WhatsApp',
+            title: 'WhatsApp Chat',
             href: '/admin/whatsapp/chat',
             icon: MessageCircle,
+        });
+        messagingSubmenu.push({
+            title: 'Bulk WhatsApp',
+            href: '/admin/whatsapp/broadcast',
+            icon: MessageSquare,
         });
     }
 

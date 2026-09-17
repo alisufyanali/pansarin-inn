@@ -31,6 +31,7 @@ use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SaleController;
 use App\Http\Controllers\Admin\CityController;
 use App\Http\Controllers\Admin\WhatsAppController;
+use App\Http\Controllers\Admin\WhatsAppBroadcastController;
 use App\Http\Controllers\Admin\SiteReviewController;
 use App\Http\Controllers\Admin\SlideController;
 use App\Http\Controllers\UserController;
@@ -215,13 +216,19 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('slides-data', [SlideController::class, 'getData'])->name('slides.data');
     Route::patch('slides/{slide}/toggle', [SlideController::class, 'toggleStatus'])->name('slides.toggle');
 
-    // WhatsApp Chat Routes
+    // WhatsApp Chat & Broadcast Routes
     Route::prefix('whatsapp')->name('whatsapp.')->group(function () {
         Route::get('/chat', [WhatsAppController::class, 'index'])->name('chat');
         Route::get('/phone-numbers', [WhatsAppController::class, 'getPhoneNumbers'])->name('phone-numbers');
         Route::get('/messages/{phone}', [WhatsAppController::class, 'getMessages'])->name('messages');
         Route::post('/send', [WhatsAppController::class, 'sendMessage'])->name('send');
         Route::post('/add-number', [WhatsAppController::class, 'addNumber'])->name('add-number');
+
+        // Bulk WhatsApp Message Routes
+        Route::get('/broadcast', [WhatsAppBroadcastController::class, 'index'])->name('broadcast');
+        Route::get('/broadcast/customers', [WhatsAppBroadcastController::class, 'customersList'])->name('broadcast.customers');
+        Route::get('/broadcast/logs', [WhatsAppBroadcastController::class, 'recentLogs'])->name('broadcast.logs');
+        Route::post('/broadcast/send', [WhatsAppBroadcastController::class, 'send'])->name('broadcast.send');
     });
 
 
