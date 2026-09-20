@@ -1,0 +1,16 @@
+---
+description: Project knowledge base — always read before any task
+alwaysApply: true
+---
+
+Before starting any task in this project:
+1. Read `docs/project/rules.md` — coding rules and hard constraints (especially the 12 hard rules).
+2. Read `docs/project/tasks.md` — current task status; do not re-do completed work.
+3. Read `docs/project/memory.md` — key decisions, gotchas, and open questions.
+
+After completing any task:
+- Update `docs/project/tasks.md`: move the completed item to the DONE section with a [x] checkbox.
+- Append a dated one-liner to the "Session Log" table in `docs/project/memory.md` if a decision was made or a new gotcha was discovered.
+
+Never store secrets, tokens, API keys, passwords, or .env values in any docs file.
+Only store env variable NAMES (e.g., `BUILD_API_TOKEN`) with a one-line description of their purpose.
