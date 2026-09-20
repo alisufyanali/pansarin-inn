@@ -74,8 +74,8 @@ pansarin-inn/
 │   ├── admin.php                  — Admin panel routes
 │   ├── web.php                    — Public web + loads admin/affiliate/settings/test
 │   ├── affiliate.php              — Affiliate-specific routes
-│   ├── frontend.php               — TODO: confirm content
-│   └── settings.php               — Settings routes
+│   ├── frontend.php               — Admin settings UI routes (misnamed): /admin/settings/ui/*, /admin/settings/general/*, /admin/settings/business/*; also two legacy FrontendController stubs
+│   └── settings.php               — User account settings routes: /settings/profile, /settings/password (throttle:6,1), /settings/appearance, /settings/two-factor — middleware: auth
 └── storage/app/legacy_customer_id_map.json  — Legacy CI customer ID → new ID mapping
 ```
 
@@ -230,7 +230,7 @@ Admin browser
 | `APP_DEBUG` | Debug mode (false in production) |
 | `APP_URL` | Laravel backend URL |
 | `FRONTEND_URL` | Next.js storefront URL (pansariinn.com) — used in emails |
-| `FRONTEND_URL_2` | Secondary frontend URL (TODO: confirm purpose) |
+| `FRONTEND_URL_2` | Vercel preview deployment URL (`https://pansarii-frontend.vercel.app`) — added to CORS `allowed_origins` alongside `FRONTEND_URL` (source: `config/cors.php`) |
 | `BUILD_API_TOKEN` | Secret token for Next.js build server to bypass rate limits |
 | `DB_CONNECTION` | Database driver |
 | `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` | Database credentials |

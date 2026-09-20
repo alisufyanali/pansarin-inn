@@ -66,16 +66,16 @@
 - [ ] **Vercel env vars audit**: confirm `NEXT_PUBLIC_API_URL`, `BUILD_API_TOKEN`, and any other required vars are set in Vercel project settings
 - [ ] **Manjistha product merge**: two products named "Manjistha" with different thumbnails; decision pending (which to keep, how to migrate orders referencing deleted product)
 - [ ] **Guest checkout validation error display**: frontend shows no field-level errors on guest checkout failure
-- [ ] **Pakistan-only phone validation**: frontend accepts any phone format; should enforce `^\+92[0-9]{10}$` before sending to API
-- [ ] **Blog category/tag article count = 0 bug**: category and tag listing shows 0 articles
+- [ ] **Pakistan-only phone validation**: validated at API (`regex:/^\+92[0-9]{10}$/` in `storeGuest`); frontend does NOT enforce this — only a placeholder `+923000000000` in the WhatsApp settings field (`resources/js/pages/Admin/Settings/ui/marketing.tsx:40`); frontend enforcement is missing
+- [ ] **Blog category/tag article count = 0 bug**: root cause confirmed — `BlogApiController` has no endpoint to list categories/tags with article counts; `GET /api/blogs` returns category name/slug but no count; `BlogTagRepository::getAllForDataTable` does `withCount('blogs')` for admin only; fix requires adding a public `GET /api/blog-categories` (or similar) endpoint that returns categories with `blogs_count`
 
 ### P2 — Nice to Have
 
-- [ ] Add-to-cart toast in quick view
-- [ ] Review count on product card
-- [ ] Footer category links
+- [ ] Add-to-cart toast in quick view — no quick-view component found in `resources/js/` (likely in the Next.js frontend repo, not this codebase)
+- [ ] Review count on product card — **API already returns `reviews_count` and `reviews_avg_rating` in `GET /api/products` list response** (source: `ProductApiController.php:26`); this is a frontend display issue in the Next.js repo, not a missing API field
+- [ ] Footer category links — no footer component found in `resources/js/` (frontend repo issue)
 - [ ] Rewards page missing sections (wallet balance display, transaction history)
-- [ ] Banner sizing fix (812×317 aspect ratio enforcement)
+- [ ] Banner sizing fix — correct aspect ratio for carousel/banner images (exact dimensions TODO: confirm from frontend repo; no 812×317 reference found in this codebase)
 - [ ] Fresh Next.js SEO audit (meta tags, canonical URLs, structured data)
 - [ ] Hostinger VPS decision (shared → VPS migration for queue workers, supervisor)
 - [ ] Enable async queue (QUEUE_CONNECTION=database or redis) — blocked on VPS decision

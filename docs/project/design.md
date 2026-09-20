@@ -19,7 +19,7 @@
 ### Layout Patterns
 - **`app-layout.tsx`** — authenticated admin shell (sidebar + topbar + main content area)
 - **`auth-layout.tsx`** — login / register / password pages (centered card)
-- **`settings/` layout** — TODO: confirm structure
+- **`settings/` layout** — `resources/js/layouts/settings/layout.tsx`: left sidebar nav (Profile, Password, Two-Factor Auth, Appearance), right content area. Used inside `app-layout.tsx`. Source: `resources/js/layouts/settings/layout.tsx:36`
 
 Pages are organized in `resources/js/pages/Admin/{Module}/` with `Index.tsx`, `Show.tsx`, `Create.tsx`, `Edit.tsx` per resource.
 

@@ -149,7 +149,7 @@ Backend: Laravel 12 API + Inertia/React admin panel, hosted on shared Hostinger 
 | Wallet (DB + model) | 🔶 Partial — frontend TODO: confirm |
 | Loyalty frontend (rewards page) | 🔶 Partial — some sections missing |
 | Affiliate frontend dashboard | 🔶 Partial — TODO: confirm |
-| Blog category/tag article count | ❌ Bug (shows 0) |
+| Blog category/tag article count | ❌ Bug (root cause confirmed: `BlogApiController` has no endpoint for listing categories/tags with counts; `GET /api/blogs` returns only category name/slug, not article count; frontend must either derive from returned articles or a dedicated category-list endpoint needs building) |
 | Guest checkout validation error display | ❌ Missing on frontend |
 | Pakistan-only phone validation on frontend | ❌ Missing |
 | Add-to-cart toast in quick view | ❌ Missing |

@@ -59,7 +59,7 @@
 
 - [ ] **Manjistha merge**: Two products both named "Manjistha - Majith Powder" with different thumbnails/variants. Which record is canonical? Do historical orders referencing the non-canonical one need migration?
 - [ ] **VPS migration**: Move from shared Hostinger to VPS to enable supervisor + queue workers + proper cron. Decision pending cost/complexity analysis.
-- [ ] **FRONTEND_URL_2**: Second frontend URL env var. Purpose unclear — possibly Vercel preview deployment URL. Confirm before removing.
+- [x] **FRONTEND_URL_2**: Confirmed — Vercel preview deployment URL (`https://pansarii-frontend.vercel.app`). Both URLs in `config/cors.php:allowed_origins`. Keep it.
 - [ ] **Wallet UI**: Wallet model and DB are complete. No customer-facing wallet UI exists in the Next.js frontend. Decide if it's a P1 feature.
 
 ---
@@ -71,3 +71,4 @@
 | Date | Summary |
 |---|---|
 | 2026-09-03 | Initial knowledge base created from full codebase scan |
+| 2026-09-03 | Resolved TODOs from code: routes/frontend.php confirmed (admin settings), FRONTEND_URL_2 confirmed (Vercel preview), settings/ layout confirmed, review_count in API confirmed, blog category count root cause identified (no public endpoint), banner 812x317 not in this repo |
