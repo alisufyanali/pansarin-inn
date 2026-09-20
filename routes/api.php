@@ -78,13 +78,13 @@ Route::middleware('throttle:api.public')->group(function () {
 });
 
 // ── Protected routes (auth:sanctum) — 60 requests/minute ──────────
-Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
-    Route::post('/logout', [AuthApiController::class, 'logout']);
+Route::middleware(['auth:sanctum', 'throttle:60,1', 'password.changed'])->group(function () {
+    Route::post('/logout', [AuthApiController::class, 'logout'])->name('api.logout');
     Route::get('/user',    [AuthApiController::class, 'user']);
 
     // Profile
-    Route::put('/profile',         [ProfileApiController::class, 'update']);
-    Route::post('/change-password', [ProfileApiController::class, 'changePassword']);
+    Route::put('/profile',          [ProfileApiController::class, 'update']);
+    Route::post('/change-password', [ProfileApiController::class, 'changePassword'])->name('password.change');
 
     // Cart
     Route::get('/cart',         [CartApiController::class, 'index']);

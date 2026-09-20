@@ -4,9 +4,13 @@ namespace Database\Seeders;
 
 use App\Models\City;
 use App\Models\Customer;
+use App\Models\CustomerGroup;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class CustomerImportSeeder extends Seeder
 {
@@ -22,6 +26,9 @@ class CustomerImportSeeder extends Seeder
 
         $raw = file_get_contents($dataPath);
         $items = json_decode($raw, true);
+
+        // TEST MODE: full run se pehle hata do
+        $items = array_slice($items, 0, 20, true);
 
         if (! is_array($items)) {
             $this->command->error('Failed to decode JSON file. Ensure it is a valid JSON array.');
@@ -47,6 +54,20 @@ class CustomerImportSeeder extends Seeder
             ->pluck('id', 'phone')
             ->mapWithKeys(fn ($id, $phone) => [$this->sanitizePhone($phone) => $id])
             ->toArray();
+
+        $existingUserEmails = User::whereNotNull('email')
+            ->pluck('email')
+            ->mapWithKeys(fn ($email) => [strtolower(trim($email)) => true])
+            ->toArray();
+
+        $usedUsernames = User::pluck('username')
+            ->filter()
+            ->mapWithKeys(fn ($uname) => [strtolower(trim($uname)) => true])
+            ->toArray();
+
+        $sharedPassword = Hash::make(Str::random(40));
+
+        $defaultGroupId = CustomerGroup::where('is_default', true)->value('id');
 
         // ── Counters ──────────────────────────────────────────────────
         $createdCount    = 0;
@@ -103,6 +124,20 @@ class CustomerImportSeeder extends Seeder
             $rawUsername = $item['username'] ?? ($item['name'] ?? null);
             $firstName   = ! empty(trim((string) $rawUsername)) ? trim((string) $rawUsername) : 'Customer';
             $lastName    = ! empty(trim((string) ($item['surname'] ?? ''))) ? trim((string) $item['surname']) : null;
+            $fullName    = trim($firstName . ' ' . ($lastName ?? ''));
+
+            $userEmail = $email ?? 'u' . ($legacyId ?? $index) . '@noemail.invalid';
+
+            if (isset($existingUserEmails[$userEmail])) {
+                $skippedLogs[$recordRef] = "Duplicate user email: {$userEmail}";
+                $skippedCount++;
+                $bar->advance();
+                continue;
+            }
+
+            $username = $this->uniqueUsername($firstName, $legacyId, $usedUsernames);
+            $hasPhone = ! empty($phone);
+            $password = $hasPhone ? Hash::make($phone, ['rounds' => 4]) : $sharedPassword;
 
             // 4. City Mapping (case-insensitive, fallback NULL)
             $legacyCityName = trim((string) ($item['city'] ?? ''));
@@ -133,6 +168,12 @@ class CustomerImportSeeder extends Seeder
             // 7. DB Transaction per record
             try {
                 $newCustomer = DB::transaction(function () use (
+                    $fullName,
+                    $username,
+                    $userEmail,
+                    $password,
+                    $hasPhone,
+                    $defaultGroupId,
                     $firstName,
                     $lastName,
                     $email,
@@ -142,9 +183,20 @@ class CustomerImportSeeder extends Seeder
                     $cityId,
                     $country
                 ) {
-                    return Customer::create([
-                        'user_id'           => null,
-                        'customer_group_id' => null,
+                    $user = User::create([
+                        'name'                 => $fullName,
+                        'username'             => $username,
+                        'email'                => $userEmail,
+                        'password'             => $password,
+                        'status'               => 1,
+                        'must_change_password' => $hasPhone,
+                    ]);
+
+                    $user->syncRoles(['customer']);
+
+                    $customer = Customer::create([
+                        'user_id'           => $user->id,
+                        'customer_group_id' => $defaultGroupId,
                         'first_name'        => $firstName,
                         'last_name'         => $lastName,
                         'email'             => $email,
@@ -160,7 +212,15 @@ class CustomerImportSeeder extends Seeder
                         'total_orders'      => 0,
                         'referred_by'       => null,
                     ]);
+
+                    $customer->wallet()->create(['balance' => 0]);
+                    $customer->loyaltyPoints()->create(['balance' => 0]);
+
+                    return $customer;
                 });
+
+                // Track newly created user email
+                $existingUserEmails[$userEmail] = true;
 
                 // Track newly created email/phone in local set
                 if ($email) {
@@ -236,6 +296,37 @@ class CustomerImportSeeder extends Seeder
     }
 
     /**
+     * Generate unique username.
+     */
+    private function uniqueUsername(string $base, $legacyId, array &$used): string
+    {
+        $candidate = Str::slug($base, '_') ?: 'customer';
+        $candidate = strtolower($candidate);
+
+        if (! isset($used[$candidate])) {
+            $used[$candidate] = true;
+            return $candidate;
+        }
+
+        if ($legacyId !== null && $legacyId !== '') {
+            $withLegacy = $candidate . '_' . $legacyId;
+            if (! isset($used[$withLegacy])) {
+                $used[$withLegacy] = true;
+                return $withLegacy;
+            }
+        }
+
+        $counter = 2;
+        while (isset($used[$candidate . '_' . $counter])) {
+            $counter++;
+        }
+
+        $final = $candidate . '_' . $counter;
+        $used[$final] = true;
+        return $final;
+    }
+
+    /**
      * Standardize phone number for reliable duplicate detection.
      */
     private function sanitizePhone(string $phone): string
@@ -251,3 +342,4 @@ class CustomerImportSeeder extends Seeder
         return $clean ?: trim($phone);
     }
 }
+

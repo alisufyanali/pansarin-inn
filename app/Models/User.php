@@ -23,6 +23,7 @@ class User extends Authenticatable
         'username',
         'status',
         'referred_by',
+        'must_change_password',
     ];
 
     protected $hidden = [
@@ -35,9 +36,10 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-            'two_factor_confirmed_at' => 'datetime',
+            'email_verified_at'        => 'datetime',
+            'password'                 => 'hashed',
+            'two_factor_confirmed_at'  => 'datetime',
+            'must_change_password'     => 'boolean',
         ];
     }
 
@@ -72,36 +74,36 @@ class User extends Authenticatable
     }
 
     /**
- * 1. Jis Affiliate ne is user ko refer kiya (The Parent)
- */
-public function referrer()
-{
-    return $this->belongsTo(User::class, 'referred_by');
-}
+     * 1. Jis Affiliate ne is user ko refer kiya (The Parent)
+     */
+    public function referrer()
+    {
+        return $this->belongsTo(User::class, 'referred_by');
+    }
 
-/**
- * 2. Wo Users jinko is Affiliate ne refer kiya (The Downline)
- */
-public function referrals()
-{
-    return $this->hasMany(User::class, 'referred_by');
-}
+    /**
+     * 2. Wo Users jinko is Affiliate ne refer kiya (The Downline)
+     */
+    public function referrals()
+    {
+        return $this->hasMany(User::class, 'referred_by');
+    }
 
-/**
- * 3. Affiliate ki earnings (Referral Table se)
- * Jab ye user as an Affiliate kamaye ga
- */
-public function affiliateCommissions()
-{
-    return $this->hasMany(Referral::class, 'affiliate_id');
-}
+    /**
+     * 3. Affiliate ki earnings (Referral Table se)
+     * Jab ye user as an Affiliate kamaye ga
+     */
+    public function affiliateCommissions()
+    {
+        return $this->hasMany(Referral::class, 'affiliate_id');
+    }
 
-/**
- * 4. User ki purchases (Referral Table se)
- * Jab ye user as a Customer kuch khareeday ga
- */
-public function customerPurchases()
-{
-    return $this->hasMany(Referral::class, 'customer_id');
-}
+    /**
+     * 4. User ki purchases (Referral Table se)
+     * Jab ye user as a Customer kuch khareeday ga
+     */
+    public function customerPurchases()
+    {
+        return $this->hasMany(Referral::class, 'customer_id');
+    }
 }

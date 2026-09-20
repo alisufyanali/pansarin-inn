@@ -86,7 +86,13 @@ class ProfileApiController extends Controller
         try {
             $request->validate([
                 'current_password' => 'required|string',
-                'password'         => ['required', 'confirmed', Password::defaults()],
+                'password'         => [
+                    'required',
+                    'confirmed',
+                    Password::defaults(),
+                    // Phone number must not be used as a password
+                    \Illuminate\Validation\Rule::notIn(array_filter([$user->customer?->phone])),
+                ],
             ]);
         } catch (ValidationException $e) {
             return response()->json([
@@ -104,7 +110,10 @@ class ProfileApiController extends Controller
             ], 422);
         }
 
-        $user->update(['password' => Hash::make($request->password)]);
+        $user->update([
+            'password'             => Hash::make($request->password),
+            'must_change_password' => false,
+        ]);
 
         // Revoke all other tokens so existing sessions are invalidated
         $currentTokenId = $user->currentAccessToken()->id;

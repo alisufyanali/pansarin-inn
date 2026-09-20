@@ -25,6 +25,7 @@ return new class extends Migration
             $table->boolean('status')->default(1);
 
             $table->foreignId('referred_by')->nullable()->constrained('users')->onDelete('set null');
+            $table->boolean('must_change_password')->default(false)->after('password');
 
             $table->rememberToken();
             $table->timestamps();
