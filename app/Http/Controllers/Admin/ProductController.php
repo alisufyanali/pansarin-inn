@@ -44,7 +44,6 @@ class ProductController extends Controller
 
             return response()->json([
                 'error'   => 'Failed to load data',
-                'message' => $e->getMessage(),
                 'data'    => [],
                 'total'   => 0,
             ], 500);
@@ -237,7 +236,7 @@ class ProductController extends Controller
         } catch (\Exception $e) {
             Log::error('Product update error: ' . $e->getMessage());
 
-            return back()->withInput()->with('error', 'Failed to update product: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Failed to update product. Please try again.');
         }
     }
 

@@ -246,8 +246,8 @@ class SaleController extends Controller
 
             return to_route('admin.sales.index')->with('success', 'Sale created successfully!');
         } catch (\Exception $e) {
-            Log::error('Sale store: ' . $e->getMessage());
-            return back()->with('error', $e->getMessage());
+            Log::error('Sale store failed', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return back()->with('error', 'Failed to create sale. Please try again.');
         }
     }
 
@@ -281,8 +281,8 @@ class SaleController extends Controller
             $this->saleRepository->update($id, $request->validated());
             return to_route('admin.sales.index')->with('success', 'Sale updated!');
         } catch (\Exception $e) {
-            Log::error('Sale update: ' . $e->getMessage());
-            return back()->with('error', $e->getMessage());
+            Log::error('Sale update failed', ['id' => $id, 'message' => $e->getMessage()]);
+            return back()->with('error', 'Failed to update sale. Please try again.');
         }
     }
 
@@ -306,7 +306,8 @@ class SaleController extends Controller
             $this->saleRepository->updateDeliveryStatus($id, $validated);
             return back()->with('success', 'Delivery status updated!');
         } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage());
+            Log::error('Sale updateDeliveryStatus failed', ['id' => $id, 'message' => $e->getMessage()]);
+            return back()->with('error', 'Failed to update delivery status.');
         }
     }
 
@@ -320,7 +321,8 @@ class SaleController extends Controller
             $this->saleRepository->updatePaymentStatus($id, $validated);
             return back()->with('success', 'Payment status updated!');
         } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage());
+            Log::error('Sale updatePaymentStatus failed', ['id' => $id, 'message' => $e->getMessage()]);
+            return back()->with('error', 'Failed to update payment status.');
         }
     }
 
@@ -336,7 +338,8 @@ class SaleController extends Controller
                 ->update(['payment_status' => $request->payment_status]);
             return response()->json(['success' => true, 'count' => count($request->ids)]);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+            Log::error('Sale bulkUpdatePaymentStatus failed', ['message' => $e->getMessage()]);
+            return response()->json(['success' => false, 'error' => 'Failed to update payment status.'], 500);
         }
     }
 
@@ -352,7 +355,8 @@ class SaleController extends Controller
                 ->update(['delivery_status' => $request->delivery_status]);
             return response()->json(['success' => true, 'count' => count($request->ids)]);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+            Log::error('Sale bulkUpdateDeliveryStatus failed', ['message' => $e->getMessage()]);
+            return response()->json(['success' => false, 'error' => 'Failed to update delivery status.'], 500);
         }
     }
 
@@ -370,7 +374,8 @@ class SaleController extends Controller
             }
             return response()->json(['success' => true, 'sent' => $sent]);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+            Log::error('Sale bulkSendReviewEmail failed', ['message' => $e->getMessage()]);
+            return response()->json(['success' => false, 'error' => 'Failed to send review emails.'], 500);
         }
     }
 
@@ -388,7 +393,8 @@ class SaleController extends Controller
             }
             return response()->json(['success' => true, 'sent' => $sent]);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+            Log::error('Sale bulkSendReviewWhatsApp failed', ['message' => $e->getMessage()]);
+            return response()->json(['success' => false, 'error' => 'Failed to send WhatsApp review messages.'], 500);
         }
     }
 }

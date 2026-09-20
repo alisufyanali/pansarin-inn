@@ -93,7 +93,7 @@ class WishlistController extends Controller
             return to_route('admin.wishlist.index')->with('success', 'Wishlist entry created successfully!');
         } catch (\Exception $e) {
             Log::error('Wishlist store error: '.$e->getMessage());
-            return back()->withInput()->with('error', $e->getMessage());
+            return back()->withInput()->with('error', 'Failed to add wishlist entry.');
         }
     }
 

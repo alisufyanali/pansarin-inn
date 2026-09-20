@@ -55,7 +55,6 @@ class CouponController extends Controller
 
             return response()->json([
                 'error' => 'Failed to load data',
-                'message' => $e->getMessage(),
                 'data' => [],
                 'total' => 0,
             ], 500);

@@ -40,6 +40,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // ── Inertia 403 rendering ─────────────────────────────────
         $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\HttpException $e, $request) {
             if ($e->getStatusCode() === 403 && $request->header('X-Inertia')) {
                 return \Inertia\Inertia::render('errors/403')
@@ -61,5 +62,50 @@ return Application::configure(basePath: dirname(__DIR__))
             return \Inertia\Inertia::render('errors/403')
                 ->toResponse($request)
                 ->setStatusCode(403);
+        });
+
+        // ── API generic exception shield ──────────────────────────
+        // Catches any unhandled exception on API requests and returns a
+        // safe generic JSON response. Never leaks exception messages when
+        // APP_DEBUG=false. Full detail is always written to laravel.log.
+        //
+        // Excluded (Laravel handles these correctly itself):
+        //   ValidationException        → 422 with field errors
+        //   AuthenticationException    → 401
+        //   AuthorizationException     → 403
+        //   ModelNotFoundException     → 404
+        //   HttpException              → uses its own status code (404, 405, …)
+        $exceptions->render(function (\Throwable $e, \Illuminate\Http\Request $request) {
+            // Only intercept API / JSON-expecting requests
+            if (! ($request->expectsJson() || $request->is('api/*'))) {
+                return null; // let the default web handler take over
+            }
+
+            // Pass well-typed exceptions back to Laravel's own renderers
+            $passThrough = [
+                \Illuminate\Validation\ValidationException::class,
+                \Illuminate\Auth\AuthenticationException::class,
+                \Illuminate\Auth\Access\AuthorizationException::class,
+                \Illuminate\Database\Eloquent\ModelNotFoundException::class,
+                \Symfony\Component\HttpKernel\Exception\HttpException::class,
+            ];
+            foreach ($passThrough as $class) {
+                if ($e instanceof $class) {
+                    return null;
+                }
+            }
+
+            // Log the full exception regardless of APP_DEBUG
+            \Illuminate\Support\Facades\Log::error('Unhandled API exception: ' . $e->getMessage(), [
+                'exception' => get_class($e),
+                'file'      => $e->getFile(),
+                'line'      => $e->getLine(),
+                'trace'     => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Something went wrong. Please try again or contact support.',
+            ], 500);
         });
     })->create();

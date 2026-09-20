@@ -109,7 +109,7 @@ class BlogCategoryController extends Controller
         } catch (\Exception $e) {
             \Log::error('Blog category deletion error: '.$e->getMessage());
 
-            return back()->with('error', $e->getMessage());
+            return back()->with('error', 'Failed to delete blog category.');
         }
     }
 }

@@ -78,7 +78,7 @@ class ReturnRequestController extends Controller
             return back()->with('success', $messages[$validated['status']] ?? 'Status updated.');
         } catch (\Exception $e) {
             Log::error('ReturnRequest updateStatus: ' . $e->getMessage());
-            return back()->with('error', $e->getMessage());
+            return back()->with('error', 'Failed to update return request status.');
         }
     }
 

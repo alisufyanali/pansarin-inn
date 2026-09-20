@@ -109,7 +109,8 @@ class OrderReviewController extends Controller
             $this->repo->updateStatus($id, $request->status);
             return back()->with('success', 'Status updated!');
         } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage());
+            Log::error('OrderReview updateStatus failed', ['id' => $id, 'message' => $e->getMessage()]);
+            return back()->with('error', 'Failed to update review status.');
         }
     }
 }

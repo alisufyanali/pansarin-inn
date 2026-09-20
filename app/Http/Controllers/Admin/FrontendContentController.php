@@ -99,7 +99,7 @@ class FrontendContentController extends Controller
             return back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             Log::error('FrontendContent creation error: ' . $e->getMessage());
-            return back()->with('error', 'Failed to create content: ' . $e->getMessage())->withInput();
+            return back()->with('error', 'Failed to create content.')->withInput();
         }
     }
 
@@ -149,7 +149,7 @@ class FrontendContentController extends Controller
             return back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             Log::error('FrontendContent update error: ' . $e->getMessage());
-            return back()->with('error', 'Failed to update content: ' . $e->getMessage())->withInput();
+            return back()->with('error', 'Failed to update content.')->withInput();
         }
     }
 
@@ -168,7 +168,7 @@ class FrontendContentController extends Controller
 
         } catch (\Exception $e) {
             Log::error('FrontendContent deletion error: ' . $e->getMessage());
-            return back()->with('error', 'Failed to delete content: ' . $e->getMessage());
+            return back()->with('error', 'Failed to delete content.');
         }
     }
 

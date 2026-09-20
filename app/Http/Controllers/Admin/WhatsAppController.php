@@ -227,9 +227,10 @@ class WhatsAppController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            Log::error('WhatsApp sendMessage failed', ['error' => $e->getMessage()]);
             return response()->json([
                 'success' => false,
-                'error' => $e->getMessage(),
+                'error' => 'Failed to send message. Please try again.',
             ], 500);
         }
     }

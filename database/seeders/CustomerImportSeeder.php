@@ -78,6 +78,9 @@ class CustomerImportSeeder extends Seeder
 
             // 2. Duplicate Checks (Skip with reason)
             if ($email && isset($existingEmails[$email])) {
+                if ($legacyId) {
+                    $legacyIdMap[(string) $legacyId] = $existingEmails[$email];
+                }
                 $skippedLogs[$recordRef] = "Duplicate email: {$email}";
                 $duplicateEmails++;
                 $skippedCount++;
@@ -86,6 +89,9 @@ class CustomerImportSeeder extends Seeder
             }
 
             if ($phone && isset($existingPhones[$phone])) {
+                if ($legacyId) {
+                    $legacyIdMap[(string) $legacyId] = $existingPhones[$phone];
+                }
                 $skippedLogs[$recordRef] = "Duplicate phone: {$phone}";
                 $duplicatePhones++;
                 $skippedCount++;

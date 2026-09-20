@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Validation\ValidationException;
 
 class OrderApiController extends Controller
@@ -137,10 +138,17 @@ class OrderApiController extends Controller
             'shipping_charges'      => 'nullable|numeric|min:0',
         ]);
 
-        $customer = $request->user()->customer;
+        $user = $request->user();
+
+        // resolveOrCreateCustomerProfile is wrapped in its own DB::transaction internally
+        $customer = $this->resolveOrCreateCustomerProfile($user, [
+            'first_name' => $user->name,
+            'email'      => $user->email,
+            'status'     => 'active',
+        ]);
 
         if (! $customer) {
-            return response()->json(['success' => false, 'message' => 'Customer profile not found.'], 404);
+            return response()->json(['success' => false, 'message' => 'Could not resolve customer profile.'], 500);
         }
 
         try {
@@ -313,97 +321,78 @@ class OrderApiController extends Controller
         $token          = null;
 
         // ── Resolve or create User + Customer ─────────────────────
-        // Priority: email match first (primary identifier the guest typed),
-        // then phone match, then create new account.
-        // Wrapped in a transaction so concurrent checkouts with the same new
-        // phone/email don't race into duplicate-key crashes.
-        
-        // Normalize phone number before any DB operations
+        // Normalize phone first — used in both user creation and customer resolution.
         $normalizedPhone = \App\Helpers\PhoneHelper::normalize($request->phone);
-        
+
         if (!$normalizedPhone) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid phone number format. Please use Pakistani mobile format (03XXXXXXXXX).',
             ], 422);
         }
-        
-        $resolvedUser = \Illuminate\Support\Facades\DB::transaction(function () use ($request, $normalizedPhone, &$accountCreated, &$token) {
 
-            // ── 1. Email match ─────────────────────────────────────
+        // Single outer transaction covers both User and Customer creation so
+        // concurrent requests for the same email/phone cannot race into a
+        // duplicate-key crash on customers.user_id or users.email.
+        [$resolvedUser, $customer] = DB::transaction(function () use (
+            $request, $normalizedPhone, &$accountCreated, &$token
+        ) {
+            // ── 1. Resolve User ────────────────────────────────────
+            // Priority: email match → phone match → create new.
             $byEmail = User::where('email', $request->email)->first();
 
             if ($byEmail) {
-                // If a DIFFERENT user already owns this phone, log a warning but
-                // do not crash — just proceed with the email-matched user as-is.
                 $phoneOwner = User::where('phone', $normalizedPhone)
                     ->where('id', '!=', $byEmail->id)
                     ->first();
 
                 if ($phoneOwner) {
                     Log::warning('Guest checkout phone conflict: phone belongs to a different user than the email match.', [
-                        'email'          => $request->email,
-                        'phone'          => $normalizedPhone,
-                        'email_user_id'  => $byEmail->id,
-                        'phone_user_id'  => $phoneOwner->id,
+                        'email'         => $request->email,
+                        'phone'         => $normalizedPhone,
+                        'email_user_id' => $byEmail->id,
+                        'phone_user_id' => $phoneOwner->id,
                     ]);
-                    // Do NOT update the email-matched user's phone.
-                    // Proceed with the email-matched user unchanged.
                 }
 
-                return $byEmail;
+                $resolvedUser = $byEmail;
+            } elseif ($byPhone = User::where('phone', $normalizedPhone)->first()) {
+                $resolvedUser = $byPhone;
+            } else {
+                $newUser = User::firstOrCreate(
+                    ['email' => $request->email],
+                    [
+                        'name'     => $request->name,
+                        'password' => Hash::make($normalizedPhone),
+                        'phone'    => $normalizedPhone,
+                        'username' => Str::slug($request->name) . '-' . rand(1000, 9999),
+                        'status'   => 1,
+                    ]
+                );
+
+                if ($newUser->wasRecentlyCreated) {
+                    $newUser->assignRole('customer');
+                    $accountCreated = true;
+                    $token = $newUser->createToken('api-token')->plainTextToken;
+                }
+
+                $resolvedUser = $newUser;
             }
 
-            // ── 2. Phone match (email not found) ───────────────────
-            $byPhone = User::where('phone', $normalizedPhone)->first();
-
-            if ($byPhone) {
-                // Phone belongs to an existing account with a different email.
-                // Attach the order to that account without modifying any fields.
-                return $byPhone;
-            }
-
-            // ── 3. Completely new guest — create account ───────────
-            // Use firstOrCreate keyed on email to be safe against
-            // the exact-same-email race condition.
-            $newUser = User::firstOrCreate(
-                ['email' => $request->email],
-                [
-                    'name'     => $request->name,
-                    // Use $normalizedPhone (03XXXXXXXXX) — same string shown in the account-created email.
-                    // $request->phone arrives as +92XXXXXXXXXX from the frontend; normalizing ensures
-                    // the displayed password and the stored hash always use the identical string.
-                    'password' => Hash::make($normalizedPhone),
-                    'phone'    => $normalizedPhone,
-                    'username' => Str::slug($request->name)  ,
-                    'status'   => 1,
-                ]
-            );
-
-            if ($newUser->wasRecentlyCreated) {
-                $newUser->assignRole('customer');
-                $accountCreated = true;
-                $token = $newUser->createToken('api-token')->plainTextToken;
-            }
-
-            return $newUser;
-        });
-
-        // ── Ensure Customer profile exists for resolved user ───────
-        $customer = $resolvedUser->customer;
-
-        if (! $customer) {
-            // User exists but has no customer profile (edge case) — create one.
-            $customer = Customer::create([
-                'user_id'    => $resolvedUser->id,
+            // ── 2. Resolve Customer (inside same transaction) ──────
+            // This means the unique-index race on customers.user_id cannot happen
+            // because we hold the same transaction lock.
+            $customer = $this->resolveOrCreateCustomerProfileInTx($resolvedUser, [
                 'first_name' => $request->name,
-                'phone'      => $this->uniquePhone($normalizedPhone),
+                'phone'      => $normalizedPhone,
                 'email'      => $request->email,
                 'address'    => $request->shipping_address,
                 'city_id'    => $request->city_id ?? null,
                 'status'     => 'active',
             ]);
-        }
+
+            return [$resolvedUser, $customer];
+        });
 
         // ── Create Order via existing OrderRepository::store() ────
         try {
@@ -507,6 +496,66 @@ class OrderApiController extends Controller
     {
         if (! $phone) return null;
         return Customer::where('phone', $phone)->exists() ? null : $phone;
+    }
+
+    // ── Customer profile resolver (own transaction) ────────────────
+    /**
+     * Used by store() (authenticated path) where no outer transaction is open.
+     * Wraps resolveOrCreateCustomerProfileInTx in its own DB::transaction.
+     */
+    private function resolveOrCreateCustomerProfile(User $user, array $fields): Customer
+    {
+        return DB::transaction(fn () => $this->resolveOrCreateCustomerProfileInTx($user, $fields));
+    }
+
+    // ── Customer profile resolver (no transaction — call inside one) ─
+    /**
+     * Core resolution logic. Must be called inside an open DB transaction.
+     *
+     * Resolution order:
+     *  1. Already linked by user_id → return as-is.
+     *  2. Orphan row (user_id=null) found by email:
+     *     - Verified user   → link and return.
+     *     - Unverified user → create fresh with email=null.
+     *  3. Email belongs to a DIFFERENT non-null user_id → create with email=null.
+     *  4. No match → create normally.
+     *
+     * UniqueConstraintViolationException is caught and resolved by re-fetching
+     * so concurrent callers within the same transaction window are safe.
+     */
+    private function resolveOrCreateCustomerProfileInTx(User $user, array $fields): Customer
+    {
+        // 1. Already has a linked customer profile?
+        $customer = Customer::where('user_id', $user->id)->first();
+        if ($customer) {
+            return $customer;
+        }
+
+        // 2 & 3. Check for an existing row by email.
+        $byEmail = isset($fields['email']) && $fields['email']
+            ? Customer::where('email', $fields['email'])->first()
+            : null;
+
+        if ($byEmail) {
+            if ($byEmail->user_id === null && $user->email_verified_at !== null) {
+                // Verified user owns this orphan — link it.
+                $byEmail->update(['user_id' => $user->id]);
+                return $byEmail->fresh();
+            }
+
+            // Unverified OR email owned by another user — create fresh without email.
+            $fields['email'] = null;
+        }
+
+        // Deduplicate phone before insert.
+        $fields['phone'] = $this->uniquePhone($fields['phone'] ?? null);
+
+        try {
+            return Customer::create(array_merge($fields, ['user_id' => $user->id]));
+        } catch (UniqueConstraintViolationException) {
+            // Race condition: another concurrent request already inserted this profile.
+            return Customer::where('user_id', $user->id)->firstOrFail();
+        }
     }
 
     // ── Format Helper ─────────────────────────────────────────────

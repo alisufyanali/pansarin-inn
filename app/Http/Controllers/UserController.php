@@ -153,7 +153,11 @@ class UserController extends Controller
                 return redirect()->route('admin.users.index')->with('success', 'User registered successfully!');
             });
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Registration failed: ' . $e->getMessage()]);
+            \Illuminate\Support\Facades\Log::error('User registration failed', [
+                'message' => $e->getMessage(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
+            return back()->withErrors(['error' => 'Registration failed. Please try again.']);
         }
     }
 

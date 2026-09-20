@@ -65,7 +65,7 @@ class BlogsCommentsController extends Controller
         } catch (\Exception $e) {
             \Log::error('Blog comment creation error: '.$e->getMessage());
 
-            return back()->withInput()->with('error', 'Failed to create comment: '.$e->getMessage());
+            return back()->withInput()->with('error', 'Failed to create comment.');
         }
     }
 
@@ -111,7 +111,7 @@ class BlogsCommentsController extends Controller
         } catch (\Exception $e) {
             \Log::error('Blog comment update error: '.$e->getMessage());
 
-            return back()->withInput()->with('error', 'Failed to update comment: '.$e->getMessage());
+            return back()->withInput()->with('error', 'Failed to update comment.');
         }
     }
 

@@ -130,8 +130,8 @@ class OrderController extends Controller
         } catch (\Illuminate\Validation\ValidationException $e) {
             throw $e; // Let Inertia handle it as 422 with errors
         } catch (\Exception $e) {
-            Log::error('Order store: ' . $e->getMessage());
-            return back()->with('error', $e->getMessage());
+            Log::error('Order store failed', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return back()->with('error', 'Failed to create order. Please try again.');
         }
     }
 
@@ -168,8 +168,8 @@ class OrderController extends Controller
         } catch (\Illuminate\Validation\ValidationException $e) {
             throw $e;
         } catch (\Exception $e) {
-            Log::error('Order update: ' . $e->getMessage());
-            return back()->with('error', $e->getMessage());
+            Log::error('Order update failed', ['id' => $id, 'message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return back()->with('error', 'Failed to update order. Please try again.');
         }
     }
 
@@ -202,8 +202,8 @@ class OrderController extends Controller
 
             return response()->json(['success' => true, 'sent' => $sent]);
         } catch (\Exception $e) {
-            Log::error('Bulk email error: ' . $e->getMessage());
-            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+            Log::error('Bulk email error', ['message' => $e->getMessage()]);
+            return response()->json(['success' => false, 'error' => 'Failed to send emails.'], 500);
         }
     }
 
@@ -230,8 +230,8 @@ class OrderController extends Controller
 
             return response()->json(['success' => true, 'sent' => $sent]);
         } catch (\Exception $e) {
-            Log::error('Bulk WhatsApp error: ' . $e->getMessage());
-            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+            Log::error('Bulk WhatsApp error', ['message' => $e->getMessage()]);
+            return response()->json(['success' => false, 'error' => 'Failed to send WhatsApp messages.'], 500);
         }
     }
 
@@ -265,7 +265,8 @@ class OrderController extends Controller
             $this->orderRepository->updateStatus($id, $to);
             return back()->with('success', 'Status updated!');
         } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage());
+            Log::error('Order updateStatus failed', ['id' => $id, 'message' => $e->getMessage()]);
+            return back()->with('error', 'Failed to update order status.');
         }
     }
 
@@ -279,7 +280,8 @@ class OrderController extends Controller
             $this->orderRepository->updatePaymentStatus($id, $validated);
             return back()->with('success', 'Payment status updated!');
         } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage());
+            Log::error('Order updatePaymentStatus failed', ['id' => $id, 'message' => $e->getMessage()]);
+            return back()->with('error', 'Failed to update payment status.');
         }
     }
 

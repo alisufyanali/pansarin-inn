@@ -51,7 +51,7 @@ class InventoryController extends Controller
             return to_route('admin.inventory.index')->with('success', 'Stock entry added!');
         } catch (\Exception $e) {
             Log::error('Inventory store: ' . $e->getMessage());
-            return back()->withInput()->with('error', $e->getMessage());
+            return back()->withInput()->with('error', 'Failed to add stock entry. Please try again.');
         }
     }
 
@@ -111,7 +111,7 @@ class InventoryController extends Controller
             return to_route('admin.inventory.index')->with('success', 'Inventory entry updated!');
         } catch (\Exception $e) {
             Log::error('Inventory update: ' . $e->getMessage());
-            return back()->withInput()->with('error', $e->getMessage());
+            return back()->withInput()->with('error', 'Failed to update inventory entry. Please try again.');
         }
     }
 
@@ -143,7 +143,7 @@ class InventoryController extends Controller
             return to_route('admin.inventory.index')->with('success', 'Bulk stock entry saved!');
         } catch (\Exception $e) {
             Log::error('Inventory bulkStore: ' . $e->getMessage());
-            return back()->with('error', 'Failed: ' . $e->getMessage());
+            return back()->with('error', 'Failed to save bulk stock entries. Please try again.');
         }
     }
 }
