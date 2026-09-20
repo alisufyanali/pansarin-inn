@@ -28,7 +28,7 @@ class CustomerImportSeeder extends Seeder
         $items = json_decode($raw, true);
 
         // TEST MODE: full run se pehle hata do
-        $items = array_slice($items, 0, 20, true);
+        // $items = array_slice($items, 0, 20, true);
 
         if (! is_array($items)) {
             $this->command->error('Failed to decode JSON file. Ensure it is a valid JSON array.');
@@ -157,13 +157,16 @@ class CustomerImportSeeder extends Seeder
             // 5. Country: legacy value if present, otherwise default 'Pakistan'
             $country = ! empty(trim((string) ($item['country'] ?? ''))) ? trim((string) $item['country']) : 'Pakistan';
 
-            // 6. Address
-            $address = ! empty(trim((string) ($item['address'] ?? ($item['address1'] ?? ''))))
+            // 6. Address (safely truncated to 255 chars for varchar column)
+            $rawAddress = ! empty(trim((string) ($item['address'] ?? ($item['address1'] ?? ''))))
                 ? trim((string) ($item['address'] ?? ($item['address1'] ?? '')))
                 : null;
-            $address2 = ! empty(trim((string) ($item['address2'] ?? '')))
+            $address = $rawAddress !== null ? mb_substr($rawAddress, 0, 255) : null;
+
+            $rawAddress2 = ! empty(trim((string) ($item['address2'] ?? '')))
                 ? trim((string) $item['address2'])
                 : null;
+            $address2 = $rawAddress2 !== null ? mb_substr($rawAddress2, 0, 255) : null;
 
             // 7. DB Transaction per record
             try {
