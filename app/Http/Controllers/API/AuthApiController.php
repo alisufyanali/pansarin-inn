@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 
@@ -20,18 +21,36 @@ class AuthApiController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'email'    => 'required|email',
+            'login'    => 'required_without:email|string|max:255',
+            'email'    => 'required_without:login|string|max:255',
             'password' => 'required|string',
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        $login = trim((string) ($request->input('login') ?? $request->input('email')));
+        if (filter_var($login, FILTER_VALIDATE_EMAIL)) {
+            $identifier = strtolower($login);
+        } else {
+            $digits = preg_replace('/\D/', '', $login);
+            $identifier = strlen($digits) >= 10 ? substr($digits, -10) : $digits;
+        }
+        $throttleKey = 'login:' . $identifier . '|' . $request->ip();
 
-        if (! $user || ! Hash::check($request->password, $user->password)) {
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid credentials.',
-            ], 401);
+                'message' => "Too many attempts. Try again in {$seconds} seconds.",
+            ], 429);
         }
+
+        $user = $this->resolveLoginUser($login);
+
+        if (! $user || ! Hash::check($request->password, $user->password)) {
+            RateLimiter::hit($throttleKey, 60);
+            return response()->json(['success' => false, 'message' => 'Invalid credentials.'], 401);
+        }
+
+        RateLimiter::clear($throttleKey);
 
         $token = $user->createToken('api-token')->plainTextToken;
 
@@ -40,14 +59,40 @@ class AuthApiController extends Controller
             'message' => 'Login successful.',
             'data'    => [
                 'token' => $token,
+                'must_change_password' => (bool) $user->must_change_password,
                 'user'  => [
                     'id'    => $user->id,
                     'name'  => $user->name,
                     'email' => $user->email,
                     'phone' => $user->phone,
+                    'must_change_password' => (bool) $user->must_change_password,
                 ],
             ],
         ]);
+    }
+
+    private function resolveLoginUser(string $login): ?User
+    {
+        if (filter_var($login, FILTER_VALIDATE_EMAIL)) {
+            return User::where('email', strtolower($login))->first();
+        }
+
+        $digits = preg_replace('/\D/', '', $login);
+        if (strlen($digits) < 10) {
+            return null;
+        }
+        $last10 = substr($digits, -10);
+
+        $customers = Customer::where('phone', 'like', '%' . $last10)
+            ->whereNotNull('user_id')
+            ->limit(2)
+            ->get();
+
+        if ($customers->count() !== 1) {
+            return null;
+        }
+
+        return User::find($customers->first()->user_id);
     }
 
     // POST /api/register
