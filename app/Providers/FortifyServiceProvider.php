@@ -4,6 +4,9 @@ namespace App\Providers;
 
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
+use App\Helpers\PhoneHelper;
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -83,6 +86,30 @@ class FortifyServiceProvider extends ServiceProvider
     {
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
         Fortify::createUsersUsing(CreateNewUser::class);
+
+        Fortify::authenticateUsing(function (Request $request) {
+            $login = (string) $request->input('email');
+            $password = (string) $request->input('password');
+
+            if (PhoneHelper::looksLikePhone($login)) {
+                $normalized = PhoneHelper::normalize($login);
+                if ($normalized) {
+                    $user = User::where('username', $normalized)->first();
+                    if ($user && Hash::check($password, $user->password)) {
+                        return $user;
+                    }
+                }
+
+                return null;
+            }
+
+            $user = User::where('email', $login)->orWhere('username', $login)->first();
+            if ($user && Hash::check($password, $user->password)) {
+                return $user;
+            }
+
+            return null;
+        });
     }
 
     /**

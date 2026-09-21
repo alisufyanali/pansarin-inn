@@ -39,16 +39,14 @@ class SendSaleConfirmationEmail implements ShouldQueue
             // Load relationships
             $this->sale->load(['customer', 'order', 'items.product', 'items.variant']);
 
-            // Check if customer has email
-            if (! $this->sale->customer || ! $this->sale->customer->email) {
-                Log::info("Sale {$this->sale->sale_code}: Customer has no email address");
+            $recipient = \App\Support\OrderMailRecipient::forSale($this->sale);
+            if (! $recipient) {
+                Log::info("Sale {$this->sale->sale_code}: No email recipient");
 
                 return;
             }
 
-            // Send email
-            Mail::to($this->sale->customer->email)
-                ->send(new SaleConfirmationMail($this->sale));
+            Mail::to($recipient)->send(new SaleConfirmationMail($this->sale));
 
             Log::info("Sale confirmation email sent for sale: {$this->sale->sale_code}");
 

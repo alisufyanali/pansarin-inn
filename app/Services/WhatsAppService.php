@@ -238,10 +238,7 @@ class WhatsAppService
      */
     protected function cleanPhone(string $phone): string
     {
-        $clean = preg_replace('/[^0-9]/', '', $phone);
-        if (str_starts_with($clean, '0')) {
-            $clean = '92' . substr($clean, 1);
-        }
-        return $clean;
+        return \App\Helpers\PhoneHelper::normalize($phone)
+            ?? preg_replace('/[^0-9]/', '', $phone);
     }
 }

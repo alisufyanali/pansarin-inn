@@ -2,6 +2,7 @@
 
 namespace App\Http\Repositories\Admin;
 
+use App\Models\Customer;
 use App\Models\Product;
 use App\Models\ProductStock;
 use App\Models\ProductVariant;
@@ -43,7 +44,11 @@ class SaleRepository
     {
         return DB::transaction(function () use ($data) {
             Cache::forget('sale_stats');
-            $sale = Sale::create([
+            $snapshots = $this->snapshotFieldsForCustomer(
+                (int) $data['customer_id'],
+                $data['shipping_address'] ?? null
+            );
+            $sale = Sale::create(array_merge([
                 'order_id'         => $data['order_id'] ?? null,
                 'customer_id'      => $data['customer_id'],
                 'city_id'          => $data['city_id'] ?? null,
@@ -63,7 +68,7 @@ class SaleRepository
                 'review'           => $data['review'] ?? null,
                 'sale_datetime'    => now(),
                 'is_active'        => true,
-            ]);
+            ], $snapshots));
 
             $this->syncItems($sale, $data['items']);
             $sale->load('items');
@@ -237,5 +242,20 @@ class SaleRepository
                 ],
             ]);
         }
+    }
+
+    protected function snapshotFieldsForCustomer(int $customerId, ?string $shippingAddress = null): array
+    {
+        $customer = Customer::find($customerId);
+        if (! $customer) {
+            return [];
+        }
+
+        return [
+            'customer_name'    => trim($customer->first_name . ' ' . ($customer->last_name ?? '')),
+            'customer_phone'   => $customer->phone,
+            'customer_email'   => $customer->email,
+            'shipping_address' => $shippingAddress ?? $customer->address,
+        ];
     }
 }

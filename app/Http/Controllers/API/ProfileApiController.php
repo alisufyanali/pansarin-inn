@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Helpers\PhoneHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
@@ -23,7 +24,15 @@ class ProfileApiController extends Controller
         try {
             $validated = $request->validate([
                 'name'       => 'sometimes|string|max:255',
-                'phone'      => 'sometimes|string|max:20|unique:users,phone,' . $user->id,
+                'phone'      => ['sometimes', 'string', 'max:20', function ($attr, $value, $fail) use ($user) {
+                    $n = PhoneHelper::normalize($value);
+                    if (! $n) {
+                        $fail('Invalid Pakistani mobile number.');
+                    }
+                    if (\App\Models\User::where('username', $n)->where('id', '!=', $user->id)->exists()) {
+                        $fail('This phone is already registered.');
+                    }
+                }],
                 'first_name' => 'sometimes|string|max:100',
                 'last_name'  => 'sometimes|nullable|string|max:100',
                 'address'    => 'sometimes|nullable|string|max:255',
@@ -91,7 +100,11 @@ class ProfileApiController extends Controller
                     'confirmed',
                     Password::defaults(),
                     // Phone number must not be used as a password
-                    \Illuminate\Validation\Rule::notIn(array_filter([$user->customer?->phone])),
+                    \Illuminate\Validation\Rule::notIn(array_values(array_unique(array_filter([
+                        $user->phone,
+                        $user->username,
+                        $user->customer?->phone,
+                    ])))),
                 ],
             ]);
         } catch (ValidationException $e) {

@@ -2,6 +2,7 @@
 
 namespace App\Http\Repositories\Admin;
 
+use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductStock;
@@ -59,7 +60,11 @@ class OrderRepository
     {
         return DB::transaction(function () use ($data) {
             Cache::forget('order_stats');
-            $order = Order::create([
+            $snapshots = $this->snapshotFieldsForCustomer(
+                (int) $data['customer_id'],
+                $data['shipping_address'] ?? null
+            );
+            $order = Order::create(array_merge([
                 'customer_id'      => $data['customer_id'],
                 'city_id'          => $data['city_id'] ?? null,
                 'invoice_discount' => $data['invoice_discount'] ?? 0,
@@ -75,7 +80,7 @@ class OrderRepository
                 'billing_address'  => $data['billing_address'] ?? null,
                 'order_note'       => $data['order_note'] ?? null,
                 'user_id'          => auth()->id(),
-            ]);
+            ], $snapshots));
 
             $this->syncItems($order, $data['items']);
             $order->calculateTotals();
@@ -338,5 +343,20 @@ class OrderRepository
                 'note'               => 'Order #' . $order->order_number,
             ]);
         }
+    }
+
+    protected function snapshotFieldsForCustomer(int $customerId, ?string $shippingAddress = null): array
+    {
+        $customer = Customer::find($customerId);
+        if (! $customer) {
+            return [];
+        }
+
+        return [
+            'customer_name'  => trim($customer->first_name . ' ' . ($customer->last_name ?? '')),
+            'customer_phone' => $customer->phone,
+            'customer_email' => $customer->email,
+            'shipping_address' => $shippingAddress ?? $customer->address,
+        ];
     }
 }

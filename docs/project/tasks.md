@@ -52,6 +52,7 @@
 
 ### P0 — Critical / Blocking
 
+- [ ] **Before production: WhatsApp OTP on first login / account claim** (phone-as-account default password is temporary)
 - [ ] **`CustomerImportSeeder` legacy ID map**: skipped duplicates should write to `storage/app/legacy_customer_id_map.json`; currently missing entries for skipped records
 - [ ] **`CustomerImportSeeder` phone normalization**: must use `PhoneHelper::normalize()` consistently; current `sanitizePhone()` may diverge
 - [ ] **`CustomerImportSeeder` default customer group**: assign `CustomerGroup` where `is_default = true`

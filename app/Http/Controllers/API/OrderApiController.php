@@ -3,24 +3,25 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Helpers\PhoneHelper;
 use App\Http\Repositories\Admin\OrderRepository;
 use App\Jobs\SendOrderConfirmationEmail;
-use App\Mail\GuestAccountCreatedMail;
 use App\Models\Customer;
 use App\Models\Order;
 use App\Models\User;
+use App\Services\CustomerIdentityService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Str;
-use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Validation\ValidationException;
 
 class OrderApiController extends Controller
 {
-    public function __construct(protected OrderRepository $orderRepo) {}
+    public function __construct(
+        protected OrderRepository $orderRepo,
+        protected CustomerIdentityService $identity,
+    ) {}
 
     // PATCH /api/orders/{id}/cancel
     public function cancel(Request $request, string $id)
@@ -139,17 +140,16 @@ class OrderApiController extends Controller
         ]);
 
         $user = $request->user();
+        $normalized = PhoneHelper::normalize($user->username ?? $user->phone ?? '');
+        if (! $normalized) {
+            return response()->json(['success' => false, 'message' => 'Your account has no valid phone number.'], 422);
+        }
 
-        // resolveOrCreateCustomerProfile is wrapped in its own DB::transaction internally
-        $customer = $this->resolveOrCreateCustomerProfile($user, [
+        [, $customer] = $this->identity->findOrCreateByPhone($normalized, [
             'first_name' => $user->name,
             'email'      => $user->email,
             'status'     => 'active',
         ]);
-
-        if (! $customer) {
-            return response()->json(['success' => false, 'message' => 'Could not resolve customer profile.'], 500);
-        }
 
         try {
             $order = $this->orderRepo->store(array_merge($request->all(), [
@@ -228,6 +228,7 @@ class OrderApiController extends Controller
             $request->validate([
                 'order_number' => 'required|string',
                 'email'        => 'nullable|email',
+                'phone'        => 'nullable|string|max:30',
             ]);
         } catch (ValidationException $e) {
             return response()->json([
@@ -240,9 +241,18 @@ class OrderApiController extends Controller
         // ── Step 1: Look up by order_number in orders table ──────────
         $query = Order::with(['items.product', 'items.variant', 'city:id,name', 'customer', 'sale'])
             ->where('order_number', $request->order_number);
-        if ($request->filled('email')) {
-            $query->whereHas('customer', function ($q) use ($request) {
-                $q->where('email', $request->email);
+        if ($request->filled('phone')) {
+            $phone = PhoneHelper::normalize($request->phone);
+            if ($phone) {
+                $query->where(function ($q) use ($phone) {
+                    $q->where('customer_phone', $phone)
+                        ->orWhereHas('customer', fn ($c) => $c->where('phone', $phone));
+                });
+            }
+        } elseif ($request->filled('email')) {
+            $query->where(function ($q) use ($request) {
+                $q->where('customer_email', $request->email)
+                    ->orWhereHas('customer', fn ($c) => $c->where('email', $request->email));
             });
         }
 
@@ -286,15 +296,14 @@ class OrderApiController extends Controller
         ]);
     }
 
-    // POST /api/orders/guest  — public, no auth required
+    // POST /api/orders/guest  — public, no auth required (never returns Sanctum token)
     public function storeGuest(Request $request)
     {
         try {
             $request->validate([
                 'name'             => 'required|string|max:255',
-                'email'            => 'required|email|max:255',
-                // Use array syntax to prevent Laravel splitting the regex on | delimiters
-                'phone'            => ['required', 'string', 'max:30', 'regex:/^\+92[0-9]{10}$/'],
+                'email'            => 'nullable|email|max:255',
+                'phone'            => 'required|string|max:30',
                 'shipping_address' => 'required|string',
                 'billing_address'  => 'nullable|string',
                 'city_id'          => 'nullable|integer|exists:cities,id',
@@ -317,84 +326,24 @@ class OrderApiController extends Controller
             ], 422);
         }
 
-        $accountCreated = false;
-        $token          = null;
-
-        // ── Resolve or create User + Customer ─────────────────────
-        // Normalize phone first — used in both user creation and customer resolution.
-        $normalizedPhone = \App\Helpers\PhoneHelper::normalize($request->phone);
-
-        if (!$normalizedPhone) {
+        $normalizedPhone = PhoneHelper::normalize($request->phone);
+        if (! $normalizedPhone) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid phone number format. Please use Pakistani mobile format (03XXXXXXXXX).',
+                'message' => 'Invalid Pakistani mobile number.',
             ], 422);
         }
 
-        // Single outer transaction covers both User and Customer creation so
-        // concurrent requests for the same email/phone cannot race into a
-        // duplicate-key crash on customers.user_id or users.email.
-        [$resolvedUser, $customer] = DB::transaction(function () use (
-            $request, $normalizedPhone, &$accountCreated, &$token
-        ) {
-            // ── 1. Resolve User ────────────────────────────────────
-            // Priority: email match → phone match → create new.
-            $byEmail = User::where('email', $request->email)->first();
+        $parts = preg_split('/\s+/', trim($request->name), 2);
+        [, $customer, $accountCreated] = DB::transaction(fn () => $this->identity->findOrCreateByPhone($normalizedPhone, [
+            'first_name' => $parts[0],
+            'last_name'  => $parts[1] ?? null,
+            'email'      => $request->email,
+            'address'    => $request->shipping_address,
+            'city_id'    => $request->city_id ?? null,
+            'status'     => 'active',
+        ]));
 
-            if ($byEmail) {
-                $phoneOwner = User::where('phone', $normalizedPhone)
-                    ->where('id', '!=', $byEmail->id)
-                    ->first();
-
-                if ($phoneOwner) {
-                    Log::warning('Guest checkout phone conflict: phone belongs to a different user than the email match.', [
-                        'email'         => $request->email,
-                        'phone'         => $normalizedPhone,
-                        'email_user_id' => $byEmail->id,
-                        'phone_user_id' => $phoneOwner->id,
-                    ]);
-                }
-
-                $resolvedUser = $byEmail;
-            } elseif ($byPhone = User::where('phone', $normalizedPhone)->first()) {
-                $resolvedUser = $byPhone;
-            } else {
-                $newUser = User::firstOrCreate(
-                    ['email' => $request->email],
-                    [
-                        'name'     => $request->name,
-                        'password' => Hash::make($normalizedPhone),
-                        'phone'    => $normalizedPhone,
-                        'username' => Str::slug($request->name) . '-' . rand(1000, 9999),
-                        'status'   => 1,
-                    ]
-                );
-
-                if ($newUser->wasRecentlyCreated) {
-                    $newUser->assignRole('customer');
-                    $accountCreated = true;
-                    $token = $newUser->createToken('api-token')->plainTextToken;
-                }
-
-                $resolvedUser = $newUser;
-            }
-
-            // ── 2. Resolve Customer (inside same transaction) ──────
-            // This means the unique-index race on customers.user_id cannot happen
-            // because we hold the same transaction lock.
-            $customer = $this->resolveOrCreateCustomerProfileInTx($resolvedUser, [
-                'first_name' => $request->name,
-                'phone'      => $normalizedPhone,
-                'email'      => $request->email,
-                'address'    => $request->shipping_address,
-                'city_id'    => $request->city_id ?? null,
-                'status'     => 'active',
-            ]);
-
-            return [$resolvedUser, $customer];
-        });
-
-        // ── Create Order via existing OrderRepository::store() ────
         try {
             $order = $this->orderRepo->store(array_merge($request->only([
                 'city_id', 'payment_method', 'shipping_address', 'billing_address',
@@ -406,24 +355,6 @@ class OrderApiController extends Controller
                 'tax'            => 0,
             ]));
 
-            // New guest account: send account-created notice (with order number) + order confirmation.
-            // Returning customer: send order confirmation only — no account mail.
-            if ($accountCreated) {
-                try {
-                    Mail::to($request->email)->queue(
-                        new GuestAccountCreatedMail(
-                            $request->name,
-                            $request->email,
-                            $normalizedPhone,
-                            $order->order_number
-                        )
-                    );
-                } catch (\Throwable $e) {
-                    Log::error('GuestAccountCreatedMail dispatch failed: ' . $e->getMessage());
-                }
-            }
-
-            // Order confirmation email — dispatched for every guest order regardless of account status.
             try {
                 SendOrderConfirmationEmail::dispatch($order);
             } catch (\Throwable $mailEx) {
@@ -433,7 +364,6 @@ class OrderApiController extends Controller
                 ]);
             }
 
-            // Dispatch admin notification email
             try {
                 Mail::to(config('mail.admin_email'))->queue(new \App\Mail\AdminNewOrderNotification($order));
             } catch (\Throwable $mailEx) {
@@ -443,9 +373,8 @@ class OrderApiController extends Controller
                 ]);
             }
 
-            // Notify all admin users via the bell (database notification)
             try {
-                $admins = \App\Models\User::role('admin')->get();
+                $admins = User::role('admin')->get();
                 foreach ($admins as $admin) {
                     $admin->notify(new \App\Notifications\NewOrderNotification($order));
                 }
@@ -456,7 +385,6 @@ class OrderApiController extends Controller
                 ]);
             }
 
-            // Dispatch WhatsApp notification if customer has phone
             if ($customer->phone) {
                 try {
                     \App\Jobs\SendOrderWhatsAppNotification::dispatch($order);
@@ -468,17 +396,11 @@ class OrderApiController extends Controller
                 }
             }
 
-            $responseData = array_merge(
-                $this->formatOrder($order, accountCreated: $accountCreated),
-                $token ? ['token' => $token] : []
-            );
-
             return response()->json([
                 'success' => true,
                 'message' => 'Order placed successfully.',
-                'data'    => $responseData,
+                'data'    => $this->formatOrder($order->load('customer'), accountCreated: $accountCreated),
             ], 201);
-
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
@@ -487,74 +409,8 @@ class OrderApiController extends Controller
             ], 422);
         } catch (\Exception $e) {
             Log::error('API Guest Order store: ' . $e->getMessage());
+
             return response()->json(['success' => false, 'message' => 'Failed to place order.'], 500);
-        }
-    }
-
-    // ── Phone uniqueness helper ────────────────────────────────────
-    private function uniquePhone(?string $phone): ?string
-    {
-        if (! $phone) return null;
-        return Customer::where('phone', $phone)->exists() ? null : $phone;
-    }
-
-    // ── Customer profile resolver (own transaction) ────────────────
-    /**
-     * Used by store() (authenticated path) where no outer transaction is open.
-     * Wraps resolveOrCreateCustomerProfileInTx in its own DB::transaction.
-     */
-    private function resolveOrCreateCustomerProfile(User $user, array $fields): Customer
-    {
-        return DB::transaction(fn () => $this->resolveOrCreateCustomerProfileInTx($user, $fields));
-    }
-
-    // ── Customer profile resolver (no transaction — call inside one) ─
-    /**
-     * Core resolution logic. Must be called inside an open DB transaction.
-     *
-     * Resolution order:
-     *  1. Already linked by user_id → return as-is.
-     *  2. Orphan row (user_id=null) found by email:
-     *     - Verified user   → link and return.
-     *     - Unverified user → create fresh with email=null.
-     *  3. Email belongs to a DIFFERENT non-null user_id → create with email=null.
-     *  4. No match → create normally.
-     *
-     * UniqueConstraintViolationException is caught and resolved by re-fetching
-     * so concurrent callers within the same transaction window are safe.
-     */
-    private function resolveOrCreateCustomerProfileInTx(User $user, array $fields): Customer
-    {
-        // 1. Already has a linked customer profile?
-        $customer = Customer::where('user_id', $user->id)->first();
-        if ($customer) {
-            return $customer;
-        }
-
-        // 2 & 3. Check for an existing row by email.
-        $byEmail = isset($fields['email']) && $fields['email']
-            ? Customer::where('email', $fields['email'])->first()
-            : null;
-
-        if ($byEmail) {
-            if ($byEmail->user_id === null && $user->email_verified_at !== null) {
-                // Verified user owns this orphan — link it.
-                $byEmail->update(['user_id' => $user->id]);
-                return $byEmail->fresh();
-            }
-
-            // Unverified OR email owned by another user — create fresh without email.
-            $fields['email'] = null;
-        }
-
-        // Deduplicate phone before insert.
-        $fields['phone'] = $this->uniquePhone($fields['phone'] ?? null);
-
-        try {
-            return Customer::create(array_merge($fields, ['user_id' => $user->id]));
-        } catch (UniqueConstraintViolationException) {
-            // Race condition: another concurrent request already inserted this profile.
-            return Customer::where('user_id', $user->id)->firstOrFail();
         }
     }
 
@@ -575,9 +431,9 @@ class OrderApiController extends Controller
             'city'            => $o->city ? $o->city->name : null,
             'created_at'      => $o->created_at,
             'account_created' => $accountCreated,
-            'customer_name'   => $o->customer?->full_name ?: null,
-            'customer_email'  => $o->customer?->email,
-            'customer_phone'  => $o->customer?->phone,
+            'customer_name'   => $o->customer_name ?? $o->customer?->full_name,
+            'customer_email'  => $o->customer_email ?? $o->customer?->email,
+            'customer_phone'  => $o->customer_phone ?? $o->customer?->phone,
         ];
 
         if ($detailed) {

@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use App\Jobs\SendOrderConfirmationEmail;
+use App\Helpers\PhoneHelper;
 use App\Mail\CustomerWelcomeMail;
-use App\Models\Customer;
 use App\Models\User;
+use App\Services\CustomerIdentityService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -17,36 +17,40 @@ use Illuminate\Validation\ValidationException;
 
 class AuthApiController extends Controller
 {
-    // POST /api/login
+    public function __construct(protected CustomerIdentityService $identity) {}
+
+    // POST /api/login — customer API: phone (username) + password only
     public function login(Request $request)
     {
         $request->validate([
-            'login'    => 'required_without:email|string|max:255',
-            'email'    => 'required_without:login|string|max:255',
+            'login'    => 'required_without:phone|string|max:30',
+            'phone'    => 'required_without:login|string|max:30',
             'password' => 'required|string',
         ]);
 
-        $login = trim((string) ($request->input('login') ?? $request->input('email')));
-        if (filter_var($login, FILTER_VALIDATE_EMAIL)) {
-            $identifier = strtolower($login);
-        } else {
-            $digits = preg_replace('/\D/', '', $login);
-            $identifier = strlen($digits) >= 10 ? substr($digits, -10) : $digits;
+        $rawLogin = trim((string) ($request->input('login') ?? $request->input('phone')));
+        $normalized = PhoneHelper::normalize($rawLogin);
+
+        if (! $normalized) {
+            return response()->json(['success' => false, 'message' => 'Invalid phone number.'], 422);
         }
-        $throttleKey = 'login:' . $identifier . '|' . $request->ip();
+
+        $throttleKey = 'login:' . $normalized . '|' . $request->ip();
 
         if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
             $seconds = RateLimiter::availableIn($throttleKey);
+
             return response()->json([
                 'success' => false,
                 'message' => "Too many attempts. Try again in {$seconds} seconds.",
             ], 429);
         }
 
-        $user = $this->resolveLoginUser($login);
+        $user = User::where('username', $normalized)->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
             RateLimiter::hit($throttleKey, 60);
+
             return response()->json(['success' => false, 'message' => 'Invalid credentials.'], 401);
         }
 
@@ -58,41 +62,18 @@ class AuthApiController extends Controller
             'success' => true,
             'message' => 'Login successful.',
             'data'    => [
-                'token' => $token,
+                'token'                => $token,
                 'must_change_password' => (bool) $user->must_change_password,
-                'user'  => [
-                    'id'    => $user->id,
-                    'name'  => $user->name,
-                    'email' => $user->email,
-                    'phone' => $user->phone,
-                    'must_change_password' => (bool) $user->must_change_password,
+                'user'                 => [
+                    'id'                   => $user->id,
+                    'name'                 => $user->name,
+                    'email'                => $user->email,
+                    'phone'                => $user->phone,
+                    'username'             => $user->username,
+                    'must_change_password'   => (bool) $user->must_change_password,
                 ],
             ],
         ]);
-    }
-
-    private function resolveLoginUser(string $login): ?User
-    {
-        if (filter_var($login, FILTER_VALIDATE_EMAIL)) {
-            return User::where('email', strtolower($login))->first();
-        }
-
-        $digits = preg_replace('/\D/', '', $login);
-        if (strlen($digits) < 10) {
-            return null;
-        }
-        $last10 = substr($digits, -10);
-
-        $customers = Customer::where('phone', 'like', '%' . $last10)
-            ->whereNotNull('user_id')
-            ->limit(2)
-            ->get();
-
-        if ($customers->count() !== 1) {
-            return null;
-        }
-
-        return User::find($customers->first()->user_id);
     }
 
     // POST /api/register
@@ -101,9 +82,9 @@ class AuthApiController extends Controller
         try {
             $request->validate([
                 'name'     => 'required|string|max:255',
-                'email'    => 'required|email|unique:users,email',
-                'password' => ['required', 'confirmed', Password::defaults()],
-                'phone'    => 'nullable|string|max:20',
+                'phone'    => 'required|string|max:30',
+                'email'    => 'nullable|email|max:255',
+                'password' => ['nullable', 'confirmed', Password::defaults()],
             ]);
         } catch (ValidationException $e) {
             return response()->json([
@@ -113,56 +94,33 @@ class AuthApiController extends Controller
             ], 422);
         }
 
+        $normalized = PhoneHelper::normalize($request->phone);
+        if (! $normalized) {
+            return response()->json(['success' => false, 'message' => 'Invalid Pakistani mobile number.'], 422);
+        }
+
         try {
-            $user = User::create([
-                'name'     => $request->name,
-                'email'    => $request->email,
-                'password' => Hash::make($request->password),
-                'phone'    => $request->phone ?? null,
-                'username' => \Illuminate\Support\Str::slug($request->name) . '-' . \Illuminate\Support\Str::random(6),
-                'status'   => 1,
-            ]);
-
-            $user->assignRole('customer');
-
-            // Create customer profile — phone uniqueness handle karo
-            $customerPhone = $request->phone ?? null;
-            if ($customerPhone && \App\Models\Customer::where('phone', $customerPhone)->exists()) {
-                $customerPhone = null;
-            }
-            \App\Models\Customer::create([
-                'user_id'    => $user->id,
-                'first_name' => $request->name,
+            $parts = preg_split('/\s+/', trim($request->name), 2);
+            [$user, $customer, $created] = $this->identity->findOrCreateByPhone($normalized, [
+                'first_name' => $parts[0],
+                'last_name'  => $parts[1] ?? null,
                 'email'      => $request->email,
-                'phone'      => $customerPhone,
                 'status'     => 'active',
             ]);
 
-            // Send welcome email — runs after both User and Customer are persisted.
-            // Wrapped in its own try/catch so a mail failure never blocks registration.
-            try {
-                $customer = $user->customer()->latest()->first();
-                if ($customer) {
-                    Mail::to($user->email)->queue(new CustomerWelcomeMail($customer));
-                }
-            } catch (\Throwable $mailEx) {
-                Log::error('CustomerWelcomeMail dispatch failed', [
-                    'user_id' => $user->id,
-                    'error'   => $mailEx->getMessage(),
+            if ($request->filled('password')) {
+                $user->update([
+                    'password'             => Hash::make($request->password),
+                    'must_change_password' => false,
                 ]);
             }
 
-            // Notify all admins of the new registration
-            try {
-                $admins = \App\Models\User::role('admin')->get();
-                foreach ($admins as $admin) {
-                    $admin->notify(new \App\Notifications\NewUserNotification($user));
+            if ($created && $user->email) {
+                try {
+                    Mail::to($user->email)->queue(new CustomerWelcomeMail($customer));
+                } catch (\Throwable $mailEx) {
+                    Log::error('CustomerWelcomeMail dispatch failed', ['user_id' => $user->id, 'error' => $mailEx->getMessage()]);
                 }
-            } catch (\Throwable $notifyEx) {
-                Log::error('NewUserNotification dispatch failed', [
-                    'user_id' => $user->id,
-                    'error'   => $notifyEx->getMessage(),
-                ]);
             }
 
             $token = $user->createToken('api-token')->plainTextToken;
@@ -181,23 +139,16 @@ class AuthApiController extends Controller
                 ],
             ], 201);
         } catch (\Illuminate\Database\QueryException $e) {
-            // Duplicate email/username constraint
-            if (str_contains($e->getMessage(), 'UNIQUE constraint') || $e->getCode() === '23000') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'An account with this email already exists.',
-                    'errors'  => ['email' => ['This email is already registered.']],
-                ], 422);
-            }
-            \Illuminate\Support\Facades\Log::error('API Register DB error: ' . $e->getMessage());
+            Log::error('API Register DB error: ' . $e->getMessage());
+
             return response()->json(['success' => false, 'message' => 'Registration failed. Please try again.'], 500);
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('API Register error: ' . $e->getMessage());
+            Log::error('API Register error: ' . $e->getMessage());
+
             return response()->json(['success' => false, 'message' => 'Registration failed. Please try again.'], 500);
         }
     }
 
-    // POST /api/logout  (auth:sanctum)
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
@@ -208,7 +159,6 @@ class AuthApiController extends Controller
         ]);
     }
 
-    // GET /api/user  (auth:sanctum)
     public function user(Request $request)
     {
         $user     = $request->user();
@@ -221,6 +171,7 @@ class AuthApiController extends Controller
                 'name'     => $user->name,
                 'email'    => $user->email,
                 'phone'    => $user->phone,
+                'username' => $user->username,
                 'roles'    => $user->getRoleNames(),
                 'customer' => $customer ? [
                     'id'         => $customer->id,

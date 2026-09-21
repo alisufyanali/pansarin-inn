@@ -11,7 +11,7 @@ class Sale extends Model
     use SoftDeletes, HasTotals;
 
     protected $fillable = [
-        'order_id', 'customer_id', 'sale_code',
+        'order_id', 'customer_id', 'customer_name', 'customer_phone', 'customer_email', 'sale_code',
         'city_id',
         'subtotal', 'product_discount', 'invoice_discount',
         'vat', 'vat_percent', 'shipping_charges', 'grand_total',

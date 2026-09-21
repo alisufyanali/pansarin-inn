@@ -144,4 +144,6 @@ return [
         ],
     ],
 
+    'order_fallback_address' => env('ORDER_FALLBACK_EMAIL'),
+
 ];

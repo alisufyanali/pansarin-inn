@@ -5,55 +5,36 @@ namespace App\Helpers;
 class PhoneHelper
 {
     /**
-     * Normalize phone number to consistent Pakistani format (03XXXXXXXXX)
-     * 
-     * Accepts:
-     * - 03001234567
-     * - +923001234567
-     * - 923001234567
-     * - 00923001234567
-     * - +92-300-1234567 (with dashes/spaces)
-     * 
-     * Returns: 03001234567 (consistent local format)
+     * Canonical stored format: 923XXXXXXXXX (12 digits, ^923\d{9}$).
      */
     public static function normalize(?string $phone): ?string
     {
-        if (!$phone) {
+        if ($phone === null || trim($phone) === '') {
             return null;
         }
 
-        // Remove all non-numeric characters
         $clean = preg_replace('/[^0-9]/', '', $phone);
-
-        // Empty after cleaning
-        if (empty($clean)) {
+        if ($clean === '') {
             return null;
         }
 
-        // Handle different formats
-        // Case 1: Starts with 0092 (international with 00 prefix) → remove 0092, add 0
+        if (preg_match('/^923\d{9}$/', $clean)) {
+            return $clean;
+        }
+
         if (str_starts_with($clean, '0092') && strlen($clean) === 14) {
-            $clean = '0' . substr($clean, 4);
-        }
-        // Case 2: Starts with 92 (international without +) → remove 92, add 0
-        elseif (str_starts_with($clean, '92') && strlen($clean) === 12) {
-            $clean = '0' . substr($clean, 2);
-        }
-        // Case 3: Starts with 3 (missing leading 0) → add 0
-        elseif (str_starts_with($clean, '3') && strlen($clean) === 10) {
-            $clean = '0' . $clean;
-        }
-        // Case 4: Already in correct format 03XXXXXXXXX (11 digits starting with 0)
-        elseif (str_starts_with($clean, '0') && strlen($clean) === 11) {
-            // Already correct
-        }
-        // Case 5: Invalid format
-        else {
-            return null;
+            $clean = '92' . substr($clean, 4);
+        } elseif (str_starts_with($clean, '00923') && strlen($clean) === 15) {
+            $clean = substr($clean, 2);
         }
 
-        // Final validation: must be 03XXXXXXXXX (11 digits, starts with 03)
         if (strlen($clean) === 11 && str_starts_with($clean, '03')) {
+            $clean = '92' . substr($clean, 1);
+        } elseif (strlen($clean) === 10 && str_starts_with($clean, '3')) {
+            $clean = '92' . $clean;
+        }
+
+        if (preg_match('/^923\d{9}$/', $clean)) {
             return $clean;
         }
 
@@ -61,48 +42,93 @@ class PhoneHelper
     }
 
     /**
-     * Convert to E.164 international format for WhatsApp (923XXXXXXXXX without +)
+     * WhatsApp API uses the same 923XXXXXXXXX format (no leading +).
      */
     public static function toInternational(?string $phone): ?string
     {
-        $normalized = self::normalize($phone);
-        
-        if (!$normalized) {
-            return null;
-        }
-
-        // Convert 03XXXXXXXXX → 923XXXXXXXXX
-        if (str_starts_with($normalized, '0')) {
-            return '92' . substr($normalized, 1);
-        }
-
-        return $normalized;
+        return self::normalize($phone);
     }
 
-    /**
-     * Format for display (0300-1234567)
-     */
     public static function format(?string $phone): ?string
     {
         $normalized = self::normalize($phone);
-        
-        if (!$normalized) {
-            return $phone; // Return original if normalization fails
+        if (! $normalized) {
+            return $phone;
         }
 
-        // Format as 0300-1234567
-        if (strlen($normalized) === 11) {
-            return substr($normalized, 0, 4) . '-' . substr($normalized, 4);
-        }
-
-        return $normalized;
+        return substr($normalized, 0, 3) . ' ' . substr($normalized, 3, 3) . ' ' . substr($normalized, 6);
     }
 
-    /**
-     * Validate Pakistani mobile format
-     */
     public static function isValid(?string $phone): bool
     {
         return self::normalize($phone) !== null;
+    }
+
+    /**
+     * True when the login field should be treated as a phone (not staff email/username).
+     */
+    public static function looksLikePhone(string $value): bool
+    {
+        $trim = trim($value);
+        if ($trim === '') {
+            return false;
+        }
+        if (filter_var($trim, FILTER_VALIDATE_EMAIL)) {
+            return false;
+        }
+
+        $digits = preg_replace('/\D/', '', $trim);
+
+        return strlen($digits) >= 10 || str_starts_with($trim, '+') || str_starts_with($trim, '03') || str_starts_with($trim, '92');
+    }
+
+    /**
+     * Classify why normalize() failed (for import skip reporting).
+     */
+    public static function normalizeFailureReason(?string $phone): string
+    {
+        if ($phone === null || trim($phone) === '') {
+            return 'empty_phone';
+        }
+
+        if (preg_match('/[^\d\s\-+().]/', $phone)) {
+            return 'non_digit_chars';
+        }
+
+        $digits = preg_replace('/\D/', '', $phone);
+        $len = strlen($digits);
+
+        if ($len < 10) {
+            return 'too_short';
+        }
+        if ($len > 15) {
+            return 'too_long';
+        }
+
+        if (preg_match('/^923\d{9}$/', $digits)) {
+            return 'other';
+        }
+
+        if (str_starts_with($digits, '03') && $len === 11) {
+            return 'other';
+        }
+
+        if (str_starts_with($digits, '3') && $len === 10) {
+            return 'other';
+        }
+
+        return 'wrong_prefix';
+    }
+
+    public static function mask(?string $phone): string
+    {
+        if (! $phone) {
+            return '';
+        }
+        $d = preg_replace('/\D/', '', $phone);
+
+        return strlen($d) >= 4
+            ? substr($d, 0, 2) . '**-***-**' . substr($d, -2)
+            : '****';
     }
 }

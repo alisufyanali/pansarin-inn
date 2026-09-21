@@ -39,14 +39,13 @@ class SendOrderConfirmationEmail implements ShouldQueue
             // Load relationships
             $this->order->load(['customer', 'items.product']);
 
-            // Check if customer has email
-            if ($this->order->customer && $this->order->customer->email) {
-                Mail::to($this->order->customer->email)
-                // Mail::to('fefadaf184@ixospace.com')
-                    ->send(new OrderConfirmation($this->order));
+            $recipient = \App\Support\OrderMailRecipient::forOrder($this->order);
+            if ($recipient) {
+                Mail::to($recipient)->send(new OrderConfirmation($this->order));
 
                 Log::info('Order confirmation email sent', [
                     'order_id' => $this->order->id,
+                    'to'       => $recipient,
                 ]);
             }
         } catch (\Exception $e) {
