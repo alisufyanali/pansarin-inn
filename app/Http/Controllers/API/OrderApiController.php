@@ -221,14 +221,13 @@ class OrderApiController extends Controller
         }
     }
 
-    // GET /api/orders/track?order_number=X&email=Y  — public, no auth required
+    // GET /api/orders/track?order_number=X&phone=Y  — public, no auth required, throttled 10/min
     public function track(Request $request)
     {
         try {
             $request->validate([
                 'order_number' => 'required|string',
-                'email'        => 'nullable|email',
-                'phone'        => 'nullable|string|max:30',
+                'phone'        => 'required|string|max:30',
             ]);
         } catch (ValidationException $e) {
             return response()->json([
@@ -238,61 +237,35 @@ class OrderApiController extends Controller
             ], 422);
         }
 
-        // ── Step 1: Look up by order_number in orders table ──────────
-        $query = Order::with(['items.product', 'items.variant', 'city:id,name', 'customer', 'sale'])
-            ->where('order_number', $request->order_number);
-        if ($request->filled('phone')) {
-            $phone = PhoneHelper::normalize($request->phone);
-            if ($phone) {
-                $query->where(function ($q) use ($phone) {
-                    $q->where('customer_phone', $phone)
-                        ->orWhereHas('customer', fn ($c) => $c->where('phone', $phone));
-                });
-            }
-        } elseif ($request->filled('email')) {
-            $query->where(function ($q) use ($request) {
-                $q->where('customer_email', $request->email)
-                    ->orWhereHas('customer', fn ($c) => $c->where('email', $request->email));
-            });
-        }
-
-        $order = $query->first();
-
-        if ($order) {
-            $order->items->transform(function ($item) {
-                $item->product_name  = $item->meta['product_name'] ?? $item->product?->name;
-                $item->variant_label = $item->meta['variant_name'] ?? $item->variant?->value;
-                return $item;
-            });
-
-            return response()->json([
-                'success' => true,
-                'data'    => $this->formatOrder($order, detailed: true),
-            ]);
-        }
-
-        // ── Step 2: If not found, try sale_code in sales table ───────
-        // (Covers admin-created direct/orderless "phone" sales)
-        $saleQuery = \App\Models\Sale::with(['items.product', 'city:id,name', 'customer', 'order'])
-            ->where('sale_code', $request->order_number);
-        if ($request->filled('email')) {
-            $saleQuery->whereHas('customer', function ($q) use ($request) {
-                $q->where('email', $request->email);
-            });
-        }
-
-        $sale = $saleQuery->first();
-
-        if (! $sale) {
+        $normalizedPhone = PhoneHelper::normalize($request->phone);
+        if (! $normalizedPhone) {
             return response()->json([
                 'success' => false,
                 'message' => 'Order not found.',
             ], 404);
         }
 
+        $order = Order::with(['items.product', 'items.variant', 'city:id,name', 'customer', 'sale'])
+            ->where('order_number', $request->order_number)
+            ->where('customer_phone', $normalizedPhone)
+            ->first();
+
+        if (! $order) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Order not found.',
+            ], 404);
+        }
+
+        $order->items->transform(function ($item) {
+            $item->product_name  = $item->meta['product_name'] ?? $item->product?->name;
+            $item->variant_label = $item->meta['variant_name'] ?? $item->variant?->value;
+            return $item;
+        });
+
         return response()->json([
             'success' => true,
-            'data'    => $this->formatSaleAsOrder($sale, detailed: true),
+            'data'    => $this->formatOrder($order, detailed: true),
         ]);
     }
 
