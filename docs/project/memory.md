@@ -26,6 +26,8 @@
 
 ## Known Gotchas
 
+- **`BackfillFlatVariantAttributes` artisan command** (`app/Console/Commands/`) — legacy safety net. Populates `attributes`/`value` on the 19 flat-format variant SKUs (Twelve Seeds Oil, Ginger Oil, Apricot Oil, Pakhan Baid Oil, Turmeric Oil, Asrol Powder, Manjistha Powder). **Not needed after the `OldProductsImportSeeder` fix (2026-09-21)** — seeder now handles both flat `{label/value}` and indexed `{label_1/value_1}` JSON formats natively. Command remains idempotent (skips variants that already have data) and can still be run as a one-shot repair. Source: `app/Console/Commands/BackfillFlatVariantAttributes.php`.
+
 - **`LoyaltyPointTransaction` model class missing** — `Customer::loyaltyTransactions()` references this class but the file doesn't exist. The table is `point_transactions`. Don't call this relationship until the model is created.
 - **`customers.user_id` can be null** — legacy CodeIgniter customers imported without creating User accounts. Normal for old data. Do not treat null user_id as an error condition.
 - **AdminSeeder runs in production** — `DatabaseSeeder` calls it unconditionally. If `php artisan db:seed` is ever run on production, it will create test users. Needs a guard.
@@ -72,3 +74,4 @@
 |---|---|
 | 2026-09-03 | Initial knowledge base created from full codebase scan |
 | 2026-09-03 | Resolved TODOs from code: routes/frontend.php confirmed (admin settings), FRONTEND_URL_2 confirmed (Vercel preview), settings/ layout confirmed, review_count in API confirmed, blog category count root cause identified (no public endpoint), banner 812x317 not in this repo |
+| 2026-09-21 | OldProductsImportSeeder fixed: now handles flat {label/value} JSON format — BackfillFlatVariantAttributes is legacy safety net only |

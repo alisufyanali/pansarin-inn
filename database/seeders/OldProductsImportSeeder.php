@@ -111,6 +111,34 @@ class OldProductsImportSeeder extends Seeder
                     $avMap    = []; // "{label}|{value}" => AttributeValue
 
                     foreach ($variants as $v) {
+                        // ── Detect flat format: {label, value} (no label_1 key) ──
+                        // Flat-format variants are converted to indexed structure so
+                        // the rest of the parsing logic is shared.
+                        if (array_key_exists('label', $v) && ! array_key_exists('label_1', $v)) {
+                            $label = trim($v['label'] ?? '');
+                            $value = trim($v['value'] ?? '');
+                            if ($label === '' || $value === '') {
+                                continue;
+                            }
+
+                            if (! isset($attrMap[$label])) {
+                                $attrMap[$label] = Attribute::firstOrCreate(
+                                    ['category_id' => $category->id, 'name' => $label],
+                                    ['slug' => Str::slug($label)]
+                                );
+                            }
+
+                            $avKey = "{$label}|{$value}";
+                            if (! isset($avMap[$avKey])) {
+                                $avMap[$avKey] = AttributeValue::firstOrCreate(
+                                    ['attribute_id' => $attrMap[$label]->id, 'value' => $value],
+                                    ['slug' => Str::slug($value)]
+                                );
+                            }
+                            continue;
+                        }
+
+                        // ── Indexed format: label_1/value_1 ... label_5/value_5 ──
                         for ($i = 1; $i <= 5; $i++) {
                             $label = trim($v["label_$i"] ?? '');
                             $value = trim($v["value_$i"] ?? '');
@@ -226,23 +254,38 @@ class OldProductsImportSeeder extends Seeder
                             $attributes       = [];
                             $attributeValueId = null;
 
-                            foreach (range(1, 5) as $i) {
-                                $label = trim($v["label_$i"] ?? '');
-                                $value = trim($v["value_$i"] ?? '');
-
-                                if ($label === '' || $value === '') {
-                                    continue;
-                                }
-
-                                $attributes[$label] = $value;
-
-                                if ($attributeValueId === null) {
+                            // ── Detect format: flat {label, value} vs indexed {label_1, value_1} ──
+                            if (array_key_exists('label', $v) && ! array_key_exists('label_1', $v)) {
+                                // Flat format
+                                $label = trim($v['label'] ?? '');
+                                $value = trim($v['value'] ?? '');
+                                if ($label !== '' && $value !== '') {
+                                    $attributes[$label] = $value;
                                     $key = "{$label}|{$value}";
                                     $attributeValueId = $avMap[$key]->id ?? null;
                                 }
+                            } else {
+                                // Indexed format
+                                foreach (range(1, 5) as $i) {
+                                    $label = trim($v["label_$i"] ?? '');
+                                    $value = trim($v["value_$i"] ?? '');
+
+                                    if ($label === '' || $value === '') {
+                                        continue;
+                                    }
+
+                                    $attributes[$label] = $value;
+
+                                    if ($attributeValueId === null) {
+                                        $key = "{$label}|{$value}";
+                                        $attributeValueId = $avMap[$key]->id ?? null;
+                                    }
+                                }
                             }
 
-                            $varLabel = $v['combined_value'] ?? implode(' - ', array_values($attributes));
+                            // varLabel: for indexed use combined_value; for flat or fallback use attribute values
+                            $varLabel = $v['combined_value']
+                                ?? (! empty($attributes) ? implode(' - ', array_values($attributes)) : '');
 
                             $varSku = $v['sku'] ?? ($sku . '-V' . str_pad($vIndex + 1, 2, '0', STR_PAD_LEFT));
                             // Guard against duplicate variant SKU
@@ -262,7 +305,7 @@ class OldProductsImportSeeder extends Seeder
                                 'sku'                => $varSku,
                                 'attribute_value_id' => $attributeValueId,
                                 'value'              => $varLabel,
-                                'attributes'         => $attributes,
+                                'attributes'         => $attributes ?: null,
                                 'price'              => (float) ($v['price'] ?? 0),
                                 'sale_price'         => null,
                                 'is_default'         => ($vIndex === 0),

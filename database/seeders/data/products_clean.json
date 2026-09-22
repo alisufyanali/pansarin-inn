@@ -32309,7 +32309,18 @@
     "featured": false,
     "meta_title": "Chamomile Tea Imported - Gul e Babona Ki Chai - گل بابونہ کی چائے At Lowest Price Online In Pakistan",
     "meta_description": "Chamomile Tea Imported - Gul e Babona Ki Chai - گل بابونہ کی چائے At Lowest Price Online In Pakistan",
-    "variants": [],
+    "variants": [
+        {
+        "label_1": "Weight",
+        "value_1": "30",
+        "label_2": null,
+        "value_2": null,
+        "combined_value": "30",
+        "price": 500.0,
+        "sku_suffix": "V01",
+        "sku": "CHAMOMILETEA-V01"
+      }
+    ],
     "has_form_attribute": false
   },
   {

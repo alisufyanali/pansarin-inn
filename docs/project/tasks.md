@@ -39,6 +39,8 @@
 - [x] Admin Orders: `customer_name`, `customer_email`, `customer_phone` in order API response
 - [x] Guest email fixes: login URL → `FRONTEND_URL/login`; password hash format aligned with displayed value; unit/variant in order confirmation email
 - [x] Admin: `$e->getMessage()` leaks removed from all controllers (generic messages + full Log::error)
+- [x] `OldProductsImportSeeder`: flat JSON format `{label/value}` now handled — `BackfillFlatVariantAttributes` command is legacy safety net only
+- [x] `VariantAttributesSeederTest`: 5 Pest tests confirm both JSON formats produce correct `attributes` + `value` (5/5 pass on SQLite `:memory:`)
 
 ---
 
@@ -81,3 +83,54 @@
 - [ ] Hostinger VPS decision (shared → VPS migration for queue workers, supervisor)
 - [ ] Enable async queue (QUEUE_CONNECTION=database or redis) — blocked on VPS decision
 - [ ] `BackfillPowderAdditional` command: verify if `additional=100` is correctly set for all Powder variants
+
+---
+
+## Before Production Deploy — Checklist
+
+Run in this order on every production deployment that includes migrations or seeder changes:
+
+1. **Backup the production DB** before any migration or seed run.
+
+2. **Run pending migrations:**
+   ```bash
+   php artisan migrate --force
+   ```
+
+3. **Run idempotent seeders** (safe to re-run — skip if already seeded):
+   ```bash
+   php artisan db:seed --class=RolePermissionSeeder --force
+   php artisan db:seed --class=AdminSeeder --force        # guard: skip in production — see tasks P0
+   php artisan db:seed --class=HealthConcernSeeder --force
+   php artisan db:seed --class=CitySeeder --force
+   ```
+   > **Note:** `DatabaseSeeder` (`db:seed` with no class) runs `AdminSeeder` unconditionally — do NOT run it on production until the production-guard task is resolved (see P0 below).
+
+4. **Verify zero empty-variant rows** (run on production DB, expected: 0 rows):
+   ```sql
+   SELECT sku, attributes, value
+   FROM product_variants
+   WHERE (attributes IS NULL OR attributes IN ('[]','{}',''))
+      OR (value IS NULL OR TRIM(value) = '' OR value = '[]')
+   AND deleted_at IS NULL;
+   ```
+   If any rows appear, run the backfill safety net:
+   ```bash
+   php artisan backfill:flat-variant-attributes
+   ```
+
+5. **Verify grand_total integrity** (run on production DB, expected: 0 rows with mismatch):
+   ```sql
+   SELECT id, order_number, grand_total,
+          (subtotal - invoice_discount + shipping_charges + tax) AS correct_grand
+   FROM orders
+   WHERE ABS(grand_total - (subtotal - invoice_discount + shipping_charges + tax)) > 0.01
+     AND deleted_at IS NULL;
+   ```
+
+6. **Clear caches:**
+   ```bash
+   php artisan config:clear
+   php artisan cache:clear
+   php artisan view:clear
+   ```

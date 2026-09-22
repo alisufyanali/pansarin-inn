@@ -73,7 +73,7 @@ Route::middleware('throttle:api.public')->group(function () {
     Route::post('/contact',              [ContactApiController::class, 'store']);
     Route::post('/coupons/validate',     [CouponApiController::class, 'check']);
     Route::post('/newsletter/subscribe', [NewsletterApiController::class, 'subscribe']);
-    Route::get('/orders/track',          [OrderApiController::class, 'track']);
+    Route::get('/orders/track',          [OrderApiController::class, 'track'])->middleware('throttle:orders.track');
     Route::post('/orders/guest',         [OrderApiController::class, 'storeGuest']);
 });
 

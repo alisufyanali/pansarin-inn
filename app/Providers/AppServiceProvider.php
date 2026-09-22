@@ -67,6 +67,10 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(60)->by($request->ip());
         });
 
+        RateLimiter::for('orders.track', function (Request $request) {
+            return Limit::perMinute(10)->by($request->ip());
+        });
+
         // Register Spatie permission middleware aliases so controllers can use 'permission' and 'role'
         $router = $this->app->make(Router::class);
         $router->aliasMiddleware('permission', PermissionMiddleware::class);

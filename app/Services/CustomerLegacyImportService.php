@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Hash;
 
 class CustomerLegacyImportService
 {
+    // ── Lists used by classifyBucket() ────────────────────────────
+
     private const PK_CITIES = [
         'karachi', 'lahore', 'islamabad', 'rawalpindi', 'faisalabad', 'multan', 'peshawar',
         'quetta', 'hyderabad', 'sialkot', 'gujranwala', 'sukkur', 'abbottabad', 'mardan',
@@ -25,9 +27,25 @@ class CustomerLegacyImportService
         'srinagar', 'birmingham', 'punganur', 'new york', 'iran', 'saudia', 'saudi', 'madina',
     ];
 
-    private const DEMO_EMAIL_PATTERNS = [
-        '@shop.com', '@example.com', '@test.com', 'mailinator.com', '@demo.', 'customer1@', 'customer2@', 'customer3@', 'customer4@',
+    /**
+     * Email patterns that mark a row as demo/junk — merged set used by both
+     * isDemo() and isRescuePk(). Any row matching these is never rescue_pk.
+     */
+    private const JUNK_EMAIL_PATTERNS = [
+        '@shop.com', '@example.com', '@test.com', 'mailinator.com',
+        '@demo.', '@gok.com',
+        'guerrillamail', 'sharklasers', 'spam4.me', 'yopmail.com',
+        'trashmail', 'throwam.com', 'maildrop.cc',
+        'customer1@', 'customer2@', 'customer3@', 'customer4@',
     ];
+
+    /**
+     * Raw-phone digit-strings ending with these 2-digit suffixes are known
+     * shared test numbers (e.g. 09xxxxxxxx01). Exclude from rescue_pk.
+     */
+    private const TEST_PHONE_DIGIT_SUFFIXES = ['01'];
+
+    // ── Main entry point ──────────────────────────────────────────
 
     public function run(bool $dryRun = false): array
     {
@@ -43,62 +61,81 @@ class CustomerLegacyImportService
             File::makeDirectory($skipDir, 0755, true);
         }
 
-        $skipPath = "{$skipDir}/customers_non_pk_phone_{$timestamp}.csv";
+        $skipPath   = "{$skipDir}/customers_non_pk_phone_{$timestamp}.csv";
         $rescuePath = "{$skipDir}/customers_rescue_pk_{$timestamp}.csv";
 
         $stats = [
-            'total' => count($items),
+            'total'    => count($items),
             'imported' => 0,
-            'skipped' => 0,
-            'bucket' => ['rescue_pk' => 0, 'foreign' => 0, 'demo' => 0, 'other' => 0],
-            'reason' => [
-                'empty_phone' => 0,
-                'not_pk_mobile' => 0,
-                'duplicate_phone' => 0,
-                'duplicate_email' => 0,
+            'skipped'  => 0,
+            'bucket'   => ['rescue_pk' => 0, 'foreign' => 0, 'demo' => 0, 'other' => 0],
+            'reason'   => [
+                'empty_phone'       => 0,
+                'not_pk_mobile'     => 0,
+                'duplicate_in_json' => 0,   // duplicate of earlier row in same JSON
+                'duplicate_in_db'   => 0,   // duplicate of row already in the DB
+                'duplicate_email'   => 0,
             ],
             'raw_formats' => ['03' => 0, '3' => 0, '92' => 0, '+92' => 0, '0092' => 0, 'other' => 0],
-            'skip_path' => $skipPath,
-            'rescue_path' => $rescuePath,
+            'skip_path'    => $skipPath,
+            'rescue_path'  => $rescuePath,
         ];
 
-        $skipRows = [];
+        $skipRows   = [];
         $rescueRows = [];
         $seenPhones = [];
         $seenEmails = [];
-        $legacyMap = [];
+        $legacyMap  = [];
 
-        $existingPhones = $dryRun ? [] : Customer::whereNotNull('phone')->pluck('id', 'phone')->all();
-        $existingEmails = $dryRun ? [] : Customer::whereNotNull('email')->pluck('id', 'email')->mapWithKeys(fn ($id, $email) => [strtolower($email) => $id])->all();
+        $existingPhones = $dryRun
+            ? []
+            : Customer::whereNotNull('phone')->pluck('id', 'phone')->all();
+
+        $existingEmails = $dryRun
+            ? []
+            : Customer::whereNotNull('email')
+                ->pluck('id', 'email')
+                ->mapWithKeys(fn ($id, $email) => [strtolower($email) => $id])
+                ->all();
+
         $existingUsernames = $dryRun ? [] : User::pluck('id', 'username')->all();
 
         $defaultGroupId = $dryRun ? null : CustomerGroup::where('is_default', true)->value('id');
-        $cityMap = City::pluck('id', 'name')->mapWithKeys(fn ($id, $name) => [strtolower(trim($name)) => $id])->all();
+        $cityMap = City::pluck('id', 'name')
+            ->mapWithKeys(fn ($id, $name) => [strtolower(trim($name)) => $id])
+            ->all();
 
         foreach ($items as $index => $item) {
-            $legacyId = (string) ($item['user_id'] ?? ($item['id'] ?? $index));
-            $firstName = trim((string) ($item['username'] ?? ($item['name'] ?? 'Customer')));
-            $lastName = trim((string) ($item['surname'] ?? '')) ?: null;
-            $emailRaw = trim((string) ($item['email'] ?? ''));
-            $email = ($emailRaw !== '' && filter_var($emailRaw, FILTER_VALIDATE_EMAIL)) ? strtolower($emailRaw) : null;
-            $rawPhone = trim((string) ($item['phone'] ?? ''));
-            $city = trim((string) ($item['city'] ?? ''));
-            $country = trim((string) ($item['country'] ?? ''));
-            $lastLogin = (string) ($item['last_login'] ?? '');
+            $legacyId     = (string) ($item['user_id'] ?? ($item['id'] ?? $index));
+            $firstName    = trim((string) ($item['username'] ?? ($item['name']    ?? 'Customer')));
+            $lastName     = trim((string) ($item['surname']  ?? '')) ?: null;
+            $emailRaw     = trim((string) ($item['email']    ?? ''));
+            $email        = ($emailRaw !== '' && filter_var($emailRaw, FILTER_VALIDATE_EMAIL))
+                            ? strtolower($emailRaw) : null;
+            $rawPhone     = trim((string) ($item['phone']    ?? ''));
+            $city         = trim((string) ($item['city']     ?? ''));
+            $country      = trim((string) ($item['country']  ?? ''));
+            $lastLogin    = (string) ($item['last_login']    ?? '');
             $creationDate = (string) ($item['creation_date'] ?? '');
-            $address1 = trim((string) ($item['address1'] ?? ($item['address'] ?? '')));
+            $address1     = trim((string) ($item['address1'] ?? ($item['address'] ?? '')));
 
             if ($rawPhone !== '') {
                 $stats['raw_formats'][$this->rawFormatBucket($rawPhone)]++;
             }
 
+            // ── Empty phone ──────────────────────────────────────
             if ($rawPhone === '') {
                 $stats['reason']['empty_phone']++;
                 $stats['skipped']++;
-                $skipRows[] = $this->skipRow($legacyId, $firstName, $lastName, $email, $rawPhone, $city, $country, $lastLogin, $creationDate, $address1, 'empty_phone', 'other', '');
+                $skipRows[] = $this->skipRow(
+                    $legacyId, $firstName, $lastName, $email, $rawPhone,
+                    $city, $country, $lastLogin, $creationDate, $address1,
+                    'empty_phone', 'other', ''
+                );
                 continue;
             }
 
+            // ── Normalize phone ─────────────────────────────────
             $normalized = PhoneHelper::normalize($rawPhone);
             if ($normalized === null) {
                 $stats['reason']['not_pk_mobile']++;
@@ -107,38 +144,60 @@ class CustomerLegacyImportService
                 if ($whyFailed === 'empty_phone') {
                     $whyFailed = 'other';
                 }
-                $bucket = $this->classifyBucket($firstName, $email, $city, $country);
+                $bucket = $this->classifyBucket($firstName, $email, $city, $country, $rawPhone);
                 $stats['bucket'][$bucket]++;
-                $skipRows[] = $this->skipRow($legacyId, $firstName, $lastName, $email, $rawPhone, $city, $country, $lastLogin, $creationDate, $address1, 'not_pk_mobile', $bucket, $whyFailed);
+                $skipRows[] = $this->skipRow(
+                    $legacyId, $firstName, $lastName, $email, $rawPhone,
+                    $city, $country, $lastLogin, $creationDate, $address1,
+                    'not_pk_mobile', $bucket, $whyFailed
+                );
                 if ($bucket === 'rescue_pk') {
                     $rescueRows[] = [
-                        $legacyId, $firstName, $lastName ?? '', $email ?? '', $rawPhone, $city, $country,
-                        $lastLogin, $creationDate, $address1, $whyFailed,
+                        $legacyId, $firstName, $lastName ?? '', $email ?? '', $rawPhone,
+                        $city, $country, $lastLogin, $creationDate, $address1, $whyFailed,
                     ];
                 }
                 continue;
             }
 
-            if (isset($seenPhones[$normalized]) || isset($existingPhones[$normalized])) {
-                $stats['reason']['duplicate_phone']++;
+            // ── Duplicate phone — split JSON vs DB ───────────────
+            $inJson = isset($seenPhones[$normalized]);
+            $inDb   = isset($existingPhones[$normalized]);
+
+            if ($inJson || $inDb) {
+                $reasonKey = $inJson ? 'duplicate_in_json' : 'duplicate_in_db';
+                $stats['reason'][$reasonKey]++;
                 $stats['skipped']++;
                 $target = $seenPhones[$normalized] ?? $existingPhones[$normalized];
                 $legacyMap[$legacyId] = is_numeric($target) ? (int) $target : $target;
-                $skipRows[] = $this->skipRow($legacyId, $firstName, $lastName, $email, $rawPhone, $city, $country, $lastLogin, $creationDate, $address1, 'duplicate_phone', 'other', '');
+                $skipRows[] = $this->skipRow(
+                    $legacyId, $firstName, $lastName, $email, $rawPhone,
+                    $city, $country, $lastLogin, $creationDate, $address1,
+                    $reasonKey, 'other', ''
+                );
                 continue;
             }
 
+            // ── Duplicate email ──────────────────────────────────
             if ($email !== null && (isset($seenEmails[$email]) || isset($existingEmails[$email]))) {
                 $stats['reason']['duplicate_email']++;
                 $stats['skipped']++;
-                $skipRows[] = $this->skipRow($legacyId, $firstName, $lastName, $email, $rawPhone, $city, $country, $lastLogin, $creationDate, $address1, 'duplicate_email', 'other', '');
+                $skipRows[] = $this->skipRow(
+                    $legacyId, $firstName, $lastName, $email, $rawPhone,
+                    $city, $country, $lastLogin, $creationDate, $address1,
+                    'duplicate_email', 'other', ''
+                );
                 continue;
             }
 
+            // ── Import ───────────────────────────────────────────
             if (! $dryRun) {
-                $customerId = $this->importOne($item, $normalized, $firstName, $lastName, $email, $city, $country, $address1, $defaultGroupId, $cityMap, $existingUsernames);
+                $customerId = $this->importOne(
+                    $item, $normalized, $firstName, $lastName, $email,
+                    $city, $country, $address1, $defaultGroupId, $cityMap, $existingUsernames
+                );
                 $seenPhones[$normalized] = $customerId;
-                $legacyMap[$legacyId] = $customerId;
+                $legacyMap[$legacyId]    = $customerId;
                 if ($email) {
                     $seenEmails[$email] = $customerId;
                 }
@@ -156,7 +215,10 @@ class CustomerLegacyImportService
         if (! $dryRun) {
             $this->writeCsv($skipPath, $skipRows, true);
             $this->writeRescueCsv($rescuePath, $rescueRows);
-            file_put_contents(storage_path('app/legacy_customer_id_map.json'), json_encode($legacyMap, JSON_PRETTY_PRINT));
+            file_put_contents(
+                storage_path('app/legacy_customer_id_map.json'),
+                json_encode($legacyMap, JSON_PRETTY_PRINT)
+            );
         }
 
         $stats['rescue_samples'] = array_map(
@@ -167,13 +229,12 @@ class CustomerLegacyImportService
         return $stats;
     }
 
-    /**
-     * Import one row from a corrected rescue CSV (phone column must normalize).
-     */
+    // ── Rescue row importer ───────────────────────────────────────
+
     public function importRescueRow(array $row): int
     {
         $phoneRaw = $row['phone'] ?? $row['raw_phone'] ?? '';
-        $phone = PhoneHelper::normalize($phoneRaw);
+        $phone    = PhoneHelper::normalize($phoneRaw);
         if (! $phone) {
             throw new \InvalidArgumentException('Invalid phone in rescue row');
         }
@@ -182,28 +243,33 @@ class CustomerLegacyImportService
             throw new \InvalidArgumentException('Duplicate phone: ' . $phone);
         }
 
-        $defaultGroupId = CustomerGroup::where('is_default', true)->value('id');
-        $cityMap = City::pluck('id', 'name')->mapWithKeys(fn ($id, $name) => [strtolower(trim($name)) => $id])->all();
+        $defaultGroupId    = CustomerGroup::where('is_default', true)->value('id');
+        $cityMap           = City::pluck('id', 'name')
+            ->mapWithKeys(fn ($id, $name) => [strtolower(trim($name)) => $id])
+            ->all();
+        $existingUsernames = User::pluck('id', 'username')->all();
 
         return $this->importOne(
             [
                 'address1' => $row['address1'] ?? '',
                 'address2' => $row['address2'] ?? '',
-                'city' => $row['city'] ?? '',
-                'country' => $row['country'] ?? 'Pakistan',
+                'city'     => $row['city']     ?? '',
+                'country'  => $row['country']  ?? 'Pakistan',
             ],
             $phone,
-            $row['name'] ?? 'Customer',
+            $row['name']    ?? 'Customer',
             $row['surname'] ?? null,
             ! empty($row['email']) ? strtolower($row['email']) : null,
-            $row['city'] ?? '',
+            $row['city']    ?? '',
             $row['country'] ?? 'Pakistan',
             $row['address1'] ?? '',
             $defaultGroupId,
             $cityMap,
-            User::pluck('id', 'username')->all()
+            $existingUsernames
         );
     }
+
+    // ── Private: single-row import ────────────────────────────────
 
     private function importOne(
         array $item,
@@ -219,10 +285,11 @@ class CustomerLegacyImportService
         array &$existingUsernames
     ): int {
         return DB::transaction(function () use (
-            $item, $normalized, $firstName, $lastName, $email, $cityName, $country, $address1, $defaultGroupId, $cityMap, &$existingUsernames
+            $item, $normalized, $firstName, $lastName, $email,
+            $cityName, $country, $address1, $defaultGroupId, $cityMap, &$existingUsernames
         ) {
             $fullName = trim($firstName . ' ' . ($lastName ?? ''));
-            $cityId = isset($cityMap[strtolower(trim($cityName))]) ? $cityMap[strtolower(trim($cityName))] : null;
+            $cityId   = $cityMap[strtolower(trim($cityName))] ?? null;
             $address2 = trim((string) ($item['address2'] ?? '')) ?: null;
 
             $user = User::create([
@@ -258,18 +325,21 @@ class CustomerLegacyImportService
         });
     }
 
-    private function classifyBucket(string $name, ?string $email, string $city, string $country): string
-    {
-        if ($this->isDemo($name, $email)) {
-            return 'demo';
-        }
-        if ($this->isForeign($city, $country)) {
-            return 'foreign';
-        }
-        if ($this->isRescuePk($city, $country, $email, $name)) {
-            return 'rescue_pk';
-        }
+    // ── Private: bucket classification ───────────────────────────
 
+    /**
+     * @param string      $rawPhone  The un-normalized raw phone string (used for test-number detection)
+     */
+    private function classifyBucket(
+        string $name,
+        ?string $email,
+        string $city,
+        string $country,
+        string $rawPhone = ''
+    ): string {
+        if ($this->isDemo($name, $email))                              return 'demo';
+        if ($this->isForeign($city, $country))                         return 'foreign';
+        if ($this->isRescuePk($city, $country, $email, $name, $rawPhone)) return 'rescue_pk';
         return 'other';
     }
 
@@ -279,13 +349,12 @@ class CustomerLegacyImportService
             return true;
         }
         if ($email) {
-            foreach (self::DEMO_EMAIL_PATTERNS as $p) {
+            foreach (self::JUNK_EMAIL_PATTERNS as $p) {
                 if (str_contains(strtolower($email), $p)) {
                     return true;
                 }
             }
         }
-
         return false;
     }
 
@@ -297,24 +366,61 @@ class CustomerLegacyImportService
                 return true;
             }
         }
-
         return false;
     }
 
-    private function isRescuePk(string $city, string $country, ?string $email, string $name): bool
-    {
+    /**
+     * A row is rescue_pk only when:
+     * 1. Not demo (name or email).
+     * 2. Country is Pakistan / PK / empty AND city is a known PK city,
+     *    OR country explicitly contains "pakistan".
+     * 3. Phone does NOT end with a known test-number suffix.
+     * 4. Email (if present) is not from a junk domain.
+     */
+    private function isRescuePk(
+        string $city,
+        string $country,
+        ?string $email,
+        string $name,
+        string $rawPhone = ''
+    ): bool {
         if ($this->isDemo($name, $email)) {
             return false;
         }
-        $countryL = strtolower($country);
-        if (str_contains($countryL, 'pakistan') || $countryL === 'pk' || $countryL === '') {
-            $cityL = strtolower($city);
-            foreach (self::PK_CITIES as $c) {
-                if ($cityL !== '' && str_contains($cityL, $c)) {
-                    return true;
+
+        // Junk email domains that don't belong to real customers
+        if ($email) {
+            foreach (self::JUNK_EMAIL_PATTERNS as $p) {
+                if (str_contains(strtolower($email), $p)) {
+                    return false;
                 }
             }
-            if ($countryL !== '' && str_contains($countryL, 'pakistan')) {
+        }
+
+        // Shared test-phone numbers (digits end with known test suffix)
+        $digits = preg_replace('/\D/', '', $rawPhone);
+        foreach (self::TEST_PHONE_DIGIT_SUFFIXES as $suffix) {
+            if (strlen($digits) >= strlen($suffix) && str_ends_with($digits, $suffix)) {
+                return false;
+            }
+        }
+
+        $countryL = strtolower($country);
+        $isPkCountry = str_contains($countryL, 'pakistan') || $countryL === 'pk';
+        $isEmptyCountry = $countryL === '';
+
+        // Require an explicit PK city when country is empty
+        if ($isPkCountry || $isEmptyCountry) {
+            $cityL = strtolower($city);
+            if ($cityL !== '') {
+                foreach (self::PK_CITIES as $c) {
+                    if (str_contains($cityL, $c)) {
+                        return $isPkCountry || $isEmptyCountry; // city matched
+                    }
+                }
+            }
+            // Country explicitly says Pakistan — accept even without a city match
+            if ($isPkCountry) {
                 return true;
             }
         }
@@ -322,50 +428,33 @@ class CustomerLegacyImportService
         return false;
     }
 
+    // ── Private: phone format detection ──────────────────────────
+
     private function rawFormatBucket(string $raw): string
     {
         $t = trim($raw);
-        if (str_starts_with($t, '03')) {
-            return '03';
-        }
-        if (str_starts_with($t, '+92')) {
-            return '+92';
-        }
-        if (str_starts_with($t, '0092')) {
-            return '0092';
-        }
+        if (str_starts_with($t, '03'))   return '03';
+        if (str_starts_with($t, '+92'))  return '+92';
+        if (str_starts_with($t, '0092')) return '0092';
         $d = preg_replace('/\D/', '', $t);
-        if (str_starts_with($d, '923')) {
-            return '92';
-        }
-        if (str_starts_with($d, '92')) {
-            return '92';
-        }
-        if (preg_match('/^3\d{9}$/', $d)) {
-            return '3';
-        }
-
+        if (str_starts_with($d, '92'))   return '92';
+        if (preg_match('/^3\d{9}$/', $d)) return '3';
         return 'other';
     }
 
+    // ── Private: CSV building ─────────────────────────────────────
+
     private function skipRow(
-        string $legacyId,
-        string $name,
-        ?string $surname,
-        ?string $email,
-        string $rawPhone,
-        string $city,
-        string $country,
-        string $lastLogin,
-        string $creationDate,
-        string $address1,
-        string $reason,
-        string $bucket,
-        string $whyFailed
+        string $legacyId, string $name, ?string $surname, ?string $email,
+        string $rawPhone, string $city, string $country,
+        string $lastLogin, string $creationDate, string $address1,
+        string $reason, string $bucket, string $whyFailed
     ): array {
         return [
-            $legacyId, $name, $surname ?? '', $email ?? '', PhoneHelper::mask($rawPhone), $rawPhone,
-            $city, $country, $lastLogin, $creationDate, $address1, $reason, $bucket, $whyFailed,
+            $legacyId, $name, $surname ?? '', $email ?? '',
+            PhoneHelper::mask($rawPhone), $rawPhone,
+            $city, $country, $lastLogin, $creationDate, $address1,
+            $reason, $bucket, $whyFailed,
         ];
     }
 
@@ -373,8 +462,10 @@ class CustomerLegacyImportService
     {
         $fp = fopen($path, 'w');
         fputcsv($fp, [
-            'legacy_id', 'name', 'surname', 'email', 'raw_phone_masked', 'raw_phone', 'city', 'country',
-            'last_login', 'creation_date', 'address1', 'reason', 'bucket', 'why_failed',
+            'legacy_id', 'name', 'surname', 'email',
+            'raw_phone_masked', 'raw_phone',
+            'city', 'country', 'last_login', 'creation_date', 'address1',
+            'reason', 'bucket', 'why_failed',
         ]);
         foreach ($rows as $row) {
             fputcsv($fp, $row);
@@ -386,8 +477,9 @@ class CustomerLegacyImportService
     {
         $fp = fopen($path, 'w');
         fputcsv($fp, [
-            'legacy_id', 'name', 'surname', 'email', 'raw_phone', 'city', 'country',
-            'last_login', 'creation_date', 'address1', 'why_failed',
+            'legacy_id', 'name', 'surname', 'email', 'raw_phone',
+            'city', 'country', 'last_login', 'creation_date', 'address1',
+            'why_failed',
         ]);
         foreach ($rows as $row) {
             fputcsv($fp, $row);

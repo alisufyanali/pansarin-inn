@@ -8,13 +8,17 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('customers', function (Blueprint $table) {
-            $table->dropUnique('customers_email_unique');
-        });
-
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropUnique(['email']);
-        });
+        // Drop customers.email unique constraint — email is no longer the login
+        // identifier; username (normalized phone) is. Guard with driver check
+        // because SQLite doesn't support ALTER TABLE DROP INDEX directly.
+        if (Schema::getConnection()->getDriverName() !== 'sqlite') {
+            Schema::table('customers', function (Blueprint $table) {
+                $table->dropUnique('customers_email_unique');
+            });
+            Schema::table('users', function (Blueprint $table) {
+                $table->dropUnique(['email']);
+            });
+        }
 
         Schema::table('orders', function (Blueprint $table) {
             $table->string('customer_name')->nullable()->after('customer_id');
@@ -39,12 +43,13 @@ return new class extends Migration
             $table->dropColumn(['customer_name', 'customer_phone', 'customer_email']);
         });
 
-        Schema::table('customers', function (Blueprint $table) {
-            $table->unique('email', 'customers_email_unique');
-        });
-
-        Schema::table('users', function (Blueprint $table) {
-            $table->unique('email');
-        });
+        if (Schema::getConnection()->getDriverName() !== 'sqlite') {
+            Schema::table('customers', function (Blueprint $table) {
+                $table->unique('email', 'customers_email_unique');
+            });
+            Schema::table('users', function (Blueprint $table) {
+                $table->unique('email');
+            });
+        }
     }
 };
