@@ -4,10 +4,43 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Blog;
+use App\Models\BlogCategory;
+use App\Models\BlogTag;
 use Illuminate\Http\Request;
 
 class BlogApiController extends Controller
 {
+    // GET /api/blog-categories
+    public function categories(Request $request)
+    {
+        $categories = BlogCategory::withCount([
+            'blogs' => fn ($q) => $q->published(),
+        ])
+            ->orderBy('name')
+            ->get(['id', 'name', 'slug', 'parent_id', 'created_at', 'updated_at']);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $categories,
+        ]);
+    }
+
+    // GET /api/blog-tags
+    public function tags(Request $request)
+    {
+        $tags = BlogTag::withCount([
+            'blogs' => fn ($q) => $q->published(),
+        ])
+            ->active()
+            ->orderBy('name')
+            ->get(['id', 'name', 'slug', 'color', 'is_active', 'created_at', 'updated_at']);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $tags,
+        ]);
+    }
+
     // GET /api/blogs
     public function index(Request $request)
     {

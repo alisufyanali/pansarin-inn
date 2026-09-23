@@ -63,8 +63,10 @@ Route::middleware('throttle:api.public')->group(function () {
     Route::post('/reviews', [SiteReviewApiController::class, 'store']);
 
     // Blogs
-    Route::get('/blogs',        [BlogApiController::class, 'index']);
-    Route::get('/blogs/{slug}', [BlogApiController::class, 'show']);
+    Route::get('/blog-categories', [BlogApiController::class, 'categories']);
+    Route::get('/blog-tags',      [BlogApiController::class, 'tags']);
+    Route::get('/blogs',          [BlogApiController::class, 'index']);
+    Route::get('/blogs/{slug}',   [BlogApiController::class, 'show']);
 
     // Offers / active coupons (public — shows available promotions)
     Route::get('/offers', [OffersApiController::class, 'index']);

@@ -60,12 +60,4 @@ class BlogTag extends Model
     {
         return $query->where('is_active', true);
     }
-
-    /**
-     * Get the count of blogs using this tag
-     */
-    public function getBlogsCountAttribute()
-    {
-        return $this->blogs()->count();
-    }
 }

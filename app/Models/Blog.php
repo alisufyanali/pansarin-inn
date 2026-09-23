@@ -26,6 +26,14 @@ class Blog extends Model
     ];
 
     /**
+     * Scope a query to only include published blogs.
+     */
+    public function scopePublished($query)
+    {
+        return $query->where('status', 'published');
+    }
+
+    /**
      * Get the category that owns the blog.
      */
     public function category()
