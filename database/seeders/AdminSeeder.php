@@ -15,6 +15,11 @@ class AdminSeeder extends Seeder
 {
     public function run(): void
     {
+        if (app()->environment('production')) {
+            $this->command->warn('SKIP: AdminSeeder disabled in production environment.');
+            return;
+        }
+
         // 0. Default Customer Group
         $defaultGroup = CustomerGroup::firstOrCreate(
             ['name' => 'General'],

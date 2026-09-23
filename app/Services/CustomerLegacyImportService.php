@@ -100,7 +100,18 @@ class CustomerLegacyImportService
 
         $existingUsernames = $dryRun ? [] : User::pluck('id', 'username')->all();
 
-        $defaultGroupId = $dryRun ? null : CustomerGroup::where('is_default', true)->value('id');
+        $defaultGroupId = null;
+        if (! $dryRun) {
+            $defaultGroup = CustomerGroup::where('is_default', true)->first();
+            if (! $defaultGroup) {
+                $defaultGroup = CustomerGroup::create([
+                    'name' => 'General',
+                    'discount_percentage' => 0,
+                    'is_default' => true,
+                ]);
+            }
+            $defaultGroupId = $defaultGroup->id;
+        }
         $cityMap = City::pluck('id', 'name')
             ->mapWithKeys(fn ($id, $name) => [strtolower(trim($name)) => $id])
             ->all();
@@ -182,6 +193,8 @@ class CustomerLegacyImportService
             if ($email !== null && (isset($seenEmails[$email]) || isset($existingEmails[$email]))) {
                 $stats['reason']['duplicate_email']++;
                 $stats['skipped']++;
+                $target = $seenEmails[$email] ?? $existingEmails[$email];
+                $legacyMap[$legacyId] = is_numeric($target) ? (int) $target : $target;
                 $skipRows[] = $this->skipRow(
                     $legacyId, $firstName, $lastName, $email, $rawPhone,
                     $city, $country, $lastLogin, $creationDate, $address1,
@@ -243,7 +256,15 @@ class CustomerLegacyImportService
             throw new \InvalidArgumentException('Duplicate phone: ' . $phone);
         }
 
-        $defaultGroupId    = CustomerGroup::where('is_default', true)->value('id');
+        $defaultGroup = CustomerGroup::where('is_default', true)->first();
+        if (! $defaultGroup) {
+            $defaultGroup = CustomerGroup::create([
+                'name' => 'General',
+                'discount_percentage' => 0,
+                'is_default' => true,
+            ]);
+        }
+        $defaultGroupId    = $defaultGroup->id;
         $cityMap           = City::pluck('id', 'name')
             ->mapWithKeys(fn ($id, $name) => [strtolower(trim($name)) => $id])
             ->all();
@@ -318,8 +339,8 @@ class CustomerLegacyImportService
                 'status'            => 'active',
             ]);
 
-            $customer->wallet()->create(['balance' => 0]);
-            $customer->loyaltyPoints()->create(['balance' => 0]);
+            if (! $customer->wallet)       { $customer->wallet()->create(['balance' => 0]); }
+            if (! $customer->loyaltyPoints) { $customer->loyaltyPoints()->create(['balance' => 0]); }
 
             return $customer->id;
         });

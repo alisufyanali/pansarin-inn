@@ -36,7 +36,7 @@ class Customer extends Model
     public function wallet() { return $this->morphOne(Wallet::class, 'walletable'); }
     public function walletTransactions() { return $this->hasManyThrough(WalletTransaction::class, Wallet::class, 'walletable_id', 'wallet_id')->where('walletable_type', Customer::class); }
     public function loyaltyPoints() { return $this->hasOne(LoyaltyPoint::class); }
-    public function loyaltyTransactions() { return $this->hasMany(LoyaltyPointTransaction::class, 'loyalty_point_id', 'id'); }
+    public function loyaltyTransactions() { return $this->hasMany(LoyaltyPointTransaction::class, 'customer_id', 'id'); }
     public function orders() { return $this->hasMany(Order::class); }
     public function referredBy() {return $this->hasOne(Referral::class, 'customer_id', 'user_id'); }
     public function referralSales() { return $this->hasManyThrough( Referral::class, Affiliate::class, 'user_id', 'affiliate_id', 'user_id', 'id'); }
