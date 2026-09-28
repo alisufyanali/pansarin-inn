@@ -37,37 +37,45 @@ class CategorySeeder extends Seeder
             [
                 'name' => 'Dawakhana',
                 'slug' => 'dawakhana',
-                'image' => 'categories/seeds.png',
+                'image' => 'categories/dawakhana.png',
                 'status' => true,
             ],
-             [
+            [
                 'name' => 'Remedies',
                 'slug' => 'remedies',
                 'image' => 'categories/remedies.png',
                 'status' => true,
-            ],[
+            ],
+            [
                 'name' => 'Dry Fruits',
                 'slug' => 'dry-fruits',
-                'image' => '',
+                'image' => 'categories/dry-fruits.png',
                 'status' => true,
             ],
-             [
+            [
                 'name' => 'Herbal Tea',
                 'slug' => 'herbal-tea',
-                'image' => '',
+                'image' => 'categories/herbal-tea.png',
                 'status' => true,
             ],
-             [
+            [
                 'name' => 'Combo Deals',
                 'slug' => 'combo-deals',
-                'image' => '',
-                'status' => true,
-            ], [
-                'name' => 'Seeds',
-                'slug' => 'seeds',
-                'image' => '',
+                'image' => 'categories/spiecs.png',
                 'status' => true,
             ],
+            [
+                'name' => 'Seeds',
+                'slug' => 'seeds',
+                'image' => 'categories/seeds.png',
+                'status' => true,
+            ],
+            [
+                'name' => 'Spiecs',
+                'slug' => 'spiecs',
+                'image' => 'categories/spiecs.png',
+                'status' => true,
+            ]
         ];
 
         foreach ($categories as $category) {

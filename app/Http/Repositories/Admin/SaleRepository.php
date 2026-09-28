@@ -188,7 +188,7 @@ class SaleRepository
                     'stock'    => (int) ($allStocks->get($p->id . '_null')?->first()?->quantity ?? 0),
                     'variants' => $p->variants->map(fn ($v) => [
                         'id'    => $v->id,
-                        'name'  => collect($v->attributes ?? [])->values()->join(' / ') ?: $v->value,
+                        'name'  => trim((collect($v->attributes ?? [])->values()->join(' / ') ?: $v->value) . ' ' . ($p->unit ?? '')),
                         'sku'   => $v->sku,
                         'price' => $v->sale_price ?? $v->price ?? 0,
                         'stock' => (int) ($allStocks->get($p->id . '_' . $v->id)?->first()?->quantity ?? 0),
@@ -205,7 +205,7 @@ class SaleRepository
         $variantIds = collect($items)->pluck('product_variant_id')->filter()->unique();
 
         $products = Product::whereIn('id', $productIds)
-            ->get(['id', 'name', 'sku'])
+            ->get(['id', 'name', 'sku', 'unit'])
             ->keyBy('id');
 
         $variants = $variantIds->isNotEmpty()
@@ -237,7 +237,7 @@ class SaleRepository
                     'product_name' => $product?->name,
                     'sku'          => $product?->sku,
                     'variant_name' => $variant
-                        ? collect($variant->attributes ?? [])->values()->join(' / ') ?: $variant->value
+                        ? trim((collect($variant->attributes ?? [])->values()->join(' / ') ?: $variant->value) . ' ' . ($product?->unit ?? ''))
                         : null,
                 ],
             ]);

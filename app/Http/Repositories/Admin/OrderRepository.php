@@ -48,7 +48,10 @@ class OrderRepository
         // Format items for frontend
         $order->items->transform(function ($item) {
             $item->product_name  = $item->meta['product_name'] ?? $item->product?->name;
-            $item->variant_label = $item->meta['variant_name'] ?? $item->variant?->value;
+            $item->variant_label = $item->meta['variant_name']
+                ?? ($item->variant
+                    ? trim((collect($item->variant->attributes ?? [])->values()->join(' / ') ?: $item->variant->value) . ' ' . ($item->product?->unit ?? ''))
+                    : null);
             return $item;
         });
 
@@ -239,7 +242,7 @@ class OrderRepository
                     'stock'    => (int) $baseStock,
                     'variants' => $p->variants->map(fn ($v) => [
                         'id'    => $v->id,
-                        'name'  => collect($v->attributes ?? [])->values()->join(' / ') ?: $v->value,
+                        'name'  => trim((collect($v->attributes ?? [])->values()->join(' / ') ?: $v->value) . ' ' . ($p->unit ?? '')),
                         'sku'   => $v->sku,
                         'price' => $v->sale_price ?? $v->price ?? 0,
                         'stock' => (int) ($allStocks->get($p->id . '_' . $v->id)?->first()?->quantity ?? 0),
@@ -256,7 +259,7 @@ class OrderRepository
         $variantIds = collect($items)->pluck('product_variant_id')->filter()->unique();
 
         $products = Product::whereIn('id', $productIds)
-            ->get(['id', 'name', 'sku'])
+            ->get(['id', 'name', 'sku', 'unit'])
             ->keyBy('id');
 
         $variants = ProductVariant::whereIn('id', $variantIds)
@@ -326,7 +329,7 @@ class OrderRepository
                     'product_name' => $product?->name,
                     'sku'          => $product?->sku,
                     'variant_name' => $variant
-                        ? collect($variant->attributes ?? [])->values()->join(' / ') ?: $variant->value
+                        ? trim((collect($variant->attributes ?? [])->values()->join(' / ') ?: $variant->value) . ' ' . ($product?->unit ?? ''))
                         : null,
                     'cost_price'   => $costPrice,
                 ],
