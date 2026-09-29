@@ -46,7 +46,8 @@
 
 ## IN PROGRESS
 
-- [ ] `CustomerImportSeeder` fixes (see PENDING P0 below — partially done but issues remain)
+- [x] `CustomerImportSeeder` fixes (see PENDING P0 below — partially done but issues remain)
+  - 2026-09-28: fixed remaining data-safety gaps in `CustomerLegacyImportService`: DB phones matched by normalized value (`+92…` rows no longer slip through); `users.username/phone/email` collisions skipped + reported (`phone_taken_by_user`/`email_taken_by_user`) instead of crashing; per-row try/catch (`import_error`) so one bad row can't abort the run and lose the ID map; rescue path same checks; dry-run now reports DB duplicates. `run()` accepts optional `$dataPath`. `tests/Feature/CustomerLegacyImportTest.php` (6 tests; 5 fail on old code, all pass now).
 
 ---
 
@@ -55,9 +56,12 @@
 ### P0 — Critical / Blocking
 
 - [ ] **Before production: WhatsApp OTP on first login / account claim** (phone-as-account default password is temporary)
-- [ ] **`CustomerImportSeeder` legacy ID map**: skipped duplicates should write to `storage/app/legacy_customer_id_map.json`; currently missing entries for skipped records
-- [ ] **`CustomerImportSeeder` phone normalization**: must use `PhoneHelper::normalize()` consistently; current `sanitizePhone()` may diverge
-- [ ] **`CustomerImportSeeder` default customer group**: assign `CustomerGroup` where `is_default = true`
+- [x] **`CustomerImportSeeder` legacy ID map**: skipped duplicates should write to `storage/app/legacy_customer_id_map.json`; currently missing entries for skipped records
+  - 2026-09-28: verified — legacy map written for skipped rows (service L183/197/232); asserted in `CustomerLegacyImportTest`
+- [x] **`CustomerImportSeeder` phone normalization**: must use `PhoneHelper::normalize()` consistently; current `sanitizePhone()` may diverge
+  - 2026-09-28: verified — `PhoneHelper::normalize()` used for JSON + (now) existing DB phones; no `sanitizePhone` left
+- [x] **`CustomerImportSeeder` default customer group**: assign `CustomerGroup` where `is_default = true`
+  - 2026-09-28: verified — default group assigned (service L105-111/L330); asserted in `CustomerLegacyImportTest`
 - [x] **`CustomerImportSeeder` wallet/loyalty rows**: create `wallet` + `loyalty_points` rows for each imported customer (like AdminSeeder does)
   - 2026-09-28: already done in `CustomerLegacyImportService::importOne()` L342-343 (verified, no code change)
 - [ ] **`AdminSeeder` production guard**: seeder runs unconditionally in `DatabaseSeeder`; must skip or abort if `APP_ENV=production` to prevent test data in production
@@ -67,7 +71,7 @@
 ### P1 — Important
 
 - [x] **fileinfo upload fallback**: verify all remaining upload paths (WhatsApp media download uses `Storage::put()` with raw binary — different path, may be safe; confirm)
-  - 2026-09-28: WhatsApp `put()` confirmed safe (string write, no MIME guess). Real gap was validation: `image`/`mimes` rules call Symfony MimeTypes (needs fileinfo). Added `App\Rules\SafeImage` (ext whitelist + `getimagesize()`, safe-SVG check) and replaced all 17 rules in 11 files. `php -l` pass; `tests/Feature/SafeImageRuleTest.php` added — run `php artisan test` to confirm.
+  - 2026-09-28: WhatsApp `put()` confirmed safe (string write, no MIME guess). Real gap was validation: `image`/`mimes` rules call Symfony MimeTypes (needs fileinfo). Added `App\Rules\SafeImage` (ext whitelist + `getimagesize()`, safe-SVG check) and replaced all 17 rules in 11 files. `php -l` pass; `tests/Feature/SafeImageRuleTest.php` added. SVG check hardened (DOM-based: banned elements, on*, href allowlist, CSS url/@import, DTD/XXE, PIs, no 512KB bypass) — 21 tests pass.
 - [ ] **Frontend `X-Build-Token` wiring**: Next.js build must send `X-Build-Token: {BUILD_API_TOKEN}` header on all API calls during `next build`; Vercel env var `BUILD_API_TOKEN` must be set
 - [ ] **Vercel env vars audit**: confirm `NEXT_PUBLIC_API_URL`, `BUILD_API_TOKEN`, and any other required vars are set in Vercel project settings
 - [ ] **Manjistha product merge**: two products named "Manjistha" with different thumbnails; decision pending (which to keep, how to migrate orders referencing deleted product)
@@ -92,6 +96,18 @@
 - [ ] `BackfillPowderAdditional` command: verify if `additional=100` is correctly set for all Powder variants
 
 ---
+
+## Found 2026-09-28 (not yet fixed unless noted)
+
+- [x] `routes/frontend.php` imported `Controllers\Api\FrontendController` (dir is `API`) — worked on Windows, **fatal on Linux** (`route:list` crashed). Fixed casing.
+- [x] `config/fortify.php` `home` was `/dashboard` (route doesn't exist → 404 after email verification). Now `/admin/dashboard`.
+- [x] 11 stale starter-kit tests (dashboard route name, logout → login, strong-password rule, User SoftDeletes → `assertSoftDeleted`). Baseline on f01e5c3: 11 failed → now 110/110 pass.
+- [ ] `BackfillPowderAdditional`: `lower(json_extract(...)) = 'powder'` matches 0 rows on MySQL (json_extract returns quoted value). Use `JSON_UNQUOTE` / `->where('attributes->Form', ...)`.
+- [ ] Deploy checklist step 4 SQL: missing parentheses — `AND deleted_at IS NULL` only binds to 2nd OR group.
+- [ ] Duplicate models `PointTransaction` + `LoyaltyPointTransaction` on same table.
+- [ ] `tsc --noEmit`: 91 pre-existing TypeScript errors in admin panel (build still succeeds).
+- [ ] Uploaded SVGs are served from our origin — add `Content-Security-Policy: script-src 'none'` for `/storage/*.svg` as defense-in-depth.
+- [ ] `routes/test.php` (run-seeder, place-order) only guarded by `APP_ENV=local` — confirm production `.env` has `APP_ENV=production`.
 
 ## Before Production Deploy — Checklist
 

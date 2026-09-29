@@ -68,7 +68,7 @@ class AuthApiController extends Controller
                     'id'                   => $user->id,
                     'name'                 => $user->name,
                     'email'                => $user->email,
-                    'phone'                => $user->phone,
+                    'phone'                => $user->phone ?? $user->username,
                     'username'             => $user->username,
                     'must_change_password'   => (bool) $user->must_change_password,
                 ],
@@ -170,7 +170,7 @@ class AuthApiController extends Controller
                 'id'       => $user->id,
                 'name'     => $user->name,
                 'email'    => $user->email,
-                'phone'    => $user->phone,
+                'phone'    => $user->phone ?? $user->username,
                 'username' => $user->username,
                 'roles'    => $user->getRoleNames(),
                 'customer' => $customer ? [

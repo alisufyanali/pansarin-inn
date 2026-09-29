@@ -3,7 +3,7 @@ use App\Http\Controllers\Admin\Settings\GeneralSettingController;
 use App\Http\Controllers\Admin\Settings\UiSettingController;
 use App\Http\Controllers\Admin\Settings\BusinessSettingController;
 
-use App\Http\Controllers\Api\FrontendController;
+use App\Http\Controllers\API\FrontendController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified', 'permission:view.settings'])->prefix('admin/settings/ui')->name('admin.ui-settings.')->group(function () {

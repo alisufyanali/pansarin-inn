@@ -8,6 +8,7 @@ use App\Models\Customer;
 use App\Models\CustomerGroup;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
 
@@ -47,9 +48,9 @@ class CustomerLegacyImportService
 
     // ── Main entry point ──────────────────────────────────────────
 
-    public function run(bool $dryRun = false): array
+    public function run(bool $dryRun = false, ?string $dataPath = null): array
     {
-        $dataPath = database_path('seeders/data/customers.json');
+        $dataPath ??= database_path('seeders/data/customers.json');
         $items = json_decode(file_get_contents($dataPath), true);
         if (! is_array($items)) {
             throw new \RuntimeException('Invalid customers.json');
@@ -75,6 +76,9 @@ class CustomerLegacyImportService
                 'duplicate_in_json' => 0,   // duplicate of earlier row in same JSON
                 'duplicate_in_db'   => 0,   // duplicate of row already in the DB
                 'duplicate_email'   => 0,
+                'phone_taken_by_user' => 0, // users.username / users.phone already hold this number
+                'email_taken_by_user' => 0, // users.email already holds this email
+                'import_error'      => 0,   // DB error on insert — row skipped, run continues
             ],
             'raw_formats' => ['03' => 0, '3' => 0, '92' => 0, '+92' => 0, '0092' => 0, 'other' => 0],
             'skip_path'    => $skipPath,
@@ -87,18 +91,16 @@ class CustomerLegacyImportService
         $seenEmails = [];
         $legacyMap  = [];
 
-        $existingPhones = $dryRun
-            ? []
-            : Customer::whereNotNull('phone')->pluck('id', 'phone')->all();
+        // Read-only lookups — loaded in dry-run too so the dry-run report is accurate.
+        $existingPhones = $this->existingCustomerPhones();
 
-        $existingEmails = $dryRun
-            ? []
-            : Customer::whereNotNull('email')
-                ->pluck('id', 'email')
-                ->mapWithKeys(fn ($id, $email) => [strtolower($email) => $id])
-                ->all();
+        $existingEmails = Customer::whereNotNull('email')
+            ->pluck('id', 'email')
+            ->mapWithKeys(fn ($id, $email) => [strtolower($email) => $id])
+            ->all();
 
-        $existingUsernames = $dryRun ? [] : User::pluck('id', 'username')->all();
+        [$userPhones, $userEmails] = $this->existingUserKeys();
+        $existingUsernames = User::pluck('id', 'username')->all();
 
         $defaultGroupId = null;
         if (! $dryRun) {
@@ -203,14 +205,56 @@ class CustomerLegacyImportService
                 continue;
             }
 
+            // ── Collision with users table (users.username/phone/email are UNIQUE) ──
+            // A User can exist without a Customer (admin/staff, or half-created account).
+            // Creating another User with the same key would throw and abort the run.
+            $userHit = $userPhones[$normalized] ?? null;
+            $reasonKey = 'phone_taken_by_user';
+            if ($userHit === null && $email !== null && isset($userEmails[$email])) {
+                $userHit   = $userEmails[$email];
+                $reasonKey = 'email_taken_by_user';
+            }
+            if ($userHit !== null) {
+                $stats['reason'][$reasonKey]++;
+                $stats['skipped']++;
+                if ($userHit['customer_id'] !== null) {
+                    $legacyMap[$legacyId] = (int) $userHit['customer_id'];
+                }
+                $skipRows[] = $this->skipRow(
+                    $legacyId, $firstName, $lastName, $email, $rawPhone,
+                    $city, $country, $lastLogin, $creationDate, $address1,
+                    $reasonKey, 'other', 'user_id=' . $userHit['user_id']
+                );
+                continue;
+            }
+
             // ── Import ───────────────────────────────────────────
             if (! $dryRun) {
-                $customerId = $this->importOne(
-                    $item, $normalized, $firstName, $lastName, $email,
-                    $city, $country, $address1, $defaultGroupId, $cityMap, $existingUsernames
-                );
+                try {
+                    $customerId = $this->importOne(
+                        $item, $normalized, $firstName, $lastName, $email,
+                        $city, $country, $address1, $defaultGroupId, $cityMap, $existingUsernames
+                    );
+                } catch (\Throwable $e) {
+                    // One bad row must not abort the whole import (and lose the ID map).
+                    // importOne() runs in a transaction, so nothing partial is left behind.
+                    Log::warning('Customer import row failed', [
+                        'legacy_id' => $legacyId,
+                        'phone'     => PhoneHelper::mask($normalized),
+                        'error'     => $e->getMessage(),
+                    ]);
+                    $stats['reason']['import_error']++;
+                    $stats['skipped']++;
+                    $skipRows[] = $this->skipRow(
+                        $legacyId, $firstName, $lastName, $email, $rawPhone,
+                        $city, $country, $lastLogin, $creationDate, $address1,
+                        'import_error', 'other', class_basename($e)
+                    );
+                    continue;
+                }
                 $seenPhones[$normalized] = $customerId;
                 $legacyMap[$legacyId]    = $customerId;
+                $userPhones[$normalized] = ['user_id' => null, 'customer_id' => $customerId];
                 if ($email) {
                     $seenEmails[$email] = $customerId;
                 }
@@ -252,8 +296,17 @@ class CustomerLegacyImportService
             throw new \InvalidArgumentException('Invalid phone in rescue row');
         }
 
-        if (Customer::where('phone', $phone)->exists()) {
-            throw new \InvalidArgumentException('Duplicate phone: ' . $phone);
+        if (isset($this->existingCustomerPhones()[$phone])) {
+            throw new \InvalidArgumentException('Duplicate phone: ' . PhoneHelper::mask($phone));
+        }
+
+        [$userPhones, $userEmails] = $this->existingUserKeys();
+        $rescueEmail = ! empty($row['email']) ? strtolower(trim($row['email'])) : null;
+        if (isset($userPhones[$phone])) {
+            throw new \InvalidArgumentException('Phone already used by user #' . $userPhones[$phone]['user_id']);
+        }
+        if ($rescueEmail !== null && isset($userEmails[$rescueEmail])) {
+            throw new \InvalidArgumentException('Email already used by user #' . $userEmails[$rescueEmail]['user_id']);
         }
 
         $defaultGroup = CustomerGroup::where('is_default', true)->first();
@@ -288,6 +341,60 @@ class CustomerLegacyImportService
             $cityMap,
             $existingUsernames
         );
+    }
+
+    // ── Private: lookups ──────────────────────────────────────────
+
+    /**
+     * Existing customer phones keyed by CANONICAL (normalized) phone.
+     * Older rows may be stored as +92…/03…/0092…; keying by raw value would
+     * let those slip past duplicate detection.
+     *
+     * @return array<string,int> normalized phone => customer id
+     */
+    private function existingCustomerPhones(): array
+    {
+        $map = [];
+        foreach (Customer::whereNotNull('phone')->pluck('phone', 'id') as $id => $phone) {
+            $key = PhoneHelper::normalize($phone) ?? $phone;
+            $map[$key] ??= $id;
+        }
+
+        return $map;
+    }
+
+    /**
+     * Phones (from users.username + users.phone, normalized) and emails already
+     * owned by a User — both columns are UNIQUE on users.
+     *
+     * @return array{0: array<string,array{user_id:int|null,customer_id:int|null}>, 1: array<string,array{user_id:int|null,customer_id:int|null}>}
+     */
+    private function existingUserKeys(): array
+    {
+        $customerByUser = Customer::whereNotNull('user_id')->pluck('id', 'user_id')->all();
+        $phones = [];
+        $emails = [];
+
+        User::query()->select(['id', 'username', 'phone', 'email'])->orderBy('id')
+            ->chunk(1000, function ($users) use (&$phones, &$emails, $customerByUser) {
+                foreach ($users as $u) {
+                    $hit = ['user_id' => $u->id, 'customer_id' => $customerByUser[$u->id] ?? null];
+                    foreach ([$u->username, $u->phone] as $candidate) {
+                        $n = PhoneHelper::normalize($candidate);
+                        if ($n !== null) {
+                            $phones[$n] ??= $hit;
+                        }
+                        if ($candidate !== null && $candidate !== '') {
+                            $phones[$candidate] ??= $hit; // exact raw value is also unique-constrained
+                        }
+                    }
+                    if ($u->email) {
+                        $emails[strtolower($u->email)] ??= $hit;
+                    }
+                }
+            });
+
+        return [$phones, $emails];
     }
 
     // ── Private: single-row import ────────────────────────────────
