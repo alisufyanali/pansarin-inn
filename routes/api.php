@@ -6,6 +6,7 @@ use App\Http\Controllers\API\CartApiController;
 use App\Http\Controllers\API\CityApiController;
 use App\Http\Controllers\API\ContactApiController;
 use App\Http\Controllers\API\CouponApiController;
+use App\Http\Controllers\API\DealApiController;
 use App\Http\Controllers\API\HealthConcernApiController;
 use App\Http\Controllers\API\HomepageApiController;
 use App\Http\Controllers\API\NewsletterApiController;
@@ -78,6 +79,11 @@ Route::middleware('throttle:api.public')->group(function () {
     Route::post('/newsletter/subscribe', [NewsletterApiController::class, 'subscribe'])->middleware('throttle:api.forms');
     Route::get('/orders/track',          [OrderApiController::class, 'track'])->middleware('throttle:orders.track');
     Route::post('/orders/guest',         [OrderApiController::class, 'storeGuest'])->middleware('throttle:api.guest-orders');
+    Route::post('/checkout/quote',       [OrderApiController::class, 'quote']);
+
+    // Deals (admin → Product Deals)
+    Route::get('/deals',        [DealApiController::class, 'index']);
+    Route::get('/deals/{slug}', [DealApiController::class, 'show']);
 });
 
 // ── Protected routes (auth:sanctum) — 60 requests/minute ──────────

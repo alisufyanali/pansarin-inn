@@ -164,10 +164,17 @@ class CartApiController extends Controller
                 ->value('quantity') ?? 0);
         }
 
+        // Deal shown on the cart line (display only — /api/checkout/quote has the real totals)
+        $dealPricing = app(\App\Services\DealPricingService::class);
+        $deals       = $product ? $dealPricing->activeDealsFor([$product->id])->get($product->id) : null;
+        $deal        = $deals ? $dealPricing->bestDisplayDeal($deals, $product->id, $unitPrice) : null;
+
         return [
             'id'         => $c->id,
             'quantity'   => $c->quantity,
             'unit_price' => $unitPrice,
+            'deal_price' => $deal ? $dealPricing->displayPrice($deal, $product->id, $unitPrice) : null,
+            'deal'       => $deal ? $dealPricing->summary($deal, $product->id) : null,
             'subtotal'   => round($unitPrice * $c->quantity, 2),
             'stock'      => $qty,
             'in_stock'   => $qty > 0,

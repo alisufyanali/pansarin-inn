@@ -183,6 +183,7 @@ class Order extends Model
             if ($order->wasChanged('status') && $order->status === 'cancelled') {
                 $order->restoreStock();
                 $order->releaseCoupon();
+                $order->releaseDeals();
             }
         });
     }
@@ -259,6 +260,26 @@ class Order extends Model
                 'source'             => $source,
                 'note'               => $notePrefix . $this->order_number,
             ]);
+        }
+    }
+
+    /** Give deal uses and deal units back when the order is cancelled. */
+    public function releaseDeals(): void
+    {
+        $this->loadMissing('items');
+
+        foreach ($this->items->whereNotNull('deal_id')->groupBy('deal_id') as $dealId => $items) {
+            Deal::whereKey($dealId)->where('current_uses', '>', 0)->decrement('current_uses');
+
+            foreach ($items->groupBy('product_id') as $productId => $productItems) {
+                $units = (int) $productItems->sum(fn ($i) => $i->meta['deal_units'] ?? $i->quantity);
+                $pivot = fn () => \Illuminate\Support\Facades\DB::table('deal_product')
+                    ->where('deal_id', $dealId)->where('product_id', $productId);
+
+                // Never below zero: clamp first, then decrement what is left
+                $pivot()->where('sold_count', '<', $units)->update(['sold_count' => 0]);
+                $pivot()->where('sold_count', '>=', $units)->decrement('sold_count', $units);
+            }
         }
     }
 

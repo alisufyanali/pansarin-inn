@@ -236,6 +236,8 @@ class HomepageApiController extends Controller
             return collect();
         }
 
+        $this->primeDeals($productIds);
+
         return ProductStock::whereIn('product_id', $productIds)
             ->get()
             ->groupBy(function ($s) {
@@ -243,7 +245,31 @@ class HomepageApiController extends Controller
             });
     }
 
+    // ── Deals pre-loader — one query per listing, keyed by product id ──
+    private array $dealMap = [];
+
+    private function primeDeals(\Illuminate\Support\Collection $productIds): void
+    {
+        $missing = $productIds->reject(fn ($id) => array_key_exists($id, $this->dealMap));
+        if ($missing->isEmpty()) {
+            return;
+        }
+
+        $found = app(\App\Services\DealPricingService::class)->activeDealsFor($missing);
+        foreach ($missing as $id) {
+            $this->dealMap[$id] = $found->get($id);
+        }
+    }
+
     private function formatProduct(Product $p, ?\Illuminate\Support\Collection $stocks = null): array
+    {
+        $this->primeDeals(collect([$p->id]));
+
+        return app(\App\Services\DealPricingService::class)
+            ->decorate($this->formatProductBase($p, $stocks), $this->dealMap[$p->id] ?? null);
+    }
+
+    private function formatProductBase(Product $p, ?\Illuminate\Support\Collection $stocks = null): array
     {
         // Lazy fallback for single-product calls (should rarely happen in this controller)
         if ($stocks === null) {

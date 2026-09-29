@@ -413,6 +413,8 @@ class ProductApiController extends Controller
             return collect();
         }
 
+        $this->primeDeals($productIds);
+
         return ProductStock::whereIn('product_id', $productIds)
             ->get()
             ->groupBy(function ($s) {
@@ -420,8 +422,32 @@ class ProductApiController extends Controller
             });
     }
 
+    // ── Deals pre-loader — one query per listing, keyed by product id ──
+    private array $dealMap = [];
+
+    private function primeDeals(\Illuminate\Support\Collection $productIds): void
+    {
+        $missing = $productIds->reject(fn ($id) => array_key_exists($id, $this->dealMap));
+        if ($missing->isEmpty()) {
+            return;
+        }
+
+        $found = app(\App\Services\DealPricingService::class)->activeDealsFor($missing);
+        foreach ($missing as $id) {
+            $this->dealMap[$id] = $found->get($id);
+        }
+    }
+
     // ── Format Helper ─────────────────────────────────────────────
     private function formatProduct(Product $p, bool $detailed = false, ?\Illuminate\Support\Collection $stocks = null): array
+    {
+        $this->primeDeals(collect([$p->id]));
+
+        return app(\App\Services\DealPricingService::class)
+            ->decorate($this->formatProductBase($p, $detailed, $stocks), $this->dealMap[$p->id] ?? null);
+    }
+
+    private function formatProductBase(Product $p, bool $detailed = false, ?\Illuminate\Support\Collection $stocks = null): array
     {
         // Fall back to live query only for single-product show() calls
         if ($stocks === null) {

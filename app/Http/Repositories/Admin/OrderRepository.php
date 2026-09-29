@@ -90,6 +90,7 @@ class OrderRepository
             }
 
             $this->syncItems($order, $data['items']);
+            $this->redeemDeals($order, $data['items']);
             $order->calculateTotals();
             $order->load('items.product', 'items.variant');
 
@@ -205,7 +206,10 @@ class OrderRepository
                 return $s->product_id . '_' . ($s->product_variant_id ?? 'null');
             });
 
-        return $products->map(function ($p) use ($allStocks) {
+        $dealPricing = app(\App\Services\DealPricingService::class);
+        $dealsMap    = $dealPricing->activeDealsFor($productIds);
+
+        return $products->map(function ($p) use ($allStocks, $dealPricing, $dealsMap) {
                 $hasVariants = $p->variants->isNotEmpty();
 
                 if ($hasVariants) {
@@ -225,13 +229,21 @@ class OrderRepository
                     'unit'     => $p->unit,
                     'price'    => $defaultVariant ? (float) ($defaultVariant->sale_price ?: $defaultVariant->price ?: 0) : 0,
                     'stock'    => (int) $baseStock,
-                    'variants' => $p->variants->map(fn ($v) => [
-                        'id'    => $v->id,
-                        'name'  => trim((collect($v->attributes ?? [])->values()->join(' / ') ?: $v->value) . ' ' . ($p->unit ?? '')),
-                        'sku'   => $v->sku,
-                        'price' => $v->sale_price ?? $v->price ?? 0,
-                        'stock' => (int) ($allStocks->get($p->id . '_' . $v->id)?->first()?->quantity ?? 0),
-                    ]),
+                    'variants' => $p->variants->map(function ($v) use ($p, $allStocks, $dealPricing, $dealsMap) {
+                        $price = (float) ($v->sale_price ?? $v->price ?? 0);
+                        $deal  = ($deals = $dealsMap->get($p->id)) ? $dealPricing->bestDisplayDeal($deals, $p->id, $price) : null;
+
+                        return [
+                            'id'         => $v->id,
+                            'name'       => trim((collect($v->attributes ?? [])->values()->join(' / ') ?: $v->value) . ' ' . ($p->unit ?? '')),
+                            'sku'        => $v->sku,
+                            'price'      => $v->sale_price ?? $v->price ?? 0,
+                            'stock'      => (int) ($allStocks->get($p->id . '_' . $v->id)?->first()?->quantity ?? 0),
+                            // Active per-unit deal price (admin form pre-fills the line discount from it)
+                            'deal_price' => $deal ? $dealPricing->displayPrice($deal, $p->id, $price) : null,
+                            'deal_title' => $deal?->title,
+                        ];
+                    }),
                 ];
             });
     }
@@ -268,6 +280,56 @@ class OrderRepository
 
         $order->update(['coupon_code' => $coupon->code]);
         $coupon->increment('usage_count');
+    }
+
+    /**
+     * Count deal usage for a storefront order: one use per deal per order,
+     * and deal units against each product's stock_limit. Runs inside the order
+     * transaction with the deal row locked so the limits cannot be overshot.
+     */
+    private function redeemDeals(Order $order, array $items): void
+    {
+        $byDeal = collect($items)->filter(fn ($i) => ! empty($i['deal_id']))->groupBy('deal_id');
+
+        foreach ($byDeal as $dealId => $lines) {
+            $deal  = \App\Models\Deal::whereKey($dealId)->lockForUpdate()->first();
+            $title = $deal?->title ?? 'This deal';
+
+            if (! $deal || ! $deal->canBeUsed()) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'items' => "{$title} has ended. Please refresh your cart and try again.",
+                ]);
+            }
+
+            if ($deal->max_uses_per_user) {
+                $previous = Order::where('customer_id', $order->customer_id)
+                    ->whereKeyNot($order->id)
+                    ->where('status', '!=', 'cancelled')
+                    ->whereHas('items', fn ($q) => $q->where('deal_id', $deal->id))
+                    ->count();
+
+                if ($previous >= $deal->max_uses_per_user) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'items' => "You have already used \"{$title}\" the maximum number of times.",
+                    ]);
+                }
+            }
+
+            foreach ($lines->groupBy('product_id') as $productId => $productLines) {
+                $units = (int) $productLines->sum(fn ($l) => $l['deal_units'] ?? $l['quantity']);
+                $pivot = DB::table('deal_product')->where('deal_id', $deal->id)->where('product_id', $productId)->lockForUpdate()->first();
+
+                if ($pivot && $pivot->stock_limit !== null && $pivot->sold_count + $units > $pivot->stock_limit) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'items' => "The deal quantity for an item in your cart has run out. Please refresh your cart.",
+                    ]);
+                }
+
+                DB::table('deal_product')->where('deal_id', $deal->id)->where('product_id', $productId)->increment('sold_count', $units);
+            }
+
+            $deal->increment('current_uses');
+        }
     }
 
     private function syncItems(Order $order, array $items): void
@@ -349,6 +411,7 @@ class OrderRepository
             $order->items()->create([
                 'product_id'         => $item['product_id'],
                 'product_variant_id' => $item['product_variant_id'] ?? null,
+                'deal_id'            => $item['deal_id'] ?? null,
                 'quantity'           => $qty,
                 'price'              => $price,
                 'cost_price'         => $costPrice,
@@ -361,6 +424,8 @@ class OrderRepository
                         ? trim((collect($variant->attributes ?? [])->values()->join(' / ') ?: $variant->value) . ' ' . ($product?->unit ?? ''))
                         : null,
                     'cost_price'   => $costPrice,
+                    'deal_title'   => $item['deal_title'] ?? null,
+                    'deal_units'   => ! empty($item['deal_id']) ? (int) ($item['deal_units'] ?? $qty) : null,
                 ],
             ]);
 
