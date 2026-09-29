@@ -25,6 +25,8 @@ class DatabaseSeeder extends Seeder
             HealthConcernSeeder::class,
             OldProductsImportSeeder::class,
             HealthConcernProductSeeder::class,
+            HealthConcernBackfillSeeder::class,   // every product gets >= 1 concern
+            ProductDetailTabsSeeder::class,       // fills empty detail tabs (needs concerns)
             OrderSeeder::class,
             SaleSeeder::class,
             CouponSeeder::class,
