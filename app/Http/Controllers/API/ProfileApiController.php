@@ -28,8 +28,15 @@ class ProfileApiController extends Controller
                     $n = PhoneHelper::normalize($value);
                     if (! $n) {
                         $fail('Invalid Pakistani mobile number.');
+                        return;
                     }
-                    if (\App\Models\User::where('username', $n)->where('id', '!=', $user->id)->exists()) {
+                    $takenByUser = \App\Models\User::where('id', '!=', $user->id)
+                        ->where(fn ($q) => $q->where('username', $n)->orWhere('phone', $n))
+                        ->exists();
+                    $takenByCustomer = \App\Models\Customer::where('phone', $n)
+                        ->where(fn ($q) => $q->whereNull('user_id')->orWhere('user_id', '!=', $user->id))
+                        ->exists();
+                    if ($takenByUser || $takenByCustomer) {
                         $fail('This phone is already registered.');
                     }
                 }],
@@ -47,14 +54,24 @@ class ProfileApiController extends Controller
             ], 422);
         }
 
+        // The phone is the login (username) and the customer's identity, so all
+        // three copies change together, stored in normalized form.
+        if (isset($validated['phone'])) {
+            $validated['phone'] = PhoneHelper::normalize($validated['phone']);
+        }
+
         // Update User table fields
         $userFields = array_intersect_key($validated, array_flip(['name', 'phone']));
+        // Only phone-login accounts follow the new phone; staff keep their username.
+        if (isset($userFields['phone']) && (! $user->username || PhoneHelper::normalize($user->username) === $user->username)) {
+            $userFields['username'] = $userFields['phone'];
+        }
         if (! empty($userFields)) {
             $user->update($userFields);
         }
 
         // Update Customer profile fields
-        $customerFields = array_intersect_key($validated, array_flip(['first_name', 'last_name', 'address', 'address2', 'city_id']));
+        $customerFields = array_intersect_key($validated, array_flip(['first_name', 'last_name', 'address', 'address2', 'city_id', 'phone']));
         if (! empty($customerFields) && $user->customer) {
             $user->customer->update($customerFields);
         }
