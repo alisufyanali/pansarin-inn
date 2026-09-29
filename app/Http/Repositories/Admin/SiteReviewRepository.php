@@ -80,6 +80,7 @@ class SiteReviewRepository
             'comment'        => $r->comment,
             'image'          => $r->image ? asset('storage/' . $r->image) : null,
             'status'         => $r->status,
+            'show_on_homepage' => (bool) $r->show_on_homepage,
             'admin_note'     => $r->admin_note,
             'created_at'     => $r->created_at,
         ];

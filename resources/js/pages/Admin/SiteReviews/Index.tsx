@@ -3,7 +3,7 @@ import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import {
     Star, Clock, CheckCircle, XCircle, BarChart2,
-    ThumbsUp, ThumbsDown, Trash2, Eye,
+    ThumbsUp, ThumbsDown, Trash2, Eye, Home,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import DataTableWrapper from '@/components/DataTableWrapper';
@@ -24,6 +24,7 @@ interface SiteReview {
     comment: string;
     image: string | null;
     status: 'pending' | 'approved' | 'rejected';
+    show_on_homepage: boolean;
     created_at: string;
 }
 
@@ -71,6 +72,21 @@ function StatusAction({ review, onDone }: { review: SiteReview; onDone: () => vo
         );
     };
 
+    const toggleHomepage = () => {
+        const show = ! review.show_on_homepage;
+        setLoading(true);
+        router.patch(
+            `/admin/site-reviews/${review.id}/toggle-homepage`,
+            { show_on_homepage: show },
+            {
+                preserveScroll: true,
+                onSuccess: () => { toast.success(show ? 'Shown on homepage.' : 'Removed from homepage.'); onDone(); },
+                onError:   (errors) => toast.error(errors.show_on_homepage ?? 'Failed to update.'),
+                onFinish:  () => setLoading(false),
+            },
+        );
+    };
+
     const deleteReview = () => {
         if (! confirm('Delete this review permanently?')) return;
         setLoading(true);
@@ -101,6 +117,21 @@ function StatusAction({ review, onDone }: { review: SiteReview; onDone: () => vo
                     className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50"
                 >
                     <ThumbsDown className="w-4 h-4" />
+                </button>
+            )}
+            {review.status === 'approved' && (
+                <button
+                    title={review.show_on_homepage ? 'Remove from homepage' : 'Show on homepage'}
+                    aria-pressed={review.show_on_homepage}
+                    disabled={loading}
+                    onClick={toggleHomepage}
+                    className={`p-1.5 rounded-lg transition-colors disabled:opacity-50 ${
+                        review.show_on_homepage
+                            ? 'text-white bg-emerald-600 hover:bg-emerald-700'
+                            : 'text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30'
+                    }`}
+                >
+                    <Home className="w-4 h-4" />
                 </button>
             )}
             <button
@@ -205,7 +236,7 @@ export default function Index({
         {
             name: 'Actions',
             cell: (row: SiteReview) => <StatusAction review={row} onDone={refresh} />,
-            width: '130px',
+            width: '160px',
             ignoreRowClick: true,
         },
     ];

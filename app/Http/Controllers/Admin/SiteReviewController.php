@@ -6,15 +6,19 @@ use App\Http\Controllers\Controller;
 use App\Http\Repositories\Admin\SiteReviewRepository;
 use App\Http\Requests\Admin\SiteReviewStatusRequest;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class SiteReviewController extends Controller
 {
+    /** Must match the key in API\HomepageApiController::index(). */
+    private const HOMEPAGE_CACHE_KEY = 'homepage_data_v5';
+
     public function __construct(protected SiteReviewRepository $repo)
     {
         $this->middleware('permission:view.site-reviews')->only(['index', 'getData', 'show']);
-        $this->middleware('permission:edit.site-reviews')->only(['updateStatus']);
+        $this->middleware('permission:edit.site-reviews')->only(['updateStatus', 'toggleHomepage']);
         $this->middleware('permission:delete.site-reviews')->only(['destroy']);
     }
 
@@ -54,14 +58,42 @@ class SiteReviewController extends Controller
     {
         try {
             $review = $this->repo->find($id);
+            if ($review->show_on_homepage) {
+                Cache::forget(self::HOMEPAGE_CACHE_KEY);
+            }
             $review->update([
                 'status'     => $request->status,
                 'admin_note' => $request->admin_note ?? $review->admin_note,
+                // A review that is no longer approved can't stay featured.
+                'show_on_homepage' => $request->status === 'approved' && $review->show_on_homepage,
             ]);
             return back()->with('success', 'Review status updated to ' . $request->status . '.');
         } catch (\Exception $e) {
             Log::error('SiteReview updateStatus: ' . $e->getMessage());
             return back()->with('error', 'Failed to update status.');
+        }
+    }
+
+    // PATCH /admin/site-reviews/{id}/toggle-homepage
+    public function toggleHomepage(Request $request, string $id)
+    {
+        $request->validate(['show_on_homepage' => 'required|boolean']);
+
+        $review = $this->repo->find($id);
+        $show   = $request->boolean('show_on_homepage');
+
+        // Only approved reviews are public, so only they can be featured.
+        if ($show && $review->status !== 'approved') {
+            return back()->withErrors(['show_on_homepage' => 'Approve the review before showing it on the homepage.']);
+        }
+
+        try {
+            $review->update(['show_on_homepage' => $show]);
+            Cache::forget(self::HOMEPAGE_CACHE_KEY);
+            return back();
+        } catch (\Exception $e) {
+            Log::error('SiteReview toggleHomepage: ' . $e->getMessage());
+            return back()->withErrors(['show_on_homepage' => 'Failed to update.']);
         }
     }
 

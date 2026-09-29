@@ -134,6 +134,7 @@ Route::middleware(['auth', 'verified', 'staff'])->prefix('admin')->name('admin.'
     Route::get('site-reviews-data',                     [SiteReviewController::class, 'getData'])->name('site-reviews.data');
     Route::get('site-reviews/{id}',                     [SiteReviewController::class, 'show'])->name('site-reviews.show');
     Route::patch('site-reviews/{id}/status',            [SiteReviewController::class, 'updateStatus'])->name('site-reviews.status');
+    Route::patch('site-reviews/{id}/toggle-homepage',   [SiteReviewController::class, 'toggleHomepage'])->name('site-reviews.toggle-homepage');
     Route::delete('site-reviews/{id}',                  [SiteReviewController::class, 'destroy'])->name('site-reviews.destroy');
 
     /*

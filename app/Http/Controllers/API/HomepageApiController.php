@@ -181,7 +181,23 @@ class HomepageApiController extends Controller
 
     private function getReviewsData(): array
     {
-        return ProductReview::with(['product:id,name,slug,thumbnail'])
+        // Approved customer (site) reviews the admin chose to feature.
+        // Ids are prefixed so they never collide with product review ids.
+        $siteReviews = \App\Models\SiteReview::approved()
+            ->where('show_on_homepage', true)
+            ->latest()
+            ->take(12)
+            ->get()
+            ->map(fn ($r) => [
+                'id'            => 's' . $r->id,
+                'customer_name' => $r->reviewer_name,
+                'rating'        => $r->rating,
+                'comment'       => $r->comment,
+                'product'       => null,
+                'created_at'    => $r->created_at->toDateString(),
+            ]);
+
+        $productReviews = ProductReview::with(['product:id,name,slug,thumbnail'])
             ->where('status', true)
             ->where('show_on_homepage', true)
             ->latest()
@@ -201,7 +217,12 @@ class HomepageApiController extends Controller
                         : null,
                 ] : null,
                 'created_at' => $r->created_at->toDateString(),
-            ])
+            ]);
+
+        return $siteReviews->concat($productReviews)
+            ->sortByDesc('created_at')
+            ->take(12)
+            ->values()
             ->toArray();
     }
 

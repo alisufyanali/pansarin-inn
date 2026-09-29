@@ -16,10 +16,12 @@ class SiteReview extends Model
         'image',
         'status',
         'admin_note',
+        'show_on_homepage',
     ];
 
     protected $casts = [
-        'rating' => 'integer',
+        'rating'           => 'integer',
+        'show_on_homepage' => 'boolean',
     ];
 
     // ── Relationships ─────────────────────────────────────────────

@@ -1,5 +1,5 @@
 // components/sidebar-sections/shop-section.tsx
-import { ShoppingCart, User, DollarSign, TicketPercent, Star, MapPin, RotateCcw, Coins, MessageSquare } from 'lucide-react';
+import { ShoppingCart, User, DollarSign, TicketPercent, MapPin, RotateCcw, Coins, MessageSquare } from 'lucide-react';
 import { type NavItem } from '@/types';
 
 interface ShopSectionProps {
@@ -78,13 +78,9 @@ export function ShopSection({
         });
     }
 
-    if (hasAnyOrderReviewPerm) {
-        shopSubmenu.push({
-            title: 'Order Reviews',
-            href: '/admin/order-reviews',
-            icon: Star,
-        });
-    }
+    // "Order Reviews" is no longer listed: nothing on the storefront writes or
+    // shows order reviews (0 rows). Customer Reviews + product Reviews cover it.
+    // The /admin/order-reviews routes are kept, so nothing breaks.
 
     if (hasAnySiteReviewPerm) {
         shopSubmenu.push({
