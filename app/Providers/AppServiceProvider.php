@@ -71,6 +71,13 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(10)->by($request->ip());
         });
 
+        // Public write endpoints — separate buckets so e.g. coupon checks at
+        // checkout never use up the guest-order allowance.
+        RateLimiter::for('api.forms', fn (Request $request) => Limit::perMinute(5)->by($request->ip()));
+        RateLimiter::for('api.reviews', fn (Request $request) => Limit::perMinute(5)->by($request->ip()));
+        RateLimiter::for('api.coupons', fn (Request $request) => Limit::perMinute(20)->by($request->ip()));
+        RateLimiter::for('api.guest-orders', fn (Request $request) => Limit::perMinute(10)->by($request->ip()));
+
         // Register Spatie permission middleware aliases so controllers can use 'permission' and 'role'
         $router = $this->app->make(Router::class);
         $router->aliasMiddleware('permission', PermissionMiddleware::class);

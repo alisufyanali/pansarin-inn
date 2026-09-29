@@ -49,7 +49,7 @@ Route::middleware('throttle:api.public')->group(function () {
 
     // Product reviews — public read, public write (guest-allowed), helpful vote
     Route::get('/products/{slug}/reviews',  [ProductReviewApiController::class, 'index']);
-    Route::post('/products/{slug}/reviews', [ProductReviewApiController::class, 'store']);
+    Route::post('/products/{slug}/reviews', [ProductReviewApiController::class, 'store'])->middleware('throttle:api.reviews');
     Route::post('/reviews/{id}/helpful',    [ProductReviewApiController::class, 'helpful']);
 
     // Homepage
@@ -60,7 +60,7 @@ Route::middleware('throttle:api.public')->group(function () {
 
     // Site-wide reviews — public read, public write (order-verified)
     Route::get('/reviews',  [SiteReviewApiController::class, 'index']);
-    Route::post('/reviews', [SiteReviewApiController::class, 'store']);
+    Route::post('/reviews', [SiteReviewApiController::class, 'store'])->middleware('throttle:api.reviews');
 
     // Blogs
     Route::get('/blog-categories', [BlogApiController::class, 'categories']);
@@ -72,11 +72,12 @@ Route::middleware('throttle:api.public')->group(function () {
     Route::get('/offers', [OffersApiController::class, 'index']);
 
     // Misc public
-    Route::post('/contact',              [ContactApiController::class, 'store']);
-    Route::post('/coupons/validate',     [CouponApiController::class, 'check']);
-    Route::post('/newsletter/subscribe', [NewsletterApiController::class, 'subscribe']);
+    // Write endpoints that send mail / create records get a tighter per-IP limit
+    Route::post('/contact',              [ContactApiController::class, 'store'])->middleware('throttle:api.forms');
+    Route::post('/coupons/validate',     [CouponApiController::class, 'check'])->middleware('throttle:api.coupons');
+    Route::post('/newsletter/subscribe', [NewsletterApiController::class, 'subscribe'])->middleware('throttle:api.forms');
     Route::get('/orders/track',          [OrderApiController::class, 'track'])->middleware('throttle:orders.track');
-    Route::post('/orders/guest',         [OrderApiController::class, 'storeGuest']);
+    Route::post('/orders/guest',         [OrderApiController::class, 'storeGuest'])->middleware('throttle:api.guest-orders');
 });
 
 // ── Protected routes (auth:sanctum) — 60 requests/minute ──────────

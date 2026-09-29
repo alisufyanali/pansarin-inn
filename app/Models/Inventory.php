@@ -97,13 +97,14 @@ class Inventory extends Model
             ]);
         }
 
-        $this->checkLowStock();
+        $this->checkLowStock($delta);
     }
 
     /**
-     * Low stock event trigger
+     * Low stock event trigger — only when this movement takes the stock from
+     * above the threshold to at/below it, so admins get one alert, not one per sale.
      */
-    private function checkLowStock(): void
+    private function checkLowStock(float $delta): void
     {
         $stock = ProductStock::where('product_id', $this->product_id)
             ->where(function ($q) {
@@ -115,7 +116,9 @@ class Inventory extends Model
 
         $threshold = 10; // default — product mein stock_alert column nahi
 
-        if ($stock <= $threshold && $stock > 0) {
+        $previous = $stock - $delta;
+
+        if ($stock <= $threshold && $stock > 0 && $previous > $threshold) {
             try {
                 event(new \App\Events\LowStockAlert($this->product));
             } catch (\Throwable $e) {

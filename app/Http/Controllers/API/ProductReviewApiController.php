@@ -45,7 +45,7 @@ class ProductReviewApiController extends Controller
             default    => $query->latest(),
         };
 
-        $reviews = $query->paginate(min((int) $request->get('per_page', 10), 50));
+        $reviews = $query->paginate(min(max((int) $request->get('per_page', 10), 1), 50));
 
         return response()->json([
             'success' => true,
@@ -117,6 +117,15 @@ class ProductReviewApiController extends Controller
                     'message' => 'You have already submitted a review for this product.',
                 ], 422);
             }
+        } elseif (! \Illuminate\Support\Facades\Cache::add(
+            'guest-review:' . $product->id . ':' . sha1((string) $request->ip()), true, now()->addDay()
+        )) {
+            // Guest: at most one review per product per IP per day (email is optional,
+            // so without this a script could flood the moderation queue)
+            return response()->json([
+                'success' => false,
+                'message' => 'You have already submitted a review for this product. Please try again later.',
+            ], 429);
         } elseif (! empty($validated['email'])) {
             // Guest: one review per product per email (only when email is provided)
             if (ProductReview::where('product_id', $product->id)->where('customer_email', $validated['email'])->exists()) {
@@ -202,9 +211,20 @@ class ProductReviewApiController extends Controller
 
     // ── POST /api/reviews/{id}/helpful ────────────────────────────
     // Public — increment helpful_count. Simple, no auth required.
-    public function helpful(string $id)
+    public function helpful(Request $request, string $id)
     {
         $review = ProductReview::approved()->findOrFail($id);
+
+        // One vote per review per IP for 30 days — stops a script inflating the count
+        $voteKey = 'review-helpful:' . $review->id . ':' . sha1((string) $request->ip());
+        if (! \Illuminate\Support\Facades\Cache::add($voteKey, true, now()->addDays(30))) {
+            return response()->json([
+                'success'       => false,
+                'message'       => 'You have already marked this review as helpful.',
+                'helpful_count' => (int) $review->helpful_count,
+            ], 429);
+        }
+
         $review->increment('helpful_count');
 
         return response()->json([
