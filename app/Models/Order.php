@@ -174,21 +174,35 @@ class Order extends Model
                     ]);
                 }
             }
+
+            if ($order->wasChanged('status') && $order->status === 'cancelled') {
+                $order->restoreStock();
+                $order->releaseCoupon();
+            }
         });
     }
 
     // ── Stock Reduction on Delivery ───────────────────────────────
 
+    /**
+     * Stock is normally taken out when the order is placed (OrderRepository),
+     * with reference = order_number. This only covers orders that were created
+     * without that step, so an order is never deducted twice.
+     */
     public function reduceStock(): void
     {
         // Items fresh load karo (booted mein cached ho sakta hai)
         $this->loadMissing('items');
 
         foreach ($this->items as $item) {
-            // Already stock out hua hai? Skip karo
+            // Already stock out hua hai (order placement ya pehle delivery par)? Skip karo
             $alreadyDone = \App\Models\Inventory::where('product_id', $item->product_id)
-                ->where('product_variant_id', $item->product_variant_id)
-                ->where('reference', 'Order #' . $this->order_number)
+                ->when(
+                    $item->product_variant_id,
+                    fn ($q) => $q->where('product_variant_id', $item->product_variant_id),
+                    fn ($q) => $q->whereNull('product_variant_id')
+                )
+                ->whereIn('reference', [$this->order_number, 'Order #' . $this->order_number])
                 ->where('type', 'out')
                 ->exists();
 
@@ -204,6 +218,50 @@ class Order extends Model
                 'source'             => 'sale',
                 'note'               => 'Auto stock out — Order delivered',
             ]);
+        }
+    }
+
+    // ── Stock Return on Cancellation ──────────────────────────────
+
+    /**
+     * Put back whatever this order took out of stock. Idempotent: the net
+     * quantity already moved for the order is what gets reversed.
+     */
+    public function restoreStock(string $source = 'order_cancel', string $notePrefix = 'Order cancelled #'): void
+    {
+        $this->loadMissing('items');
+
+        foreach ($this->items->groupBy(fn ($i) => $i->product_id . '_' . ($i->product_variant_id ?? 'null')) as $group) {
+            $item = $group->first();
+
+            $netOut = -(float) \App\Models\Inventory::where('product_id', $item->product_id)
+                ->when(
+                    $item->product_variant_id,
+                    fn ($q) => $q->where('product_variant_id', $item->product_variant_id),
+                    fn ($q) => $q->whereNull('product_variant_id')
+                )
+                ->whereIn('reference', [$this->order_number, 'Order #' . $this->order_number])
+                ->sum('quantity');
+
+            if ($netOut <= 0) continue;
+
+            \App\Models\Inventory::create([
+                'product_id'         => $item->product_id,
+                'product_variant_id' => $item->product_variant_id ?? null,
+                'type'               => 'in',
+                'quantity'           => $netOut,
+                'reference'          => $this->order_number,
+                'source'             => $source,
+                'note'               => $notePrefix . $this->order_number,
+            ]);
+        }
+    }
+
+    /** Give the coupon use back when the order is cancelled. */
+    public function releaseCoupon(): void
+    {
+        if ($this->coupon_code) {
+            Coupon::where('code', $this->coupon_code)->where('usage_count', '>', 0)->decrement('usage_count');
         }
     }
 }

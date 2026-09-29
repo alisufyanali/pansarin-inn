@@ -95,7 +95,43 @@ class ReturnRequestRepository
             'reviewed_at'   => now(),
         ], fn ($v) => $v !== null));
 
+        if ($status === 'completed') {
+            $this->restockReturnedItems($return);
+        }
+
         return $return;
+    }
+
+    /**
+     * Returned goods go back into stock once the return is completed.
+     * Idempotent: keyed on the return reference, so re-saving 'completed' is a no-op.
+     */
+    private function restockReturnedItems(ReturnRequest $return): void
+    {
+        $reference = 'RETURN-' . $return->id;
+
+        if (\App\Models\Inventory::where('reference', $reference)->exists()) {
+            return;
+        }
+
+        $return->loadMissing('items.orderItem');
+
+        foreach ($return->items as $item) {
+            $orderItem = $item->orderItem;
+            if (! $orderItem || $item->quantity <= 0) {
+                continue;
+            }
+
+            \App\Models\Inventory::create([
+                'product_id'         => $orderItem->product_id,
+                'product_variant_id' => $orderItem->product_variant_id,
+                'type'               => 'return',
+                'quantity'           => $item->quantity,
+                'source'             => 'return',
+                'reference'          => $reference,
+                'note'               => 'Return completed #' . $return->id,
+            ]);
+        }
     }
 
     // ── Stats ─────────────────────────────────────────────────────

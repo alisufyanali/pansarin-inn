@@ -121,18 +121,9 @@ class OrderRepository
             ]);
 
             // Purane items ka stock wapas karo (reverse inventory)
+            // Net-based: an order already restocked (e.g. cancelled) is not restocked twice
             $order->load('items');
-            foreach ($order->items as $oldItem) {
-                \App\Models\Inventory::create([
-                    'product_id'         => $oldItem->product_id,
-                    'product_variant_id' => $oldItem->product_variant_id,
-                    'type'               => 'in',
-                    'quantity'           => $oldItem->quantity,
-                    'source'             => 'order_edit',
-                    'reference'          => $order->order_number,
-                    'note'               => 'Order edit reversal #' . $order->order_number,
-                ]);
-            }
+            $order->restoreStock('order_edit', 'Order edit reversal #');
 
             $order->items()->delete();
             $this->syncItems($order, $data['items']);
@@ -150,18 +141,8 @@ class OrderRepository
             Cache::forget('order_stats');
             $order = Order::with('items')->findOrFail($id);
 
-            // Stock wapas karo
-            foreach ($order->items as $item) {
-                \App\Models\Inventory::create([
-                    'product_id'         => $item->product_id,
-                    'product_variant_id' => $item->product_variant_id,
-                    'type'               => 'in',
-                    'quantity'           => $item->quantity,
-                    'source'             => 'order_delete',
-                    'reference'          => $order->order_number,
-                    'note'               => 'Order deleted #' . $order->order_number,
-                ]);
-            }
+            // Stock wapas karo — net-based, so an already cancelled order is not restocked twice
+            $order->restoreStock('order_delete', 'Order deleted #');
 
             $order->items()->delete();
             return $order->delete();
@@ -303,17 +284,28 @@ class OrderRepository
             ->get(['id', 'value', 'attributes', 'price'])
             ->keyBy('id');
 
+        // Lock the stock rows until the order transaction commits, so two
+        // checkouts cannot both sell the last units.
         $stocks = ProductStock::whereIn('product_id', $productIds)
+            ->lockForUpdate()
             ->get()
             ->groupBy(fn ($s) => $s->product_id . '_' . ($s->product_variant_id ?? 'null'));
+
+        // Same product/variant on several lines is checked against its total quantity
+        $requested = [];
+        foreach ($items as $item) {
+            if (empty($item['product_id'])) continue;
+            $key = $item['product_id'] . '_' . ($item['product_variant_id'] ?? 'null');
+            $requested[$key] = ($requested[$key] ?? 0) + (int) $item['quantity'];
+        }
 
         // FIRST: Validate stock availability for all items before creating any
         foreach ($items as $item) {
             if (empty($item['product_id'])) continue;
 
-            $qty       = (int) $item['quantity'];
             $variantId = $item['product_variant_id'] ?? null;
             $stockKey  = $item['product_id'] . '_' . ($variantId ?? 'null');
+            $qty       = $requested[$stockKey];
 
             $availableStock = (int) ($stocks->get($stockKey)?->first()?->quantity ?? 0);
 
