@@ -248,11 +248,27 @@ class WhatsAppController extends Controller
             $token = $request->query('hub_verify_token');
             $challenge = $request->query('hub_challenge');
 
-            if ($mode === 'subscribe' && $token === $verifyToken) {
-                return response($challenge, 200);
+            // An unset verify token must never match a missing query param (null === null)
+            if ($mode === 'subscribe' && $verifyToken && is_string($token) && hash_equals((string) $verifyToken, $token)) {
+                // Plain text: the challenge is echoed back, so it must not render as HTML
+                return response((string) $challenge, 200)->header('Content-Type', 'text/plain');
             }
 
             return response('Forbidden', 403);
+        }
+
+        // POST: only accept payloads signed by Meta with our app secret
+        $appSecret = config('services.whatsapp.app_secret');
+        if ($appSecret) {
+            $expected  = 'sha256=' . hash_hmac('sha256', $request->getContent(), $appSecret);
+            $signature = (string) $request->header('X-Hub-Signature-256');
+            if (! hash_equals($expected, $signature)) {
+                Log::warning('WhatsApp webhook rejected: bad signature', ['ip' => $request->ip()]);
+
+                return response('Forbidden', 403);
+            }
+        } else {
+            Log::warning('WhatsApp webhook: WHATSAPP_APP_SECRET is not set, signature not verified');
         }
 
         // POST: Handle incoming messages

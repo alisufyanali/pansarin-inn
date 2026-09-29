@@ -39,6 +39,7 @@ return [
         'phone_number_id' => env('WHATSAPP_PHONE_NUMBER_ID'),
         'access_token' => env('WHATSAPP_ACCESS_TOKEN'),
         'verify_token' => env('WHATSAPP_VERIFY_TOKEN'),
+        'app_secret' => env('WHATSAPP_APP_SECRET'), // Meta app secret — verifies X-Hub-Signature-256 on webhooks
         'api_url' => env('WHATSAPP_API_URL', 'https://graph.facebook.com'),
         'phone' => env('WHATSAPP_PHONE_NUMBER', '+92 304 5779900'), // Customer-facing WhatsApp contact
     ],
