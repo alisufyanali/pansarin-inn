@@ -105,3 +105,35 @@ it('restocks returned items once when the return is completed', function () {
 
     expect(stockNow())->toBe(8.0);
 });
+
+it('marks the order delivered when its sale is delivered, crediting points once', function () {
+    placeOrder(2)->assertStatus(201);
+    $order = Order::sole();
+
+    $sale = \App\Models\Sale::create([
+        'order_id' => $order->id, 'customer_id' => $order->customer_id,
+        'delivery_status' => 'processing', 'payment_status' => 'unpaid',
+    ]);
+    expect($order->fresh()->status)->toBe('pending');
+
+    $sale->update(['delivery_status' => 'delivered']);
+    $order->refresh();
+
+    expect($order->status)->toBe('delivered')
+        ->and($order->delivered_at)->not->toBeNull()
+        ->and(stockNow())->toBe(8.0)
+        ->and(\App\Models\PointTransaction::where('reference', $order->order_number)->count())->toBe(1);
+});
+
+it('cancels the order and restocks when its sale is cancelled', function () {
+    placeOrder(2)->assertStatus(201);
+    $order = Order::sole();
+
+    \App\Models\Sale::create([
+        'order_id' => $order->id, 'customer_id' => $order->customer_id,
+        'delivery_status' => 'cancelled', 'payment_status' => 'unpaid',
+    ]);
+
+    expect($order->fresh()->status)->toBe('cancelled')
+        ->and(stockNow())->toBe(10.0);
+});

@@ -98,6 +98,28 @@ class Sale extends Model
                 }
             }
         });
+
+        // Delivery is tracked on the Sale. Mirror delivered/cancelled onto the linked
+        // Order so its hooks run: loyalty points, affiliate commission, stock return.
+        static::saved(function (Sale $sale) {
+            if ($sale->wasRecentlyCreated || $sale->wasChanged('delivery_status')) {
+                $sale->syncOrderStatus();
+            }
+        });
+    }
+
+    public function syncOrderStatus(): void
+    {
+        $order = $this->order_id ? \App\Models\Order::find($this->order_id) : null;
+        if (! $order) {
+            return;
+        }
+
+        if ($this->delivery_status === 'delivered' && ! in_array($order->status, ['delivered', 'cancelled', 'refunded'])) {
+            $order->update(['status' => 'delivered']);
+        } elseif ($this->delivery_status === 'cancelled' && in_array($order->status, ['pending', 'processing', 'shipped'])) {
+            $order->update(['status' => 'cancelled']);
+        }
     }
 
     /**

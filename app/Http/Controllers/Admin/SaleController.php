@@ -351,8 +351,9 @@ class SaleController extends Controller
                 'ids.*'           => 'exists:sales,id',
                 'delivery_status' => 'required|in:pending,processing,shipped,delivered,cancelled,returned',
             ]);
-            \App\Models\Sale::whereIn('id', $request->ids)
-                ->update(['delivery_status' => $request->delivery_status]);
+            // Per-model update so the Sale → Order status sync (points, commission, stock) runs
+            \App\Models\Sale::whereIn('id', $request->ids)->get()
+                ->each(fn ($sale) => $sale->update(['delivery_status' => $request->delivery_status]));
             return response()->json(['success' => true, 'count' => count($request->ids)]);
         } catch (\Exception $e) {
             Log::error('Sale bulkUpdateDeliveryStatus failed', ['message' => $e->getMessage()]);

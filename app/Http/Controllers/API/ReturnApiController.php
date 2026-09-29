@@ -71,8 +71,9 @@ class ReturnApiController extends Controller
             ], 422);
         }
 
-        // 7-day return window — using order's updated_at as the delivery timestamp proxy
-        $deliveredAt = $order->updated_at;
+        // 7-day return window from the actual delivery time. updated_at is only a
+        // last resort for old orders delivered before delivered_at existed.
+        $deliveredAt = $order->sale?->delivery_datetime ?? $order->delivered_at ?? $order->updated_at;
         if (Carbon::now()->diffInDays($deliveredAt, true) > 7) {
             return response()->json([
                 'success' => false,

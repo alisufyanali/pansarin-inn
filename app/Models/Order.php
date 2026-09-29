@@ -34,6 +34,7 @@ class Order extends Model
         'payment_method',
         'payment_status',
         'payment_date',
+        'delivered_at',
         'user_id',
     ];
 
@@ -45,6 +46,7 @@ class Order extends Model
         'tax'              => 'float',
         'grand_total'      => 'float',
         'payment_date'     => 'date',
+        'delivered_at'     => 'datetime',
     ];
 
     // ── Relationships ─────────────────────────────────────────────
@@ -163,6 +165,9 @@ class Order extends Model
 
         static::updated(function (Order $order) {
             if ($order->wasChanged('status') && $order->status === 'delivered') {
+                if (! $order->delivered_at) {
+                    $order->forceFill(['delivered_at' => now()])->saveQuietly();
+                }
                 $order->reduceStock();
                 // Process affiliate commission — runs after stock reduction, idempotent guard inside service
                 try {
