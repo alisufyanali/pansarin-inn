@@ -93,6 +93,12 @@ class FortifyServiceProvider extends ServiceProvider
         return $user?->hasRole('affiliate') ? route('affiliate.dashboard') : route('home');
     }
 
+    /** Deactivated accounts (users.status = 0) cannot sign in. */
+    private static function isActive(User $user): bool
+    {
+        return $user->status === null || (bool) $user->status;
+    }
+
     /**
      * Configure Fortify actions.
      */
@@ -109,7 +115,7 @@ class FortifyServiceProvider extends ServiceProvider
                 $normalized = PhoneHelper::normalize($login);
                 if ($normalized) {
                     $user = User::where('username', $normalized)->first();
-                    if ($user && Hash::check($password, $user->password)) {
+                    if ($user && Hash::check($password, $user->password) && self::isActive($user)) {
                         return $user;
                     }
                 }
@@ -118,7 +124,7 @@ class FortifyServiceProvider extends ServiceProvider
             }
 
             $user = User::where('email', $login)->orWhere('username', $login)->first();
-            if ($user && Hash::check($password, $user->password)) {
+            if ($user && Hash::check($password, $user->password) && self::isActive($user)) {
                 return $user;
             }
 

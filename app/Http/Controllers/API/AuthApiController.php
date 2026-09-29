@@ -56,6 +56,11 @@ class AuthApiController extends Controller
 
         RateLimiter::clear($throttleKey);
 
+        // Deactivated accounts (users.status = 0) cannot sign in
+        if ($user->status !== null && ! $user->status) {
+            return response()->json(['success' => false, 'message' => 'This account has been deactivated. Please contact support.'], 403);
+        }
+
         $token = $user->createToken('api-token')->plainTextToken;
 
         return response()->json([
