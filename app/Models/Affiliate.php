@@ -13,7 +13,37 @@ class Affiliate extends Model
         'user_id', 'affiliate_code', 'commission_rate', 'balance',
         'payment_method', 'payment_account_title', 'payment_iban_details',
         'payment_account_no_details', 'status', 'parent_id',
+        'fixed_commission', 'joined_at', 'approved_by', 'notes',
     ];
+
+    protected $casts = [
+        'fixed_commission' => 'float',
+        'joined_at'        => 'datetime',
+    ];
+
+    public function isActive(): bool
+    {
+        return $this->status === 'active';
+    }
+
+    /** Rs earned per delivered referred order: own amount, else the default setting. */
+    public function commissionPerOrder(): float
+    {
+        if ($this->fixed_commission !== null) {
+            return (float) $this->fixed_commission;
+        }
+
+        return (float) (AffiliateSetting::where('key', 'default_commission')->value('value') ?? 0);
+    }
+
+    public static function generateCode(): string
+    {
+        do {
+            $code = strtoupper(\Illuminate\Support\Str::random(8));
+        } while (static::where('affiliate_code', $code)->exists());
+
+        return $code;
+    }
 
     /**
      * Booted method to handle auto-syncing with Wallet

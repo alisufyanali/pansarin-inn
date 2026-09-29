@@ -14,13 +14,15 @@ interface Product {
 interface Props {
     products: Product[];
     affiliateCode: string;
-    commissionRate: number;
+    /** Storefront (Next.js) base URL — referral links must land there */
+    storefrontUrl: string;
+    commissionPerOrder: number;
 }
 
-export default function ProductCatalog({ products, affiliateCode, commissionRate }: Props) {
+export default function ProductCatalog({ products, affiliateCode, storefrontUrl, commissionPerOrder }: Props) {
 
    const copyLink = (productSlug: string) => {
-    const link = `${window.location.origin}/register-affiliate?ref=${affiliateCode}&product=${productSlug}`;
+    const link = `${storefrontUrl}/${productSlug}?ref=${affiliateCode}`;
     navigator.clipboard.writeText(link);
     toast.success('Product promotion link copied!');
     };
@@ -41,7 +43,7 @@ export default function ProductCatalog({ products, affiliateCode, commissionRate
                     </div>
                     <div className="bg-blue-600 text-white px-6 py-3 rounded-2xl shadow-lg shadow-blue-500/20 flex items-center gap-3">
                         <Tag size={20} />
-                        <span className="font-bold">Your Rate: {commissionRate}%</span>
+                        <span className="font-bold">You earn Rs.{commissionPerOrder} per delivered order</span>
                     </div>
                 </div>
 
@@ -73,7 +75,7 @@ export default function ProductCatalog({ products, affiliateCode, commissionRate
                                     <div className="p-4 bg-blue-50 dark:bg-blue-900/10 rounded-2xl border border-blue-100 dark:border-blue-800/50">
                                         <div className="text-[10px] uppercase tracking-widest text-blue-600 dark:text-blue-400 font-bold mb-1">Your Earning</div>
                                         <div className="text-2xl font-black text-blue-700 dark:text-blue-500">
-                                            Rs.{product.commission_amount.toFixed(2)}
+                                            Rs.{Number(product.commission_amount).toFixed(2)}
                                         </div>
                                     </div>
                                 </div>

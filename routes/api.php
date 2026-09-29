@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\API\AffiliateApiController;
 use App\Http\Controllers\API\AuthApiController;
 use App\Http\Controllers\API\BlogApiController;
 use App\Http\Controllers\API\CartApiController;
@@ -81,6 +82,10 @@ Route::middleware('throttle:api.public')->group(function () {
     Route::post('/orders/guest',         [OrderApiController::class, 'storeGuest'])->middleware('throttle:api.guest-orders');
     Route::post('/checkout/quote',       [OrderApiController::class, 'quote']);
 
+    // Affiliate (referral) program
+    Route::post('/affiliate/apply', [AffiliateApiController::class, 'apply'])->middleware('throttle:api.forms');
+    Route::post('/affiliate/click', [AffiliateApiController::class, 'click']);
+
     // Deals (admin → Product Deals)
     Route::get('/deals',        [DealApiController::class, 'index']);
     Route::get('/deals/{slug}', [DealApiController::class, 'show']);
@@ -112,6 +117,10 @@ Route::middleware(['auth:sanctum', 'throttle:60,1', 'password.changed'])->group(
     Route::get('/wishlist',         [WishlistApiController::class, 'index']);
     Route::post('/wishlist',        [WishlistApiController::class, 'store']);
     Route::delete('/wishlist/{id}', [WishlistApiController::class, 'destroy']);
+
+    // Affiliate application for the signed-in customer
+    Route::post('/affiliate/apply-me', [AffiliateApiController::class, 'applyAuthenticated']);
+    Route::get('/affiliate/status',    [AffiliateApiController::class, 'status']);
 
     // Rewards (loyalty points)
     Route::get('/rewards', [RewardsApiController::class, 'index']);

@@ -12,28 +12,84 @@ class AdminAffiliateController extends Controller
 {
     public function index()
     {
-        // Sab affiliates ko unke user details ke sath uthayein
-        $affiliates = Affiliate::with('user:id,first_name,last_name,email')
+        // Pending applications first, then the rest (newest first)
+        $affiliates = Affiliate::with('user:id,name,email,phone,username')
+            ->withCount('commissions')
+            ->orderByRaw("CASE WHEN status = 'pending' THEN 0 ELSE 1 END")
             ->latest()
             ->get()
-            ->map(function($affiliate) {
+            ->map(function ($affiliate) {
                 return [
-                    'id' => $affiliate->id,
-                    'affiliate_code' => $affiliate->affiliate_code,
-                    'balance' => $affiliate->balance ?? 0,
-                    'commission_rate' => $affiliate->commission_rate,
-                    'status' => $affiliate->status === 'active' ? true : false,
-                    'user' => [
-                        'first_name' => $affiliate->user->first_name,
-                        'last_name' => $affiliate->user->last_name,
-                        'email' => $affiliate->user->email,
-                    ]
+                    'id'               => $affiliate->id,
+                    'affiliate_code'   => $affiliate->affiliate_code,
+                    'balance'          => (float) ($affiliate->balance ?? 0),
+                    // null = uses the default from Affiliate Settings
+                    'fixed_commission' => $affiliate->fixed_commission,
+                    'commission_per_order' => $affiliate->commissionPerOrder(),
+                    'status'           => $affiliate->status, // pending | active | blocked
+                    'orders'           => $affiliate->commissions_count,
+                    'referrals'        => \App\Models\User::where('referred_by', $affiliate->user_id)->count(),
+                    'notes'            => $affiliate->notes,
+                    'payment'          => array_filter([
+                        'method'  => $affiliate->payment_method,
+                        'title'   => $affiliate->payment_account_title,
+                        'account' => $affiliate->payment_account_no_details,
+                        'iban'    => $affiliate->payment_iban_details,
+                    ]),
+                    'applied_at'       => $affiliate->created_at?->format('d M Y'),
+                    'user'             => [
+                        'name'  => $affiliate->user?->name,
+                        'email' => $affiliate->user?->email,
+                        'phone' => $affiliate->user?->phone ?? $affiliate->user?->username,
+                    ],
                 ];
             });
 
         return Inertia::render('Admin/Affiliate/AffiliateManager', [
-            'affiliates' => $affiliates
+            'affiliates'        => $affiliates,
+            'defaultCommission' => (float) (\App\Models\AffiliateSetting::where('key', 'default_commission')->value('value') ?? 0),
         ]);
+    }
+
+    /** Approve a pending (or re-activate a blocked) affiliate: gives the affiliate role. */
+    public function approve($id)
+    {
+        $affiliate = Affiliate::with('user')->findOrFail($id);
+
+        $affiliate->update([
+            'status'      => 'active',
+            'approved_by' => auth()->id(),
+            'joined_at'   => $affiliate->joined_at ?? now(),
+        ]);
+
+        if ($affiliate->user && ! $affiliate->user->hasRole('affiliate')) {
+            $affiliate->user->assignRole('affiliate');
+        }
+
+        return back()->with('success', 'Affiliate approved — they can now sign in to the affiliate dashboard.');
+    }
+
+    /** Reject a pending application or block an active affiliate. */
+    public function block($id)
+    {
+        $affiliate = Affiliate::with('user')->findOrFail($id);
+        $affiliate->update(['status' => 'blocked']);
+
+        if ($affiliate->user?->hasRole('affiliate')) {
+            $affiliate->user->removeRole('affiliate');
+        }
+
+        return back()->with('success', 'Affiliate blocked.');
+    }
+
+    /** Rs per delivered referred order for this affiliate (empty = use the default). */
+    public function updateCommission(Request $request, $id)
+    {
+        $data = $request->validate(['fixed_commission' => 'nullable|numeric|min:0|max:100000']);
+
+        Affiliate::findOrFail($id)->update(['fixed_commission' => $data['fixed_commission'] ?? null]);
+
+        return back()->with('success', 'Commission updated.');
     }
 
     public function referralLogs()
@@ -70,15 +126,10 @@ class AdminAffiliateController extends Controller
         ]);
     }
 
+    // Kept for existing links: toggles between approved and blocked
     public function updateStatus($id)
     {
-        $affiliate = Affiliate::findOrFail($id);
-        
-        // Status toggle logic
-        $affiliate->status = ($affiliate->status === 'active') ? 'blocked' : 'active';
-        $affiliate->save();
-
-        return back()->with('success', 'Affiliate status updated successfully!');
+        return Affiliate::findOrFail($id)->status === 'active' ? $this->block($id) : $this->approve($id);
     }
 
 

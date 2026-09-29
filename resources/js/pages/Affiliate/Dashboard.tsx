@@ -15,6 +15,7 @@ interface Referral {
 interface Product {
     id: number;
     name: string;
+    slug: string;
     sale_price: number;
     commission_amount: number;
 }
@@ -22,19 +23,21 @@ interface Product {
 interface Props {
     products: Product[];
     affiliateCode: string;
+    /** Storefront (Next.js) base URL — referral links must land there */
+    storefrontUrl: string;
     referrals: Referral[];
     stats: {
         total_referrals: number;
         total_earnings: string;
-        commission_rate: number;
+        commission_per_order: number;
     };
 }
 
-export default function Dashboard({ products, affiliateCode, referrals, stats }: Props) {
-    
+export default function Dashboard({ products, affiliateCode, storefrontUrl, referrals, stats }: Props) {
+    const referralLink = `${storefrontUrl}/?ref=${affiliateCode}`;
+
     const copyReferralLink = () => {
-        const link = `${window.location.origin}/register-affiliate?ref=${affiliateCode}`;
-        navigator.clipboard.writeText(link);
+        navigator.clipboard.writeText(referralLink);
         toast.success('Main referral link copied!');
     };
 
@@ -75,6 +78,10 @@ export default function Dashboard({ products, affiliateCode, referrals, stats }:
                                 <Copy size={20} />
                             </button>
                         </div>
+                        <p className="mt-3 text-xs text-gray-500 break-all">{referralLink}</p>
+                        <p className="mt-1 text-xs text-gray-400">
+                            You earn Rs.{stats.commission_per_order} on every delivered order from customers who sign up or order through your link.
+                        </p>
                     </div>
                 </div>
 
@@ -146,7 +153,7 @@ export default function Dashboard({ products, affiliateCode, referrals, stats }:
                             <Package className="text-blue-500" /> Profitable Products
                         </h2>
                         <span className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-bold uppercase">
-                            Rate: {stats.commission_rate}%
+                            Rs.{stats.commission_per_order} / order
                         </span>
                     </div>
                     
@@ -162,14 +169,14 @@ export default function Dashboard({ products, affiliateCode, referrals, stats }:
                                             <span className="font-bold dark:text-gray-200">Rs.{product.sale_price}</span>
                                         </div>
                                         <div className="flex justify-between items-center p-3 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-100 dark:border-green-900/30">
-                                            <span className="text-green-700 dark:text-green-400 text-xs font-bold uppercase">You Earn</span>
-                                            <span className="font-black text-green-600 text-lg">Rs.{product.commission_amount.toFixed(2)}</span>
+                                            <span className="text-green-700 dark:text-green-400 text-xs font-bold uppercase">You Earn / order</span>
+                                            <span className="font-black text-green-600 text-lg">Rs.{Number(product.commission_amount).toFixed(2)}</span>
                                         </div>
                                     </div>
 
-                                    <button 
+                                    <button
                                         onClick={() => {
-                                            const link = `${window.location.origin}/register-affiliate?ref=${affiliateCode}&product=${product.id}`;
+                                            const link = `${storefrontUrl}/${product.slug}?ref=${affiliateCode}`;
                                             navigator.clipboard.writeText(link);
                                             toast.success('Promo link copied!');
                                         }}

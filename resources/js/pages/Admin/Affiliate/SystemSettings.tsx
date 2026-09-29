@@ -21,7 +21,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 export default function SystemSettings({ settings }: SettingsProps) {
     // Form handling using Inertia useForm
     const { data, setData, post, processing, errors } = useForm({
-        default_commission: settings?.default_commission || '5',
+        default_commission: settings?.default_commission || '0',
         min_payout: settings?.min_payout || '1000',
         cookie_duration: settings?.cookie_duration || '30',
     });
@@ -62,8 +62,11 @@ export default function SystemSettings({ settings }: SettingsProps) {
     {/* Default Commission */}
     <div>
       <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">
-        Default Commission (%)
+        Default Commission (Rs per delivered order)
       </label>
+      <p className="text-xs text-gray-500 mb-2">
+        Fixed amount an affiliate earns for each delivered order of a customer they referred. Can be overridden per affiliate.
+      </p>
 
       <input
         type="number"

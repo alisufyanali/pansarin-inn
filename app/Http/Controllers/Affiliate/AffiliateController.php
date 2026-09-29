@@ -24,20 +24,35 @@ class AffiliateController extends Controller
             return redirect()->route('affiliate.dashboard')->with('message', 'Aap pehle se affiliate hain.');
         }
 
-        $user->assignRole('affiliate');
-
+        // Applications wait for admin approval; the affiliate role is given on approval
         Affiliate::firstOrCreate(
             ['user_id' => $user->id],
             [
-                'affiliate_code'  => strtoupper(Str::random(10)),
-                'status'          => 'active',
-                'commission_rate' => 5.00,
-                'joined_at'       => now(),
+                'affiliate_code' => Affiliate::generateCode(),
+                'status'         => 'pending',
             ]
         );
 
-        // Back ki bajaye dashboard par bhejen taake join hote hi result dikhe
-        return redirect()->route('affiliate.dashboard')->with('success', 'Affiliate program joined successfully!');
+        return redirect()->route('home')->with('success', 'Application received! You will get access once an admin approves it.');
+    }
+
+    /** Catalogue products with their "from" price, for sharing links. */
+    private function shareableProducts(Affiliate $affiliate, ?int $limit = null)
+    {
+        $perOrder = $affiliate->commissionPerOrder();
+
+        return Product::where('status', true)
+            ->with(['variants' => fn ($q) => $q->where('status', true)])
+            ->orderBy('name')
+            ->when($limit, fn ($q) => $q->limit($limit))
+            ->get(['id', 'name', 'slug'])
+            ->map(fn ($product) => [
+                'id'                => $product->id,
+                'name'              => $product->name,
+                'slug'              => $product->slug,
+                'sale_price'        => (float) ($product->variants->min(fn ($v) => ($v->sale_price ?? $v->price) + ($v->additional ?? 0)) ?? 0),
+                'commission_amount' => $perOrder,
+            ]);
     }
 
     public function dashboard() {
@@ -48,12 +63,8 @@ class AffiliateController extends Controller
             return redirect()->route('home')->with('error', 'Affiliate record not found.');
         }
 
-        // 1. Products with dynamic commission
-        $products = Product::where('status', 1)->limit(10)->get(['id', 'name', 'slug', 'sale_price'])
-        ->map(function($product) use ($affiliate) {
-            $product->commission_amount = ($product->sale_price * ($affiliate->commission_rate ?? 5)) / 100;
-            return $product;
-        });
+        // 1. Products to share (commission is a fixed amount per delivered order)
+        $products = $this->shareableProducts($affiliate, 10);
 
         // 2. REAL STATS: Direct affiliate table se balance aur commissions table se total
         $totalEarnings = \App\Models\AffiliateCommission::where('affiliate_id', $affiliate->id)
@@ -77,8 +88,12 @@ class AffiliateController extends Controller
                 return [
                     'id' => $refUser->id,
                     'name' => $refUser->name,
-                    'email' => $refUser->email,
+                    // Referred customers' contact details are not shared with the affiliate
+                    'email' => $refUser->email ? \Illuminate\Support\Str::mask($refUser->email, '*', 2, max(0, strpos($refUser->email, '@') - 2)) : '',
                     'created_at' => $refUser->created_at->format('d M Y'),
+                    'total_purchases' => \App\Models\Order::whereIn('customer_id', function ($sub) use ($refUser) {
+                        $sub->select('id')->from('customers')->where('user_id', $refUser->id);
+                    })->where('status', '!=', 'cancelled')->count(),
                     'total_commission' => number_format($userCommission, 2),
                 ];
             });
@@ -102,12 +117,14 @@ class AffiliateController extends Controller
         return Inertia::render('Affiliate/Dashboard', [
             'products' => $products,
             'affiliateCode' => $affiliate->affiliate_code,
+            // Referral links point at the storefront, which keeps ?ref= and sends it with signup/orders
+            'storefrontUrl' => rtrim((string) config('app.frontend_url'), '/'),
             'referrals' => $referrals,
             'commissionHistory' => $commissionHistory,
             'stats' => [
                 'total_referrals' => $referrals->count(),
                 'total_earnings' => number_format($affiliate->balance, 2),
-                'commission_rate' => $affiliate->commission_rate,
+                'commission_per_order' => $affiliate->commissionPerOrder(),
             ]
         ]);
     }
@@ -263,22 +280,11 @@ class AffiliateController extends Controller
             return redirect()->route('home');
         }
 
-        // Dashboard wala hi 'status' filter use karein
-        $products = Product::where('status', 1)->get()->map(function($product) use ($affiliate) {
-            return [
-                'id' => $product->id,
-                'name' => $product->name,
-                'slug' => $product->slug,
-                'sale_price' => $product->sale_price,
-                // Commission calculation
-                'commission_amount' => ($product->sale_price * ($affiliate->commission_rate ?? 5)) / 100,
-            ];
-        });
-
         return Inertia::render('Affiliate/ProductCatalog', [
-            'products' => $products,
+            'products' => $this->shareableProducts($affiliate),
             'affiliateCode' => $affiliate->affiliate_code,
-            'commissionRate' => $affiliate->commission_rate ?? 5
+            'storefrontUrl' => rtrim((string) config('app.frontend_url'), '/'),
+            'commissionPerOrder' => $affiliate->commissionPerOrder(),
         ]);
     }
 }

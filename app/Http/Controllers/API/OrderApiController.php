@@ -230,6 +230,9 @@ class OrderApiController extends Controller
             'status'     => 'active',
         ]);
 
+        // Came through an affiliate's referral link (first referral only)
+        app(\App\Services\AffiliateService::class)->attachReferral($user, $request->input('ref'));
+
         try {
             $order = $this->orderRepo->store(array_merge($priced, [
                 'customer_id'    => $customer->id,
@@ -403,7 +406,7 @@ class OrderApiController extends Controller
         }
 
         $parts = preg_split('/\s+/', trim($request->name), 2);
-        [, $customer, $accountCreated] = DB::transaction(fn () => $this->identity->findOrCreateByPhone($normalizedPhone, [
+        [$guestUser, $customer, $accountCreated] = DB::transaction(fn () => $this->identity->findOrCreateByPhone($normalizedPhone, [
             'first_name' => $parts[0],
             'last_name'  => $parts[1] ?? null,
             'email'      => $request->email,
@@ -411,6 +414,12 @@ class OrderApiController extends Controller
             'city_id'    => $request->city_id ?? null,
             'status'     => 'active',
         ]));
+
+        // Referral link: only for an account created by this checkout — a guest must
+        // not be able to assign an existing customer to an affiliate by typing their phone.
+        if ($accountCreated) {
+            app(\App\Services\AffiliateService::class)->attachReferral($guestUser, $request->input('ref'));
+        }
 
         try {
             $order = $this->orderRepo->store(array_merge($priced, [

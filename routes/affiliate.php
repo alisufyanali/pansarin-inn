@@ -51,6 +51,9 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     // Core Admin Affiliate Management
     Route::get('/affiliates', [AdminAffiliateController::class, 'index'])->name('affiliates.index');
     Route::patch('/affiliate/status/{id}', [AdminAffiliateController::class, 'updateStatus'])->name('affiliate.updateStatus');
+    Route::patch('/affiliate/{id}/approve', [AdminAffiliateController::class, 'approve'])->name('affiliate.approve');
+    Route::patch('/affiliate/{id}/block', [AdminAffiliateController::class, 'block'])->name('affiliate.block');
+    Route::patch('/affiliate/{id}/commission', [AdminAffiliateController::class, 'updateCommission'])->name('affiliate.commission');
     Route::get('/logs', [AdminAffiliateController::class, 'referralLogs'])->name('affiliate.logs');
 
     // Nested Nested Routes for Admin -> Affiliates (Settings & Payouts)

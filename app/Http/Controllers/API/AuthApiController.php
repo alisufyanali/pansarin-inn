@@ -125,6 +125,9 @@ class AuthApiController extends Controller
                 'status'     => 'active',
             ]);
 
+            // Signed up through an affiliate's referral link (?ref=CODE on the storefront)
+            app(\App\Services\AffiliateService::class)->attachReferral($user, $request->input('ref'));
+
             if ($request->filled('password')) {
                 $user->update([
                     'password'             => Hash::make($request->password),
