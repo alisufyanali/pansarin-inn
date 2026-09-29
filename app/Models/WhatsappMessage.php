@@ -9,7 +9,10 @@ use Illuminate\Database\Eloquent\Model;
 class WhatsappMessage extends Model
 {
     protected $fillable = [
+        'wa_message_id',
         'from_number',
+        'contact_name',
+        'type',
         'message',
         'media_url',
         'is_read',

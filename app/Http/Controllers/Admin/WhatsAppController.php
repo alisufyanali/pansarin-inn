@@ -10,8 +10,8 @@ use App\Models\WhatsappMessageLog;
 use App\Services\WhatsAppService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia; 
 
 class WhatsAppController extends Controller
@@ -271,85 +271,150 @@ class WhatsAppController extends Controller
             Log::warning('WhatsApp webhook: WHATSAPP_APP_SECRET is not set, signature not verified');
         }
 
-        // POST: Handle incoming messages
+        // POST: incoming messages. Meta may batch several entries/changes/messages in one
+        // call and retries until it gets a 200 — so every message is handled, duplicates are
+        // skipped by their wamid, and we always answer 200 once the signature is valid.
         try {
             $data = $request->all();
+            $saved = 0;
 
-            // Log webhook data
-            Log::info('WhatsApp Webhook', ['data' => $data]);
+            foreach ($data['entry'] ?? [] as $entry) {
+                foreach ($entry['changes'] ?? [] as $change) {
+                    $value = $change['value'] ?? [];
+                    $names = collect($value['contacts'] ?? [])
+                        ->mapWithKeys(fn ($c) => [($c['wa_id'] ?? '') => $c['profile']['name'] ?? null]);
 
-            $messageData = $data['entry'][0]['changes'][0]['value']['messages'][0] ?? null;
-
-            if ($messageData) {
-                $from = $messageData['from'];
-                $type = $messageData['type'];
-                $message = '';
-                $mediaFileName = null;
-
-                if ($type === 'text') {
-                    $message = $messageData['text']['body'];
+                    foreach ($value['messages'] ?? [] as $messageData) {
+                        $saved += $this->storeIncomingMessage($messageData, $names->get($messageData['from'] ?? '')) ? 1 : 0;
+                    }
+                    // $value['statuses'] (sent/delivered/read receipts) are not stored
                 }
-
-                // Handle media
-                if (in_array($type, ['image', 'document', 'audio'])) {
-                    $mediaId = $messageData[$type]['id'];
-                    $mediaFileName = $this->downloadMedia($mediaId, $type);
-                    $message = strtoupper($type).' RECEIVED';
-                }
-
-                // Save message
-                WhatsappMessage::create([
-                    'from_number' => $from,
-                    'message' => $message,
-                    'media_url' => $mediaFileName,
-                    'received_at' => now(),
-                ]);
             }
 
-            return response('OK', 200);
-        } catch (\Exception $e) {
+            Log::info('WhatsApp webhook processed', ['messages_saved' => $saved]);
+        } catch (\Throwable $e) {
             Log::error('WhatsApp Webhook Error', ['error' => $e->getMessage()]);
-
-            return response('OK', 200);
         }
+
+        return response('OK', 200);
+    }
+
+    /** Save one incoming message; false when it was already stored (Meta retry) or unusable. */
+    protected function storeIncomingMessage(array $messageData, ?string $contactName): bool
+    {
+        $waId = $messageData['id'] ?? null;
+        $from = $messageData['from'] ?? null;
+        $type = $messageData['type'] ?? 'unknown';
+
+        if (! $from || ($waId && WhatsappMessage::where('wa_message_id', $waId)->exists())) {
+            return false;
+        }
+
+        $mediaFileName = null;
+        $message = match ($type) {
+            'text'        => $messageData['text']['body'] ?? '',
+            'button'      => $messageData['button']['text'] ?? '',
+            'interactive' => $messageData['interactive']['button_reply']['title']
+                             ?? $messageData['interactive']['list_reply']['title']
+                             ?? '[Interactive reply]',
+            'location'    => trim('📍 ' . ($messageData['location']['name'] ?? '') . ' '
+                             . ($messageData['location']['latitude'] ?? '') . ',' . ($messageData['location']['longitude'] ?? '')),
+            'reaction'    => 'Reacted ' . ($messageData['reaction']['emoji'] ?? ''),
+            'contacts'    => '[Contact card]',
+            default       => '',
+        };
+
+        if (in_array($type, ['image', 'document', 'audio', 'video', 'sticker'], true)) {
+            $media = $messageData[$type] ?? [];
+            if (! empty($media['id'])) {
+                $mediaFileName = $this->downloadMedia($media['id'], $type, $media['mime_type'] ?? null);
+            }
+            $caption = $media['caption'] ?? ($media['filename'] ?? null);
+            $message = $caption ?: strtoupper($type) . ' RECEIVED';
+        } elseif ($message === '') {
+            $message = '[' . ucfirst($type) . ' message]';
+        }
+
+        try {
+            WhatsappMessage::create([
+                'wa_message_id' => $waId,
+                'from_number'   => $from,
+                'contact_name'  => $contactName,
+                'type'          => $type,
+                'message'       => $message,
+                'media_url'     => $mediaFileName,
+                'received_at'   => isset($messageData['timestamp'])
+                    ? \Illuminate\Support\Carbon::createFromTimestamp((int) $messageData['timestamp'])
+                    : now(),
+            ]);
+        } catch (\Illuminate\Database\UniqueConstraintViolationException) {
+            return false; // a parallel retry already stored it
+        }
+
+        return true;
     }
 
     /**
-     * Download media from WhatsApp
+     * Download media from WhatsApp into public/storage/whatsapp (served as
+     * /storage/whatsapp/{file}, no storage:link needed — same as other uploads).
      */
-    protected function downloadMedia($mediaId, $type)
+    protected function downloadMedia(string $mediaId, string $type, ?string $mimeType = null): ?string
     {
         $accessToken = config('services.whatsapp.access_token');
+        $apiUrl      = rtrim(config('services.whatsapp.api_url', 'https://graph.facebook.com'), '/');
 
         try {
-            // Get media URL
-            $response = Http::withToken($accessToken)
-                ->get("https://graph.facebook.com/v17.0/{$mediaId}");
-
-            $mediaUrl = $response->json()['url'] ?? null;
-
+            // 1. Media id → temporary download URL
+            $info     = Http::withToken($accessToken)->timeout(15)->get("{$apiUrl}/v22.0/{$mediaId}")->json();
+            $mediaUrl = $info['url'] ?? null;
             if (! $mediaUrl) {
+                Log::warning('WhatsApp media URL missing', ['media_id' => $mediaId, 'response' => $info]);
+
                 return null;
             }
 
-            // Download media
-            $mediaContent = Http::withToken($accessToken)
-                ->get($mediaUrl)
-                ->body();
+            // 2. Download (the URL also needs the bearer token)
+            $download = Http::withToken($accessToken)->timeout(30)->get($mediaUrl);
+            if (! $download->successful()) {
+                Log::warning('WhatsApp media download failed', ['media_id' => $mediaId, 'status' => $download->status()]);
 
-            // Determine extension from type
-            $extMap = ['image' => 'jpg', 'document' => 'pdf', 'audio' => 'ogg'];
-            $ext = $extMap[$type] ?? 'bin';
-            $fileName = 'media_'.time().'.'.$ext;
+                return null;
+            }
 
-            // Save file
-            Storage::disk('public')->put("whatsapp/{$fileName}", $mediaContent);
+            $ext = $this->extensionFor($info['mime_type'] ?? $mimeType, $type);
+            $fileName = 'media_' . preg_replace('/[^A-Za-z0-9_-]/', '', $mediaId) . '.' . $ext;
+
+            $directory = public_path('storage/whatsapp');
+            if (! is_dir($directory)) {
+                mkdir($directory, 0755, true);
+            }
+            file_put_contents($directory . DIRECTORY_SEPARATOR . $fileName, $download->body());
 
             return $fileName;
-        } catch (\Exception $e) {
-            Log::error('Media Download Error', ['error' => $e->getMessage()]);
+        } catch (\Throwable $e) {
+            Log::error('Media Download Error', ['media_id' => $mediaId, 'error' => $e->getMessage()]);
 
             return null;
         }
+    }
+
+    protected function extensionFor(?string $mimeType, string $type): string
+    {
+        $map = [
+            'image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif',
+            'audio/ogg' => 'ogg', 'audio/mpeg' => 'mp3', 'audio/mp4' => 'm4a', 'audio/aac' => 'aac', 'audio/amr' => 'amr',
+            'video/mp4' => 'mp4', 'video/3gpp' => '3gp',
+            'application/pdf' => 'pdf',
+            'application/msword' => 'doc',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'docx',
+            'application/vnd.ms-excel' => 'xls',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => 'xlsx',
+            'text/plain' => 'txt',
+        ];
+        $mimeType = strtolower(trim(explode(';', (string) $mimeType)[0]));
+
+        return $map[$mimeType] ?? match ($type) {
+            'image' => 'jpg', 'sticker' => 'webp', 'audio' => 'ogg', 'video' => 'mp4', default => 'bin',
+        };
     }
 }

@@ -156,12 +156,10 @@ export default function WhatsAppChat() {
 
     if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext || '')) {
       return <img src={url} alt="Media" className="max-w-xs rounded-lg" />;
-    } else if (['ogg', 'mp3', 'wav'].includes(ext || '')) {
-      return (
-        <audio controls className="max-w-xs">
-          <source src={url} type={`audio/${ext}`} />
-        </audio>
-      );
+    } else if (['ogg', 'mp3', 'wav', 'm4a', 'aac', 'amr'].includes(ext || '')) {
+      return <audio controls src={url} className="max-w-xs" />;
+    } else if (['mp4', '3gp'].includes(ext || '')) {
+      return <video controls src={url} className="max-w-xs rounded-lg" />;
     } else {
       return (
         <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">
