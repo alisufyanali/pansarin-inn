@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\API\HomepageApiController;
 use App\Http\Controllers\Controller;
 use App\Http\Repositories\Admin\SiteReviewRepository;
 use App\Http\Requests\Admin\SiteReviewStatusRequest;
@@ -12,9 +13,6 @@ use Inertia\Inertia;
 
 class SiteReviewController extends Controller
 {
-    /** Must match the key in API\HomepageApiController::index(). */
-    private const HOMEPAGE_CACHE_KEY = 'homepage_data_v5';
-
     public function __construct(protected SiteReviewRepository $repo)
     {
         $this->middleware('permission:view.site-reviews')->only(['index', 'getData', 'show']);
@@ -59,7 +57,7 @@ class SiteReviewController extends Controller
         try {
             $review = $this->repo->find($id);
             if ($review->show_on_homepage) {
-                Cache::forget(self::HOMEPAGE_CACHE_KEY);
+                Cache::forget(HomepageApiController::CACHE_KEY);
             }
             $review->update([
                 'status'     => $request->status,
@@ -89,7 +87,7 @@ class SiteReviewController extends Controller
 
         try {
             $review->update(['show_on_homepage' => $show]);
-            Cache::forget(self::HOMEPAGE_CACHE_KEY);
+            Cache::forget(HomepageApiController::CACHE_KEY);
             return back();
         } catch (\Exception $e) {
             Log::error('SiteReview toggleHomepage: ' . $e->getMessage());

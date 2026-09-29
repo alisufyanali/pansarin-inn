@@ -14,12 +14,19 @@ use Illuminate\Support\Facades\Cache;
 
 class HomepageApiController extends Controller
 {
+    /**
+     * Cache keys for GET /api/homepage and GET /api/slides. Admin controllers
+     * clear these after edits — always reference the constants, never the strings.
+     */
+    public const CACHE_KEY        = 'homepage_data_v5';
+    public const SLIDES_CACHE_KEY = 'slides_data';
+
     // GET /api/homepage — single combined endpoint
     public function index()
     {
         // Cache key includes a version suffix so adding new keys doesn't serve
         // stale responses that are missing the new_arrivals field.
-        $data = Cache::remember('homepage_data_v5', 300, function () {
+        $data = Cache::remember(self::CACHE_KEY, 300, function () {
             return [
                 'banners'           => $this->getBanners(),
                 'categories'        => $this->getCategories(),
@@ -38,7 +45,7 @@ class HomepageApiController extends Controller
     // GET /api/slides — public banners/slides endpoint
     public function slides()
     {
-        $data = Cache::remember('slides_data', 300, fn () => $this->getBanners());
+        $data = Cache::remember(self::SLIDES_CACHE_KEY, 300, fn () => $this->getBanners());
 
         return response()->json(['success' => true, 'data' => $data]);
     }

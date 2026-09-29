@@ -143,7 +143,7 @@ class UiSettingController extends Controller
             'parallax_vendor_title',
         ]);
 
-        \Illuminate\Support\Facades\Cache::forget('homepage_data');
+        \Illuminate\Support\Facades\Cache::forget(\App\Http\Controllers\API\HomepageApiController::CACHE_KEY);
 
         return redirect()->route('admin.ui-settings.index')->with('success', 'Homepage updated!');
     }
@@ -157,7 +157,7 @@ class UiSettingController extends Controller
             'top_slide_categories',
         ]);
 
-        \Illuminate\Support\Facades\Cache::forget('homepage_data');
+        \Illuminate\Support\Facades\Cache::forget(\App\Http\Controllers\API\HomepageApiController::CACHE_KEY);
 
         return redirect()->route('admin.ui-settings.index')->with('success', 'Categories updated!');
     }
@@ -228,7 +228,7 @@ class UiSettingController extends Controller
             ]);
         }
 
-        \Illuminate\Support\Facades\Cache::forget('homepage_data');
+        \Illuminate\Support\Facades\Cache::forget(\App\Http\Controllers\API\HomepageApiController::CACHE_KEY);
 
         return response()->json([
             'success' => true,
