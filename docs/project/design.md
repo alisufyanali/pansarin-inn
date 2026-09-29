@@ -44,6 +44,13 @@ Pages are organized in `resources/js/pages/Admin/{Module}/` with `Index.tsx`, `S
 - Dark mode: supported via Tailwind `dark:` variants; toggle stored in cookie `appearance`
 - Sidebar state stored in cookie `sidebar_state`
 
+### Screens added 2026-09-29/30
+- **Admin → Product Deals** (`pages/Admin/ProductsDeals/*`): list with toggle-status / duplicate / delete; form shows a value field for percentage, fixed, flash_sale (%) and bundle (%), Buy X / Get Y fields for buy_x_get_y.
+- **Admin → Orders / Sales forms**: variant dropdown shows `— Deal Rs.X`; picking the variant fills the line discount, which follows the quantity.
+- **Admin → Affiliates** (`pages/Admin/Affiliate/AffiliateManager.tsx`): pending applications first (amber badge), payout details + "how will you promote" note, Approve / Reject / Block / Unblock, inline Rs-per-order commission (empty = default from Affiliate Settings).
+- **Affiliate panel** (`pages/Affiliate/Dashboard.tsx`, `ProductCatalog.tsx`): referral link `{FRONTEND_URL}/?ref=CODE`, product links `{FRONTEND_URL}/{slug}?ref=CODE`, "You earn Rs.X per delivered order", referred customers (emails masked).
+- **Admin → WhatsApp Chat**: received media shown inline (images, audio incl. m4a/aac/amr, mp4 video), other files as download links.
+
 ### Print / Dispatch List
 - Orders print is a client-side popup window (no Blade template)
 - Generated HTML: orders dispatch table (Order #, Name, Phone, City, Product Detail nested table, Total Price)

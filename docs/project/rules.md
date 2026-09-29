@@ -14,7 +14,7 @@
 - All DB reads/writes go through a Repository — never raw Eloquent in controllers
 - Repositories wrap multi-step writes in `DB::transaction()`
 - `find($id)` throws `ModelNotFoundException` (let exception shield handle 404)
-- DataTable/list methods return paginated collection; controllers call `->paginate(min((int) $request->perPage, 100))`
+- DataTable/list methods return a paginated collection with `perPage` clamped to 1–100
 
 ### Validation
 - Admin writes use `FormRequest` classes (extend `Illuminate\Foundation\Http\FormRequest`)
@@ -36,8 +36,12 @@ All API responses follow this envelope:
 
 ### Transactions
 - Use `DB::transaction()` for any write that touches >1 table
-- Customer + User creation in `OrderApiController` wrapped in single outer transaction to prevent race on `customers.user_id` unique constraint
-- `UniqueConstraintViolationException` caught inside transaction → re-fetch instead of failing
+- Customer + User creation goes through `CustomerIdentityService` (handles the unique-phone race)
+- `UniqueConstraintViolationException` caught → re-fetch instead of failing
+
+### Services
+- Business logic that is shared between API and admin lives in `app/Services/` (pricing, deals, affiliate, identity, WhatsApp, courier)
+- Controllers stay thin: validate → service/repository → JSON / Inertia
 
 ### Eager Loading / N+1
 - Always eager-load relationships used in loops: `Order::with(['items.product', 'items.variant', 'customer', 'city'])`
@@ -48,11 +52,11 @@ All API responses follow this envelope:
 
 ## Hard Rules (from past bugs)
 
-### 1. `products.price` column does NOT exist for pricing
-- The `products` table has a `price` column in `$fillable`/`$casts` but it is **not the source of truth**
-- All pricing is in `product_variants.price` and `product_variants.sale_price`
-- When you need a product price: `$product->variants->firstWhere('is_default', true)?->price ?? $product->variants->min('price')`
-- Never read `$product->price` for display or calculation; it will be 0 or stale
+### 1. Products have no price — variants do
+- The `products` table has **no** price / sale_price column
+- Selling price of a variant = `sale_price ?? price`; customer pays `final_price = (sale_price ?? price) + additional`
+- Product "from" price = min variant `final_price`
+- Never read `$product->price` / `$product->sale_price` (they are null) — the old affiliate dashboard crashed on `products.sale_price`
 
 ### 2. Always use `slug`, never generate slug from `name`
 - Product, category, blog slugs are pre-set at import time and indexed for SEO
@@ -70,18 +74,16 @@ All API responses follow this envelope:
 - Rationale: development uses MySQL but any SQLite-based testing or future migration must not break
 
 ### 5. Phone normalization — one canonical path
-- Normalize ALL phone numbers through `App\Helpers\PhoneHelper::normalize()` before DB storage
-- Canonical format: `03XXXXXXXXX` (11 digits, starts with `03`)
-- WhatsApp API format: `923XXXXXXXXX` via `PhoneHelper::toInternational()`
-- Never store `+92...` or `92...` format in the `customers.phone` or `users.phone` columns
-- Applies to: checkout, seeders, import scripts, uniquePhone() helper
+- Normalize ALL phone numbers through `App\Helpers\PhoneHelper::normalize()` before storing or looking up
+- Canonical stored format: **`923XXXXXXXXX`** (12 digits, no `+`) — `normalize('03001234567')`, `normalize('+923001234567')` and `normalize('923001234567')` all return `923001234567`
+- `normalize()` returns `null` for invalid numbers → return 422 with `errors.phone`
+- Stored in `users.username`, `users.phone`, `customers.phone`, `orders.customer_phone`
+- Applies to: login, register, checkout, profile, affiliate apply, imports, seeders
 
-### 6. Customer resolution — never blind `Customer::create()`
-Use `resolveOrCreateCustomerProfileInTx()` pattern (from `OrderApiController`):
-1. `Customer::where('user_id', $user->id)->first()` — return if exists
-2. `Customer::where('email', $email)->first()` — if found with `user_id = null` AND `$user->email_verified_at !== null` → link it; else create with `email = null`
-3. If email row has different non-null `user_id` → create with `email = null`
-4. Wrap in DB::transaction; catch `UniqueConstraintViolationException` → re-fetch
+### 6. Customer resolution — only through `CustomerIdentityService`
+- `findOrCreateByPhone($normalizedPhone, $profile)` returns `[User, Customer, wasCreated]`; it links legacy customers (`user_id = null`), creates wallet + loyalty rows and handles the unique-phone race
+- Never `Customer::create()` / `User::create()` for a customer elsewhere
+- Never let an unauthenticated request act on an **existing** account found by phone (no tokens, no password changes, no referral re-assignment) — see `/api/register` and guest orders
 
 ### 7. `HasTotals::calculateTotals()` — product_discount is NOT subtracted
 ```
@@ -121,8 +123,27 @@ Never say "done" and submit without running verification.
   ```
 - Old-file deletion: `unlink(public_path('storage/' . $relativePath))` + `file_exists()` guard
 
-### 12. `must_change_password` flow
+### 12. Never trust money from the client
+- Storefront order totals come only from `CheckoutPricingService` (prices, deals, coupon, shipping). Client `price` is only a hint; `discount`, `invoice_discount`, `shipping_charges`, `tax` are ignored
+- Coupon / deal usage is counted inside the order transaction with row locks (`OrderRepository::redeemCoupon/redeemDeals`) and released on cancel
+- Anything touching stock must be idempotent (net-based inventory references) and lock `product_stocks` rows
+
+### 13. Admin access = `staff` + permission
+- Every `/admin` route group has `auth, verified, staff`; every controller action must also have a `permission:` middleware (`$this->middleware('permission:x')->only([...])`)
+- Customer/affiliate roles carry some `view.*` permissions — never rely on permission alone for admin pages
+- New admin methods: add them to the controller's `->only([...])` lists
+
+### 14. Request input hygiene
+- `per_page`: clamp `min(max((int) ..., 1), 50)` (100 for admin/products)
+- Sort columns from the request go through `App\Support\SortInput::column()/direction()`
+- Public write endpoints need a named rate limiter (`api.forms`, `api.reviews`, `api.coupons`, `api.guest-orders`) — never numeric `throttle:x,1` (shared bucket)
+
+### 15. `must_change_password` flow
 - Guest checkout sets `must_change_password = true` on the auto-created user
 - `EnsurePasswordChanged` middleware (alias `password.changed`) blocks all auth:sanctum routes except `password.change` and `api.logout`
 - Change-password endpoint: validates current_password, new password ≠ customer phone, sets `must_change_password = false`
 - Login response always includes `must_change_password: bool`
+
+### 16. Tests
+- Run with PHP 8.4: `D:\laragon\bin\php\php-8.4\php.exe vendor/bin/pest` (SQLite in-memory; Laragon's default PHP 8.2 fails composer's platform check)
+- Every bug fix / feature adds a Pest test; the suite must be green before committing

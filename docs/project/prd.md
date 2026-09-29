@@ -1,171 +1,89 @@
-# Product Requirements — Pansari Inn
+# Product Requirements — Pansari Inn (backend)
+
+> Last verified against code: 2026-09-30.
 
 ## Purpose
 
-Pakistani herbal/ayurvedic e-commerce store. Sells wholesale and retail herbal products, spices, Dawakhana remedies, and natural wellness items. Bilingual product names (English + Urdu). Two active domains:
+Pakistani herbal / ayurvedic e-commerce store (herbs, oils, spices, Dawakhana remedies, skincare). Bilingual product names (English + Urdu).
 
-- **pansariinn.com** — New Next.js storefront (active, on Vercel)
-- **pansariinn.pk** — Legacy CodeIgniter site (being retired; 308 redirects to new site)
-
-Backend: Laravel 12 API + Inertia/React admin panel, hosted on shared Hostinger hosting.
+- **pansariinn.com** — Next.js storefront (Vercel)
+- **custom.pansariinn.pk** — this Laravel app: storefront API, admin panel, affiliate panel
+- **pansariinn.pk** — legacy CodeIgniter site, being retired
 
 ---
 
-## Target Users
+## Users & Roles
 
-| Role | Description |
+| Role | Where | What |
+|---|---|---|
+| Guest | storefront | Browse, cart (localStorage), guest checkout (account auto-created: password = phone, must change on first login) |
+| Customer (`customer` role) | storefront API (Sanctum) | Orders, cancel, returns, wishlist, rewards, reviews, profile, affiliate application |
+| Affiliate (`affiliate` role, after admin approval) | `/affiliate/*` (Fortify web login) | Referral + product links, referrals, commission history, payouts |
+| Staff (`super-admin`, `admin`, `manager`, any custom role) | `/admin/*` | Per-action Spatie permissions. Customer/affiliate-only users cannot enter `/admin` |
+
+---
+
+## Modules
+
+### Catalog & variants — Done
+Products (no price column), categories, health concerns, variants (`price`, `sale_price`, `additional`, `attributes` JSON), gallery, SEO fields, videos, stock (`product_stocks` + `inventories`).
+
+### Pricing & checkout — Done
+- Server-side pricing for every storefront order (`CheckoutPricingService`): catalogue prices, deals, coupon, shipping. Client-sent discounts/shipping/tax are ignored.
+- `POST /api/checkout/quote` gives the storefront the exact totals.
+- Guest checkout auto-creates User + Customer by phone (`CustomerIdentityService`).
+
+### Coupons — Done
+Percentage/fixed, `apply_to` order/product/category, min purchase, max discount cap, `usage_limit` (counted), `per_user_limit`, valid through the whole `end_date`. Use is released when the order is cancelled.
+
+### Product Deals — Done
+Admin CRUD + toggle + duplicate. Types: percentage, fixed, flash_sale, buy_x_get_y, bundle. Shown via `/api/deals` and as `deal`/`deal_price` on product, homepage and cart APIs; applied as order line discounts with `max_uses`, `max_uses_per_user`, `stock_limit` enforced. Admin order/sale forms prefill the deal discount.
+
+### Orders & sales — Done
+- `ORDER-{seq}` from 50001; status pending → processing → shipped → delivered / cancelled / refunded.
+- Stock taken at order placement, restored on cancel/delete (idempotent).
+- Admin creates Sales from orders; a Sale marked delivered/cancelled updates its Order (points, commission, stock follow).
+
+### Returns — Done
+Customer request within 7 days of delivery; admin approve/reject/complete; completing restocks returned items. Refund/wallet credit is manual (not automated).
+
+### Loyalty points — Partial
+Earned on delivery (`OrderObserver`, rate from settings); admin adjust/settings. No redemption endpoint yet.
+
+### Wallet — Partial
+Polymorphic wallets for customers and affiliates. Affiliates use it for payouts; no customer-facing wallet spending.
+
+### Affiliate (referral) program — Done
+Apply on storefront (`/api/affiliate/apply`, `/apply-me`) → admin approves (role granted) → affiliate shares storefront links with `?ref=CODE` → referred customer (first referral wins) → fixed Rs commission per delivered order (per-affiliate override or default setting) → payout request → admin approve/reject. Products stay admin-owned; affiliates do not list products.
+
+### Reviews — Done
+Product reviews (guest or auth, verified purchase, admin reply/moderation, homepage toggle, images, helpful votes 1/IP), site reviews (per delivered order, email-verified), order reviews (admin).
+
+### Blog, Newsletter, Contact, Support — Done
+Blog with categories/tags and public count endpoints; newsletter subscribe + admin compose; contact form; support tickets (API + admin).
+
+### WhatsApp — Done
+Outgoing order/sale notifications, admin chat + broadcast, incoming webhook (signed, batched, deduped, media download).
+
+### Reports & dashboard — Done
+KPIs, sales over time, top products/customers, category sales, payment breakdown, returns rate, affiliate performance, CSV export.
+
+---
+
+## Not done / open
+
+| Item | Status |
 |---|---|
-| **Customer** | Registered account; can order, track, return, leave reviews, earn loyalty points, use wishlist |
-| **Guest** | Checkout without registering; account auto-created silently; email + phone stored |
-| **Affiliate** | Earns commission on referred orders; has affiliate code, payout requests, wallet |
-| **Admin** | Full CRUD on all modules via admin panel at `/admin/*`; multiple sub-roles via Spatie permissions |
-
----
-
-## Feature List by Module
-
-### Catalog
-- Products with name, Urdu name, scientific name, SKU, slug (unique), unit, thumbnail, gallery
-- Categories (hierarchical, parent_id self-referential)
-- Product variants: Weight, Size, Form attributes — `price` and `sale_price` live on variants only
-- Health Concerns pivot (many-to-many) for filtering
-- Rich product detail: ingredients, how_to_use, benefits, key_features (all JSON arrays)
-- SEO fields: meta_title, meta_description, meta_keywords, schema_markup, social_image
-- Featured products, deals/offers (percentage or fixed discount, date-bounded)
-- Product videos (video URL field)
-- **Status: DONE** — fully seeded, API served at `/api/products`
-
-### Variants
-- `product_variants`: SKU, value string, attributes JSON (`{"Weight": "100 gm"}` etc.), price, sale_price, is_default, stock_alert
-- Stock tracked in `product_stocks` and `inventories` (event-driven sync)
-- Variant label built by `collect(attributes)->values()->join(' / ')` — no hardcoded key names
-- Backfill command exists for flat-import variants missing attributes JSON
-- **Status: DONE** — variant display fix applied
-
-### Cart / Checkout
-- Authenticated cart (`carts` table, per user+variant)
-- Guest checkout: `POST /api/orders/guest` — auto-creates User + Customer; phone normalized to `03XXXXXXXXX`; password = normalized phone; `must_change_password = true`
-- Coupon validation before order creation
-- City-based shipping charges
-- **Status: DONE** (guest checkout crash fix applied)
-
-### Orders
-- Created by authenticated users (`POST /api/orders`) or guests (`POST /api/orders/guest`)
-- `order_number` auto-generated: `ORDER-{seq}` starting at 50001
-- `grand_total = subtotal − invoice_discount + shipping_charges + tax` (product_discount is display-only, already in item subtotals)
-- Items carry `meta` JSON snapshot (product_name, sku, variant_name, cost_price)
-- Stock deducted at order creation via Inventory events → ProductStock
-- Status flow: `pending → processing → shipped → delivered → cancelled/refunded`
-- On `delivered`: AffiliateService triggered for commission
-- Admin can create orders directly (admin panel)
-- **Status: DONE**
-
-### Returns
-- Customer submits return request with reason_category + comment
-- Admin reviews and updates status
-- `return_requests` + `return_request_items` tables
-- **Status: DONE** (admin module built)
-
-### Loyalty Points
-- `loyalty_points` (balance per customer) + `point_transactions` (earn/redeem/admin_adjustment)
-- Admin can adjust balance manually
-- Frontend rewards page: **PARTIAL** (backend done, frontend sections incomplete)
-
-### Wallet
-- Polymorphic (`walletable`) — used by both Customer and Affiliate
-- `wallet_transactions`: credit/debit with reference morphs
-- **Status: PARTIAL** — model and DB done; frontend integration TODO: confirm
-
-### Affiliates / Referrals
-- Affiliate code, commission rate, multi-level (`parent_id` on affiliates)
-- `referrals` table tracks referred customers + orders
-- `affiliate_commissions` table per order
-- Payout requests with admin approval
-- **Status: PARTIAL** — backend done; affiliate-facing frontend TODO: confirm
-
-### Reviews
-- **Product reviews**: guest or authenticated; verified-purchase detection; admin reply; show_on_homepage toggle; multi-image upload; helpful_count
-- **Site reviews**: one per delivered order (verified by email match); admin approval flow; image upload
-- **Order reviews**: post-order admin review (separate from product reviews)
-- Admin: approve/reject, bulk actions, reply
-- **Status: DONE** (dummy seeder done; display fixes done)
-
-### Blog
-- `blogs` + `blog_categories` (hierarchical) + `blog_tags` (many-to-many)
-- `blog_comments` with moderation
-- API: `GET /api/blogs`, `GET /api/blogs/{slug}`
-- **Status: PARTIAL** — category/tag article count shows 0 on frontend (known bug)
-
-### Newsletter
-- Subscribe via `POST /api/newsletter/subscribe`
-- Verification token + verified_at flow
-- Admin compose + send to subscriber list
-- **Status: DONE**
-
-### Health Concerns
-- `health_concerns` table with icon, status, sort_order
-- Many-to-many with products via `product_health_concern`
-- API: `GET /api/health-concerns`
-- **Status: DONE** (seeded)
-
-### Reports
-- Admin reports: summary KPIs, sales-over-time, top products, top customers, category sales, payment breakdown, returns rate, affiliate performance
-- CSV export
-- **Status: DONE** (admin module built)
-
-### Contacts / Support
-- Public `POST /api/contact` — stores in `contacts`
-- Ticket system (`tickets` + `ticket_replies`) — API endpoints exist
-- Admin: view, reply, status update, bulk actions
-- **Status: DONE** (admin done; ticket API partial)
-
-### WhatsApp
-- Incoming message log + admin chat interface
-- Broadcast to bulk customers
-- Order/sale confirmation via WhatsApp notification jobs
-- **Status: DONE** (admin panel done)
-
----
-
-## Done / Partial / Missing
-
-| Module | Status |
-|---|---|
-| Catalog + variants API | ✅ Done |
-| Admin CRUD (products, categories, etc.) | ✅ Done |
-| Cart + authenticated orders | ✅ Done |
-| Guest checkout + auto-account | ✅ Done |
-| Order emails + WhatsApp | ✅ Done |
-| Returns admin | ✅ Done |
-| Loyalty admin | ✅ Done |
-| Reports | ✅ Done |
-| Product reviews (public + admin) | ✅ Done |
-| Site reviews | ✅ Done |
-| Blog (admin + API) | ✅ Done |
-| Newsletter | ✅ Done |
-| Health Concerns | ✅ Done |
-| WhatsApp chat + broadcast | ✅ Done |
-| must_change_password flow | ✅ Done |
-| Wallet (DB + model) | 🔶 Partial — frontend TODO: confirm |
-| Loyalty frontend (rewards page) | 🔶 Partial — some sections missing |
-| Affiliate frontend dashboard | 🔶 Partial — TODO: confirm |
-| Blog category/tag article count | ❌ Bug (root cause confirmed: `BlogApiController` has no endpoint for listing categories/tags with counts; `GET /api/blogs` returns only category name/slug, not article count; frontend must either derive from returned articles or a dedicated category-list endpoint needs building) |
-| Guest checkout validation error display | ❌ Missing on frontend |
-| Pakistan-only phone validation on frontend | ❌ Missing |
-| Add-to-cart toast in quick view | ❌ Missing |
-| Review count on product card | ❌ Missing |
-| Footer category links | ❌ Missing |
-| Banner sizing (812×317) | ❌ Missing |
-| fileinfo fallback for uploads on production | ❌ Pending |
-| Manjistha product merge decision | ❌ Pending owner decision |
-| AdminSeeder production guard | ❌ Missing |
-
----
+| WhatsApp OTP for account claim / first login (default password = phone) | Open — needs decision |
+| Loyalty point redemption (`POST /rewards/redeem`) | Missing |
+| Automatic refund / points reversal on returns | Missing (manual) |
+| `product_variants.price` meaning (cost vs selling) inconsistent in code | Needs owner confirmation |
+| Deactivating a user does not revoke existing Sanctum tokens | Open |
+| Manjistha duplicate product merge | Owner decision |
+| VPS move (async queue) | Owner decision |
 
 ## Non-Goals
 
-- No multi-vendor storefront (vendor table exists but not surfaced)
-- No payment gateway integration yet (COD only; Stripe/PayPal fields exist but unused)
-- No PWA / mobile app
-- No multi-currency
-- No subscription / recurring orders
+- Multi-vendor marketplace (a `vendors` table exists but is unused; affiliates are referral-only)
+- Payment gateway (COD / manual transfer only)
+- Multi-currency, subscriptions, native mobile app
