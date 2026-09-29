@@ -1,6 +1,6 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import {
     Star, Clock, CheckCircle, XCircle, BarChart2,
     ThumbsUp, ThumbsDown, Trash2, Eye, Home,
@@ -99,6 +99,13 @@ function StatusAction({ review, onDone }: { review: SiteReview; onDone: () => vo
 
     return (
         <div className="flex items-center gap-1">
+            <Link
+                href={`/admin/site-reviews/${review.id}`}
+                title="View"
+                className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+            >
+                <Eye className="w-4 h-4" />
+            </Link>
             {review.status !== 'approved' && (
                 <button
                     title="Approve"
@@ -236,7 +243,7 @@ export default function Index({
         {
             name: 'Actions',
             cell: (row: SiteReview) => <StatusAction review={row} onDone={refresh} />,
-            width: '160px',
+            width: '190px',
             ignoreRowClick: true,
         },
     ];
