@@ -99,6 +99,8 @@ Route::middleware(['auth', 'verified', 'staff'])->prefix('admin')->name('admin.'
     Route::resource('attributes', ProductAttributeController::class);
     Route::get('attributes-data', [ProductAttributeController::class, 'getData'])->name('attributes.data');
 
+    Route::post('deals/{deal}/toggle-status', [ProductsDealController::class, 'toggleStatus'])->name('deals.toggle-status');
+    Route::post('deals/{deal}/duplicate', [ProductsDealController::class, 'duplicate'])->name('deals.duplicate');
     Route::resource('deals', ProductsDealController::class);
     Route::get('deals-data', [ProductsDealController::class, 'getData'])->name('deals.data');
 

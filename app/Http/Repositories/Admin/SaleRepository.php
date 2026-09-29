@@ -178,7 +178,10 @@ class SaleRepository
                 return $s->product_id . '_' . ($s->product_variant_id ?? 'null');
             });
 
-        return $products->map(function ($p) use ($allStocks) {
+        $dealPricing = app(\App\Services\DealPricingService::class);
+        $dealsMap    = $dealPricing->activeDealsFor($productIds);
+
+        return $products->map(function ($p) use ($allStocks, $dealPricing, $dealsMap) {
                 return [
                     'id'       => $p->id,
                     'name'     => $p->name,
@@ -186,13 +189,21 @@ class SaleRepository
                     'unit'     => $p->unit,
                     'price'    => 0,
                     'stock'    => (int) ($allStocks->get($p->id . '_null')?->first()?->quantity ?? 0),
-                    'variants' => $p->variants->map(fn ($v) => [
-                        'id'    => $v->id,
-                        'name'  => trim((collect($v->attributes ?? [])->values()->join(' / ') ?: $v->value) . ' ' . ($p->unit ?? '')),
-                        'sku'   => $v->sku,
-                        'price' => $v->sale_price ?? $v->price ?? 0,
-                        'stock' => (int) ($allStocks->get($p->id . '_' . $v->id)?->first()?->quantity ?? 0),
-                    ]),
+                    'variants' => $p->variants->map(function ($v) use ($p, $allStocks, $dealPricing, $dealsMap) {
+                        $price = (float) ($v->sale_price ?? $v->price ?? 0);
+                        $deal  = ($deals = $dealsMap->get($p->id)) ? $dealPricing->bestDisplayDeal($deals, $p->id, $price) : null;
+
+                        return [
+                            'id'         => $v->id,
+                            'name'       => trim((collect($v->attributes ?? [])->values()->join(' / ') ?: $v->value) . ' ' . ($p->unit ?? '')),
+                            'sku'        => $v->sku,
+                            'price'      => $v->sale_price ?? $v->price ?? 0,
+                            'stock'      => (int) ($allStocks->get($p->id . '_' . $v->id)?->first()?->quantity ?? 0),
+                            // Active per-unit deal price (admin form pre-fills the line discount from it)
+                            'deal_price' => $deal ? $dealPricing->displayPrice($deal, $p->id, $price) : null,
+                            'deal_title' => $deal?->title,
+                        ];
+                    }),
                 ];
             });
     }

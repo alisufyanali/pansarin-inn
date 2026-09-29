@@ -22,7 +22,14 @@ class ProductDealRequest extends FormRequest
             'description' => 'nullable|string',
             'image' => ['nullable', 'file', new SafeImage(), 'max:2048'],
             'deal_type' => 'required|in:percentage,fixed,buy_x_get_y,bundle,flash_sale',
-            'discount_value' => 'required_if:deal_type,percentage,fixed|nullable|numeric|min:0',
+            'discount_value' => [
+                'required_if:deal_type,percentage,fixed,flash_sale,bundle', 'nullable', 'numeric', 'min:0',
+                // percentage-style deals cannot go above 100%
+                \Illuminate\Validation\Rule::when(
+                    in_array($this->input('deal_type'), ['percentage', 'flash_sale', 'bundle'], true),
+                    ['max:100']
+                ),
+            ],
             'min_quantity' => 'required_if:deal_type,buy_x_get_y|nullable|integer|min:1',
             'free_quantity' => 'required_if:deal_type,buy_x_get_y|nullable|integer|min:0',
             'min_purchase_amount' => 'nullable|numeric|min:0',

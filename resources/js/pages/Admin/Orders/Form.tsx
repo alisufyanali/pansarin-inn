@@ -23,7 +23,15 @@ type Customer = {
   address2: string | null;
   city_id: number | null;
 };
-type Variant = { id: number; name: string; price: number; stock: number };
+type Variant = {
+  id: number;
+  name: string;
+  price: number;
+  stock: number;
+  /** Active deal price per unit, if a Product Deal covers this variant */
+  deal_price?: number | null;
+  deal_title?: string | null;
+};
 type Product = { 
   id: number; 
   name: string; 
@@ -173,9 +181,20 @@ export default function OrderForm({
     setData('items', newItems);
   };
 
+  // Line discount an active deal gives: (price - deal_price) × quantity
+  const dealDiscount = (v: Variant | undefined, quantity: number) =>
+    v?.deal_price != null ? Math.max(0, (Number(v.price) - Number(v.deal_price)) * Number(quantity || 0)) : 0;
+
   const updateItem = (index: number, field: keyof OrderItem, value: any) => {
     const newItems = [...data.items];
     newItems[index] = { ...newItems[index], [field]: value };
+    // Keep a deal discount in step with the quantity
+    if (field === 'quantity') {
+      const v = selectedProducts[index]?.variants?.find(v => v.id === Number(newItems[index].product_variant_id));
+      if (v?.deal_price != null) {
+        newItems[index].discount = dealDiscount(v, Number(value));
+      }
+    }
     setData('items', newItems);
   };
 
@@ -210,7 +229,12 @@ export default function OrderForm({
       const variant = product.variants?.find(v => v.id === Number(variantId));
       if (variant) {
         const newItems = [...data.items];
-        newItems[index] = { ...newItems[index], product_variant_id: variantId, price: variant.price };
+        newItems[index] = {
+          ...newItems[index],
+          product_variant_id: variantId,
+          price: variant.price,
+          discount: dealDiscount(variant, Number(newItems[index].quantity)),
+        };
         setData('items', newItems);
       }
     } else {
@@ -526,7 +550,7 @@ export default function OrderForm({
                                 <option key={variant.id} value={variant.id}
                                   disabled={variant.stock <= 0}
                                   style={variant.stock <= 0 ? { color: '#ef4444' } : {}}>
-                                  {variant.name} — Stock: {variant.stock}{variant.stock <= 0 ? ' ⚠ Out' : ''}
+                                  {variant.name} — Stock: {variant.stock}{variant.stock <= 0 ? ' ⚠ Out' : ''}{variant.deal_price != null ? ` — Deal Rs.${variant.deal_price}` : ''}
                                 </option>
                               ))}
                             </select>

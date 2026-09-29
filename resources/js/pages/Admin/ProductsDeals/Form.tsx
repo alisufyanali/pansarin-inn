@@ -234,9 +234,14 @@ export default function Form({
                             </div>
 
                             {/* Discount Value */}
-                            {(data.deal_type === 'percentage' || data.deal_type === 'fixed') && (
+                            {['percentage', 'fixed', 'flash_sale', 'bundle'].includes(data.deal_type) && (
                                 <div>
-                                    <label className={labelClass}>Discount Value *</label>
+                                    <label className={labelClass}>
+                                        Discount Value *
+                                        {data.deal_type === 'bundle' && (
+                                            <span className="ml-1 font-normal text-gray-500">(applies when all selected products are in the cart)</span>
+                                        )}
+                                    </label>
                                     <div className="relative">
                                         <input
                                             type="number"
@@ -248,7 +253,7 @@ export default function Form({
                                             step="0.01"
                                         />
                                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
-                                            {data.deal_type === 'percentage' ? '%' : 'Rs.'}
+                                            {data.deal_type === 'fixed' ? 'Rs.' : '%'}
                                         </span>
                                     </div>
                                     <FieldError message={errors.discount_value} />

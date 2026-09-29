@@ -25,7 +25,7 @@ interface Deal {
     description: string;
     image?: string;
     deal_type: string;
-    discount_value: number;
+    discount_value: number | null;
     min_quantity: number;
     free_quantity: number;
     min_purchase_amount: number | null;
@@ -73,7 +73,7 @@ export default function Edit({ deal, products, dealTypes, flash }: Props) {
         description: deal.description,
         image: null as File | null,
         deal_type: deal.deal_type,
-        discount_value: deal.discount_value.toString(),
+        discount_value: deal.discount_value?.toString() ?? '', // null for Buy X Get Y deals
         min_quantity: deal.min_quantity,
         free_quantity: deal.free_quantity,
         min_purchase_amount: deal.min_purchase_amount?.toString() || '',

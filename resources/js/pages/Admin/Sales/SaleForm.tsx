@@ -26,6 +26,9 @@ type Variant = {
     sku: string;
     price: number;
     stock: number;
+    /** Active deal price per unit, if a Product Deal covers this variant */
+    deal_price?: number | null;
+    deal_title?: string | null;
 };
 
 type Product = {
@@ -212,9 +215,20 @@ export default function SaleForm({
 
     // ── Handlers ─────────────────────────────────────────────────────────────
 
+    // Line discount an active deal gives: (price - deal_price) × quantity
+    const dealDiscount = (v: Variant | undefined, quantity: number) =>
+        v?.deal_price != null ? Math.max(0, (Number(v.price) - Number(v.deal_price)) * Number(quantity || 0)) : 0;
+
     const updateItem = (index: number, field: keyof SaleItem, value: any) => {
         const items = [...data.items];
         items[index] = { ...items[index], [field]: value };
+        // Keep a deal discount in step with the quantity
+        if (field === 'quantity') {
+            const v = selectedProducts[index]?.variants?.find(v => v.id === Number(items[index].product_variant_id));
+            if (v?.deal_price != null) {
+                items[index].discount = dealDiscount(v, Number(value));
+            }
+        }
         setData('items', items);
     };
 
@@ -239,6 +253,7 @@ export default function SaleForm({
             ...items[index],
             product_variant_id: variantId,
             price: v ? v.price : (p?.price ?? 0),
+            discount: dealDiscount(v, Number(items[index].quantity)),
         };
         setData('items', items);
     };
@@ -500,7 +515,7 @@ export default function SaleForm({
                                                     <option value="">No variant</option>
                                                     {prod?.variants?.map(v => (
                                                         <option key={v.id} value={v.id}>
-                                                            {v.name} (Stk: {v.stock})
+                                                            {v.name} (Stk: {v.stock}){v.deal_price != null ? ` — Deal Rs.${v.deal_price}` : ''}
                                                         </option>
                                                     ))}
                                                 </select>
