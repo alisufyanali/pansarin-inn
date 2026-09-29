@@ -16,6 +16,8 @@ class BlogTagController extends Controller
     {
         $this->blogTagRepo = $blogTagRepo;
 
+        $this->middleware('permission:view.blogtags')->only(['index', 'getData', 'show']);
+        $this->middleware('permission:view.blogtags|create.blogs|edit.blogs')->only(['getActiveTags']);
         $this->middleware('permission:create.blogtags')->only(['create', 'store']);
         $this->middleware('permission:edit.blogtags')->only(['edit', 'update']);
         $this->middleware('permission:delete.blogtags')->only(['destroy']);

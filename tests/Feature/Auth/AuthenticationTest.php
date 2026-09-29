@@ -12,6 +12,7 @@ test('login screen can be rendered', function () {
 
 test('users can authenticate using the login screen', function () {
     $user = User::factory()->withoutTwoFactor()->create();
+    $user->assignRole(\Spatie\Permission\Models\Role::create(['name' => 'admin', 'guard_name' => 'web']));
 
     $response = $this->post(route('login.store'), [
         'email' => $user->email,
@@ -19,7 +20,7 @@ test('users can authenticate using the login screen', function () {
     ]);
 
     $this->assertAuthenticated();
-    $response->assertRedirect(route('admin.dashboard', absolute: false));
+    $response->assertRedirect(route('admin.dashboard'));
 });
 
 test('users with two factor enabled are redirected to two factor challenge', function () {

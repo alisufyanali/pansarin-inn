@@ -14,7 +14,7 @@ class FrontendContentController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:view.frontend')->only(['index', 'show']);
+        $this->middleware('permission:view.frontend')->only(['index', 'show', 'getData']);
         $this->middleware('permission:create.frontend')->only(['create', 'store']);
         $this->middleware('permission:edit.frontend')->only(['edit', 'update']);
         $this->middleware('permission:delete.frontend')->only(['destroy']);

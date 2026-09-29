@@ -14,8 +14,8 @@ class InventoryController extends Controller
 {
     public function __construct(protected InventoryRepository $inventoryRepository)
     {
-        $this->middleware('permission:view.inventory')->only(['index', 'getData', 'show']);
-        $this->middleware('permission:create.inventory')->only(['create', 'store']);
+        $this->middleware('permission:view.inventory')->only(['index', 'getData', 'show', 'getLowStockProducts']);
+        $this->middleware('permission:create.inventory')->only(['create', 'store', 'bulkCreate', 'bulkStore']);
         $this->middleware('permission:edit.inventory')->only(['edit', 'update']);
         $this->middleware('permission:delete.inventory')->only(['destroy']);
     }

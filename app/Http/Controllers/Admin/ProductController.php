@@ -20,7 +20,8 @@ class ProductController extends Controller
     public function __construct(ProductRepository $productRepository)
     {
         $this->productRepository = $productRepository;
-        $this->middleware('permission:view.products')->only(['index', 'getData', 'show']);
+        $this->middleware('permission:view.products')->only(['index', 'getData', 'show', 'getAttributesByCategory']);
+        $this->middleware('permission:view.products|create.orders|create.sales')->only(['search']);
         $this->middleware('permission:create.products')->only(['create', 'store']);
         $this->middleware('permission:edit.products')->only(['edit', 'update']);
         $this->middleware('permission:delete.products')->only(['destroy']);

@@ -19,7 +19,7 @@ class CouponController extends Controller
     {
         $this->couponRepository = $couponRepository;
         $this->middleware('permission:create.coupons')->only(['create', 'store']);
-        $this->middleware('permission:edit.coupons')->only(['edit', 'update']);
+        $this->middleware('permission:edit.coupons')->only(['edit', 'update', 'toggleStatus']);
         $this->middleware('permission:delete.coupons')->only(['destroy']);
         $this->middleware('permission:view.coupons')->only(['index', 'show', 'getData']);
     }

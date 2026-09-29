@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Helpers\PhoneHelper;
+use App\Http\Middleware\EnsureStaff;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -46,7 +47,7 @@ class FortifyServiceProvider extends ServiceProvider
                 {
                     $request->session()->flash('success', 'Welcome back! You are logged in.');
 
-                    return redirect()->intended(route('admin.dashboard'));
+                    return redirect()->intended(FortifyServiceProvider::homeFor($request->user()));
                 }
             };
         });
@@ -59,7 +60,7 @@ class FortifyServiceProvider extends ServiceProvider
                 {
                     $request->session()->flash('success', 'Welcome! Your account has been created successfully.');
 
-                    return redirect()->intended(route('admin.dashboard'));
+                    return redirect()->intended(FortifyServiceProvider::homeFor($request->user()));
                 }
             };
         });
@@ -77,6 +78,19 @@ class FortifyServiceProvider extends ServiceProvider
             };
         });
 
+    }
+
+    /**
+     * Where a user lands after web login/registration: staff go to the admin
+     * panel, affiliates to their own dashboard, everyone else to the home page.
+     */
+    public static function homeFor(?User $user): string
+    {
+        if (EnsureStaff::isStaff($user)) {
+            return route('admin.dashboard');
+        }
+
+        return $user?->hasRole('affiliate') ? route('affiliate.dashboard') : route('home');
     }
 
     /**

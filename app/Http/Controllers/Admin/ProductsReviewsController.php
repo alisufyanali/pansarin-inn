@@ -12,7 +12,7 @@ class ProductsReviewsController extends Controller
 {
     public function __construct(protected ProductReviewRepository $repo)
     {
-        $this->middleware('permission:reviews.view')->only(['index', 'getData']);
+        $this->middleware('permission:reviews.view')->only(['index', 'getData', 'show']);
         $this->middleware('permission:reviews.moderate')->only(['updateStatus', 'bulkAction', 'reply', 'toggleHomepage']);
         $this->middleware('permission:reviews.delete')->only(['destroy', 'bulkAction']);
     }

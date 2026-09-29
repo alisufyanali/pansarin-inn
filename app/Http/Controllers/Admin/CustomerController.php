@@ -29,6 +29,7 @@ class CustomerController extends Controller
         $this->middleware('permission:edit.customers')->only(['edit', 'update']);
         $this->middleware('permission:delete.customers')->only(['destroy']);
         $this->middleware('permission:view.customers')->only(['index', 'show', 'getData']);
+        $this->middleware('permission:view.customers|create.orders|create.sales')->only(['search']);
     }
 
     public function index(Request $request) {

@@ -17,7 +17,7 @@ class HealthConcernController extends Controller
     {
         $this->repo = $repo;
 
-        $this->middleware('permission:view.health-concerns')->only(['index', 'getData']);
+        $this->middleware('permission:view.health-concerns')->only(['index', 'getData', 'show']);
         $this->middleware('permission:create.health-concerns')->only(['create', 'store']);
         $this->middleware('permission:edit.health-concerns')->only(['edit', 'update']);
         $this->middleware('permission:delete.health-concerns')->only(['destroy']);

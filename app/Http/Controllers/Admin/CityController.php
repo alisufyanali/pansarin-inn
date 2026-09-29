@@ -18,7 +18,7 @@ class CityController extends Controller
         $this->cityRepository = $cityRepository;
         $this->middleware('permission:create.cities')->only(['create', 'store']);
         $this->middleware('permission:edit.cities')->only(['edit', 'update']);
-        $this->middleware('permission:delete.cities')->only(['destroy']);
+        $this->middleware('permission:delete.cities')->only(['destroy', 'bulkDelete']);
         $this->middleware('permission:view.cities')->only(['index', 'show', 'getData']);
     }
 

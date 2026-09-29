@@ -18,7 +18,12 @@ class ProductVariantController extends Controller
 
     public function __construct(ProductVariantRepository $variantRepository)
     {
-        $this->variantRepository = $variantRepository; 
+        $this->variantRepository = $variantRepository;
+
+        $this->middleware('permission:view.variants')->only(['index', 'getData', 'show']);
+        $this->middleware('permission:create.variants')->only(['create', 'store']);
+        $this->middleware('permission:edit.variants')->only(['edit', 'update']);
+        $this->middleware('permission:delete.variants')->only(['destroy']);
     }
 
     /**
