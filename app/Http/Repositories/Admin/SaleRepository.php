@@ -195,7 +195,7 @@ class SaleRepository
 
                         return [
                             'id'         => $v->id,
-                            'name'       => trim((collect($v->attributes ?? [])->values()->join(' / ') ?: $v->value) . ' ' . ($p->unit ?? '')),
+                            'name'       => $v->label($p->unit),
                             'sku'        => $v->sku,
                             'price'      => $v->sale_price ?? $v->price ?? 0,
                             'stock'      => (int) ($allStocks->get($p->id . '_' . $v->id)?->first()?->quantity ?? 0),
@@ -247,9 +247,7 @@ class SaleRepository
                 'meta'               => [
                     'product_name' => $product?->name,
                     'sku'          => $product?->sku,
-                    'variant_name' => $variant
-                        ? trim((collect($variant->attributes ?? [])->values()->join(' / ') ?: $variant->value) . ' ' . ($product?->unit ?? ''))
-                        : null,
+                    'variant_name' => $variant?->label($product?->unit),
                 ],
             ]);
         }

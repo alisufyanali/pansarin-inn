@@ -142,7 +142,7 @@ class ReturnRequestController extends Controller
                     'item_reason'  => $item->item_reason,
                     'product_name' => $orderItem?->meta['product_name'] ?? $product?->name ?? '—',
                     'variant_name' => $orderItem?->meta['variant_name']
-                        ?? ($variant ? collect($variant->attributes ?? [])->values()->join(' / ') ?: $variant->value : null),
+                        ?? $variant?->label($product?->unit),
                     'sku'          => $orderItem?->meta['sku'] ?? $product?->sku ?? '—',
                     'original_qty' => $orderItem?->quantity ?? 0,
                     'unit_price'   => (float) ($orderItem?->price ?? 0),

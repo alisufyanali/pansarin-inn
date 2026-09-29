@@ -140,9 +140,7 @@ class SaleController extends Controller
                         'subtotal'           => $item->subtotal,
                         'product_name'       => $item->meta['product_name'] ?? $item->product?->name,
                         'variant_name'       => $item->meta['variant_name']
-                                                    ?? (($item->variant)
-                                                        ? (collect($item->variant->getAttribute('attributes') ?? [])->values()->join(' / ') ?: $item->variant->value)
-                                                        : null),
+                                                    ?? $item->variant?->label($item->product?->unit),
                         'sku'                => $item->meta['sku'] ?? $item->product?->sku,
                     ]),
                 ],

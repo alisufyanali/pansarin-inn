@@ -14,7 +14,7 @@ class CartApiController extends Controller
     public function index(Request $request)
     {
         $items = Cart::with([
-            'variant.product:id,name,slug,thumbnail',
+            'variant.product:id,name,slug,thumbnail,unit',
         ])->where('user_id', $request->user()->id)->get();
 
         // Batch-load stock for all variants in one query — avoids N+1
@@ -85,7 +85,7 @@ class CartApiController extends Controller
             ]);
         }
 
-        $cartItem->load('variant.product:id,name,slug,thumbnail');
+        $cartItem->load('variant.product:id,name,slug,thumbnail,unit');
 
         return response()->json([
             'success' => true,
@@ -115,7 +115,7 @@ class CartApiController extends Controller
         }
 
         $cartItem->update(['quantity' => $request->quantity]);
-        $cartItem->load('variant.product:id,name,slug,thumbnail');
+        $cartItem->load('variant.product:id,name,slug,thumbnail,unit');
 
         return response()->json([
             'success' => true,
@@ -186,7 +186,8 @@ class CartApiController extends Controller
             ] : null,
             'variant'    => $variant ? [
                 'id'   => $variant->id,
-                'name' => collect($variant->attributes ?? [])->values()->join(' / ') ?: $variant->value,
+                // e.g. "250 gm / Powder" — same label the product page puts on guest cart items
+                'name' => $variant->label($product?->unit),
                 'sku'  => $variant->sku,
             ] : null,
         ];

@@ -68,6 +68,6 @@ class OrderItem extends Model
             return $this->meta['variant_name'];
         }
 
-        return $this->variant?->name ?? null;
+        return $this->variant?->label($this->product?->unit);
     }
 }

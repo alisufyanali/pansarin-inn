@@ -144,6 +144,12 @@ Never say "done" and submit without running verification.
 - Change-password endpoint: validates current_password, new password ≠ customer phone, sets `must_change_password = false`
 - Login response always includes `must_change_password: bool`
 
+### 17. Variant labels always come from `ProductVariant::label($unit)`
+- Format: first non-Form attribute + product unit, then the rest: `250 gm / Powder`, `30 ml`, `100 gm`, `1 Pc` (a value that already has letters, like `1 Pack`, gets no extra unit)
+- Used for `order_items.meta.variant_name`, `sale_items.meta.variant_name`, admin forms, cart/wishlist API, emails
+- Never build labels inline with `collect($attrs)->values()->join(' / ')`; product API `variants[].name` stays raw (the storefront adds the unit with `withUnit()`)
+- Old items: `php artisan orders:fix-variant-labels --dry-run` then without `--dry-run`
+
 ### 16. Tests
 - Run with PHP 8.4: `D:\laragon\bin\php\php-8.4\php.exe vendor/bin/pest` (SQLite in-memory; Laragon's default PHP 8.2 fails composer's platform check)
 - Every bug fix / feature adds a Pest test; the suite must be green before committing

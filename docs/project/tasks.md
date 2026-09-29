@@ -35,6 +35,7 @@
 - [x] Admin: toggle-status + duplicate routes, Edit crash (null discount) fixed, flash_sale/bundle value field, deal prefill in admin order/sale forms
 
 ### 2026-09-30
+- [x] Variant labels with unit everywhere (`ProductVariant::label()`): orders/sales/emails showed `250 / Powder gm` or no unit; cart/wishlist API had no unit; `orders:fix-variant-labels` command for old items
 - [x] Storefront forgot/reset password: `POST /api/forgot-password`, `/api/reset-password` (were missing → 404); customer reset links open the storefront
 - [x] Affiliate referral program: `/api/affiliate/apply`, `/apply-me`, `/status`, `/click`; `ref` on register/orders; admin approve/block/per-affiliate commission; fixed Rs per delivered order; dashboard crash (`products.sale_price`) fixed; storefront referral links
 - [x] WhatsApp webhook: missing `Http` import (media messages crashed), all messages per batch, dedupe by wamid, more message types, media to `public/storage/whatsapp`, always 200
@@ -95,4 +96,5 @@
      AND ABS(grand_total - (subtotal - invoice_discount + shipping_charges + tax)) > 0.01;
    ```
 8. Clear caches: `php artisan optimize:clear`.
+   Then fix old order/sale item labels: `php artisan orders:fix-variant-labels --dry-run`, check the sample, run without `--dry-run`.
 9. Admin: set Affiliate Settings (default commission, min payout, cookie days); attach products to active deals.

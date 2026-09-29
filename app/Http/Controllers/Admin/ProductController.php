@@ -301,7 +301,7 @@ class ProductController extends Controller
                     'stock'    => (int) $baseStock,
                     'variants' => $p->variants->map(fn ($v) => [
                         'id'    => $v->id,
-                        'name'  => collect($v->attributes ?? [])->values()->join(' / ') ?: $v->value,
+                        'name'  => $v->label($p->unit),
                         'sku'   => $v->sku,
                         'price' => $v->sale_price ?? $v->price ?? 0,
                         'stock' => (int) ($allStocks->get($p->id . '_' . $v->id)?->first()?->quantity ?? 0),

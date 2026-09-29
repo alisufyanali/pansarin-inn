@@ -295,8 +295,8 @@ class OrderController extends Controller
             $found = \App\Models\Order::with([
                 'customer:id,first_name,last_name,email,phone',
                 'city:id,name',
-                'items.product:id,name',
-                'items.variant:id,sku,value,attributes',
+                'items.product:id,name,unit',
+                'items.variant:id,product_id,sku,value,attributes',
             ])->where('order_number', $request->order_number)->first();
 
             if (!$found) {
@@ -326,16 +326,12 @@ class OrderController extends Controller
                     ] : null,
                     'city'  => $found->city ? ['id' => $found->city->id, 'name' => $found->city->name] : null,
                     'items' => $found->items->map(function ($item) {
-                        $variantLabel = null;
-                        if ($item->variant) {
-                            $attrs = $item->variant->attributes;
-                            $variantLabel = (!empty($attrs) && is_array($attrs))
-                                ? implode(' / ', array_values($attrs))
-                                : ($item->variant->value ?: $item->variant->sku);
-                        }
+                        // Snapshot taken at order time first; live variant label as fallback
+                        $variantLabel = $item->meta['variant_name'] ?? $item->variant?->label($item->product?->unit);
+
                         return [
                             'id'            => $item->id,
-                            'product_name'  => $item->product?->name ?? 'Unknown Product',
+                            'product_name'  => $item->meta['product_name'] ?? $item->product?->name ?? 'Unknown Product',
                             'variant_label' => $variantLabel,
                             'quantity'      => $item->quantity,
                             'unit_price'    => (float) $item->unit_price,

@@ -18,7 +18,7 @@ class WishlistApiController extends Controller
     public function index(Request $request)
     {
         $items = Wishlist::with([
-                'product:id,name,slug,thumbnail',
+                'product:id,name,slug,thumbnail,unit',
                 'variant:id,sku,value,attributes,price,sale_price,product_id',
             ])
             ->where('user_id', $request->user()->id)
@@ -48,7 +48,7 @@ class WishlistApiController extends Controller
                 // null when product has no variants or user wishlisted without selecting one.
                 'variant'            => $w->variant ? [
                     'id'         => $w->variant->id,
-                    'name'       => collect($w->variant->attributes ?? [])->values()->join(' / ') ?: $w->variant->value,
+                    'name'       => $w->variant->label($w->product?->unit),
                     'sku'        => $w->variant->sku,
                     'price'      => (float) ($w->variant->sale_price ?? $w->variant->price),
                     'sale_price' => $w->variant->sale_price ? (float) $w->variant->sale_price : null,

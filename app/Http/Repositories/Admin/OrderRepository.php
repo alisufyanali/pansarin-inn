@@ -49,9 +49,7 @@ class OrderRepository
         $order->items->transform(function ($item) {
             $item->product_name  = $item->meta['product_name'] ?? $item->product?->name;
             $item->variant_label = $item->meta['variant_name']
-                ?? ($item->variant
-                    ? trim((collect($item->variant->attributes ?? [])->values()->join(' / ') ?: $item->variant->value) . ' ' . ($item->product?->unit ?? ''))
-                    : null);
+                ?? $item->variant?->label($item->product?->unit);
             return $item;
         });
 
@@ -235,7 +233,7 @@ class OrderRepository
 
                         return [
                             'id'         => $v->id,
-                            'name'       => trim((collect($v->attributes ?? [])->values()->join(' / ') ?: $v->value) . ' ' . ($p->unit ?? '')),
+                            'name'       => $v->label($p->unit),
                             'sku'        => $v->sku,
                             'price'      => $v->sale_price ?? $v->price ?? 0,
                             'stock'      => (int) ($allStocks->get($p->id . '_' . $v->id)?->first()?->quantity ?? 0),
@@ -376,9 +374,7 @@ class OrderRepository
                 $variant = $variantId ? $variants->get($variantId) : null;
 
                 $productName = $product?->name ?? 'Unknown Product';
-                $variantName = $variant
-                    ? (collect($variant->attributes ?? [])->values()->join(' / ') ?: $variant->value)
-                    : null;
+                $variantName = $variant?->label($product?->unit);
                 $fullName = $variantName ? "{$productName} ({$variantName})" : $productName;
 
                 throw \Illuminate\Validation\ValidationException::withMessages([
@@ -420,9 +416,7 @@ class OrderRepository
                 'meta'               => [
                     'product_name' => $product?->name,
                     'sku'          => $product?->sku,
-                    'variant_name' => $variant
-                        ? trim((collect($variant->attributes ?? [])->values()->join(' / ') ?: $variant->value) . ' ' . ($product?->unit ?? ''))
-                        : null,
+                    'variant_name' => $variant?->label($product?->unit),
                     'cost_price'   => $costPrice,
                     'deal_title'   => $item['deal_title'] ?? null,
                     'deal_units'   => ! empty($item['deal_id']) ? (int) ($item['deal_units'] ?? $qty) : null,
