@@ -23,6 +23,100 @@ class OrderApiController extends Controller
         protected CustomerIdentityService $identity,
     ) {}
 
+    /** Default shipping when no city is chosen — must match DEFAULT_SHIPPING in the frontend (lib/cities.ts). */
+    private const DEFAULT_SHIPPING = 250;
+
+    /** Orders above this subtotal ship free — must match the checkout page rule. */
+    private const FREE_SHIPPING_ABOVE = 5000;
+
+    /**
+     * Never trust money values sent by the storefront. Item prices are checked
+     * against the DB, and the invoice discount / shipping are recomputed here.
+     *
+     * Two legitimate unit prices exist per variant: the cart API's
+     * (sale_price ?? price) and the product page's final_price (+ additional).
+     * Anything below the base price is rejected; anything above final_price is
+     * capped to it.
+     *
+     * @throws ValidationException
+     */
+    private function applyServerPricing(array $data): array
+    {
+        $items      = $data['items'] ?? [];
+        $variantIds = collect($items)->pluck('product_variant_id')->filter()->unique();
+        $productIds = collect($items)->pluck('product_id')->filter()->unique();
+
+        $activeProducts = \App\Models\Product::whereIn('id', $productIds)->where('status', true)->pluck('id')->flip();
+        $variants = \App\Models\ProductVariant::whereIn('id', $variantIds)->where('status', true)->get()->keyBy('id');
+        $fallback = \App\Models\ProductVariant::whereIn('product_id', $productIds)->where('status', true)->get()->groupBy('product_id');
+
+        $subtotal = 0.0;
+        $lines    = [];
+        foreach ($items as $i => $item) {
+            if (! $activeProducts->has($item['product_id'])) {
+                throw ValidationException::withMessages(["items.$i.product_id" => ['This product is currently unavailable.']]);
+            }
+
+            $variant = null;
+            if (! empty($item['product_variant_id'])) {
+                $variant = $variants->get($item['product_variant_id']);
+                if (! $variant) {
+                    throw ValidationException::withMessages(["items.$i.product_variant_id" => ['This option is currently unavailable.']]);
+                }
+                if ((int) $variant->product_id !== (int) $item['product_id']) {
+                    throw ValidationException::withMessages(["items.$i.product_variant_id" => ['Selected option does not belong to this product.']]);
+                }
+            }
+
+            // No variant sent: accept the cheapest variant of the product as the floor.
+            $candidates = $variant ? collect([$variant]) : ($fallback->get($item['product_id']) ?? collect());
+            if ($candidates->isEmpty()) {
+                throw ValidationException::withMessages(["items.$i.product_id" => ['This product is currently unavailable.']]);
+            }
+
+            $base  = (float) $candidates->min(fn ($v) => $v->sale_price ?? $v->price ?? 0);
+            $final = (float) $candidates->max(fn ($v) => ($v->sale_price ?? $v->price ?? 0) + (int) ($v->additional ?? 0));
+            $price = (float) $item['price'];
+
+            if ($base <= 0 || $price < $base - 0.5) {
+                throw ValidationException::withMessages(["items.$i.price" => ['The price of an item in your cart has changed. Please refresh your cart and try again.']]);
+            }
+
+            $items[$i]['price']    = min($price, $final);
+            $items[$i]['discount'] = 0; // per-item discounts are admin-only
+            $lineTotal = $items[$i]['price'] * (int) $item['quantity'];
+            $subtotal += $lineTotal;
+            $lines[]   = ['product_id' => (int) $item['product_id'], 'total' => $lineTotal];
+        }
+        $data['items'] = $items;
+
+        // Coupon: recompute the discount from the code; a bare invoice_discount is ignored.
+        $discount = 0.0;
+        $code = trim((string) ($data['coupon_code'] ?? ''));
+        $data['coupon_code'] = null;
+        if ($code !== '') {
+            $coupon   = \App\Models\Coupon::where('code', strtoupper($code))->first();
+            $eligible = $coupon ? $coupon->eligibleAmount($lines) : 0;
+            if (! $coupon || ! $coupon->isValid() || $eligible <= 0
+                || ($coupon->min_purchase_amount && $subtotal < $coupon->min_purchase_amount)) {
+                throw ValidationException::withMessages(['coupon_code' => ['This coupon is no longer valid. Please remove it and try again.']]);
+            }
+            $discount = round(min((float) $coupon->calculateDiscount($eligible), $eligible), 2);
+            $data['coupon_code'] = $coupon->code;
+        }
+        $data['invoice_discount'] = $discount;
+
+        // Shipping: city rate, or free above the threshold.
+        $cityRate = ! empty($data['city_id'])
+            ? \App\Models\City::whereKey($data['city_id'])->value('shipping_charges')
+            : null;
+        $data['shipping_charges'] = $subtotal > self::FREE_SHIPPING_ABOVE
+            ? 0
+            : (float) ($cityRate ?? self::DEFAULT_SHIPPING);
+
+        return $data;
+    }
+
     // PATCH /api/orders/{id}/cancel
     public function cancel(Request $request, string $id)
     {
@@ -137,12 +231,26 @@ class OrderApiController extends Controller
             'order_note'            => 'nullable|string',
             'invoice_discount'      => 'nullable|numeric|min:0',
             'shipping_charges'      => 'nullable|numeric|min:0',
+            'coupon_code'           => 'nullable|string|max:50',
         ]);
 
         $user = $request->user();
         $normalized = PhoneHelper::normalize($user->username ?? $user->phone ?? '');
         if (! $normalized) {
             return response()->json(['success' => false, 'message' => 'Your account has no valid phone number.'], 422);
+        }
+
+        try {
+            $priced = $this->applyServerPricing($request->only([
+                'city_id', 'payment_method', 'shipping_address', 'billing_address',
+                'order_note', 'coupon_code', 'items',
+            ]));
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => collect($e->errors())->flatten()->first(),
+                'errors'  => $e->errors(),
+            ], 422);
         }
 
         [, $customer] = $this->identity->findOrCreateByPhone($normalized, [
@@ -152,7 +260,7 @@ class OrderApiController extends Controller
         ]);
 
         try {
-            $order = $this->orderRepo->store(array_merge($request->all(), [
+            $order = $this->orderRepo->store(array_merge($priced, [
                 'customer_id'    => $customer->id,
                 'status'         => 'pending',
                 'payment_status' => 'unpaid',
@@ -284,6 +392,7 @@ class OrderApiController extends Controller
                 'order_note'       => 'nullable|string',
                 'shipping_charges' => 'nullable|numeric|min:0',
                 'invoice_discount' => 'nullable|numeric|min:0',
+                'coupon_code'      => 'nullable|string|max:50',
                 'items'            => 'required|array|min:1',
                 'items.*.product_id'         => 'required|exists:products,id',
                 'items.*.product_variant_id' => 'nullable|exists:product_variants,id',
@@ -309,6 +418,19 @@ class OrderApiController extends Controller
             ], 422);
         }
 
+        try {
+            $priced = $this->applyServerPricing($request->only([
+                'city_id', 'payment_method', 'shipping_address', 'billing_address',
+                'order_note', 'coupon_code', 'items',
+            ]));
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => collect($e->errors())->flatten()->first(),
+                'errors'  => $e->errors(),
+            ], 422);
+        }
+
         $parts = preg_split('/\s+/', trim($request->name), 2);
         [, $customer, $accountCreated] = DB::transaction(fn () => $this->identity->findOrCreateByPhone($normalizedPhone, [
             'first_name' => $parts[0],
@@ -320,10 +442,7 @@ class OrderApiController extends Controller
         ]));
 
         try {
-            $order = $this->orderRepo->store(array_merge($request->only([
-                'city_id', 'payment_method', 'shipping_address', 'billing_address',
-                'order_note', 'invoice_discount', 'shipping_charges', 'items',
-            ]), [
+            $order = $this->orderRepo->store(array_merge($priced, [
                 'customer_id'    => $customer->id,
                 'status'         => 'pending',
                 'payment_status' => 'unpaid',

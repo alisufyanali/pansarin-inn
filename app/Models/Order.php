@@ -20,6 +20,7 @@ class Order extends Model
         'subtotal',
         'product_discount',
         'invoice_discount',
+        'coupon_code',
         'shipping_charges',
         'tax',
         'grand_total',

@@ -57,7 +57,8 @@ class Coupon extends Model
         if ($this->start_date && $now->lt($this->start_date)) {
             return false;
         }
-        if ($this->end_date && $now->gt($this->end_date)) {
+        // end_date is a date — the coupon stays valid for the whole of that day
+        if ($this->end_date && $now->gt($this->end_date->copy()->endOfDay())) {
             return false;
         }
 
@@ -67,6 +68,30 @@ class Coupon extends Model
         }
 
         return true;
+    }
+
+    /**
+     * Part of the cart this coupon applies to.
+     * $lines: [['product_id' => int, 'total' => float], ...]
+     */
+    public function eligibleAmount(array $lines): float
+    {
+        $lines = collect($lines);
+
+        if ($this->apply_to === 'product') {
+            return (float) $lines->where('product_id', $this->product_id)->sum('total');
+        }
+
+        if ($this->apply_to === 'category') {
+            $productIds = Product::whereIn('id', $lines->pluck('product_id')->unique())
+                ->where('category_id', $this->category_id)
+                ->pluck('id')
+                ->all();
+
+            return (float) $lines->whereIn('product_id', $productIds)->sum('total');
+        }
+
+        return (float) $lines->sum('total');
     }
 
     // Calculate discount amount

@@ -75,7 +75,6 @@ it('register with an already-registered phone does not issue a token or change t
 
     $attack->assertStatus(422)->assertJsonMissingPath('data.token');
 
-    $user = User::where('username', '03005550000')->orWhere('username', '+923005550000')->first()
-        ?? User::latest('id')->first();
+    $user = User::sole();
     expect(\Illuminate\Support\Facades\Hash::check('Secret#123', $user->password))->toBeTrue();
 });

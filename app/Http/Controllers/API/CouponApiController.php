@@ -15,6 +15,10 @@ class CouponApiController extends Controller
             'code'       => 'required|string',
             'amount'     => 'required|numeric|min:0',
             'product_id' => 'nullable|exists:products,id',
+            'items'              => 'nullable|array',
+            'items.*.product_id' => 'required_with:items|integer',
+            'items.*.price'      => 'required_with:items|numeric|min:0',
+            'items.*.quantity'   => 'required_with:items|integer|min:1',
         ]);
 
         $coupon = Coupon::with(['product', 'category'])
@@ -43,7 +47,27 @@ class CouponApiController extends Controller
             ], 422);
         }
 
-        $discountAmount = $coupon->calculateDiscount($request->amount);
+        // Product/category coupons only discount the matching part of the cart —
+        // the same rule the order endpoints apply when the order is placed.
+        $eligible = (float) $request->amount;
+        if ($request->filled('items')) {
+            $eligible = $coupon->eligibleAmount(collect($request->items)->map(fn ($i) => [
+                'product_id' => (int) $i['product_id'],
+                'total'      => (float) $i['price'] * (int) $i['quantity'],
+            ])->all());
+        } elseif ($coupon->apply_to === 'product' && $request->filled('product_id')
+            && (int) $request->product_id !== (int) $coupon->product_id) {
+            $eligible = 0;
+        }
+
+        if ($eligible <= 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This coupon does not apply to the items in your cart.',
+            ], 422);
+        }
+
+        $discountAmount = min($coupon->calculateDiscount($eligible), $eligible);
 
         return response()->json([
             'success' => true,

@@ -85,6 +85,10 @@ class OrderRepository
                 'user_id'          => auth()->id(),
             ], $snapshots));
 
+            if (! empty($data['coupon_code'])) {
+                $this->redeemCoupon($order, $data['coupon_code']);
+            }
+
             $this->syncItems($order, $data['items']);
             $order->calculateTotals();
             $order->load('items.product', 'items.variant');
@@ -252,6 +256,39 @@ class OrderRepository
     }
 
     // ── Private Helpers ───────────────────────────────────────────
+
+    /**
+     * Count one use of the coupon against the order. Runs inside the order
+     * transaction with the coupon row locked, so usage_limit and per_user_limit
+     * cannot be overshot by parallel checkouts.
+     */
+    private function redeemCoupon(Order $order, string $code): void
+    {
+        $coupon = \App\Models\Coupon::where('code', $code)->lockForUpdate()->first();
+
+        if (! $coupon || ! $coupon->isValid()) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'coupon_code' => 'This coupon is no longer valid. Please remove it and try again.',
+            ]);
+        }
+
+        // The new order already carries the code, so exclude it from the count
+        $previousUses = Order::where('customer_id', $order->customer_id)
+            ->where('coupon_code', $coupon->code)
+            ->where('status', '!=', 'cancelled')
+            ->whereKeyNot($order->id)
+            ->count();
+
+        if ($coupon->per_user_limit && $previousUses >= $coupon->per_user_limit) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'coupon_code' => 'You have already used this coupon the maximum number of times.',
+            ]);
+        }
+
+        $order->update(['coupon_code' => $coupon->code]);
+        $coupon->increment('usage_count');
+    }
+
     private function syncItems(Order $order, array $items): void
     {
         // Pre-load all products, variants, and stocks in 3 queries — eliminates N+1
