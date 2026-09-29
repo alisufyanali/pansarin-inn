@@ -5,9 +5,12 @@ namespace App\Http\Controllers\API;
 use App\Rules\SafeImage;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
+use App\Helpers\PhoneHelper;
 use App\Models\Order;
+use App\Models\Product;
 use App\Models\SiteReview;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -16,31 +19,50 @@ class SiteReviewApiController extends Controller
     /**
      * GET /api/reviews
      *
-     * Public — returns only approved site-wide reviews.
+     * Public — one feed of approved site-wide reviews AND approved product
+     * reviews, so the /reviews page is not empty while product reviews exist.
      * Supports: per_page, sort (newest|oldest|highest_rating|lowest_rating), search (reviewer name).
      */
     public function index(Request $request)
     {
-        $query = SiteReview::approved();
+        $search = $request->filled('search')
+            ? '%' . addcslashes((string) $request->search, '%_\\') . '%'
+            : null;
 
-        // Search by reviewer name
-        if ($request->filled('search')) {
-            $query->where('reviewer_name', 'like', '%' . $request->search . '%');
-        }
+        $site = DB::table('site_reviews')
+            ->where('status', 'approved')
+            ->when($search, fn ($q) => $q->where('reviewer_name', 'like', $search))
+            ->select([
+                'id', DB::raw("'site' as source"), 'reviewer_name as name', 'rating', 'comment',
+                'image', DB::raw('NULL as product_id'), DB::raw('1 as verified'), 'created_at',
+            ]);
 
-        // Sort
-        match ($request->get('sort', 'newest')) {
-            'oldest'         => $query->oldest(),
-            'highest_rating' => $query->orderByDesc('rating')->latest(),
-            'lowest_rating'  => $query->orderBy('rating')->latest(),
-            default          => $query->latest(), // 'newest'
+        $product = DB::table('product_reviews')
+            ->where('status', true)
+            ->when($search, fn ($q) => $q->where('customer_name', 'like', $search))
+            ->select([
+                'id', DB::raw("'product' as source"), 'customer_name as name', 'rating', 'comment',
+                DB::raw('NULL as image'), 'product_id', 'is_verified as verified', 'created_at',
+            ]);
+
+        $query = DB::query()->fromSub($site->unionAll($product), 'r');
+
+        match ($request->input('sort', 'newest')) {
+            'oldest'         => $query->orderBy('created_at')->orderBy('id'),
+            'highest_rating' => $query->orderByDesc('rating')->orderByDesc('created_at'),
+            'lowest_rating'  => $query->orderBy('rating')->orderByDesc('created_at'),
+            default          => $query->orderByDesc('created_at')->orderByDesc('id'),
         };
 
-        $reviews = $query->paginate(min(max((int) $request->get('per_page', 12), 1), 50));
+        $reviews = $query->paginate(min(max((int) $request->input('per_page', 12), 1), 50));
+
+        $products = Product::whereIn('id', collect($reviews->items())->pluck('product_id')->filter()->unique())
+            ->get(['id', 'name', 'slug', 'thumbnail'])
+            ->keyBy('id');
 
         return response()->json([
             'success' => true,
-            'data'    => $reviews->map(fn ($r) => $this->formatPublic($r)),
+            'data'    => collect($reviews->items())->map(fn ($r) => $this->formatPublic($r, $products)),
             'meta'    => [
                 'total'        => $reviews->total(),
                 'per_page'     => $reviews->perPage(),
@@ -65,16 +87,23 @@ class SiteReviewApiController extends Controller
         $input = array_merge($request->all(), [
             'reviewer_name'  => $request->input('reviewer_name')  ?? $request->input('customer_name'),
             'reviewer_email' => $request->input('reviewer_email') ?? $request->input('email'),
+            'reviewer_phone' => $request->input('reviewer_phone') ?? $request->input('phone'),
         ]);
 
         try {
+            // The order can be verified by the phone OR the email used at checkout
+            // (email is optional at checkout, phone is not).
             $validated = validator($input, [
                 'reviewer_name'  => 'required|string|max:255',
-                'reviewer_email' => 'required|email|max:255',
+                'reviewer_email' => 'nullable|required_without:reviewer_phone|email|max:255',
+                'reviewer_phone' => 'nullable|required_without:reviewer_email|string|max:30',
                 'order_number'   => 'required|string|max:100',
                 'rating'         => 'required|integer|min:1|max:5',
                 'comment'        => 'required|string|min:10|max:2000',
                 'image'          => ['nullable', 'file', new SafeImage(['jpeg', 'png', 'jpg', 'webp']), 'max:2048'],
+            ], [
+                'reviewer_email.required_without' => 'Please enter the phone number or email used on the order.',
+                'reviewer_phone.required_without' => 'Please enter the phone number or email used on the order.',
             ])->validate();
         } catch (ValidationException $e) {
             return response()->json([
@@ -84,39 +113,40 @@ class SiteReviewApiController extends Controller
             ], 422);
         }
 
-        // ── 1. Verify order exists and was delivered ──────────────
-        // We load the sale relationship so that display_status can check
-        // Sale.delivery_status — orders.status is often frozen at 'processing'
-        // even after the linked Sale has been marked delivered.
-        $order = Order::where('order_number', $validated['order_number'])
-            ->first();
+        // ── 1. Find the order and verify the reviewer owns it ─────
+        // "Not found" and "details don't match" return the same message so the
+        // endpoint cannot be used to discover which order numbers exist.
+        $order    = Order::where('order_number', trim($validated['order_number']))->first();
+        $customer = $order ? Customer::find($order->customer_id) : null;
 
-        if (! $order) {
+        $email = strtolower(trim((string) ($validated['reviewer_email'] ?? '')));
+        $phone = PhoneHelper::normalize($validated['reviewer_phone'] ?? null);
+
+        $owns = $customer && (
+            ($email !== '' && strtolower(trim((string) $customer->email)) === $email)
+            || ($phone !== null && PhoneHelper::normalize($customer->phone) === $phone)
+        );
+
+        if (! $owns) {
+            $msg = 'We could not find an order matching this order number and phone/email.';
             return response()->json([
                 'success' => false,
-                'message' => 'No order found with this order number.',
+                'message' => $msg,
+                'errors'  => ['order_number' => [$msg]],
             ], 422);
         }
 
-        // Use display_status (Sale-aware) instead of raw orders.status
+        // ── 2. Only delivered orders can be reviewed ──────────────
+        // display_status is Sale-aware — orders.status is often frozen at
+        // 'processing' even after the linked Sale has been marked delivered.
         $order->loadMissing('sale');
 
         if ($order->display_status !== 'delivered') {
+            $msg = 'Only delivered orders are eligible for a review.';
             return response()->json([
                 'success' => false,
-                'message' => 'Only delivered orders are eligible for a review.',
-            ], 422);
-        }
-
-        // ── 2. Verify email matches the order's customer ──────────
-        $customerEmailMatches = Customer::where('id', $order->customer_id)
-            ->where('email', $validated['reviewer_email'])
-            ->exists();
-
-        if (! $customerEmailMatches) {
-            return response()->json([
-                'success' => false,
-                'message' => 'The email address does not match the order records.',
+                'message' => $msg,
+                'errors'  => ['order_number' => [$msg]],
             ], 422);
         }
 
@@ -148,7 +178,8 @@ class SiteReviewApiController extends Controller
             'order_id'       => $order->id,
             'order_number'   => $order->order_number,
             'reviewer_name'  => $validated['reviewer_name'],
-            'reviewer_email' => $validated['reviewer_email'],
+            // Column is NOT NULL — phone-verified reviewers get the order's email (or '').
+            'reviewer_email' => $email !== '' ? $email : (string) ($customer->email ?? ''),
             'rating'         => $validated['rating'],
             'comment'        => $validated['comment'],
             'image'          => $imagePath,
@@ -180,15 +211,28 @@ class SiteReviewApiController extends Controller
 
     // ── Private formatter ─────────────────────────────────────────
 
-    private function formatPublic(SiteReview $r): array
+    /** Row from the site/product union in index(). */
+    private function formatPublic(object $r, $products): array
     {
+        $product = $r->product_id ? $products->get($r->product_id) : null;
+
         return [
-            'id'            => $r->id,
-            'reviewer_name' => $r->reviewer_name,
-            'rating'        => $r->rating,
+            // Prefixed so ids from the two tables never collide in the feed.
+            'id'            => ($r->source === 'site' ? 's' : 'p') . $r->id,
+            'source'        => $r->source,
+            'customer_name' => $r->name,
+            'reviewer_name' => $r->name, // kept for older clients
+            'rating'        => (int) $r->rating,
             'comment'       => $r->comment,
+            'verified'      => (bool) $r->verified,
             'image'         => $r->image ? asset('storage/' . $r->image) : null,
-            'created_at'    => $r->created_at->toDateString(),
+            'created_at'    => substr((string) $r->created_at, 0, 10),
+            'product'       => $product ? [
+                'id'        => $product->id,
+                'name'      => $product->name,
+                'slug'      => $product->slug,
+                'thumbnail' => $product->thumbnail ? asset('storage/' . $product->thumbnail) : null,
+            ] : null,
         ];
     }
 }
