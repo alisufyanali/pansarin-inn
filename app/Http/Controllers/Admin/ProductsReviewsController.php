@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\API\HomepageApiController;
 use App\Http\Controllers\Controller;
 use App\Http\Repositories\Admin\ProductReviewRepository;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
@@ -42,6 +44,7 @@ class ProductsReviewsController extends Controller
         try {
             $request->validate(['status' => 'required|in:approved,pending']);
             $this->repo->updateStatus($id, $request->status === 'approved');
+            Cache::forget(HomepageApiController::CACHE_KEY);
             return back()->with('success', 'Review status updated.');
         } catch (\Exception $e) {
             Log::error('Reviews updateStatus: ' . $e->getMessage());
@@ -62,6 +65,7 @@ class ProductsReviewsController extends Controller
 
             $ids    = $request->ids;
             $action = $request->action;
+            Cache::forget(HomepageApiController::CACHE_KEY);
 
             if ($action === 'delete') {
                 $count = $this->repo->bulkDelete($ids);
@@ -92,15 +96,26 @@ class ProductsReviewsController extends Controller
     }
 
     // PATCH /admin/reviews/{id}/toggle-homepage
+    // Returns back() (not JSON) so the Inertia admin page can call it with router.patch.
     public function toggleHomepage(Request $request, string $id)
     {
+        $request->validate(['show_on_homepage' => 'required|boolean']);
+
+        $review = $this->repo->find($id);
+        $show   = $request->boolean('show_on_homepage');
+
+        // Only approved reviews are public, so only they can be featured.
+        if ($show && ! $review->status) {
+            return back()->withErrors(['show_on_homepage' => 'Approve the review before showing it on the homepage.']);
+        }
+
         try {
-            $review = $this->repo->find($id);
-            $review->update(['show_on_homepage' => (bool) $request->show_on_homepage]);
-            return response()->json(['success' => true, 'show_on_homepage' => $review->show_on_homepage]);
+            $review->update(['show_on_homepage' => $show]);
+            Cache::forget(HomepageApiController::CACHE_KEY);
+            return back();
         } catch (\Exception $e) {
             Log::error('Reviews toggleHomepage: ' . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Failed to update.'], 500);
+            return back()->withErrors(['show_on_homepage' => 'Failed to update.']);
         }
     }
 
@@ -109,6 +124,7 @@ class ProductsReviewsController extends Controller
     {
         try {
             $this->repo->delete($id);
+            Cache::forget(HomepageApiController::CACHE_KEY);
             return redirect()->route('admin.reviews.index')->with('success', 'Review deleted.');
         } catch (\Exception $e) {
             Log::error('Reviews destroy: ' . $e->getMessage());

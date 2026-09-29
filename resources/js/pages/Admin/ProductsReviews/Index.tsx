@@ -7,6 +7,7 @@ import { Head, router } from '@inertiajs/react';
 import {
     BarChart2,
     CheckCircle,
+    Home,
     MessageSquare,
     Reply,
     ShieldAlert,
@@ -36,6 +37,7 @@ interface Review {
     comment: string;
     is_verified: boolean;
     status: 'approved' | 'pending';
+    show_on_homepage: boolean;
     helpful_count: number;
     admin_reply: string | null;
     created_at: string;
@@ -170,6 +172,19 @@ export default function Index({
             `/admin/reviews/${id}/status`,
             { status },
             { preserveScroll: true, onSuccess: () => { toast.success(`Review ${status}.`); refresh(); } },
+        );
+    };
+
+    const toggleHomepage = (row: Review) => {
+        const show = !row.show_on_homepage;
+        router.patch(
+            `/admin/reviews/${row.id}/toggle-homepage`,
+            { show_on_homepage: show },
+            {
+                preserveScroll: true,
+                onSuccess: () => { toast.success(show ? 'Shown on homepage.' : 'Removed from homepage.'); refresh(); },
+                onError:   (errors) => toast.error(errors.show_on_homepage ?? 'Failed to update.'),
+            },
         );
     };
 
@@ -321,6 +336,20 @@ export default function Index({
                             <ThumbsDown size={14} />
                         </button>
                     )}
+                    {row.status === 'approved' && (
+                        <button
+                            title={row.show_on_homepage ? 'Remove from homepage' : 'Show on homepage'}
+                            aria-pressed={row.show_on_homepage}
+                            onClick={() => toggleHomepage(row)}
+                            className={`p-1.5 rounded-lg transition ${
+                                row.show_on_homepage
+                                    ? 'text-white bg-emerald-600 hover:bg-emerald-700'
+                                    : 'text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30'
+                            }`}
+                        >
+                            <Home size={14} />
+                        </button>
+                    )}
                     <button
                         title="Reply"
                         onClick={() => setReplyTarget(row)}
@@ -337,7 +366,7 @@ export default function Index({
                     </button>
                 </div>
             ),
-            width: '120px',
+            width: '150px',
             ignoreRowClick: true,
         },
     ];
