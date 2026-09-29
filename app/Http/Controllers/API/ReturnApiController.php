@@ -181,7 +181,7 @@ class ReturnApiController extends Controller
         $returns = ReturnRequest::with(['order:id,order_number', 'items'])
             ->where('user_id', $user->id)
             ->latest()
-            ->paginate($request->get('per_page', 10));
+            ->paginate(min(max((int) $request->get('per_page', 10), 1), 50));
 
         return response()->json([
             'success' => true,

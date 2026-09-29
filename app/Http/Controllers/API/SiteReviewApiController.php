@@ -36,7 +36,7 @@ class SiteReviewApiController extends Controller
             default          => $query->latest(), // 'newest'
         };
 
-        $reviews = $query->paginate(min((int) $request->get('per_page', 12), 50));
+        $reviews = $query->paginate(min(max((int) $request->get('per_page', 12), 1), 50));
 
         return response()->json([
             'success' => true,

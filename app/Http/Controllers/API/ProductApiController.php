@@ -99,7 +99,7 @@ class ProductApiController extends Controller
             $query->orderBy($sortBy, $sortOrder);
         }
 
-        $products = $query->paginate(min((int) $request->get('per_page', 15), 100));
+        $products = $query->paginate(min(max((int) $request->get('per_page', 15), 1), 100));
         $stocks   = $this->preloadStocks($products->getCollection());
 
         return response()->json([

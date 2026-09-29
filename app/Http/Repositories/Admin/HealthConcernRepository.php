@@ -36,8 +36,8 @@ class HealthConcernRepository
         }
 
         // Sorting
-        $sortBy    = $request->get('sortBy', 'sort_order');
-        $sortOrder = $request->get('sortOrder', 'asc');
+        $sortBy    = \App\Support\SortInput::column($request->get('sortBy'), 'sort_order');
+        $sortOrder = \App\Support\SortInput::direction($request->get('sortOrder'), 'asc');
         $query->orderBy($sortBy, $sortOrder);
 
         // Pagination

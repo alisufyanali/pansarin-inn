@@ -60,8 +60,8 @@ class UserController extends Controller
         }
 
         // Sorting
-        $sortBy = $request->get('sortBy', 'id');
-        $sortOrder = $request->get('sortOrder', 'desc');
+        $sortBy = \App\Support\SortInput::column($request->get('sortBy'), 'id');
+        $sortOrder = \App\Support\SortInput::direction($request->get('sortOrder'), 'desc');
         $query->orderBy($sortBy, $sortOrder);
 
         // Pagination

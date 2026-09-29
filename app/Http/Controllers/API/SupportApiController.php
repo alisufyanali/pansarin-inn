@@ -70,7 +70,7 @@ class SupportApiController extends Controller
     {
         $tickets = Ticket::where('user_id', $request->user()->id)
             ->latest()
-            ->paginate($request->get('per_page', 10));
+            ->paginate(min(max((int) $request->get('per_page', 10), 1), 50));
 
         return response()->json([
             'success' => true,

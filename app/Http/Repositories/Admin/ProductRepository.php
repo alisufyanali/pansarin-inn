@@ -39,7 +39,10 @@ class ProductRepository
         if ($request->filled('status'))   $query->where('status',   $request->status   === 'active');
         if ($request->filled('featured')) $query->where('featured', $request->featured  === 'yes');
 
-        $query->orderBy($request->get('sortBy', 'created_at'), $request->get('sortOrder', 'desc'));
+        $query->orderBy(
+            \App\Support\SortInput::column($request->get('sortBy'), 'created_at'),
+            \App\Support\SortInput::direction($request->get('sortOrder'), 'desc')
+        );
 
         $products = $query->paginate(min((int) $request->get('perPage', 10), 100), ['*'], 'page', $request->get('page', 1));
 

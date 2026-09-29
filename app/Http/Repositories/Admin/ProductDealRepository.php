@@ -35,8 +35,8 @@ class ProductDealRepository
         }
 
         // Sorting
-        $sortBy = $request->get('sortBy', 'created_at');
-        $sortOrder = $request->get('sortOrder', 'desc');
+        $sortBy = \App\Support\SortInput::column($request->get('sortBy'), 'created_at');
+        $sortOrder = \App\Support\SortInput::direction($request->get('sortOrder'), 'desc');
         $query->orderBy($sortBy, $sortOrder);
 
         $perPage = min((int) $request->get('perPage', 10), 100);

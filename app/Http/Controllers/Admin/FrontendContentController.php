@@ -56,10 +56,13 @@ class FrontendContentController extends Controller
         }
 
         if ($request->filled('sort_by') && $request->filled('sort_order')) {
-            $query->orderBy($request->sort_by, $request->sort_order);
+            $query->orderBy(
+                \App\Support\SortInput::column($request->sort_by, 'id'),
+                \App\Support\SortInput::direction($request->sort_order)
+            );
         }
 
-        $perPage = $request->input('perPage', $request->input('per_page', 10));
+        $perPage = min(max((int) $request->input('perPage', $request->input('per_page', 10)), 1), 100);
         $contents = $query->paginate($perPage);
 
         return response()->json($contents);

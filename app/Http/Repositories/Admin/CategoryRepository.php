@@ -38,8 +38,8 @@ class CategoryRepository
         }
 
         // Sorting
-        $sortBy = $request->get('sortBy', 'created_at');
-        $sortOrder = $request->get('sortOrder', 'desc');
+        $sortBy = \App\Support\SortInput::column($request->get('sortBy'), 'created_at');
+        $sortOrder = \App\Support\SortInput::direction($request->get('sortOrder'), 'desc');
         $query->orderBy($sortBy, $sortOrder);
 
         // Pagination

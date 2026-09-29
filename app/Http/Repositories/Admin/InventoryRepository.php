@@ -50,7 +50,10 @@ class InventoryRepository
         if ($request->filled('date_from')) $query->whereDate('created_at', '>=', $request->date_from);
         if ($request->filled('date_to'))   $query->whereDate('created_at', '<=', $request->date_to);
 
-        $query->orderBy($request->get('sortBy', 'created_at'), $request->get('sortOrder', 'desc'));
+        $query->orderBy(
+            \App\Support\SortInput::column($request->get('sortBy'), 'created_at'),
+            \App\Support\SortInput::direction($request->get('sortOrder'), 'desc')
+        );
         $inventories = $query->paginate(min((int) $request->get('perPage', 10), 100));
 
         // Pre-load stocks for this page's products in ONE query — avoids N+1 in formatRow()

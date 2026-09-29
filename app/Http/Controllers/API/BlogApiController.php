@@ -63,7 +63,7 @@ class BlogApiController extends Controller
             $query->whereHas('tags', fn ($q) => $q->where('slug', $request->tag));
         }
 
-        $blogs = $query->latest()->paginate($request->get('per_page', 10));
+        $blogs = $query->latest()->paginate(min(max((int) $request->get('per_page', 10), 1), 50));
 
         return response()->json([
             'success' => true,

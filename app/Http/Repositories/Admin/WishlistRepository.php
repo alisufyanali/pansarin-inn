@@ -26,7 +26,7 @@ class WishlistRepository
         if ($request->filled('product_id')) $query->where('product_id', $request->product_id);
 
         $sortBy    = $request->get('sortBy', 'created_at');
-        $sortOrder = $request->get('sortOrder', 'desc');
+        $sortOrder = \App\Support\SortInput::direction($request->get('sortOrder'), 'desc');
         $allowed   = ['id', 'user_id', 'product_id', 'created_at'];
         $query->orderBy(in_array($sortBy, $allowed) ? $sortBy : 'created_at', $sortOrder);
 

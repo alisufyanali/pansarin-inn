@@ -104,8 +104,8 @@ class RoleController extends Controller
         }
 
         // Sorting
-        $sortBy = $request->get('sortBy', 'id');
-        $sortOrder = $request->get('sortOrder', 'desc');
+        $sortBy = \App\Support\SortInput::column($request->get('sortBy'), 'id');
+        $sortOrder = \App\Support\SortInput::direction($request->get('sortOrder'), 'desc');
 
         if ($sortBy === 'permissions_count') {
             $query->withCount('permissions')

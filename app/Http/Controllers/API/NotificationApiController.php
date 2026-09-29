@@ -20,7 +20,7 @@ class NotificationApiController extends Controller
 
         $notifications = Notification::where('user_id', $userId)
             ->latest()
-            ->paginate($request->get('per_page', 15));
+            ->paginate(min(max((int) $request->get('per_page', 15), 1), 50));
 
         $unreadCount = Notification::where('user_id', $userId)
             ->where('is_read', false)
