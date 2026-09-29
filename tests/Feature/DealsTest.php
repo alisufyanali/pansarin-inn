@@ -200,3 +200,9 @@ it('lets admins toggle and duplicate deals', function () {
     $this->actingAs($admin)->post("/admin/deals/{$deal->id}/duplicate")->assertRedirect();
     expect(Deal::count())->toBe(2);
 });
+
+it('hides deals that have no active products', function () {
+    makeDeal(['title' => 'Empty', 'deal_type' => 'percentage', 'discount_value' => 10], []);
+
+    $this->getJson('/api/deals')->assertOk()->assertJsonCount(0, 'data');
+});

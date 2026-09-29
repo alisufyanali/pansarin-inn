@@ -48,6 +48,8 @@ class DealApiController extends Controller
     {
         return Deal::active()
             ->where(fn ($q) => $q->whereNull('max_uses')->orWhereColumn('current_uses', '<', 'max_uses'))
+            // A deal with no (active) products has nothing to show
+            ->whereHas('products', fn ($q) => $q->where('status', true))
             ->with(['products' => fn ($q) => $q->where('status', true)->with(['variants' => fn ($v) => $v->where('status', true), 'category:id,name,slug'])]);
     }
 
