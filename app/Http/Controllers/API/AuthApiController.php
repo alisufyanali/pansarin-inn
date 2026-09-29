@@ -99,6 +99,18 @@ class AuthApiController extends Controller
             return response()->json(['success' => false, 'message' => 'Invalid Pakistani mobile number.'], 422);
         }
 
+        // An existing account must never be claimed through /register — that would hand
+        // a token (and a password reset) to anyone who knows the phone number.
+        if ($this->identity->findUserByUsername($normalized) || $this->identity->findCustomerByPhone($normalized)?->user) {
+            $msg = 'An account with this phone number already exists. Please log in instead.';
+
+            return response()->json([
+                'success' => false,
+                'message' => $msg,
+                'errors'  => ['phone' => [$msg]],
+            ], 422);
+        }
+
         try {
             $parts = preg_split('/\s+/', trim($request->name), 2);
             [$user, $customer, $created] = $this->identity->findOrCreateByPhone($normalized, [

@@ -57,3 +57,25 @@ it('(j) DB unique violation on customers.phone returns no SQL in API response', 
     expect($body)->not->toContain('PDOException');
     expect($body)->not->toContain('Duplicate entry');
 });
+
+it('register with an already-registered phone does not issue a token or change the password', function () {
+    $this->postJson('/api/register', [
+        'name'                  => 'Owner',
+        'phone'                 => '+923005550000',
+        'password'              => 'Secret#123',
+        'password_confirmation' => 'Secret#123',
+    ])->assertStatus(201);
+
+    $attack = $this->postJson('/api/register', [
+        'name'                  => 'Attacker',
+        'phone'                 => '03005550000',
+        'password'              => 'Hacked#123',
+        'password_confirmation' => 'Hacked#123',
+    ]);
+
+    $attack->assertStatus(422)->assertJsonMissingPath('data.token');
+
+    $user = User::where('username', '03005550000')->orWhere('username', '+923005550000')->first()
+        ?? User::latest('id')->first();
+    expect(\Illuminate\Support\Facades\Hash::check('Secret#123', $user->password))->toBeTrue();
+});
