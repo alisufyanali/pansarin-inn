@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin\Settings;
 
+use App\Rules\SafeImage;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\HomepageCategoryProduct;
@@ -102,8 +103,8 @@ class UiSettingController extends Controller
 
     public function updateBrandingUI(Request $request) {
         $request->validate([
-            'home_top_logo' => 'nullable|image|max:2048',
-            'fav_ext' => 'nullable|image|max:1024',
+            'home_top_logo' => ['nullable', 'file', new SafeImage(), 'max:2048'],
+            'fav_ext' => ['nullable', 'file', new SafeImage(), 'max:1024'],
         ]);
 
         $this->updateSettings($request, [

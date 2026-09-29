@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Rules\SafeImage;
 use Illuminate\Foundation\Http\FormRequest;
 
 class ProductDealRequest extends FormRequest
@@ -19,7 +20,7 @@ class ProductDealRequest extends FormRequest
             'title' => 'required|string|max:255',
             'slug' => 'nullable|string|unique:deals,slug,'.$id,
             'description' => 'nullable|string',
-            'image' => 'nullable|image|max:2048',
+            'image' => ['nullable', 'file', new SafeImage(), 'max:2048'],
             'deal_type' => 'required|in:percentage,fixed,buy_x_get_y,bundle,flash_sale',
             'discount_value' => 'required_if:deal_type,percentage,fixed|nullable|numeric|min:0',
             'min_quantity' => 'required_if:deal_type,buy_x_get_y|nullable|integer|min:1',

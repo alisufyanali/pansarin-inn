@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Rules\SafeImage;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\Order;
@@ -73,7 +74,7 @@ class SiteReviewApiController extends Controller
                 'order_number'   => 'required|string|max:100',
                 'rating'         => 'required|integer|min:1|max:5',
                 'comment'        => 'required|string|min:10|max:2000',
-                'image'          => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+                'image'          => ['nullable', 'file', new SafeImage(['jpeg', 'png', 'jpg', 'webp']), 'max:2048'],
             ])->validate();
         } catch (ValidationException $e) {
             return response()->json([

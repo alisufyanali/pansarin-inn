@@ -87,3 +87,20 @@ it('(i) guest checkout existing phone: 201, no token, attaches to existing custo
         ->assertJsonPath('success', true)
         ->assertJsonMissing(['token']);
 });
+
+// Invalid (non-PK) phone → 422 with field-level errors.phone for the frontend
+it('guest checkout invalid phone: 422 with errors.phone', function () {
+    $this->postJson('/api/orders/guest', [
+        'name'             => 'Ali Hassan',
+        'phone'            => '+441234567890',
+        'shipping_address' => '123 Test Street, Karachi',
+        'items'            => [[
+            'product_id'         => $this->productId,
+            'product_variant_id' => $this->variantId,
+            'quantity'           => 1,
+            'price'              => 100,
+        ]],
+    ])->assertStatus(422)
+      ->assertJsonPath('success', false)
+      ->assertJsonStructure(['errors' => ['phone']]);
+});

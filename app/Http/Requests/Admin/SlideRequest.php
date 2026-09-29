@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Rules\SafeImage;
 use Illuminate\Foundation\Http\FormRequest;
 
 class SlideRequest extends FormRequest
@@ -16,7 +17,7 @@ class SlideRequest extends FormRequest
             'subtitle'   => 'nullable|string|max:500',
             'btn_text'   => 'nullable|string|max:100',
             'btn_url'    => 'nullable|string|max:500',
-            'image'      => 'nullable|image|max:5120',
+            'image'      => ['nullable', 'file', new SafeImage(), 'max:5120'],
             'sort_order' => 'nullable|integer|min:0',
             'is_active'  => 'nullable|boolean',
         ];

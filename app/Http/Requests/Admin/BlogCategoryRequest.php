@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Rules\SafeImage;
 use Illuminate\Foundation\Http\FormRequest;
 
 class BlogCategoryRequest extends FormRequest
@@ -25,7 +26,7 @@ class BlogCategoryRequest extends FormRequest
             'meta_description' => 'nullable|string|max:160',
             'meta_keywords' => 'nullable|string',
             'schema_markup' => 'nullable|string',
-            'social_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'social_image' => ['nullable', 'file', new SafeImage(['jpeg', 'png', 'jpg', 'gif', 'webp']), 'max:2048'],
             'social_description' => 'nullable|string|max:300',
         ];
     }

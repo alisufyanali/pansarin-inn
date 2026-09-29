@@ -35,12 +35,16 @@ class RewardsApiController extends Controller
         // Paginated transaction history — newest first
         $transactions = PointTransaction::where('customer_id', $customer->id)
             ->latest()
-            ->paginate($request->get('per_page', 15));
+            ->paginate(min(max((int) $request->get('per_page', 15), 1), 50));
+
+        // Wallet balance (store credit) — additive field, existing keys unchanged
+        $walletBalance = (float) ($customer->wallet?->balance ?? 0);
 
         return response()->json([
             'success' => true,
             'data'    => [
-                'balance'      => (int) $loyalty->balance,
+                'balance'        => (int) $loyalty->balance,
+                'wallet_balance' => $walletBalance,
                 'transactions' => $transactions->map(fn ($t) => [
                     'id'        => $t->id,
                     'points'    => $t->points,   // positive = earned, negative = redeemed

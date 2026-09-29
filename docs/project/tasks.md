@@ -58,19 +58,25 @@
 - [ ] **`CustomerImportSeeder` legacy ID map**: skipped duplicates should write to `storage/app/legacy_customer_id_map.json`; currently missing entries for skipped records
 - [ ] **`CustomerImportSeeder` phone normalization**: must use `PhoneHelper::normalize()` consistently; current `sanitizePhone()` may diverge
 - [ ] **`CustomerImportSeeder` default customer group**: assign `CustomerGroup` where `is_default = true`
-- [ ] **`CustomerImportSeeder` wallet/loyalty rows**: create `wallet` + `loyalty_points` rows for each imported customer (like AdminSeeder does)
+- [x] **`CustomerImportSeeder` wallet/loyalty rows**: create `wallet` + `loyalty_points` rows for each imported customer (like AdminSeeder does)
+  - 2026-09-28: already done in `CustomerLegacyImportService::importOne()` L342-343 (verified, no code change)
 - [ ] **`AdminSeeder` production guard**: seeder runs unconditionally in `DatabaseSeeder`; must skip or abort if `APP_ENV=production` to prevent test data in production
-- [ ] **`LoyaltyPointTransaction` model class missing**: `app/Models/LoyaltyPointTransaction.php` does not exist; `Customer::loyaltyTransactions()` will fail; table is `point_transactions`
+- [x] **`LoyaltyPointTransaction` model class missing**: `app/Models/LoyaltyPointTransaction.php` does not exist; `Customer::loyaltyTransactions()` will fail; table is `point_transactions`
+  - 2026-09-28: already done (commit 00c047d) — model exists, `$table = 'point_transactions'`; covered by `LoyaltyPointTransactionTest`. Note: duplicate `PointTransaction` model on same table — cleanup later.
 
 ### P1 — Important
 
-- [ ] **fileinfo upload fallback**: verify all remaining upload paths (WhatsApp media download uses `Storage::put()` with raw binary — different path, may be safe; confirm)
+- [x] **fileinfo upload fallback**: verify all remaining upload paths (WhatsApp media download uses `Storage::put()` with raw binary — different path, may be safe; confirm)
+  - 2026-09-28: WhatsApp `put()` confirmed safe (string write, no MIME guess). Real gap was validation: `image`/`mimes` rules call Symfony MimeTypes (needs fileinfo). Added `App\Rules\SafeImage` (ext whitelist + `getimagesize()`, safe-SVG check) and replaced all 17 rules in 11 files. `php -l` pass; `tests/Feature/SafeImageRuleTest.php` added — run `php artisan test` to confirm.
 - [ ] **Frontend `X-Build-Token` wiring**: Next.js build must send `X-Build-Token: {BUILD_API_TOKEN}` header on all API calls during `next build`; Vercel env var `BUILD_API_TOKEN` must be set
 - [ ] **Vercel env vars audit**: confirm `NEXT_PUBLIC_API_URL`, `BUILD_API_TOKEN`, and any other required vars are set in Vercel project settings
 - [ ] **Manjistha product merge**: two products named "Manjistha" with different thumbnails; decision pending (which to keep, how to migrate orders referencing deleted product)
 - [ ] **Guest checkout validation error display**: frontend shows no field-level errors on guest checkout failure
+  - 2026-09-28: backend half done — invalid-phone 422 now also returns `errors.phone` (was message-only); test added in `GuestCheckoutTest`. Remaining: Next.js must render `errors.*` per field (frontend repo not connected).
 - [ ] **Pakistan-only phone validation**: validated at API (`regex:/^\+92[0-9]{10}$/` in `storeGuest`); frontend does NOT enforce this — only a placeholder `+923000000000` in the WhatsApp settings field (`resources/js/pages/Admin/Settings/ui/marketing.tsx:40`); frontend enforcement is missing
-- [ ] **Blog category/tag article count = 0 bug**: root cause confirmed — `BlogApiController` has no endpoint to list categories/tags with article counts; `GET /api/blogs` returns category name/slug but no count; `BlogTagRepository::getAllForDataTable` does `withCount('blogs')` for admin only; fix requires adding a public `GET /api/blog-categories` (or similar) endpoint that returns categories with `blogs_count`
+  - 2026-09-28: note — backend now uses `PhoneHelper::normalize()` (not the regex above). Frontend work pending; frontend repo not connected this session.
+- [x] **Blog category/tag article count = 0 bug**: root cause confirmed — `BlogApiController` has no endpoint to list categories/tags with article counts; `GET /api/blogs` returns category name/slug but no count; `BlogTagRepository::getAllForDataTable` does `withCount('blogs')` for admin only; fix requires adding a public `GET /api/blog-categories` (or similar) endpoint that returns categories with `blogs_count`
+  - 2026-09-28: already done — `GET /api/blog-categories` + `/api/blog-tags` (`routes/api.php:66-67`, `BlogApiController.php:14-43`, published-only `withCount`), covered by `BlogPublicEndpointsTest`. Frontend consumption not verified.
 
 ### P2 — Nice to Have
 
@@ -78,6 +84,7 @@
 - [ ] Review count on product card — **API already returns `reviews_count` and `reviews_avg_rating` in `GET /api/products` list response** (source: `ProductApiController.php:26`); this is a frontend display issue in the Next.js repo, not a missing API field
 - [ ] Footer category links — no footer component found in `resources/js/` (frontend repo issue)
 - [ ] Rewards page missing sections (wallet balance display, transaction history)
+  - 2026-09-28: backend done — `GET /api/rewards` now adds `data.wallet_balance` (additive, non-breaking) and caps `per_page` at 50; history already paginated. Remaining: Next.js rewards page UI (frontend repo not connected).
 - [ ] Banner sizing fix — correct aspect ratio for carousel/banner images (exact dimensions TODO: confirm from frontend repo; no 812×317 reference found in this codebase)
 - [ ] Fresh Next.js SEO audit (meta tags, canonical URLs, structured data)
 - [ ] Hostinger VPS decision (shared → VPS migration for queue workers, supervisor)

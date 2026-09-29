@@ -301,9 +301,11 @@ class OrderApiController extends Controller
 
         $normalizedPhone = PhoneHelper::normalize($request->phone);
         if (! $normalizedPhone) {
+            $msg = 'Invalid Pakistani mobile number. Use format 03XXXXXXXXX.';
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid Pakistani mobile number.',
+                'message' => $msg,
+                'errors'  => ['phone' => [$msg]],
             ], 422);
         }
 

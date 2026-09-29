@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Rules\SafeImage;
 use App\Http\Controllers\Controller;
 use App\Models\FrontendContent;
 use Illuminate\Http\Request;
@@ -74,7 +75,7 @@ class FrontendContentController extends Controller
         try {
             $data = $request->validate([
                 'type'        => 'required|in:carousel,banner',
-                'image'       => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+                'image'       => ['required', 'file', new SafeImage(['jpeg', 'png', 'jpg', 'gif', 'webp']), 'max:2048'],
                 'title'       => 'nullable|string|max:255',
                 'order'       => 'nullable|integer|min:0',
                 'is_active'   => 'nullable|boolean',
@@ -122,7 +123,7 @@ class FrontendContentController extends Controller
         try {
             $data = $request->validate([
                 'type'        => 'required|in:carousel,banner',
-                'image'       => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+                'image'       => ['nullable', 'file', new SafeImage(['jpeg', 'png', 'jpg', 'gif', 'webp']), 'max:2048'],
                 'title'       => 'nullable|string|max:255',
                 'order'       => 'nullable|integer|min:0',
                 'is_active'   => 'nullable|boolean',

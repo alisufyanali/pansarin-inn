@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Rules\SafeImage;
 use Illuminate\Foundation\Http\FormRequest;
 
 class CategoryRequest extends FormRequest
@@ -21,13 +22,13 @@ class CategoryRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'parent_id' => 'nullable|exists:categories,id',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'image' => ['nullable', 'file', new SafeImage(['jpeg', 'png', 'jpg', 'gif']), 'max:2048'],
             'status' => 'boolean',
             'meta_title' => 'nullable|string|max:60',
             'meta_description' => 'nullable|string',
             'meta_keywords' => 'nullable|string',
             'schema_markup' => 'nullable|string',
-            'social_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'social_image' => ['nullable', 'file', new SafeImage(['jpeg', 'png', 'jpg', 'gif']), 'max:2048'],
             'social_description' => 'nullable|string',
         ];
     }

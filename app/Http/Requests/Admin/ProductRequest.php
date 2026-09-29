@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Rules\SafeImage;
 use Illuminate\Foundation\Http\FormRequest;
 
 class ProductRequest extends FormRequest
@@ -38,10 +39,10 @@ class ProductRequest extends FormRequest
             'sale_price' => 'nullable|numeric|min:0',
             'status' => 'sometimes|boolean',
             'featured' => 'sometimes|boolean',
-            'thumbnail' => 'nullable|image|max:2048',
-            'social_image' => 'nullable|image|max:2048',
+            'thumbnail' => ['nullable', 'file', new SafeImage(), 'max:2048'],
+            'social_image' => ['nullable', 'file', new SafeImage(), 'max:2048'],
             'gallery' => 'nullable|array',
-            'gallery.*' => 'image|max:2048',
+            'gallery.*' => ['file', new SafeImage(), 'max:2048'],
             'meta_title' => 'nullable|string|max:60',
             'meta_description' => 'nullable|string|max:160',
             'meta_keywords' => 'nullable|string',

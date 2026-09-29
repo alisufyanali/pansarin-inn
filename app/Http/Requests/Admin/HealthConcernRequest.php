@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Rules\SafeImage;
 use Illuminate\Foundation\Http\FormRequest;
 
 class HealthConcernRequest extends FormRequest
@@ -15,7 +16,7 @@ class HealthConcernRequest extends FormRequest
     {
         return [
             'name'       => 'required|string|max:255',
-            'icon'       => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
+            'icon'       => ['nullable', 'file', new SafeImage(['jpeg', 'png', 'jpg', 'gif', 'svg', 'webp']), 'max:2048'],
             'status'     => 'boolean',
             'sort_order' => 'nullable|integer|min:0',
         ];
