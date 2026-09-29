@@ -175,7 +175,7 @@ class OrderApiController extends Controller
         $orders = Order::with(['items', 'city:id,name', 'sale', 'customer'])
             ->where('customer_id', $customer->id)
             ->latest()
-            ->paginate($request->get('per_page', 10));
+            ->paginate(min(max((int) $request->get('per_page', 10), 1), 50));
 
         return response()->json([
             'success' => true,
@@ -546,45 +546,6 @@ class OrderApiController extends Controller
             $trackingFromSale = $o->sale?->shipping_response;
             $trackingFromOrder = $o->shipping_response ?? null;
             $base['tracking']         = $trackingFromSale ?: $trackingFromOrder;
-        }
-
-        return $base;
-    }
-
-    private function formatSaleAsOrder(\App\Models\Sale $s, bool $detailed = false): array
-    {
-        $orderNumber = $s->order?->order_number ?? $s->sale_code;
-        $base = [
-            'id'              => $s->id,
-            'order_number'    => $orderNumber,
-            'sale_code'       => $s->sale_code,
-            'status'          => $s->display_status,
-            'payment_status'  => $s->payment_status,
-            'payment_method'  => $s->payment_type,
-            'grand_total'     => (float) $s->grand_total,
-            'subtotal'        => (float) ($s->subtotal ?? 0),
-            'shipping'        => (float) ($s->shipping_charges ?? 0),
-            'discount'        => (float) ($s->invoice_discount ?? 0),
-            'tax'             => (float) ($s->vat ?? 0),
-            'city'            => $s->city ? $s->city->name : ($s->customer?->city?->name ?? null),
-            'created_at'      => $s->sale_datetime ?? $s->created_at,
-            'account_created' => false,
-        ];
-
-        if ($detailed) {
-            $base['items']            = $s->items->map(fn ($item) => [
-                'id'           => $item->id,
-                'product_name' => $item->meta['product_name'] ?? $item->product?->name ?? null,
-                'variant'      => $item->meta['variant_name'] ?? null,
-                'quantity'     => $item->quantity,
-                'price'        => (float) $item->price,
-                'discount'     => (float) ($item->discount ?? 0),
-                'subtotal'     => (float) $item->subtotal,
-            ]);
-            $base['shipping_address'] = $s->shipping_address ?? $s->customer?->address ?? null;
-            $base['billing_address']  = null;
-            $base['order_note']       = $s->remarks ?? null;
-            $base['tracking']         = $s->shipping_response ?? null;
         }
 
         return $base;

@@ -22,8 +22,8 @@ Route::middleware([TrackAffiliate::class])->group(function () {
 
 Route::match(['get', 'post'], '/whatsapp/webhook', [WhatsAppController::class, 'webhook'])->middleware('throttle:30,1')->name('whatsapp.webhook');
 
-// TODO: Add Spatie permission `run-maintenance` to the database, assign to admin roles, then use:
-Route::middleware(['auth', 'permission:run-maintenance'])->group(function () {
+// Maintenance helpers — staff with the `run-maintenance` permission only (seeded in RolePermissionSeeder)
+Route::middleware(['auth', 'staff', 'permission:run-maintenance'])->group(function () {
     Route::get('/clear-cache', function () {
         try {
             Artisan::call('cache:clear');
