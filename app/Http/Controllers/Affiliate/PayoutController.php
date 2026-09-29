@@ -109,7 +109,16 @@ class PayoutController extends Controller
 
         // 2. Database Transaction taake koi aik query fail ho to sab rollback ho jaye
         DB::transaction(function () use ($wallet, $affiliate, $amount, $method, $snapshotString, $detailsSnapshot) {
-            
+
+            // Lock the wallet and re-check the balance — two requests submitted at
+            // once must not both pass the validation above and overdraw it.
+            $lockedBalance = (float) \App\Models\Wallet::whereKey($wallet?->id)->lockForUpdate()->value('balance');
+            if (! $wallet || $amount > $lockedBalance) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'amount' => 'Aapke wallet mein itna balance maujood nahi hai.',
+                ]);
+            }
+
             // Step A: Wallet balance se amount fauri minus (Freeze) karein
             $wallet->decrement('balance', $amount);
             $affiliate->decrement('balance', $amount);

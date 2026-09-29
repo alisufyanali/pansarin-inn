@@ -144,7 +144,18 @@ class AffiliateController extends Controller
             'email' => 'required|email|unique:users,email',
             'password' => ['required', 'confirmed', Password::defaults()],
             'affiliate_code' => 'nullable|string|exists:affiliates,affiliate_code',
+            'phone' => ['required', 'string', 'max:30', function ($attr, $value, $fail) {
+                $normalized = \App\Helpers\PhoneHelper::normalize($value);
+                if (! $normalized) {
+                    $fail('Invalid Pakistani mobile number. Use format 03XXXXXXXXX.');
+                } elseif (User::where('username', $normalized)->orWhere('phone', $normalized)->exists()
+                    || \App\Models\Customer::where('phone', $normalized)->whereNotNull('user_id')->exists()) {
+                    $fail('An account with this phone number already exists. Please log in instead.');
+                }
+            }],
         ]);
+
+        $phone = \App\Helpers\PhoneHelper::normalize($request->phone);
 
         $referredById = null;
 
@@ -159,16 +170,42 @@ class AffiliateController extends Controller
             if ($referrer) $referredById = $referrer->user_id;
         }
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'phone' => $request->phone,
-            'username' => $request->username ?? Str::slug($request->name) . rand(100, 999),
-            'password' => Hash::make($request->password),
-            'referred_by' => $referredById,
-        ]);
+        // Same shape as every other customer account: username = normalized phone
+        // (the storefront logs in by phone) and a Customer profile with wallet and
+        // loyalty points, without which the customer cannot place orders.
+        \Illuminate\Support\Facades\DB::transaction(function () use ($request, $phone, $referredById) {
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'phone' => $phone,
+                'username' => $phone,
+                'password' => Hash::make($request->password),
+                'referred_by' => $referredById,
+            ]);
 
-        $user->assignRole('customer');
+            $user->assignRole('customer');
+
+            $parts = preg_split('/\s+/', trim($request->name), 2);
+            $customer = \App\Models\Customer::where('phone', $phone)->whereNull('user_id')->first();
+            if ($customer) {
+                $customer->update(['user_id' => $user->id]);
+            } else {
+                $customer = \App\Models\Customer::create([
+                    'user_id'    => $user->id,
+                    'first_name' => $parts[0],
+                    'last_name'  => $parts[1] ?? null,
+                    'phone'      => $phone,
+                    'email'      => $request->email,
+                    'status'     => 'active',
+                ]);
+            }
+            if (! $customer->wallet) {
+                $customer->wallet()->create(['balance' => 0]);
+            }
+            if (! $customer->loyaltyPoints) {
+                $customer->loyaltyPoints()->create(['balance' => 0]);
+            }
+        });
         return redirect()->route('login')->with('success', 'Registration successful!');
     }
 
