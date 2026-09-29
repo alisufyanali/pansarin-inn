@@ -93,6 +93,14 @@ Meta WhatsApp → POST /whatsapp/webhook (signature-checked) → whatsapp_messag
 | POST | /api/login | Phone + password only (`login` or `phone` field, normalized). Per `phone|IP` 5 tries → 60 s lock. Deactivated users (`users.status=0`) → 403 |
 | POST | /api/register | New phone only — an existing phone returns 422 (never issues a token for another account). Accepts `ref` (affiliate code) |
 
+### Password reset — `throttle:api.password-reset` (5/min per email; requests come via the Next.js server IP)
+| Method | Path | Notes |
+|---|---|---|
+| POST | /api/forgot-password | `{email}` → sends Laravel reset link; same 200 answer whether or not the email exists |
+| POST | /api/reset-password | `{token, email, password, password_confirmation}` → resets, clears `must_change_password`, deletes all Sanctum tokens; bad/expired token → 422 |
+
+Reset link (`ResetPassword::createUrlUsing` in `AppServiceProvider`): customers → `{FRONTEND_URL}/reset-password?token=&email=`; staff/affiliates → Fortify `/reset-password/{token}`. Only accounts with an email can reset this way.
+
 ### Public — `throttle:api.public` (60/min per IP; 1000/min with valid `X-Build-Token`)
 | Method | Path | Extra limiter / notes |
 |---|---|---|

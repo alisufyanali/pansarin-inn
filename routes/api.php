@@ -14,6 +14,7 @@ use App\Http\Controllers\API\NewsletterApiController;
 use App\Http\Controllers\API\NotificationApiController;
 use App\Http\Controllers\API\OffersApiController;
 use App\Http\Controllers\API\OrderApiController;
+use App\Http\Controllers\API\PasswordResetApiController;
 use App\Http\Controllers\API\ProductApiController;
 use App\Http\Controllers\API\ProductReviewApiController;
 use App\Http\Controllers\API\ProfileApiController;
@@ -29,6 +30,10 @@ Route::middleware('throttle:10,1')->group(function () {
     Route::post('/login',    [AuthApiController::class, 'login']);
     Route::post('/register', [AuthApiController::class, 'register']);
 });
+
+// ── Storefront password reset (proxied by the Next.js /api/auth/* route handlers) ──
+Route::post('/forgot-password', [PasswordResetApiController::class, 'forgot'])->middleware('throttle:api.password-reset');
+Route::post('/reset-password',  [PasswordResetApiController::class, 'reset'])->middleware('throttle:api.password-reset');
 
 // ── Public routes — build-server aware rate limit (api.public limiter) ──
 // Normal traffic: 60 req/min per IP.

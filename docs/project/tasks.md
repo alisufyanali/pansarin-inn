@@ -35,6 +35,7 @@
 - [x] Admin: toggle-status + duplicate routes, Edit crash (null discount) fixed, flash_sale/bundle value field, deal prefill in admin order/sale forms
 
 ### 2026-09-30
+- [x] Storefront forgot/reset password: `POST /api/forgot-password`, `/api/reset-password` (were missing → 404); customer reset links open the storefront
 - [x] Affiliate referral program: `/api/affiliate/apply`, `/apply-me`, `/status`, `/click`; `ref` on register/orders; admin approve/block/per-affiliate commission; fixed Rs per delivered order; dashboard crash (`products.sale_price`) fixed; storefront referral links
 - [x] WhatsApp webhook: missing `Http` import (media messages crashed), all messages per batch, dedupe by wamid, more message types, media to `public/storage/whatsapp`, always 200
 

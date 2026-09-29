@@ -2,8 +2,10 @@
 
 namespace App\Providers;
 
+use App\Http\Middleware\EnsureStaff;
 use App\Models\Order;
 use App\Observers\OrderObserver;
+use Illuminate\Auth\Notifications\ResetPassword;
 use App\Services\WhatsAppService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -37,6 +39,19 @@ class AppServiceProvider extends ServiceProvider
     {
         // Register model observers
         Order::observe(OrderObserver::class);
+
+        // Password reset emails: customers reset on the storefront, staff and
+        // affiliates (who sign in to this app via Fortify) reset here.
+        ResetPassword::createUrlUsing(function ($user, string $token) {
+            $email = $user->getEmailForPasswordReset();
+
+            if (EnsureStaff::isStaff($user) || $user->hasRole('affiliate')) {
+                return route('password.reset', ['token' => $token, 'email' => $email]);
+            }
+
+            return rtrim((string) config('app.frontend_url'), '/')
+                . '/reset-password?' . http_build_query(['token' => $token, 'email' => $email]);
+        });
 
         // Strong password policy — applies wherever Password::defaults() is used
         Password::defaults(function () {
@@ -77,6 +92,12 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('api.reviews', fn (Request $request) => Limit::perMinute(5)->by($request->ip()));
         RateLimiter::for('api.coupons', fn (Request $request) => Limit::perMinute(20)->by($request->ip()));
         RateLimiter::for('api.guest-orders', fn (Request $request) => Limit::perMinute(10)->by($request->ip()));
+
+        // Password reset is proxied through the Next.js server, so every request
+        // arrives from the same IP — key by the email instead.
+        RateLimiter::for('api.password-reset', fn (Request $request) => Limit::perMinute(5)->by(
+            'pw-reset|' . (strtolower(trim((string) $request->input('email'))) ?: $request->ip())
+        ));
 
         // Register Spatie permission middleware aliases so controllers can use 'permission' and 'role'
         $router = $this->app->make(Router::class);
