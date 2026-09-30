@@ -18,7 +18,7 @@ class Product extends Model
         'aboutus', 'affiliate', 'api', 'arqiyaat', 'beauty-corner', 'blog', 'cancel-order', 'cart',
         'category', 'change-password', 'check-email', 'checkout', 'concern', 'contact', 'dawakhana',
         'desktop', 'faqs', 'forgot-password', 'herb', 'login', 'mobile', 'murrabajat', 'newarrival',
-        'offers', 'oils', 'order-confirmation', 'orders', 'our-commitment-to-quality', 'our-story',
+        'offers', 'offline', 'oils', 'order-confirmation', 'orders', 'our-commitment-to-quality', 'our-story',
         'pricing-policy', 'privacy', 'product', 'products', 'profile', 'register', 'remedies',
         'reset-password', 'reset-password-success', 'returns', 'reviews', 'rewards', 'shipping-info',
         'shop', 'spices', 'supplements', 'support', 'terms', 'track-order', 'wishlist',
