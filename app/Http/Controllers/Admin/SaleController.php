@@ -58,6 +58,8 @@ class SaleController extends Controller
                     'payment_status'  => $s->payment_status,
                     'payment_type'    => $s->payment_type,
                     'created_at'      => $s->created_at,
+                    // Invoice "Ship To" — the sale's address, else its order's (see Sales/Index.tsx)
+                    'shipping_address'=> $s->shipping_address,
                     'customer'        => $s->customer ? [
                         'id'         => $s->customer->id,
                         'first_name' => $s->customer->first_name,
@@ -67,8 +69,9 @@ class SaleController extends Controller
                         'address'    => $s->customer->address,
                     ] : null,
                     'order'           => $s->order ? [
-                        'id'           => $s->order->id,
-                        'order_number' => $s->order->order_number,
+                        'id'               => $s->order->id,
+                        'order_number'     => $s->order->order_number,
+                        'shipping_address' => $s->order->shipping_address,
                     ] : null,
                     'city'            => $s->city ? ['name' => $s->city->name] : ($s->customer?->city ? ['name' => $s->customer->city->name] : null),
                     'items'           => $s->items->map(fn ($item) => [

@@ -37,7 +37,8 @@ interface Sale {
     created_at: string;
     customer?: { id: number; first_name: string; last_name: string; phone: string; email?: string; address?: string };
     city?: { name: string } | null;
-    order?: { id: number; order_number: string };
+    shipping_address?: string | null;
+    order?: { id: number; order_number: string; shipping_address?: string | null };
     items?: SaleItem[];
 }
 
@@ -118,8 +119,13 @@ export default function Index({ stats, flash }: Props) {
         const pinIcon   = `<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:4px;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>`;
         const cityIcon  = `<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:4px;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`;
 
+        // Addresses are typed by customers on the storefront — never inject raw HTML
+        const escapeHtml = (v: string) => v.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+
         const invoices = selected.map(sale => {
             const items = sale.items ?? [];
+            // Where this sale ships: the sale's own address, else its order's, else the customer's
+            const shipTo = (sale.shipping_address || sale.order?.shipping_address || sale.customer?.address || '').trim();
             const date  = new Date(sale.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
             const itemRows = items.map((item, i) => `
@@ -171,8 +177,8 @@ export default function Index({ stats, flash }: Props) {
                     <div style="flex:1;background:#f8f8ff;border:1px solid #c7d2fe;border-radius:8px;padding:10px 14px;">
                         <div style="font-size:9px;font-weight:800;color:#4338ca;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;border-bottom:1px solid #e0e7ff;padding-bottom:4px;">Ship To</div>
                         <div style="color:#555;font-size:11px;line-height:1.9;">
-                            ${sale.customer?.address
-                                ? `<div>${pinIcon}${sale.customer.address}</div>`
+                            ${shipTo
+                                ? `<div style="white-space:pre-line;">${pinIcon}${escapeHtml(shipTo)}</div>`
                                 : '<div style="color:#aaa;font-style:italic;">No address provided</div>'}
                             ${sale.city?.name ? `<div>${cityIcon}${sale.city.name}</div>` : ''}
                             <div>${phoneIcon}${sale.customer?.phone ?? '—'}</div>
