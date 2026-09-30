@@ -43,6 +43,17 @@ class User extends Authenticatable
         ];
     }
 
+    protected static function booted(): void
+    {
+        // Deactivating an account (status = 0) signs it out of the storefront
+        // API everywhere — login is already refused for inactive users.
+        static::updated(function (User $user) {
+            if ($user->wasChanged('status') && $user->status !== null && ! (bool) $user->status) {
+                $user->tokens()->delete();
+            }
+        });
+    }
+
     public function unreadNotificationsCount()
     {
         return $this->unreadNotifications()->count();

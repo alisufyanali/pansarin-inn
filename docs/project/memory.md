@@ -42,8 +42,8 @@
 - **Two auth systems**: storefront customers → Sanctum (`/api/login`); admin/affiliate → Fortify session (`/login`).
 - **Affiliate wallet** is kept equal to `affiliates.balance` by `Affiliate::updated` (increment/decrement fire it).
 - **Laravel numeric throttles share one bucket per IP** (`throttle:5,1` on two routes counts together) → use named limiters.
-- **Deactivating a user** (`status=0`) blocks new logins but does not revoke existing Sanctum tokens.
-- **BackfillPowderAdditional** uses `lower(json_extract(...)) = 'powder'`, which matches 0 rows on MySQL (quoted JSON value).
+- **Deactivating a user** (`status=0`) blocks logins and deletes their Sanctum tokens (`User::booted`). There is no admin UI toggle for `users.status` yet.
+- **Raw `json_extract()`** returns quoted values on MySQL but bare values on SQLite — compare JSON attributes in PHP or with Laravel `->` paths.
 - **routes/test.php** is only registered when `APP_ENV=local` — production `.env` must say `production`.
 
 ---

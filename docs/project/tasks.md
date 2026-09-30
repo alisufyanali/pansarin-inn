@@ -51,13 +51,13 @@
 
 ### P1
 - [ ] Confirm meaning of `product_variants.price` (cost vs selling) and make `OrderRepository` cost price consistent
-- [ ] Revoke Sanctum tokens when a user is deactivated
+- [x] Revoke Sanctum tokens when a user is deactivated (`User::booted`, 2026-09-30)
 - [ ] Loyalty redemption endpoint (`POST /rewards/redeem`) — storefront rewards page waits for it
 - [ ] Automatic refund / loyalty reversal on completed returns (currently manual)
 - [ ] Manjistha product merge (owner decision)
 
 ### P2
-- [ ] `BackfillPowderAdditional`: use `JSON_UNQUOTE` / `where('attributes->Form', ...)` (matches 0 rows on MySQL)
+- [x] `BackfillPowderAdditional` matched 0 rows on MySQL — now filters in PHP (2026-09-30)
 - [ ] Merge duplicate `PointTransaction` / `LoyaltyPointTransaction` models
 - [ ] `PageController` (Pages CMS) has no routes — finish or remove
 - [ ] `tsc --noEmit` pre-existing admin panel TypeScript errors

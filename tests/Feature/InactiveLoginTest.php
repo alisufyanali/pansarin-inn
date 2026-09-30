@@ -18,6 +18,19 @@ it('refuses API login for a deactivated account', function () {
         ->assertJsonMissingPath('data.token');
 });
 
+it('signs a user out of the API when the account is deactivated', function () {
+    $user = User::create([
+        'name' => 'Active', 'username' => '923005558888', 'phone' => '923005558888',
+        'password' => bcrypt('Secret#123'), 'status' => 1,
+    ]);
+    $user->createToken('api-token');
+    $user->createToken('api-token');
+
+    $user->update(['status' => 0]);
+
+    expect($user->tokens()->count())->toBe(0);
+});
+
 it('refuses web login for a deactivated account', function () {
     User::create([
         'name' => 'Blocked Staff', 'username' => 'blockedstaff', 'email' => 'blocked@example.com',

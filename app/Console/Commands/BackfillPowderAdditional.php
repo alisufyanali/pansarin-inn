@@ -19,17 +19,16 @@ class BackfillPowderAdditional extends Command
 
     public function handle(): int
     {
-        // SQLite supports JSON path extraction via json_extract().
-        // Laravel's whereJsonContains works on SQLite for simple scalar matches.
-        $query = ProductVariant::query()
+        // Filter in PHP: raw json_extract() returns the quoted value ("Powder") on
+        // MySQL but the bare value on SQLite, so a SQL comparison matched 0 rows
+        // on MySQL. A few thousand variants — cheap to scan.
+        $ids = ProductVariant::withTrashed() // include soft-deleted rows — backfill data integrity
             ->where('additional', 0)
-            ->whereRaw(
-                // Case-insensitive: lower(json_extract(...)) = 'powder'
-                "lower(json_extract(attributes, '$.Form')) = 'powder'"
-            )
-            ->withTrashed(); // include soft-deleted rows — backfill data integrity
+            ->get(['id', 'attributes'])
+            ->filter(fn (ProductVariant $v) => strcasecmp(trim((string) (((array) $v->getAttribute('attributes'))['Form'] ?? '')), 'powder') === 0)
+            ->pluck('id');
 
-        $count = $query->count();
+        $count = $ids->count();
 
         if ($count === 0) {
             $this->info('Nothing to update — no Powder variants with additional = 0 found.');
@@ -38,8 +37,10 @@ class BackfillPowderAdditional extends Command
 
         $this->info("Found {$count} Powder variant(s) with additional = 0. Updating...");
 
-        // Update in one query for performance
-        $updated = $query->update(['additional' => 100]);
+        $updated = 0;
+        foreach ($ids->chunk(500) as $chunk) {
+            $updated += ProductVariant::withTrashed()->whereIn('id', $chunk)->where('additional', 0)->update(['additional' => 100]);
+        }
 
         $this->info("Done. {$updated} variant(s) updated to additional = 100.");
 
