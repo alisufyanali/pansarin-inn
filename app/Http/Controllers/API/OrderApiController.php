@@ -215,6 +215,7 @@ class OrderApiController extends Controller
             'shipping_address'      => 'nullable|string',
             'billing_address'       => 'nullable|string',
             'order_note'            => 'nullable|string',
+            'address_line'          => 'nullable|string|max:255',
             'invoice_discount'      => 'nullable|numeric|min:0',
             'shipping_charges'      => 'nullable|numeric|min:0',
             'coupon_code'           => 'nullable|string|max:50',
@@ -256,6 +257,7 @@ class OrderApiController extends Controller
                 'status'         => 'pending',
                 'payment_status' => 'unpaid',
             ]));
+            $this->rememberAddress($customer, $request);
 
             // Dispatch confirmation email — only reached if order was saved successfully.
             // Wrapped independently so a mail failure never rolls back the order response.
@@ -381,6 +383,7 @@ class OrderApiController extends Controller
                 'city_id'          => 'nullable|integer|exists:cities,id',
                 'payment_method'   => 'nullable|string|max:100',
                 'order_note'       => 'nullable|string',
+                'address_line'     => 'nullable|string|max:255',
                 'shipping_charges' => 'nullable|numeric|min:0',
                 'invoice_discount' => 'nullable|numeric|min:0',
                 'coupon_code'      => 'nullable|string|max:50',
@@ -445,6 +448,7 @@ class OrderApiController extends Controller
                 'payment_status' => 'unpaid',
                 'tax'            => 0,
             ]));
+            $this->rememberAddress($customer, $request);
 
             try {
                 SendOrderConfirmationEmail::dispatch($order);
@@ -503,6 +507,24 @@ class OrderApiController extends Controller
 
             return response()->json(['success' => false, 'message' => 'Failed to place order.'], 500);
         }
+    }
+
+    /**
+     * Save the street address and city used for this order on the customer, so
+     * the next checkout is pre-filled (GET /api/user → customer.address / city_id).
+     * address_line is the street part only (shipping_address also has name + city).
+     */
+    private function rememberAddress(\App\Models\Customer $customer, Request $request): void
+    {
+        $line = trim((string) $request->input('address_line', ''));
+        if ($line === '') {
+            return;
+        }
+
+        $customer->update(array_filter([
+            'address' => $line,
+            'city_id' => $request->input('city_id') ?: null,
+        ], fn ($v) => $v !== null));
     }
 
     // ── Format Helper ─────────────────────────────────────────────
