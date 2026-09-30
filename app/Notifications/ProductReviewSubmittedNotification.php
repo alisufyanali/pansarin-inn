@@ -27,7 +27,7 @@ class ProductReviewSubmittedNotification extends Notification
             'product_name'      => $productName,
             'customer_name'     => $this->review->customer_name,
             'rating'            => $this->review->rating,
-            'message'           => "New product review for \"{$productName}\" — {$this->review->rating}/5 stars by {$this->review->customer_name}. Pending approval.",
+            'message'           => "New product review for \"{$productName}\" — {$this->review->rating}/5 stars by {$this->review->customer_name}. Live on the product page — hide it from Admin → Reviews if needed.",
             'action_url'        => '/admin/reviews',
         ];
     }

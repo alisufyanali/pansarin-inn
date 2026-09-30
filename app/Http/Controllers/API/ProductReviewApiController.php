@@ -74,7 +74,9 @@ class ProductReviewApiController extends Controller
 
     // ── POST /api/products/{slug}/reviews ─────────────────────────
     // Guest-allowed (auth optional). Rating 1-5, comment min 10 chars.
-    // Auto-detects verified purchase for logged-in users.
+    // Published right away (admin can hide it later); is_verified = the reviewer
+    // bought this product — logged-in: a delivered order of theirs; guest: the
+    // order_number they give plus that order's phone or email.
     public function store(Request $request, string $slug)
     {
         $product = Product::where('slug', $slug)->where('status', true)->firstOrFail();
@@ -95,6 +97,7 @@ class ProductReviewApiController extends Controller
                 'rating'       => 'required|integer|min:1|max:5',
                 'comment'      => 'required|string|min:10|max:2000',
                 'order_number' => 'nullable|string|max:100',
+                'phone'        => 'nullable|string|max:30',
                 'images.*'     => ['nullable', 'file', new SafeImage(['jpeg', 'png', 'jpg', 'webp']), 'max:2048'],
             ])->validate();
         } catch (ValidationException $e) {
@@ -155,6 +158,19 @@ class ProductReviewApiController extends Controller
             }
         }
 
+        // Guest: order number + the phone or email that order was placed with
+        if (! $isVerified && ! $user && ! empty($validated['order_number'])
+            && (! empty($validated['email']) || ! empty($validated['phone']))) {
+            $phone = ! empty($validated['phone']) ? \App\Helpers\PhoneHelper::normalize($validated['phone']) : null;
+            $isVerified = Order::where('order_number', $validated['order_number'])
+                ->where('status', 'delivered')
+                ->whereHas('items', fn ($q) => $q->where('product_id', $product->id))
+                ->where(fn ($q) => $q
+                    ->when(! empty($validated['email']), fn ($q) => $q->orWhere('customer_email', $validated['email']))
+                    ->when($phone, fn ($q) => $q->orWhere('customer_phone', $phone)))
+                ->exists();
+        }
+
         // ── Image uploads ─────────────────────────────────────────
         $imagePaths = [];
         if ($request->hasFile('images')) {
@@ -181,7 +197,7 @@ class ProductReviewApiController extends Controller
             'comment'        => $validated['comment'],
             'images'         => $imagePaths ?: null,
             'is_verified'    => $isVerified,
-            'status'         => false, // pending admin approval
+            'status'         => true, // shown right away; admin can hide it (Unverified badge when not bought)
         ]);
 
         // Notify all admins of the new product review submission
@@ -199,13 +215,8 @@ class ProductReviewApiController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Thank you for your review! It will appear after admin approval.',
-            'data'    => [
-                'id'          => $review->id,
-                'rating'      => $review->rating,
-                'is_verified' => $review->is_verified,
-                'status'      => 'pending_approval',
-            ],
+            'message' => 'Thank you for your review!',
+            'data'    => $this->formatPublic($review->fresh()),
         ], 201);
     }
 
