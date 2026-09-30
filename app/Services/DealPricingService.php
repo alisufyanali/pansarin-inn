@@ -171,7 +171,7 @@ class DealPricingService
 
         return match ($deal->deal_type) {
             'percentage', 'flash_sale', 'bundle' => rtrim(rtrim(number_format($value, 2), '0'), '.') . '% OFF',
-            'fixed'       => 'Rs ' . number_format($value) . ' OFF',
+            'fixed'       => 'PKR ' . number_format($value) . ' OFF',
             'buy_x_get_y' => 'Buy ' . $deal->min_quantity . ' Get ' . $deal->free_quantity . ' Free',
             default       => 'DEAL',
         };

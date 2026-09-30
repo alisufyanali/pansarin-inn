@@ -34,7 +34,7 @@ class WhatsAppService
      * Send template message (for orders)
      *
      * @param float  $orderTotal          Raw numeric total — stored in DB log (decimal column).
-     * @param string $orderTotalFormatted Display string e.g. "Rs. 1,150.00" — sent in WhatsApp template.
+     * @param string $orderTotalFormatted Display string e.g. "PKR 1,150" — sent in WhatsApp template.
      *                                    Falls back to formatting $orderTotal when omitted.
      */
     public function sendTemplateMessage(
@@ -47,7 +47,7 @@ class WhatsAppService
         string $templateName = 'order_confirmation'
     ) {
         // Formatted display string for the WhatsApp template body
-        $displayTotal = $orderTotalFormatted !== '' ? $orderTotalFormatted : 'Rs. ' . number_format($orderTotal, 2);
+        $displayTotal = $orderTotalFormatted !== '' ? $orderTotalFormatted : 'PKR ' . number_format($orderTotal);
 
         $url = "{$this->apiUrl}/v22.0/{$this->phoneNumberId}/messages";
 
