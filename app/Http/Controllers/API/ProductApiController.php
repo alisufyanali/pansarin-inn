@@ -54,28 +54,21 @@ class ProductApiController extends Controller
             $query->where('featured', true);
         }
 
-        if ($request->filled('min_price') || $request->filled('max_price')) {
-            $query->where(function ($q) use ($request) {
-                // Check if any active variant fits the price range
-                $q->whereHas('variants', function ($sub) use ($request) {
-                    $sub->where('status', true);
-                    if ($request->filled('min_price')) {
-                        $sub->where('price', '>=', $request->min_price);
-                    }
-                    if ($request->filled('max_price')) {
-                        $sub->where('price', '<=', $request->max_price);
-                    }
-                })->orWhere(function ($sub) use ($request) {
-                    // Fall back to product price if it has no variants
-                    $sub->whereDoesntHave('variants');
-                    if ($request->filled('min_price')) {
-                        $sub->where('price', '>=', $request->min_price);
-                    }
-                    if ($request->filled('max_price')) {
-                        $sub->where('price', '<=', $request->max_price);
-                    }
-                });
-            });
+        // Price = what the card shows: a variant's (sale_price ?? price) + additional.
+        // Products have no price column — price lives on variants only.
+        $unitPrice = 'COALESCE(sale_price, price) + COALESCE(additional, 0)';
+
+        // Cheapest active variant = the "from" price on the card; filter and sort use it
+        $cardPrice = fn () => \App\Models\ProductVariant::selectRaw("MIN($unitPrice)")
+            ->whereColumn('product_id', 'products.id')
+            ->where('status', true);
+
+        if ($request->filled('min_price')) {
+            // Literal float (not a binding): SQLite compares a bound string as text
+            $query->where($cardPrice(), '>=', \Illuminate\Support\Facades\DB::raw((string) (float) $request->min_price));
+        }
+        if ($request->filled('max_price')) {
+            $query->where($cardPrice(), '<=', \Illuminate\Support\Facades\DB::raw((string) (float) $request->max_price));
         }
 
         // Default sort: name asc (alphabetical).
@@ -84,14 +77,7 @@ class ProductApiController extends Controller
         $sortOrder = $request->get('sort_order', 'asc') === 'desc' ? 'desc' : 'asc';
 
         if ($sortBy === 'price') {
-            $query->orderBy(
-                \App\Models\ProductVariant::select('price')
-                    ->whereColumn('product_id', 'products.id')
-                    ->where('status', true)
-                    ->orderBy('price', 'asc')
-                    ->limit(1),
-                $sortOrder
-            );
+            $query->orderBy($cardPrice(), $sortOrder)->orderBy('name');
         } elseif ($sortBy === 'rating') {
             // reviews_avg_rating is already loaded by the withAvg() above (filtered to approved reviews)
             $query->orderBy('reviews_avg_rating', $sortOrder);
