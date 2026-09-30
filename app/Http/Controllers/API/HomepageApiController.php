@@ -18,7 +18,7 @@ class HomepageApiController extends Controller
      * Cache keys for GET /api/homepage and GET /api/slides. Admin controllers
      * clear these after edits — always reference the constants, never the strings.
      */
-    public const CACHE_KEY        = 'homepage_data_v6';
+    public const CACHE_KEY        = 'homepage_data_v7';
     public const SLIDES_CACHE_KEY = 'slides_data';
 
     // GET /api/homepage — single combined endpoint
@@ -200,8 +200,13 @@ class HomepageApiController extends Controller
             ->map(fn ($r) => [
                 'id'            => 's' . $r->id,
                 'customer_name' => $r->reviewer_name,
+                'title'         => null,
                 'rating'        => $r->rating,
                 'comment'       => $r->comment,
+                // Site reviews are only accepted for a delivered order
+                'verified'      => true,
+                // Photos the customer attached (never the product image)
+                'images'        => $r->image ? [asset('storage/' . $r->image)] : [],
                 'product'       => null,
                 'created_at'    => $r->created_at->toDateString(),
             ]);
@@ -215,8 +220,11 @@ class HomepageApiController extends Controller
             ->map(fn ($r) => [
                 'id'            => $r->id,
                 'customer_name' => $r->customer_name,
+                'title'         => $r->title,
                 'rating'        => $r->rating,
                 'comment'       => $r->comment,
+                'verified'      => (bool) $r->is_verified,
+                'images'        => collect($r->images ?? [])->map(fn ($img) => asset('storage/' . $img))->values()->all(),
                 'product'       => $r->product ? [
                     'id'        => $r->product->id,
                     'name'      => $r->product->name,
