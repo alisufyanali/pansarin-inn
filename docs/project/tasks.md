@@ -52,7 +52,7 @@
 ### P1
 - [ ] Confirm meaning of `product_variants.price` (cost vs selling) and make `OrderRepository` cost price consistent
 - [x] Revoke Sanctum tokens when a user is deactivated (`User::booted`, 2026-09-30)
-- [ ] Loyalty redemption endpoint (`POST /rewards/redeem`) — storefront rewards page waits for it
+- [x] Loyalty redemption: `POST /api/rewards/redeem` (quote) + `redeem_points` on `POST /api/orders` and `/checkout/quote`, 50 pts = Rs 1, refunded on cancel (2026-09-30)
 - [ ] Automatic refund / loyalty reversal on completed returns (currently manual)
 - [ ] Manjistha product merge (owner decision)
 

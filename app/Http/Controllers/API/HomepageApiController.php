@@ -18,7 +18,7 @@ class HomepageApiController extends Controller
      * Cache keys for GET /api/homepage and GET /api/slides. Admin controllers
      * clear these after edits — always reference the constants, never the strings.
      */
-    public const CACHE_KEY        = 'homepage_data_v5';
+    public const CACHE_KEY        = 'homepage_data_v6';
     public const SLIDES_CACHE_KEY = 'slides_data';
 
     // GET /api/homepage — single combined endpoint
@@ -32,6 +32,8 @@ class HomepageApiController extends Controller
                 'categories'        => $this->getCategories(),
                 'category_products' => $this->getCategoryProducts(),
                 'featured_products' => $this->getFeaturedProducts(),
+                // Admin → Product Deals, bundle deals first — same shape as GET /api/deals
+                'combo_deals'       => app(DealApiController::class)->listing(null, false, 8, true),
                 'new_arrivals'      => $this->getNewArrivals(),
                 'video_products'    => $this->getVideoProducts(),
                 'reviews'           => $this->getReviewsData(),

@@ -87,6 +87,15 @@ class OrderRepository
                 $this->redeemCoupon($order, $data['coupon_code']);
             }
 
+            // Storefront checkout only (CheckoutPricingService) — discount is already in invoice_discount
+            if (! empty($data['points_redeemed'])) {
+                $order->update([
+                    'points_redeemed' => (int) $data['points_redeemed'],
+                    'points_discount' => (float) ($data['points_discount'] ?? 0),
+                ]);
+                app(\App\Services\LoyaltyRedemptionService::class)->redeem($order, (int) $data['points_redeemed']);
+            }
+
             $this->syncItems($order, $data['items']);
             $this->redeemDeals($order, $data['items']);
             $order->calculateTotals();

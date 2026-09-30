@@ -21,6 +21,8 @@ class Order extends Model
         'product_discount',
         'invoice_discount',
         'coupon_code',
+        'points_redeemed',
+        'points_discount',
         'shipping_charges',
         'tax',
         'grand_total',
@@ -42,6 +44,8 @@ class Order extends Model
         'subtotal'         => 'float',
         'product_discount' => 'float',
         'invoice_discount' => 'float',
+        'points_redeemed'  => 'integer',
+        'points_discount'  => 'float',
         'shipping_charges' => 'float',
         'tax'              => 'float',
         'grand_total'      => 'float',
@@ -183,6 +187,7 @@ class Order extends Model
             if ($order->wasChanged('status') && $order->status === 'cancelled') {
                 $order->restoreStock();
                 $order->releaseCoupon();
+                app(\App\Services\LoyaltyRedemptionService::class)->refund($order);
                 $order->releaseDeals();
             }
         });

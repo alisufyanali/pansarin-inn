@@ -36,6 +36,11 @@ class Deal extends Model
                 $deal->slug = Str::slug($deal->title);
             }
         });
+
+        // Homepage carries deal prices and the "Combo Deals" section
+        $forgetHomepage = fn () => \Illuminate\Support\Facades\Cache::forget(\App\Http\Controllers\API\HomepageApiController::CACHE_KEY);
+        static::saved($forgetHomepage);
+        static::deleted($forgetHomepage);
     }
 
     // Relationships

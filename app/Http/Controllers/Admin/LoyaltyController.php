@@ -58,7 +58,8 @@ class LoyaltyController extends Controller
                 'customer'     => $data['customer'],
                 'balance'      => $data['balance'],
                 'transactions' => $data['transactions'],
-                'meta'         => $data['meta'],
+                'meta'           => $data['meta'],
+                'redemptionRate' => app(\App\Services\LoyaltyRedemptionService::class)->rate(),
             ]);
         } catch (\Exception $e) {
             return redirect()->route('admin.loyalty.index')->with('error', 'Customer not found.');
@@ -134,7 +135,7 @@ class LoyaltyController extends Controller
             'loyalty_points_per_rupee'     => '0.01',
             'loyalty_min_order_amount'     => '0',
             'loyalty_points_expiry_days'   => '0',
-            'loyalty_redemption_rate'      => '0',
+            'loyalty_redemption_rate'      => '0.02', // 50 points = Rs 1
         ];
 
         $saved    = GeneralSetting::whereIn('type', $keys)->pluck('value', 'type')->all();

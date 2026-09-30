@@ -11,25 +11,41 @@ use Illuminate\Http\Request;
 
 class DealApiController extends Controller
 {
+    public const TYPES = ['percentage', 'fixed', 'buy_x_get_y', 'bundle', 'flash_sale'];
+
     public function __construct(protected DealPricingService $pricing) {}
 
     // GET /api/deals — active deals (admin → Product Deals), featured first
+    // ?featured=1 → featured only, ?type=bundle → one deal type only
     public function index(Request $request)
     {
+        $type = in_array($request->get('type'), self::TYPES, true) ? $request->get('type') : null;
+
+        return response()->json([
+            'success' => true,
+            'data'    => $this->listing($type, $request->boolean('featured')),
+        ]);
+    }
+
+    /**
+     * Active deals in the storefront shape. Also feeds the homepage
+     * "Combo Deals" section (HomepageApiController, bundle deals first).
+     */
+    public function listing(?string $type = null, bool $featuredOnly = false, int $limit = 50, bool $bundlesFirst = false): array
+    {
         $deals = $this->activeQuery()
-            ->when($request->boolean('featured'), fn ($q) => $q->where('is_featured', true))
+            ->when($type, fn ($q) => $q->where('deal_type', $type))
+            ->when($featuredOnly, fn ($q) => $q->where('is_featured', true))
+            ->when($bundlesFirst, fn ($q) => $q->orderByRaw("CASE WHEN deal_type = 'bundle' THEN 0 ELSE 1 END"))
             ->orderByDesc('is_featured')
             ->orderBy('display_order')
             ->latest('id')
-            ->limit(50)
+            ->limit($limit)
             ->get();
 
         $stocks = $this->stocksFor($deals->flatMap->products);
 
-        return response()->json([
-            'success' => true,
-            'data'    => $deals->map(fn (Deal $d) => $this->format($d, $stocks))->values(),
-        ]);
+        return $deals->map(fn (Deal $d) => $this->format($d, $stocks))->values()->all();
     }
 
     // GET /api/deals/{slug}

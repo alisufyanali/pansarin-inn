@@ -47,8 +47,8 @@ Admin CRUD + toggle + duplicate. Types: percentage, fixed, flash_sale, buy_x_get
 ### Returns — Done
 Customer request within 7 days of delivery; admin approve/reject/complete; completing restocks returned items. Refund/wallet credit is manual (not automated).
 
-### Loyalty points — Partial
-Earned on delivery (`OrderObserver`, rate from settings); admin adjust/settings. No redemption endpoint yet.
+### Loyalty points — Done
+Earned on delivery (`OrderObserver`, rate from settings); admin adjust/settings. Redeemed at checkout: `redeem_points` on `POST /api/orders` (logged-in only), rate `loyalty_redemption_rate` (default 0.02 = 50 pts for Rs 1), whole rupees only, capped at the amount after deals + coupon; discount goes into `invoice_discount` (also stored as `orders.points_discount`); points returned when the order is cancelled (`LoyaltyRedemptionService`). `POST /api/rewards/redeem` previews how many points / rupees apply.
 
 ### Wallet — Partial
 Polymorphic wallets for customers and affiliates. Affiliates use it for payouts; no customer-facing wallet spending.
@@ -75,7 +75,7 @@ KPIs, sales over time, top products/customers, category sales, payment breakdown
 | Item | Status |
 |---|---|
 | WhatsApp OTP for account claim / first login (default password = phone) | Open — needs decision |
-| Loyalty point redemption (`POST /rewards/redeem`) | Missing |
+| Loyalty point redemption | Done (2026-09-30) |
 | Automatic refund / points reversal on returns | Missing (manual) |
 | `product_variants.price` meaning (cost vs selling) inconsistent in code | Needs owner confirmation |
 | Deactivating a user does not revoke existing Sanctum tokens | Open |

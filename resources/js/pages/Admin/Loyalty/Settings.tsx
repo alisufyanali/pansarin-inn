@@ -155,7 +155,7 @@ export default function Settings({
                         {/* Redemption rate */}
                         <Field
                             label="PKR Value per Point (Redemption Rate)"
-                            hint="How much PKR is each point worth when redeemed at checkout? Set to 0 to disable redemption entirely."
+                            hint="How much PKR is each point worth when redeemed at checkout? 0.02 = 50 points for Rs 1. Set to 0 to disable redemption entirely."
                         >
                             <input
                                 type="number"

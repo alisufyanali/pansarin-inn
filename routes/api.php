@@ -129,6 +129,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1', 'password.changed'])->group(
 
     // Rewards (loyalty points)
     Route::get('/rewards', [RewardsApiController::class, 'index']);
+    Route::post('/rewards/redeem', [RewardsApiController::class, 'redeem']);
 
     // Returns
     Route::get('/returns',  [ReturnApiController::class, 'index']);

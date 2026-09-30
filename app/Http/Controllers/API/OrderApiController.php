@@ -29,9 +29,9 @@ class OrderApiController extends Controller
      *
      * @throws ValidationException
      */
-    private function applyServerPricing(array $data): array
+    private function applyServerPricing(array $data, ?int $pointsBalance = null): array
     {
-        $priced = app(\App\Services\CheckoutPricingService::class)->price($data);
+        $priced = app(\App\Services\CheckoutPricingService::class)->price($data, $pointsBalance);
         unset($priced['breakdown']);
 
         return $priced;
@@ -39,12 +39,14 @@ class OrderApiController extends Controller
 
     // POST /api/checkout/quote — public. Prices a cart exactly like order placement
     // (deals, coupon, shipping) so the cart/checkout can show the real total.
+    // redeem_points is priced only when a customer's Bearer token is sent.
     public function quote(Request $request)
     {
         try {
             $request->validate([
                 'city_id'                    => 'nullable|integer|exists:cities,id',
                 'coupon_code'                => 'nullable|string|max:50',
+                'redeem_points'              => 'nullable|integer|min:0',
                 'items'                      => 'required|array|min:1|max:100',
                 'items.*.product_id'         => 'required|integer|exists:products,id',
                 'items.*.product_variant_id' => 'nullable|integer|exists:product_variants,id',
@@ -59,20 +61,29 @@ class OrderApiController extends Controller
             ], 422);
         }
 
-        $pricing     = app(\App\Services\CheckoutPricingService::class);
-        $input       = $request->only(['city_id', 'coupon_code', 'items']);
-        $couponError = null;
+        $pricing = app(\App\Services\CheckoutPricingService::class);
+        $input   = $request->only(['city_id', 'coupon_code', 'redeem_points', 'items']);
+        $errors  = ['coupon_code' => null, 'redeem_points' => null];
+
+        // Public route: read the token if one is sent (no auth middleware here)
+        $customerId = auth('sanctum')->user()?->customer?->id;
+        $balance    = $customerId ? app(\App\Services\LoyaltyRedemptionService::class)->balance($customerId) : null;
 
         try {
-            try {
-                $priced = $pricing->price($input);
-            } catch (ValidationException $e) {
-                // A bad coupon should not hide the rest of the quote
-                if (! array_key_exists('coupon_code', $e->errors())) {
-                    throw $e;
+            // A bad coupon or points amount should not hide the rest of the quote:
+            // drop the failing one and price again (at most once per field).
+            for ($try = 0; ; $try++) {
+                try {
+                    $priced = $pricing->price($input, $balance);
+                    break;
+                } catch (ValidationException $e) {
+                    $field = collect(array_keys($errors))->first(fn ($f) => array_key_exists($f, $e->errors()));
+                    if (! $field || $try >= 2) {
+                        throw $e;
+                    }
+                    $errors[$field] = $e->errors()[$field][0];
+                    $input[$field]  = null;
                 }
-                $couponError = collect($e->errors()['coupon_code'])->first();
-                $priced = $pricing->price(array_merge($input, ['coupon_code' => null]));
             }
         } catch (ValidationException $e) {
             return response()->json([
@@ -84,7 +95,11 @@ class OrderApiController extends Controller
 
         return response()->json([
             'success' => true,
-            'data'    => array_merge($priced['breakdown'], ['coupon_error' => $couponError]),
+            'data'    => array_merge($priced['breakdown'], [
+                'coupon_error'   => $errors['coupon_code'],
+                'points_error'   => $errors['redeem_points'],
+                'points_balance' => $balance,
+            ]),
         ]);
     }
 
@@ -203,6 +218,7 @@ class OrderApiController extends Controller
             'invoice_discount'      => 'nullable|numeric|min:0',
             'shipping_charges'      => 'nullable|numeric|min:0',
             'coupon_code'           => 'nullable|string|max:50',
+            'redeem_points'         => 'nullable|integer|min:0',
         ]);
 
         $user = $request->user();
@@ -211,11 +227,18 @@ class OrderApiController extends Controller
             return response()->json(['success' => false, 'message' => 'Your account has no valid phone number.'], 422);
         }
 
+        // Resolved before pricing so the loyalty points balance is known
+        [, $customer] = $this->identity->findOrCreateByPhone($normalized, [
+            'first_name' => $user->name,
+            'email'      => $user->email,
+            'status'     => 'active',
+        ]);
+
         try {
             $priced = $this->applyServerPricing($request->only([
                 'city_id', 'payment_method', 'shipping_address', 'billing_address',
-                'order_note', 'coupon_code', 'items',
-            ]));
+                'order_note', 'coupon_code', 'redeem_points', 'items',
+            ]), app(\App\Services\LoyaltyRedemptionService::class)->balance($customer->id));
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
@@ -223,12 +246,6 @@ class OrderApiController extends Controller
                 'errors'  => $e->errors(),
             ], 422);
         }
-
-        [, $customer] = $this->identity->findOrCreateByPhone($normalized, [
-            'first_name' => $user->name,
-            'email'      => $user->email,
-            'status'     => 'active',
-        ]);
 
         // Came through an affiliate's referral link (first referral only)
         app(\App\Services\AffiliateService::class)->attachReferral($user, $request->input('ref'));
@@ -500,7 +517,9 @@ class OrderApiController extends Controller
             'grand_total'     => (float) $o->grand_total,
             'subtotal'        => (float) ($o->subtotal ?? 0),
             'shipping'        => (float) ($o->shipping_charges ?? 0),
-            'discount'        => (float) ($o->invoice_discount ?? 0),
+            'discount'        => (float) ($o->invoice_discount ?? 0),   // includes points_discount
+            'points_redeemed' => (int) ($o->points_redeemed ?? 0),
+            'points_discount' => (float) ($o->points_discount ?? 0),
             'tax'             => (float) ($o->tax ?? 0),
             'city'            => $o->city ? $o->city->name : null,
             'created_at'      => $o->created_at,

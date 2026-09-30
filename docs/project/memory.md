@@ -62,8 +62,8 @@
 - [ ] Meaning of `product_variants.price` (cost vs selling)
 - [ ] Manjistha duplicate product merge
 - [ ] VPS move (async queue, cron)
-- [ ] Loyalty redemption + customer wallet spending
-- [ ] Homepage "Combo Deals" section on the storefront still uses static data
+- [x] Loyalty redemption — 50 points = Rs 1, spent at checkout (2026-09-30); customer wallet spending still open
+- [x] Homepage "Combo Deals" — `/api/homepage` now returns `combo_deals` (admin deals, bundles first); storefront must switch from static data
 
 ---
 
@@ -77,3 +77,4 @@
 | 2026-09-29 | Security/logic audit + fixes: register takeover, server pricing + coupons, staff gate + permissions, stock double-deduction / restock, sale→order sync + return window, affiliate payout lock, profile phone sync, webhook signature, per_page/sort, login status, rate limits |
 | 2026-09-29 | Product Deals wired end-to-end (DealPricingService, CheckoutPricingService, /api/deals, /api/checkout/quote, admin toggle/duplicate/edit fix) |
 | 2026-09-30 | Affiliate referral program (apply → approve → ref tracking → fixed commission); WhatsApp webhook reliability fix (missing Http import, batches, dedupe, media); docs refreshed from code |
+| 2026-09-30 | Homepage `combo_deals` from admin deals (`/api/deals?type=`), loyalty redemption at checkout (50 pts = Rs 1) |

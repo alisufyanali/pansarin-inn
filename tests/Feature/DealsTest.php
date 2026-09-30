@@ -206,3 +206,17 @@ it('hides deals that have no active products', function () {
 
     $this->getJson('/api/deals')->assertOk()->assertJsonCount(0, 'data');
 });
+
+it('shows admin deals in the homepage combo_deals, bundles first', function () {
+    [$tulsi] = ($this->makeProduct)('tulsi', 500);
+    makeDeal(['title' => 'Ten Off', 'deal_type' => 'percentage', 'discount_value' => 10, 'is_featured' => true], [$this->product->id]);
+    makeDeal(['title' => 'Neem Tulsi Combo', 'deal_type' => 'bundle', 'discount_value' => 15], [$this->product->id, $tulsi->id]);
+    makeDeal(['title' => 'Off', 'deal_type' => 'fixed', 'discount_value' => 5, 'is_active' => false], [$this->product->id]);
+
+    $combos = $this->getJson('/api/homepage')->assertOk()->json('data.combo_deals');
+
+    expect(collect($combos)->pluck('title')->all())->toBe(['Neem Tulsi Combo', 'Ten Off'])
+        ->and($combos[0]['products'])->toHaveCount(2);
+
+    $this->getJson('/api/deals?type=bundle')->assertOk()->assertJsonCount(1, 'data');
+});

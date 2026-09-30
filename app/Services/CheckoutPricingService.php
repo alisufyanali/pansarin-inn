@@ -18,6 +18,8 @@ use Illuminate\Validation\ValidationException;
  *    price below the base is accepted only when a deal brings it that low.
  *  - Deals (DealPricingService) become per-line discounts.
  *  - The coupon discount is recomputed from coupon_code; invoice_discount is ignored.
+ *  - redeem_points (logged-in customers only) is checked against the balance
+ *    passed in; its rupee value is added to invoice_discount.
  *  - Shipping is the city rate, free above FREE_SHIPPING_ABOVE.
  */
 class CheckoutPricingService
@@ -28,15 +30,19 @@ class CheckoutPricingService
     /** Orders above this subtotal ship free — must match the checkout page rule. */
     public const FREE_SHIPPING_ABOVE = 5000;
 
-    public function __construct(protected DealPricingService $deals) {}
+    public function __construct(
+        protected DealPricingService $deals,
+        protected LoyaltyRedemptionService $points,
+    ) {}
 
     /**
-     * @return array  $data with items/invoice_discount/coupon_code/shipping_charges
-     *                rewritten, plus a 'breakdown' key for quotes.
+     * @param  int|null  $pointsBalance  customer's points balance; null = guest (no redemption)
+     * @return array  $data with items/invoice_discount/coupon_code/shipping_charges/
+     *                points_redeemed/points_discount rewritten, plus a 'breakdown' key for quotes.
      *
      * @throws ValidationException
      */
-    public function price(array $data): array
+    public function price(array $data, ?int $pointsBalance = null): array
     {
         $items      = array_values($data['items'] ?? []);
         $variantIds = collect($items)->pluck('product_variant_id')->filter()->unique();
@@ -128,7 +134,20 @@ class CheckoutPricingService
             $discount = round(min((float) $coupon->calculateDiscount($eligible), $eligible), 2);
             $data['coupon_code'] = $coupon->code;
         }
-        $data['invoice_discount'] = $discount;
+
+        // ── 3b. Loyalty points ───────────────────────────────────────
+        $wanted = (int) ($data['redeem_points'] ?? 0);
+        unset($data['redeem_points']);
+        $redeem = ['points' => 0, 'discount' => 0.0];
+        if ($wanted > 0) {
+            if ($pointsBalance === null) {
+                throw ValidationException::withMessages(['redeem_points' => ['Please log in to use your reward points.']]);
+            }
+            $redeem = $this->points->quote($wanted, $pointsBalance, $subtotal - $discount);
+        }
+        $data['points_redeemed']  = $redeem['points'];
+        $data['points_discount']  = $redeem['discount'];
+        $data['invoice_discount'] = round($discount + $redeem['discount'], 2);
 
         // ── 4. Shipping ──────────────────────────────────────────────
         $cityRate = ! empty($data['city_id'])
@@ -152,8 +171,10 @@ class CheckoutPricingService
             'deal_discount'    => round(collect($items)->sum('discount'), 2),
             'coupon_code'      => $data['coupon_code'],
             'coupon_discount'  => $discount,
+            'points_redeemed'  => $redeem['points'],
+            'points_discount'  => $redeem['discount'],
             'shipping'         => (float) $data['shipping_charges'],
-            'grand_total'      => round($subtotal - $discount + $data['shipping_charges'], 2),
+            'grand_total'      => round($subtotal - $data['invoice_discount'] + $data['shipping_charges'], 2),
         ];
 
         return $data;

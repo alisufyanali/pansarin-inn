@@ -205,10 +205,12 @@ export default function Show({
     balance,
     transactions: initialTransactions,
     meta: initialMeta,
+    redemptionRate = 0,
     flash,
 }: {
     customer: Customer;
     balance: number;
+    redemptionRate?: number;
     transactions: Transaction[];
     meta: Meta;
     flash?: { success?: string; error?: string };
@@ -310,7 +312,9 @@ export default function Show({
                         <span className="text-2xl font-normal opacity-70 ml-2">pts</span>
                     </div>
                     <p className="text-sm opacity-60 mt-2">
-                        Equivalent to PKR {(currentBalance * 1).toLocaleString()} in store credit (if redemption enabled)
+                        {redemptionRate > 0
+                            ? <>Worth PKR {Math.floor(currentBalance * redemptionRate).toLocaleString()} off at checkout</>
+                            : 'Redemption is switched off in Loyalty Settings'}
                     </p>
                 </div>
 
