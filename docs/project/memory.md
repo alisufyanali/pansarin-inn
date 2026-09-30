@@ -78,3 +78,4 @@
 | 2026-09-29 | Product Deals wired end-to-end (DealPricingService, CheckoutPricingService, /api/deals, /api/checkout/quote, admin toggle/duplicate/edit fix) |
 | 2026-09-30 | Affiliate referral program (apply → approve → ref tracking → fixed commission); WhatsApp webhook reliability fix (missing Http import, batches, dedupe, media); docs refreshed from code |
 | 2026-09-30 | Homepage `combo_deals` from admin deals (`/api/deals?type=`), loyalty redemption at checkout (50 pts = Rs 1) |
+| 2026-10-01 | QA batch: reviews publish instantly with is_verified; price filter/sort by card price (was 500); homepage review title/verified/photos; empty categories hidden + Spiecs retired; search suggestions; GET /api/slugs + reserved product slugs; other/alternative names in API; PKR wording |
