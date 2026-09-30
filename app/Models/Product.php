@@ -9,6 +9,21 @@ class Product extends Model
 {
     use SoftDeletes;
 
+    /**
+     * Storefront page URLs — a product slug must never equal one, or the product
+     * page (/{slug}) would be hidden by that page. Keep in sync with the
+     * storefront's lib/storefront-routes.ts STATIC_TOP_LEVEL.
+     */
+    public const RESERVED_SLUGS = [
+        'aboutus', 'affiliate', 'api', 'arqiyaat', 'beauty-corner', 'blog', 'cancel-order', 'cart',
+        'category', 'change-password', 'check-email', 'checkout', 'concern', 'contact', 'dawakhana',
+        'desktop', 'faqs', 'forgot-password', 'herb', 'login', 'mobile', 'murrabajat', 'newarrival',
+        'offers', 'oils', 'order-confirmation', 'orders', 'our-commitment-to-quality', 'our-story',
+        'pricing-policy', 'privacy', 'product', 'products', 'profile', 'register', 'remedies',
+        'reset-password', 'reset-password-success', 'returns', 'reviews', 'rewards', 'shipping-info',
+        'shop', 'spices', 'supplements', 'support', 'terms', 'track-order', 'wishlist',
+    ];
+
     protected $fillable = [
         'vendor_id',
         'category_id',

@@ -21,6 +21,7 @@ use App\Http\Controllers\API\ProfileApiController;
 use App\Http\Controllers\API\ReturnApiController;
 use App\Http\Controllers\API\RewardsApiController;
 use App\Http\Controllers\API\SiteReviewApiController;
+use App\Http\Controllers\API\SlugIndexController;
 use App\Http\Controllers\API\SupportApiController;
 use App\Http\Controllers\API\WishlistApiController;
 use Illuminate\Support\Facades\Route;
@@ -49,6 +50,7 @@ Route::middleware('throttle:api.public')->group(function () {
     Route::get('/products/{slug}',       [ProductApiController::class, 'show']);
     Route::get('/products/{slug}/related', [ProductApiController::class, 'related']);
     Route::get('/categories',            [ProductApiController::class, 'categories']);
+    Route::get('/slugs',                 [SlugIndexController::class, 'index']); // storefront 404/redirect checks
     Route::get('/cities',                [CityApiController::class, 'index']);
 
     // Health Concerns

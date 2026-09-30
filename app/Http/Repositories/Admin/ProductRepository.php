@@ -295,7 +295,8 @@ class ProductRepository
         $counter  = 1;
 
         while (
-            Product::where('slug', $slug)
+            in_array($slug, Product::RESERVED_SLUGS, true)
+            || Product::where('slug', $slug)
                 ->when($excludeId, fn ($q) => $q->where('id', '!=', $excludeId))
                 ->exists()
         ) {

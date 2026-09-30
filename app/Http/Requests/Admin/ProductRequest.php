@@ -21,7 +21,8 @@ class ProductRequest extends FormRequest
 
         return [
             'name' => 'required|string|max:255',
-            'slug' => 'nullable|string|max:255|unique:products,slug,'.$id,
+            'slug' => ['nullable', 'string', 'max:255', 'unique:products,slug,'.$id,
+                \Illuminate\Validation\Rule::notIn(\App\Models\Product::RESERVED_SLUGS)],
             'sku' => 'nullable|string|max:255',
             'barcode' => 'nullable|string|max:255',
             'category_id' => 'required|exists:categories,id',
@@ -73,6 +74,7 @@ class ProductRequest extends FormRequest
     {
         return [
             'name.required' => 'Product name is required.',
+            'slug.not_in' => 'This slug is a storefront page address (e.g. shop, herb, blog). Please choose another.',
             'category_id.required' => 'Category is required.',
             'category_id.exists' => 'Selected category does not exist.',
             'price.required' => 'Price is required.',
