@@ -44,7 +44,7 @@ class DatabaseSeeder extends Seeder
             StateSeeder::class,
             CitySeeder::class,
             HomepageDummyDataSeeder::class,
-            // CustomerImportSeeder::class
+            CustomerImportSeeder::class
 
         ]);
 
