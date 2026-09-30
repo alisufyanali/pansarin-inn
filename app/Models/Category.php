@@ -15,6 +15,7 @@ class Category extends Model
         'image',
         'parent_id',
         'status',
+        'sort_order',
         'meta_title',
         'meta_description',
         'meta_keywords',

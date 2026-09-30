@@ -14,6 +14,8 @@ export type CategoryFormData = {
     parent_id: string | number;
     image: File | null;
     status: boolean;
+    /** Position on the storefront (Shop By Category, filters) — lower first */
+    sort_order?: number | string;
     meta_title?: string;
     meta_description?: string;
     meta_keywords?: string;
@@ -42,6 +44,7 @@ export default function Form({ category, categories, isEdit = false }: CategoryF
         parent_id: category?.parent_id || '',
         image: null,
         status: category?.status ?? true,
+        sort_order: category?.sort_order ?? 99,
         meta_title: category?.meta_title || '',
         meta_description: category?.meta_description || '',
         meta_keywords: category?.meta_keywords || '',
@@ -191,6 +194,21 @@ export default function Form({ category, categories, isEdit = false }: CategoryF
                                             </span>
                                         </div>
                                     </div>
+                                </div>
+
+                                {/* Storefront position */}
+                                <div className="mt-4">
+                                    <label className={labelClass}>Display Order</label>
+                                    <input
+                                        type="number"
+                                        min={1}
+                                        max={999}
+                                        value={data.sort_order ?? ''}
+                                        onChange={e => setData('sort_order', e.target.value)}
+                                        className={inputClass(errors.sort_order)}
+                                    />
+                                    <p className="mt-1 text-xs text-gray-500">Order on the store (Shop By Category, filters). 1 comes first; categories without products are hidden on the store.</p>
+                                    <FieldError message={errors.sort_order} />
                                 </div>
                             </div>
                         </div>

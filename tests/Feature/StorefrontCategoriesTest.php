@@ -14,3 +14,13 @@ it('lists only categories that have active products', function () {
     $this->getJson('/api/categories')->assertOk()
         ->assertJsonPath('data.*.slug', ['herb']);
 });
+
+it('lists categories in the admin-set display order', function () {
+    foreach ([['Oils', 'oils', 5], ['Herbs', 'herb', 1], ['Beauty Corner', 'beauty-corner', 99], ['Spices', 'spices', 3]] as [$name, $slug, $order]) {
+        $c = Category::create(['name' => $name, 'slug' => $slug, 'status' => true, 'sort_order' => $order]);
+        Product::create(['category_id' => $c->id, 'name' => "$name item", 'slug' => "$slug-item", 'sku' => strtoupper($slug), 'unit' => 'gm', 'status' => true]);
+    }
+
+    $this->getJson('/api/categories')->assertOk()
+        ->assertJsonPath('data.*.slug', ['herb', 'spices', 'oils', 'beauty-corner']);
+});

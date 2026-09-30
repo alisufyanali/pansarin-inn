@@ -12,6 +12,14 @@ class CategoryRequest extends FormRequest
         return true;
     }
 
+    /** Empty Display Order = end of the list (column is not nullable). */
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('sort_order') && ($this->input('sort_order') === null || $this->input('sort_order') === '')) {
+            $this->merge(['sort_order' => 99]);
+        }
+    }
+
     public function rules(): array
     {
         $categoryId = $this->route('category');
@@ -24,6 +32,7 @@ class CategoryRequest extends FormRequest
             'parent_id' => 'nullable|exists:categories,id',
             'image' => ['nullable', 'file', new SafeImage(['jpeg', 'png', 'jpg', 'gif']), 'max:2048'],
             'status' => 'boolean',
+            'sort_order' => 'nullable|integer|min:1|max:999',
             'meta_title' => 'nullable|string|max:60',
             'meta_description' => 'nullable|string',
             'meta_keywords' => 'nullable|string',

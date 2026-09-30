@@ -18,7 +18,7 @@ class HomepageApiController extends Controller
      * Cache keys for GET /api/homepage and GET /api/slides. Admin controllers
      * clear these after edits — always reference the constants, never the strings.
      */
-    public const CACHE_KEY        = 'homepage_data_v8';
+    public const CACHE_KEY        = 'homepage_data_v9';
     public const SLIDES_CACHE_KEY = 'slides_data';
 
     // GET /api/homepage — single combined endpoint
@@ -87,6 +87,7 @@ class HomepageApiController extends Controller
             ->withCount(['products' => fn ($q) => $q->where('status', true)])
             ->with('children:id,name,slug,image,parent_id')
             ->whereNull('parent_id')
+            ->orderBy('sort_order')   // owner's order (Admin → Categories)
             ->orderBy('name')
             ->get(['id', 'name', 'slug', 'image', 'parent_id'])
             // Same rule as GET /api/categories: no empty categories on the storefront

@@ -174,6 +174,7 @@ class ProductApiController extends Controller
             ->withCount(['products' => fn ($q) => $q->where('status', true)])
             ->with('children:id,name,slug,image,parent_id')
             ->whereNull('parent_id')
+            ->orderBy('sort_order')   // owner's order (Admin → Categories)
             ->orderBy('name')
             ->get(['id', 'name', 'slug', 'image', 'parent_id'])
             // Storefront lists only categories a customer can shop (empty ones stay in admin)

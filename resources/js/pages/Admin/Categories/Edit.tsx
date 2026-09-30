@@ -10,6 +10,7 @@ interface Category {
     parent_id?: string | number | null;
     image?: string;
     status: boolean;
+    sort_order?: number;
     meta_title?: string;
     meta_description?: string;
     meta_keywords?: string;
@@ -38,6 +39,7 @@ export default function Edit({ category, categories }: { category: Category; cat
                     parent_id: category.parent_id ?? '',
                     image: category.image as any,
                     status: category.status,
+                    sort_order: category.sort_order ?? 99,
                     meta_title: category.meta_title,
                     meta_description: category.meta_description,
                     meta_keywords: category.meta_keywords,
