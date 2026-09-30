@@ -96,6 +96,10 @@ class ProductApiController extends Controller
                 'per_page'     => $products->perPage(),
                 'current_page' => $products->currentPage(),
                 'last_page'    => $products->lastPage(),
+                // Nothing matched a search: closest product names ("Did you mean …?")
+                'suggestions'  => $products->total() === 0 && $request->filled('search')
+                    ? app(\App\Services\SearchSuggestionService::class)->suggest((string) $request->search)
+                    : [],
             ],
         ]);
     }
