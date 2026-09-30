@@ -70,12 +70,7 @@ class CategorySeeder extends Seeder
                 'image' => 'categories/seeds.png',
                 'status' => true,
             ],
-            [
-                'name' => 'Spiecs',
-                'slug' => 'spiecs',
-                'image' => 'categories/spiecs.png',
-                'status' => true,
-            ]
+            // 'Spiecs' (misspelt duplicate of Spices) removed — see migration 2026_10_01_000001
         ];
 
         foreach ($categories as $category) {

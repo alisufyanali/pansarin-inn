@@ -171,7 +171,10 @@ class ProductApiController extends Controller
             ->with('children:id,name,slug,image,parent_id')
             ->whereNull('parent_id')
             ->orderBy('name')
-            ->get(['id', 'name', 'slug', 'image', 'parent_id']);
+            ->get(['id', 'name', 'slug', 'image', 'parent_id'])
+            // Storefront lists only categories a customer can shop (empty ones stay in admin)
+            ->filter(fn ($c) => $c->products_count > 0 || $c->children->isNotEmpty())
+            ->values();
 
         return response()->json([
             'success' => true,
