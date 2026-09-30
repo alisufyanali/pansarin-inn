@@ -484,6 +484,9 @@ class ProductApiController extends Controller
             'featured'        => (bool) $p->featured,
             'thumbnail'       => $p->thumbnail ? asset('storage/' . $p->thumbnail) : null,
             'urdu_name'       => $p->urdu_name,
+            // Other names customers search by ("Also known as" on the product page)
+            'other_name'       => $p->other_name ?: null,
+            'alternative_name' => $p->alternative_name ?: null,
             // 'description' = short overview text (used on cards / list views)
             'description'     => $p->short_description,
             // 'long_description' = full admin-written content (used on detail page)
