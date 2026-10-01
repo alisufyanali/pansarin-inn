@@ -125,7 +125,17 @@ export default function Index({ stats, flash }: Props) {
         const invoices = selected.map(sale => {
             const items = sale.items ?? [];
             // Where this sale ships: the sale's own address, else its order's, else the customer's
-            const shipTo = (sale.shipping_address || sale.order?.shipping_address || sale.customer?.address || '').trim();
+            let shipTo = (sale.shipping_address || sale.order?.shipping_address || sale.customer?.address || '').trim();
+            // Storefront orders stored "Name, street, city": the name is already under Bill To
+            // and the city has its own line, so show only the street part here.
+            const custName = `${sale.customer?.first_name ?? ''} ${sale.customer?.last_name ?? ''}`.trim();
+            for (const n of [custName, sale.customer?.first_name ?? ''].filter(Boolean)) {
+                if (shipTo.toLowerCase().startsWith(`${n.toLowerCase()},`)) { shipTo = shipTo.slice(n.length + 1).trim(); break; }
+            }
+            const cityName = sale.city?.name?.trim();
+            if (cityName && shipTo.toLowerCase().endsWith(`, ${cityName.toLowerCase()}`)) {
+                shipTo = shipTo.slice(0, -(cityName.length + 2)).trim();
+            }
             const date  = new Date(sale.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
             const itemRows = items.map((item, i) => `

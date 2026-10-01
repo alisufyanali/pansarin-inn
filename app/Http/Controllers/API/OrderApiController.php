@@ -190,7 +190,7 @@ class OrderApiController extends Controller
 
         $order->items->transform(function ($item) {
             $item->product_name  = $item->meta['product_name'] ?? $item->product?->name;
-            $item->variant_label = $item->meta['variant_name'] ?? $item->variant?->value;
+            $item->variant_label = $item->meta['variant_name'] ?? $item->variant?->label($item->product?->unit);
             return $item;
         });
 
@@ -360,7 +360,7 @@ class OrderApiController extends Controller
 
         $order->items->transform(function ($item) {
             $item->product_name  = $item->meta['product_name'] ?? $item->product?->name;
-            $item->variant_label = $item->meta['variant_name'] ?? $item->variant?->value;
+            $item->variant_label = $item->meta['variant_name'] ?? $item->variant?->label($item->product?->unit);
             return $item;
         });
 
