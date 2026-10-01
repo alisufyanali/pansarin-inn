@@ -120,11 +120,21 @@ class SendBulkWhatsAppMessage implements ShouldQueue
                 'api_response'     => is_array($response) ? json_encode($response) : (string) $response,
             ]);
 
-            Log::info('SendBulkWhatsAppMessage completed', [
-                'customer_id' => $customer->id,
-                'phone'       => $cleanPhone,
-                'status'      => 'logged',
-            ]);
+            // The log row above already holds Meta's error, so it is not
+            // re-logged as BULK-ERROR; just record the real outcome.
+            if (WhatsAppService::isFailure(is_array($response) ? $response : null)) {
+                Log::warning('SendBulkWhatsAppMessage rejected by Meta', [
+                    'customer_id' => $customer->id,
+                    'code'        => $response['error']['code'] ?? null,
+                    'error'       => $response['error']['message'] ?? null,
+                ]);
+            } else {
+                Log::info('SendBulkWhatsAppMessage completed', [
+                    'customer_id' => $customer->id,
+                    'phone'       => $cleanPhone,
+                    'status'      => 'sent',
+                ]);
+            }
 
         } catch (\Throwable $e) {
             Log::error('SendBulkWhatsAppMessage failed', [

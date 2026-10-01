@@ -119,7 +119,7 @@ export default function WhatsAppChat() {
         },
         onError: (errors) => {
           console.error('Failed to send message:', errors);
-          alert('Failed to send message');
+          alert(errors.message || 'Failed to send message');
           setSending(false);
         }
       }

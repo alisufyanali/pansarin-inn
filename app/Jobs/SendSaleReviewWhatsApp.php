@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Exceptions\WhatsAppApiException;
 use App\Models\Sale;
 use App\Models\WhatsappMessageLog;
 use App\Services\WhatsAppService;
@@ -55,6 +56,23 @@ class SendSaleReviewWhatsApp implements ShouldQueue
             'messages'         => $message,
             'api_response'     => json_encode($response),
         ]);
+
+        if (WhatsAppService::isFailure($response)) {
+            $e = new WhatsAppApiException($response);
+            Log::warning('Sale review WhatsApp rejected by Meta', [
+                'sale_id'   => $this->sale->id,
+                'error'     => $e->getMessage(),
+                'retryable' => $e->retryable,
+            ]);
+
+            // A retry cannot fix e.g. a customer outside the 24-hour window
+            if (! $e->retryable) {
+                $this->fail($e);
+                return;
+            }
+
+            throw $e;
+        }
 
         Log::info('WHATSAPP JOB RESPONSE: sale review message sent', ['sale_id' => $this->sale->id, 'response' => $response]);
     }

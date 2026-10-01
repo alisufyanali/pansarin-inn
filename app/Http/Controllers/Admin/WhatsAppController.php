@@ -214,6 +214,19 @@ class WhatsAppController extends Controller
                 'api_response' => json_encode($response),
             ]);
 
+            if (WhatsAppService::isFailure($response)) {
+                $error = 'WhatsApp did not send the message: ' . ($response['error']['message'] ?? 'unknown error');
+                Log::warning('WHATSAPP CONTROLLER SEND FAILED', ['code' => $response['error']['code'] ?? null]);
+
+                // withErrors (not a flash) so the chat's onError runs and the
+                // message is not shown as sent
+                if (request()->header('X-Inertia')) {
+                    return back()->withErrors(['message' => $error]);
+                }
+
+                return response()->json(['success' => false, 'error' => $error, 'response' => $response], 422);
+            }
+
             Log::info('WHATSAPP CONTROLLER SEND RESPONSE', ['status' => 'sent']);
 
             // If Inertia request, redirect back with success
@@ -365,7 +378,7 @@ class WhatsAppController extends Controller
 
         try {
             // 1. Media id → temporary download URL
-            $info     = Http::withToken($accessToken)->timeout(15)->get("{$apiUrl}/v22.0/{$mediaId}")->json();
+            $info     = Http::withToken($accessToken)->timeout(15)->get("{$apiUrl}/" . WhatsAppService::GRAPH_VERSION . "/{$mediaId}")->json();
             $mediaUrl = $info['url'] ?? null;
             if (! $mediaUrl) {
                 Log::warning('WhatsApp media URL missing', ['media_id' => $mediaId, 'response' => $info]);

@@ -4,6 +4,7 @@
 
 namespace App\Jobs;
 
+use App\Exceptions\WhatsAppApiException;
 use App\Models\Order;
 use App\Services\WhatsAppService;
 use Illuminate\Bus\Queueable;
@@ -70,11 +71,27 @@ class SendOrderWhatsAppNotification implements ShouldQueue
                 'order_confirmation'
             );
 
+            $whatsappService->throwIfFailed($response);
+
             Log::info('WHATSAPP JOB RESPONSE: order template sent', [
                 'order_id' => $this->order->id,
                 'response' => $response,
             ]);
 
+        } catch (WhatsAppApiException $e) {
+            Log::error('Order WhatsApp rejected by Meta', [
+                'order_id'  => $this->order->id,
+                'error'     => $e->getMessage(),
+                'retryable' => $e->retryable,
+            ]);
+
+            // A retry cannot fix e.g. a number outside the allow-list
+            if (! $e->retryable) {
+                $this->fail($e);
+                return;
+            }
+
+            throw $e;
         } catch (\Exception $e) {
             Log::error('Failed to send order WhatsApp', [
                 'order_id' => $this->order->id,

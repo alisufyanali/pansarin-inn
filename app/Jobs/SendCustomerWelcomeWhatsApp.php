@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Exceptions\WhatsAppApiException;
 use App\Models\Customer;
 use App\Services\WhatsAppService;
 use Illuminate\Bus\Queueable;
@@ -59,11 +60,26 @@ class SendCustomerWelcomeWhatsApp implements ShouldQueue
                 'api_response' => json_encode($response),
             ]);
 
+            $whatsappService->throwIfFailed($response);
+
             Log::info('WHATSAPP JOB RESPONSE: customer welcome sent', [
                 'customer_id' => $this->customer->id,
                 'response' => $response,
             ]);
 
+        } catch (WhatsAppApiException $e) {
+            Log::warning('Customer welcome WhatsApp rejected by Meta', [
+                'customer_id' => $this->customer->id,
+                'error'       => $e->getMessage(),
+                'retryable'   => $e->retryable,
+            ]);
+
+            if (! $e->retryable) {
+                $this->fail($e);
+                return;
+            }
+
+            throw $e;
         } catch (\Exception $e) {
             Log::error('WHATSAPP FAILED: Failed to send customer welcome WhatsApp', [
                 'customer_id' => $this->customer->id,

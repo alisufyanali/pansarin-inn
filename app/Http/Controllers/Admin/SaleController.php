@@ -389,8 +389,17 @@ class SaleController extends Controller
             $sent = 0;
             foreach ($sales as $sale) {
                 if ($sale->customer?->phone) {
-                    \App\Jobs\SendSaleReviewWhatsApp::dispatch($sale);
-                    $sent++;
+                    // On the sync queue a temporary Meta error throws here;
+                    // one failed send must not abort the rest of the batch.
+                    try {
+                        \App\Jobs\SendSaleReviewWhatsApp::dispatch($sale);
+                        $sent++;
+                    } catch (\Throwable $e) {
+                        \Illuminate\Support\Facades\Log::error('Sale review WhatsApp failed', [
+                            'sale_id' => $sale->id,
+                            'error'   => $e->getMessage(),
+                        ]);
+                    }
                 }
             }
             return response()->json(['success' => true, 'sent' => $sent]);

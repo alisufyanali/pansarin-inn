@@ -31,5 +31,8 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <!-- Never use the real WhatsApp credentials from .env in tests -->
+        <env name="WHATSAPP_ACCESS_TOKEN" value="test-token" force="true"/>
+        <env name="WHATSAPP_PHONE_NUMBER_ID" value="000000000" force="true"/>
     </php>
 </phpunit>
