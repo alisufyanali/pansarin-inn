@@ -35,16 +35,48 @@ export default function NotificationBell({ auth }: Props) {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    // Ids already shown, so a notification rings once whether it arrives by polling or Echo
+    const seenIdsRef = useRef<Set<string> | null>(null);
+
     useEffect(() => {
-        audioRef.current = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZUVE=');
+        audioRef.current = new Audio('/sounds/notification.mp3');
+        audioRef.current.preload = 'auto';
     }, []);
 
-    const playSound = () => { audioRef.current?.play().catch(() => {}); };
+    // Browsers block sound until the page has been clicked once; harmless if it still fails
+    const playSound = () => {
+        const a = audioRef.current;
+        if (!a) return;
+        a.currentTime = 0;
+        a.play().catch(() => {});
+    };
+
+    const announce = (fresh: Notification[]) => {
+        if (fresh.length === 0) return;
+        playSound();
+        if (fresh.length > 3) {
+            toast.success(`${fresh.length} new notifications`, { icon: '🔔', duration: 5000 });
+            return;
+        }
+        fresh.forEach(n => toast.success(n.data?.message || 'New notification', { icon: '🔔', duration: 5000 }));
+    };
 
     const fetchNotifications = async () => {
         try {
             const res = await axios.get<{ notifications: Notification[]; count: number }>('/admin/notifications/unread');
-            setNotifications(res.data.notifications);
+            const list = res.data.notifications;
+
+            // First load only remembers what is there; later polls ring for anything new
+            if (seenIdsRef.current === null) {
+                seenIdsRef.current = new Set(list.map(n => n.id));
+            } else {
+                const seen = seenIdsRef.current;
+                const fresh = list.filter(n => !seen.has(n.id));
+                fresh.forEach(n => seen.add(n.id));
+                announce(fresh);
+            }
+
+            setNotifications(list);
             setUnreadCount(res.data.count);
         } catch (err) {
             console.error('Failed to fetch notifications', err);
@@ -56,10 +88,24 @@ export default function NotificationBell({ auth }: Props) {
 
         fetchNotifications();
 
+        // Live broadcasting (Pusher) is not configured on every server, and the bell
+        // notifications are database-only — so poll. Every 20 s while the tab is
+        // visible, and straight away when the admin comes back to the tab.
+        const poll = window.setInterval(() => {
+            if (document.visibilityState === 'visible') fetchNotifications();
+        }, 20_000);
+        const onVisible = () => { if (document.visibilityState === 'visible') fetchNotifications(); };
+        document.addEventListener('visibilitychange', onVisible);
+
+        // Echo still delivers instantly where broadcasting is set up
         const channel = echo.private(`App.Models.User.${auth.user.id}`);
-        channel.notification((payload: any) => {
+        channel.notification((payload: { id?: string; type?: string; message: string; action_url?: string }) => {
+            const id = payload.id || Date.now().toString();
+            if (seenIdsRef.current?.has(id)) return;
+            seenIdsRef.current?.add(id);
+
             const newNotification: Notification = {
-                id: payload.id || Date.now().toString(),
+                id,
                 type: payload.type || 'default',
                 data: payload,
                 read_at: null,
@@ -67,12 +113,14 @@ export default function NotificationBell({ auth }: Props) {
             };
             setNotifications(prev => [newNotification, ...prev.slice(0, 4)]);
             setUnreadCount(prev => prev + 1);
-
-            playSound();
-            toast.success(payload.message || 'New notification', { icon: '🔔', duration: 4000 });
+            announce([newNotification]);
         });
 
-        return () => { echo.leave(`App.Models.User.${auth.user.id}`); };
+        return () => {
+            window.clearInterval(poll);
+            document.removeEventListener('visibilitychange', onVisible);
+            echo.leave(`App.Models.User.${auth.user.id}`);
+        };
     }, [auth?.user?.id]);
 
     const markAsRead = async (notificationId: string) => {

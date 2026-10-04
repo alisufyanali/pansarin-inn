@@ -188,7 +188,7 @@ class SiteReviewApiController extends Controller
 
         // Notify all admins of the new site review submission
         try {
-            $admins = \App\Models\User::role('admin')->get();
+            $admins = \App\Models\User::notifiableStaff()->get();
             foreach ($admins as $admin) {
                 $admin->notify(new \App\Notifications\SiteReviewSubmittedNotification($review));
             }

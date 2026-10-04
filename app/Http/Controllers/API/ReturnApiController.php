@@ -139,7 +139,7 @@ class ReturnApiController extends Controller
 
             // Notify all admins of the new return request
             try {
-                $admins = \App\Models\User::role('admin')->get();
+                $admins = \App\Models\User::notifiableStaff()->get();
                 foreach ($admins as $admin) {
                     $admin->notify(new \App\Notifications\ReturnRequestNotification($returnRequest));
                 }

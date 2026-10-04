@@ -180,7 +180,7 @@ class AffiliateApiController extends Controller
         ]);
 
         try {
-            foreach (User::role('admin')->get() as $admin) {
+            foreach (User::notifiableStaff()->get() as $admin) {
                 $admin->notify(new \App\Notifications\NewAffiliateApplicationNotification($affiliate));
             }
         } catch (\Throwable $e) {

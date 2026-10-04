@@ -11,7 +11,7 @@ class SendLowStockNotification
     public function handle(LowStockAlert $event)
     {
         // Get all admin users
-        $admins = User::role('admin')->get(); // If using Spatie permissions
+        $admins = User::notifiableStaff()->get(); // If using Spatie permissions
 
         foreach ($admins as $admin) {
             $admin->notify(new LowStockNotification($event->product));

@@ -349,7 +349,7 @@ class WhatsAppController extends Controller
         }
 
         try {
-            WhatsappMessage::create([
+            $stored = WhatsappMessage::create([
                 'wa_message_id' => $waId,
                 'from_number'   => $from,
                 'contact_name'  => $contactName,
@@ -362,6 +362,15 @@ class WhatsAppController extends Controller
             ]);
         } catch (\Illuminate\Database\UniqueConstraintViolationException) {
             return false; // a parallel retry already stored it
+        }
+
+        // Bell notification for staff; never fail the webhook over it (Meta would retry)
+        try {
+            foreach (\App\Models\User::notifiableStaff()->get() as $admin) {
+                $admin->notify(new \App\Notifications\WhatsAppMessageReceivedNotification($stored));
+            }
+        } catch (\Throwable $e) {
+            Log::error('WhatsAppMessageReceivedNotification failed', ['error' => $e->getMessage()]);
         }
 
         return true;

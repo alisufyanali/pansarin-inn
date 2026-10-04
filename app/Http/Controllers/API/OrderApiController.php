@@ -128,7 +128,7 @@ class OrderApiController extends Controller
 
         // Notify all admins of the customer-initiated order cancellation
         try {
-            $admins = \App\Models\User::role('admin')->get();
+            $admins = \App\Models\User::notifiableStaff()->get();
             foreach ($admins as $admin) {
                 $admin->notify(new \App\Notifications\OrderCancelledNotification($order));
             }
@@ -282,7 +282,7 @@ class OrderApiController extends Controller
 
             // Notify all admin users via the bell (database notification)
             try {
-                $admins = \App\Models\User::role('admin')->get();
+                $admins = \App\Models\User::notifiableStaff()->get();
                 foreach ($admins as $admin) {
                     $admin->notify(new \App\Notifications\NewOrderNotification($order));
                 }
@@ -469,7 +469,7 @@ class OrderApiController extends Controller
             }
 
             try {
-                $admins = User::role('admin')->get();
+                $admins = User::notifiableStaff()->get();
                 foreach ($admins as $admin) {
                     $admin->notify(new \App\Notifications\NewOrderNotification($order));
                 }

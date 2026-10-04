@@ -59,6 +59,16 @@ class User extends Authenticatable
         return $this->unreadNotifications()->count();
     }
 
+    /**
+     * Staff who get the admin bell notifications (new order, review, contact …).
+     * Includes super-admin — notifying role('admin') alone skipped the owner.
+     * whereHas instead of role([...]) so a role missing from the DB never throws.
+     */
+    public function scopeNotifiableStaff($query)
+    {
+        return $query->whereHas('roles', fn ($q) => $q->whereIn('name', ['super-admin', 'admin']));
+    }
+
     public function customer()
     {
         return $this->hasOne(Customer::class);

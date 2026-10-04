@@ -40,11 +40,14 @@ class NotificationController extends Controller
     //     ]);
     // }
 
+    /** Polled by the admin bell every few seconds — count and latest 5 in SQL, not every row in memory */
     public function unread()
     {
+        $user = auth()->user();
+
         return response()->json([
-            'count' => auth()->user()->unreadNotifications->count(),
-            'notifications' => auth()->user()->unreadNotifications->take(5),
+            'count'         => $user->unreadNotifications()->count(),
+            'notifications' => $user->unreadNotifications()->limit(5)->get(),
         ]);
     }
 
