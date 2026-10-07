@@ -1,7 +1,7 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { PlusCircle, ShoppingBag, Clock, TrendingUp, CheckCircle, DollarSign, Printer, CreditCard, Truck, Star, MessageCircle, Mail } from 'lucide-react';
+import { PlusCircle, ShoppingBag, Clock, TrendingUp, CheckCircle, DollarSign, Printer, CreditCard, Truck, Star, MessageCircle, Mail, CalendarDays } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
 import DataTableWrapper from '@/components/DataTableWrapper';
 import { CommonColumns } from '@/components/TableColumns';
@@ -51,9 +51,38 @@ interface Stats {
 }
 
 interface Props {
+    /** Stats for today (the screen opens on today's sales) */
     stats: Stats;
+    /** Today's date on the server, Y-m-d */
+    today: string;
     flash?: { success?: string; error?: string };
 }
+
+/** Local date as Y-m-d (what <input type="date"> uses) */
+function ymd(d: Date): string {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/** Quick ranges relative to the server's today */
+function presetRange(preset: 'today' | 'yesterday' | '7days' | 'month' | 'all', today: string): { from: string; to: string } {
+    const [y, m, d] = today.split('-').map(Number);
+    const day = (offset: number) => ymd(new Date(y, m - 1, d + offset));
+    switch (preset) {
+        case 'today':     return { from: today, to: today };
+        case 'yesterday': return { from: day(-1), to: day(-1) };
+        case '7days':     return { from: day(-6), to: today };
+        case 'month':     return { from: ymd(new Date(y, m - 1, 1)), to: today };
+        case 'all':       return { from: '', to: '' };
+    }
+}
+
+const PRESETS = [
+    { key: 'today',     label: 'Today' },
+    { key: 'yesterday', label: 'Yesterday' },
+    { key: '7days',     label: 'Last 7 days' },
+    { key: 'month',     label: 'This month' },
+    { key: 'all',       label: 'All time' },
+] as const;
 
 const DELIVERY_COLORS: Record<string, string> = {
     pending:    'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
@@ -71,7 +100,38 @@ const PAYMENT_COLORS: Record<string, string> = {
     refunded:       'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400',
 };
 
-export default function Index({ stats, flash }: Props) {
+export default function Index({ stats: todayStats, today, flash }: Props) {
+    // Date range for the list AND the stat cards — opens on today
+    const [range, setRange] = useState<{ from: string; to: string }>({ from: today, to: today });
+    const [stats, setStats] = useState<Stats>(todayStats);
+    const [statsLoading, setStatsLoading] = useState(false);
+    const rangeQuery = new URLSearchParams(range).toString();
+
+    // Page load already brought today's totals; any later change asks the server
+    const statsLoaded = useRef(false);
+    useEffect(() => {
+        if (!statsLoaded.current) { statsLoaded.current = true; return; }
+        const ctrl = new AbortController();
+        setStatsLoading(true);
+        axios.get<Stats>(`/admin/sales-stats?${rangeQuery}`, { signal: ctrl.signal })
+            .then(res => setStats(res.data))
+            .catch(err => { if (!axios.isCancel(err)) toast.error('Could not load totals for these dates.'); })
+            .finally(() => { if (!ctrl.signal.aborted) setStatsLoading(false); });
+        return () => ctrl.abort();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [rangeQuery]);
+
+    const activePreset = PRESETS.find(p => {
+        const r = presetRange(p.key, today);
+        return r.from === range.from && r.to === range.to;
+    })?.key;
+
+    const rangeLabel = !range.from && !range.to
+        ? 'All time'
+        : range.from === range.to
+            ? (range.from === today ? 'Today' : new Date(range.from + 'T00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }))
+            : `${range.from ? new Date(range.from + 'T00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '…'} – ${range.to ? new Date(range.to + 'T00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'today'}`;
+
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
     const [allRows, setAllRows] = useState<Sale[]>([]);
     const [paymentDropdown, setPaymentDropdown] = useState(false);
@@ -526,8 +586,52 @@ export default function Index({ stats, flash }: Props) {
                     </div>
                 </div>
 
-                {/* Stats */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                {/* Date range — filters the stat cards and the table together */}
+                <div className="flex flex-col lg:flex-row lg:items-center gap-3 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm px-4 py-3">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
+                        <CalendarDays className="w-4 h-4 text-blue-600" />
+                        Showing: <span className="text-blue-600 dark:text-blue-400">{rangeLabel}</span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 lg:ml-auto">
+                        {PRESETS.map(p => (
+                            <button
+                                key={p.key}
+                                type="button"
+                                onClick={() => setRange(presetRange(p.key, today))}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${
+                                    activePreset === p.key
+                                        ? 'bg-blue-600 border-blue-600 text-white'
+                                        : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'
+                                }`}
+                            >
+                                {p.label}
+                            </button>
+                        ))}
+                        <div className="flex items-center gap-1.5">
+                            <label className="text-xs text-gray-500 dark:text-gray-400" htmlFor="sales-from">From</label>
+                            <input
+                                id="sales-from"
+                                type="date"
+                                value={range.from}
+                                max={range.to || undefined}
+                                onChange={e => setRange(r => ({ ...r, from: e.target.value }))}
+                                className="px-2 py-1.5 text-xs rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
+                            />
+                            <label className="text-xs text-gray-500 dark:text-gray-400" htmlFor="sales-to">To</label>
+                            <input
+                                id="sales-to"
+                                type="date"
+                                value={range.to}
+                                min={range.from || undefined}
+                                onChange={e => setRange(r => ({ ...r, to: e.target.value }))}
+                                className="px-2 py-1.5 text-xs rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Stats — for the chosen dates */}
+                <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 transition-opacity ${statsLoading ? 'opacity-50' : ''}`}>
                     <StatCard title="Total Sales"  value={stats.total}                                          color="blue"    icon={ShoppingBag} />
                     <StatCard title="Pending"      value={stats.pending}                                        color="amber"   icon={Clock} />
                     <StatCard title="Processing"   value={stats.processing}                                     color="purple"  icon={TrendingUp} />
@@ -538,7 +642,7 @@ export default function Index({ stats, flash }: Props) {
                 {/* Table */}
                 <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
                     <DataTableWrapper
-                        fetchUrl="/admin/sales-data"
+                        fetchUrl={`/admin/sales-data?${rangeQuery}`}
                         columns={columns}
                         csvHeaders={csvHeaders}
                         searchableKeys={['sale_code', 'customer.first_name', 'customer.phone', 'delivery_status']}

@@ -7,7 +7,6 @@ use App\Models\Product;
 use App\Models\ProductStock;
 use App\Models\ProductVariant;
 use App\Models\Sale;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -32,6 +31,20 @@ class SaleRepository
         if ($request->filled('delivery_status')) $query->where('delivery_status', $request->delivery_status);
         if ($request->filled('payment_status'))  $query->where('payment_status', $request->payment_status);
 
+        return self::inDateRange($query, $request->input('from'), $request->input('to'));
+    }
+
+    /**
+     * Sales made from $from to $to (Y-m-d, both days included). Either end may
+     * be empty. Same rule for the list and the stat cards, so they always agree.
+     */
+    public static function inDateRange($query, ?string $from, ?string $to)
+    {
+        $valid = fn (?string $d) => $d && preg_match('/^\d{4}-\d{2}-\d{2}$/', $d);
+
+        if ($valid($from)) $query->where('sales.created_at', '>=', $from . ' 00:00:00');
+        if ($valid($to))   $query->where('sales.created_at', '<=', $to . ' 23:59:59');
+
         return $query;
     }
 
@@ -43,7 +56,6 @@ class SaleRepository
     public function store(array $data): Sale
     {
         return DB::transaction(function () use ($data) {
-            Cache::forget('sale_stats');
             $snapshots = $this->snapshotFieldsForCustomer(
                 (int) $data['customer_id'],
                 $data['shipping_address'] ?? null
@@ -115,7 +127,6 @@ class SaleRepository
     public function delete($id): bool
     {
         return DB::transaction(function () use ($id) {
-            Cache::forget('sale_stats');
             $sale = Sale::findOrFail($id);
             $sale->items()->delete();
             return $sale->delete();
@@ -142,25 +153,25 @@ class SaleRepository
         return $sale;
     }
 
-    public function getStats(): array
+    /** Stat cards for the sales screen, for the same date range as the list. */
+    public function getStats(?string $from = null, ?string $to = null): array
     {
-        return Cache::remember('sale_stats', 300, function () {
-            $counts = Sale::selectRaw("
-                COUNT(*) as total,
-                SUM(CASE WHEN delivery_status = 'pending' THEN 1 ELSE 0 END) as pending,
-                SUM(CASE WHEN delivery_status = 'processing' THEN 1 ELSE 0 END) as processing,
-                SUM(CASE WHEN delivery_status = 'delivered' THEN 1 ELSE 0 END) as delivered,
-                SUM(CASE WHEN payment_status = 'paid' THEN grand_total ELSE 0 END) as totalRevenue
-            ")->first();
+        // Not cached: it changes with every date range and is one aggregate query
+        $counts = self::inDateRange(Sale::query(), $from, $to)->selectRaw("
+            COUNT(*) as total,
+            SUM(CASE WHEN delivery_status = 'pending' THEN 1 ELSE 0 END) as pending,
+            SUM(CASE WHEN delivery_status = 'processing' THEN 1 ELSE 0 END) as processing,
+            SUM(CASE WHEN delivery_status = 'delivered' THEN 1 ELSE 0 END) as delivered,
+            SUM(CASE WHEN payment_status = 'paid' THEN grand_total ELSE 0 END) as totalRevenue
+        ")->first();
 
-            return [
-                'total'        => (int) $counts->total,
-                'pending'      => (int) $counts->pending,
-                'processing'   => (int) $counts->processing,
-                'delivered'    => (int) $counts->delivered,
-                'totalRevenue' => (float) $counts->totalRevenue,
-            ];
-        });
+        return [
+            'total'        => (int) $counts->total,
+            'pending'      => (int) $counts->pending,
+            'processing'   => (int) $counts->processing,
+            'delivered'    => (int) $counts->delivered,
+            'totalRevenue' => (float) $counts->totalRevenue,
+        ];
     }
 
     public function getProductsForForm(): \Illuminate\Support\Collection

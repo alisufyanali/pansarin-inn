@@ -329,6 +329,17 @@ export default function DataTableWrapper({
     };
   }, []);
 
+  // A page can change fetchUrl (e.g. Sales date range): load page 1 of the new URL,
+  // and keep refreshRef pointing at the current URL rather than the first one.
+  const firstUrl = useRef(fetchUrl);
+  useEffect(() => {
+    if (refreshRef) refreshRef.current = () => reloadData(1, perPage);
+    if (fetchUrl === firstUrl.current) return;
+    firstUrl.current = fetchUrl;
+    reloadData(1, perPage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchUrl]);
+
   // Event handlers
   const handlePageChange = (page: number) => {
     setCurrentPage(page);

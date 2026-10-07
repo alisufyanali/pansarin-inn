@@ -28,14 +28,29 @@ class SaleController extends Controller
             'bulkSendReviewWhatsApp',
         ]);
         $this->middleware('permission:delete.sales')->only(['destroy']);
-        $this->middleware('permission:view.sales')->only(['index', 'show', 'getData']);
+        $this->middleware('permission:view.sales')->only(['index', 'show', 'getData', 'stats']);
     }
 
     public function index(Request $request)
     {
+        // The screen opens on today's sales; the page re-asks /admin/sales-stats when the dates change
+        $today = now()->toDateString();
+
         return Inertia::render('Admin/Sales/Index', [
-            'stats' => $this->saleRepository->getStats(),
+            'stats' => $this->saleRepository->getStats($today, $today),
+            'today' => $today,
         ]);
+    }
+
+    /** GET /admin/sales-stats?from=Y-m-d&to=Y-m-d — stat cards for the chosen dates */
+    public function stats(Request $request)
+    {
+        $request->validate([
+            'from' => 'nullable|date_format:Y-m-d',
+            'to'   => 'nullable|date_format:Y-m-d',
+        ]);
+
+        return response()->json($this->saleRepository->getStats($request->input('from'), $request->input('to')));
     }
 
     public function getData(Request $request)
