@@ -42,6 +42,11 @@ return new class extends Migration
 
             $table->text('short_description')->nullable();
             $table->longText('long_description')->nullable();
+            // Product page tabs
+            $table->text('ingredients')->nullable();
+            $table->text('how_to_use')->nullable();
+            $table->text('benefits')->nullable();
+            $table->text('key_features')->nullable();
  
             $table->integer('number_of_view')->default(0);
             $table->text('video')->nullable();
@@ -64,6 +69,8 @@ return new class extends Migration
 
             $table->timestamps();
             $table->softDeletes();
+
+            $table->index(['status', 'featured'], 'products_status_featured_index');
         });
     }
 

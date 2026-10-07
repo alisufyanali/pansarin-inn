@@ -15,7 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('sku')->unique();
             $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
-            $table->foreignId('attribute_value_id')->nullable()->constrained('attribute_values')->onDelete('cascade');
+            // Variants carry their attributes as JSON; this old link is optional (no FK)
+            $table->unsignedBigInteger('attribute_value_id')->nullable()->index('product_variants_attribute_value_id_foreign');
             $table->string('value');
             $table->json('attributes')->nullable(); // stores attribute_value ids or key-value JSON
           

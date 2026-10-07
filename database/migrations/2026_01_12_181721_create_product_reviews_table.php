@@ -19,12 +19,22 @@ return new class extends Migration
             $table->string('customer_name'); // Guest ke liye name
             $table->string('customer_email')->nullable();
             $table->string('order_number')->nullable(); // Order verify karne ke liye
+            $table->string('title')->nullable();
 
             $table->integer('rating')->default(5);
             $table->text('comment');
+            $table->json('images')->nullable();
+            $table->unsignedInteger('helpful_count')->default(0);
+            $table->text('admin_reply')->nullable();
+            $table->timestamp('admin_replied_at')->nullable();
             $table->boolean('is_verified')->default(false); // Backend check karega
             $table->boolean('status')->default(false); // Admin approve karega ya nahi
+            $table->boolean('show_on_homepage')->default(false)->index();
             $table->timestamps();
+            $table->softDeletes();
+
+            // WHERE product_id = ? AND status = 1
+            $table->index(['product_id', 'status'], 'product_reviews_product_status_index');
         });
     }
 

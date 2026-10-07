@@ -51,6 +51,7 @@ return new class extends Migration
             $table->index(['product_variant_id', 'type']);
             $table->index('reference');
             $table->index('created_at'); // date range queries ke liye
+            $table->index(['product_id', 'product_variant_id'], 'inventories_product_variant_index');
         });
     }
 

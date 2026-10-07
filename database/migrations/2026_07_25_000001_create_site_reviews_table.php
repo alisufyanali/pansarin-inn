@@ -28,6 +28,8 @@ return new class extends Migration
 
             // Moderation
             $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
+            // Admin picks which approved reviews appear on the storefront homepage
+            $table->boolean('show_on_homepage')->default(false);
             $table->text('admin_note')->nullable();
 
             $table->timestamps();
@@ -36,6 +38,7 @@ return new class extends Migration
             $table->unique('order_id', 'site_reviews_order_id_unique');
             $table->index('status');
             $table->index('reviewer_email');
+            $table->index(['status', 'show_on_homepage']);
         });
     }
 

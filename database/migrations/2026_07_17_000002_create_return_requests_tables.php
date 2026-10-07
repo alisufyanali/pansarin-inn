@@ -29,6 +29,8 @@ return new class extends Migration
             $table->enum('reason_category', ['defective', 'wrong_item', 'not_needed', 'other']);
 
             $table->text('comment')->nullable();
+            $table->decimal('refund_amount', 12, 2)->nullable()
+                  ->comment('Refund amount set by admin when marking as completed/refunded');
 
             // Admin fields
             $table->text('admin_note')->nullable();

@@ -15,6 +15,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('order_id')->constrained('orders')->onDelete('cascade');
             $table->foreignId('customer_id')->constrained('customers')->onDelete('cascade');
+            // Customer as they were at the time of sale
+            $table->string('customer_name')->nullable();
+            $table->string('customer_phone', 20)->nullable();
+            $table->string('customer_email')->nullable();
             $table->string('sale_code')->unique(); // Order code se generate hoga
 
             // Amounts
@@ -62,6 +66,8 @@ return new class extends Migration
             $table->index('payment_status');
             $table->index('sale_datetime');
             $table->index('is_active');
+            $table->index('delivery_status', 'sales_delivery_status_index');
+            $table->index('customer_id', 'sales_customer_id_index');
         });
     }
 

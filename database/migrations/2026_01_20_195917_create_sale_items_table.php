@@ -14,7 +14,8 @@ return new class extends Migration
         Schema::create('sale_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('sale_id')->constrained('sales')->onDelete('cascade');
-            $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
+            // Null for a custom item bought in from outside (name/size in meta)
+            $table->foreignId('product_id')->nullable()->constrained('products')->onDelete('cascade');
             $table->foreignId('product_variant_id')->nullable()->constrained('product_variants')->onDelete('cascade');
 
             $table->unsignedInteger('quantity')->default(1);

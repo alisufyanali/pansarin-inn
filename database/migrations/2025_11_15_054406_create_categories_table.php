@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('image')->nullable();
             $table->unsignedBigInteger('parent_id')->nullable();
             $table->boolean('status')->default(true);
+            $table->unsignedSmallInteger('sort_order')->default(99); // storefront order, lower first
 
             // SEO Fields
             $table->string('meta_title', 60)->nullable();

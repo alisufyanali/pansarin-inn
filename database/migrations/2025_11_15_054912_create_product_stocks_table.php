@@ -18,6 +18,7 @@ return new class extends Migration
             $table->integer('quantity')->default(0);
             $table->timestamps();
             $table->unique(['product_id', 'product_variant_id']);
+            $table->index(['product_id', 'product_variant_id'], 'product_stocks_product_variant_index');
         });
     }
 

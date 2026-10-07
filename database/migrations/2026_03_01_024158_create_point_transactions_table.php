@@ -12,8 +12,12 @@ return new class extends Migration
             $table->id();
             $table->foreignId('customer_id')->constrained()->onDelete('cascade');
             $table->integer('points'); // Positive (+) for earn, Negative (-) for redeem
+            $table->enum('type', ['earned', 'redeemed', 'admin_adjustment'])->default('earned');
             $table->string('reason'); // e.g., 'purchase', 'referral', 'signup_bonus'
+            $table->string('reference')->nullable()->comment('e.g. order number or admin note');
             $table->timestamps();
+
+            $table->index('customer_id', 'point_transactions_customer_id_index');
         });
     }
 

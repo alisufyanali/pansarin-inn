@@ -14,6 +14,10 @@ return new class extends Migration
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
             $table->foreignId('customer_id')->constrained('customers')->onDelete('cascade');
+            // Customer as they were when ordering (the customer record can change later)
+            $table->string('customer_name')->nullable();
+            $table->string('customer_phone', 20)->nullable();
+            $table->string('customer_email')->nullable();
             $table->unsignedBigInteger('city_id')->nullable();
             $table->string('order_number')->unique();
             $table->integer('user_id')->nullable();
@@ -22,6 +26,10 @@ return new class extends Migration
             $table->decimal('subtotal', 12, 2)->default(0);
             $table->decimal('product_discount', 12, 2)->default(0);
             $table->decimal('invoice_discount', 12, 2)->default(0);
+            $table->string('coupon_code', 50)->nullable()->index();
+            // Loyalty points spent on this order; points_discount is already inside invoice_discount
+            $table->unsignedInteger('points_redeemed')->default(0);
+            $table->decimal('points_discount', 10, 2)->default(0);
             $table->decimal('shipping_charges', 12, 2)->default(0);
             $table->decimal('tax', 12, 2)->default(0);
             $table->decimal('grand_total', 12, 2)->default(0);
@@ -41,6 +49,7 @@ return new class extends Migration
             $table->string('payment_method')->nullable();
             $table->enum('payment_status', ['unpaid', 'paid', 'partially_paid', 'refunded'])->default('unpaid');
             $table->date('payment_date')->nullable();
+            $table->timestamp('delivered_at')->nullable();
 
             $table->timestamps();
             $table->softDeletes();
@@ -49,6 +58,8 @@ return new class extends Migration
             $table->index('order_number');
             $table->index(['customer_id', 'status']);
             $table->index('payment_status');
+            $table->index('status', 'orders_status_index');
+            $table->index('customer_id', 'orders_customer_id_index');
 
             $table->foreign('city_id')->references('id')->on('cities')->onDelete('set null');
         });

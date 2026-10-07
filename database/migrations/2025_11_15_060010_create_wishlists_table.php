@@ -13,9 +13,10 @@ return new class extends Migration
     {
         Schema::create('wishlists', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('user_id');
-            $table->unsignedBigInteger('product_id');
-            $table->unsignedBigInteger('product_variant_id')->nullable();
+            $table->foreignId('user_id')->index()->constrained('users')->cascadeOnDelete();
+            $table->foreignId('product_id')->index()->constrained('products')->cascadeOnDelete();
+            $table->foreignId('product_variant_id')->nullable()->index('wishlists_product_variant_id_index')
+                ->constrained('product_variants')->nullOnDelete();
             $table->timestamps();
         });
     }

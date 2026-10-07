@@ -14,7 +14,7 @@ return new class extends Migration
             $table->foreignId('customer_group_id')->nullable()->constrained()->onDelete('set null');
             $table->string('first_name');
             $table->string('last_name')->nullable();
-            $table->string('email')->unique()->nullable();
+            $table->string('email')->nullable(); // not unique: customers are identified by phone
             $table->string('phone')->unique()->nullable();
             $table->string('address')->nullable();
             $table->string('address2')->nullable();
@@ -31,6 +31,9 @@ return new class extends Migration
             $table->softDeletes();
 
             $table->foreign('city_id')->references('id')->on('cities')->onDelete('set null');
+
+            $table->index('email', 'customers_email_index');
+            $table->index('phone', 'customers_phone_index');
         });
     }
 

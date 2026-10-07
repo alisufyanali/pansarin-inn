@@ -16,6 +16,8 @@ return new class extends Migration
             $table->unsignedBigInteger('parent_id')->nullable();
             $table->foreign('parent_id')->references('id')->on('affiliates')->onDelete('set null');
             $table->decimal('commission_rate', 5, 2)->default(5.00);
+            // Rs paid per delivered referred order; null = use the default setting
+            $table->decimal('fixed_commission', 10, 2)->nullable();
             $table->enum('status', ['pending', 'active', 'blocked'])->default('pending');
 
             $table->decimal('balance', 10, 2)->default(0.00); // Current earning
