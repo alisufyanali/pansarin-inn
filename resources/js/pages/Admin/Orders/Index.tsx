@@ -80,6 +80,8 @@ const PAYMENT_COLORS: Record<string, string> = {
 export default function Index({ stats, flash }: Props) {
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
     const [allRows, setAllRows] = useState<Order[]>([]);
+    // Orders already turned into a sale are hidden unless this is ticked
+    const [showConverted, setShowConverted] = useState(false);
     const printRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -422,8 +424,18 @@ export default function Index({ stats, flash }: Props) {
 
                 {/* DataTable */}
                 <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
+                    {/* Orders that became a sale live under Sales; they show here only on request */}
+                    <label className="flex items-center gap-2 px-6 pt-4 text-sm text-gray-600 dark:text-gray-300 cursor-pointer select-none w-fit">
+                        <input
+                            type="checkbox"
+                            checked={showConverted}
+                            onChange={e => setShowConverted(e.target.checked)}
+                            className="w-4 h-4 rounded border-gray-300 text-blue-600"
+                        />
+                        Show orders already moved to Sales
+                    </label>
                     <DataTableWrapper
-                        fetchUrl="/admin/orders-data"
+                        fetchUrl={showConverted ? '/admin/orders-data?with_sale=1' : '/admin/orders-data'}
                         columns={columns}
                         csvHeaders={csvHeaders}
                         searchableKeys={['order_number', 'customer.first_name', 'status']}
