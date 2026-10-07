@@ -122,6 +122,14 @@ export default function Index({ stats, flash }: Props) {
         // Addresses are typed by customers on the storefront — never inject raw HTML
         const escapeHtml = (v: string) => v.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 
+        // "50 gm / Powder" → a bold green "50 gm · Powder" pill, so the size cannot be missed
+        const variantPill = (label: string | null) => {
+            const parts = (label ?? '').split('/').map(p => p.trim()).filter(Boolean);
+            return parts.length
+                ? `<span style="display:inline-block;padding:2px 9px;border-radius:12px;background:#dcfce7;border:1px solid #86efac;color:#14532d;font-weight:700;font-size:12px;white-space:nowrap;">${escapeHtml(parts.join(' · '))}</span>`
+                : `<span style="color:#9ca3af;">—</span>`;
+        };
+
         const invoices = selected.map(sale => {
             const items = sale.items ?? [];
             // Where this sale ships: the sale's own address, else its order's, else the customer's
@@ -141,8 +149,8 @@ export default function Index({ stats, flash }: Props) {
             const itemRows = items.map((item, i) => `
                 <tr style="background:${i % 2 === 0 ? '#ffffff' : '#f0fdf4'};">
                     <td style="padding:7px 10px;border-bottom:1px solid #e8f5e9;text-align:center;color:#9ca3af;font-size:11px;">${i + 1}</td>
-                    <td style="padding:7px 10px;border-bottom:1px solid #e8f5e9;font-weight:500;color:#1a1a1a;">${item.product_name}</td>
-                    <td style="padding:7px 10px;border-bottom:1px solid #e8f5e9;text-align:center;color:#6b7280;font-size:11px;">${item.variant_name ?? '—'}</td>
+                    <td style="padding:7px 10px;border-bottom:1px solid #e8f5e9;font-weight:500;color:#1a1a1a;">${escapeHtml(item.product_name ?? '—')}</td>
+                    <td style="padding:7px 10px;border-bottom:1px solid #e8f5e9;text-align:center;">${variantPill(item.variant_name)}</td>
                     <td style="padding:7px 10px;border-bottom:1px solid #e8f5e9;text-align:center;font-weight:600;">${item.quantity}</td>
                     <td style="padding:7px 10px;border-bottom:1px solid #e8f5e9;text-align:right;color:#374151;">Rs ${Number(item.price).toLocaleString()}</td>
                     <td style="padding:7px 10px;border-bottom:1px solid #e8f5e9;text-align:right;font-weight:600;color:${Number(item.discount ?? 0) > 0 ? '#dc2626' : '#9ca3af'};">
@@ -203,7 +211,7 @@ export default function Index({ stats, flash }: Props) {
                             <tr style="background:linear-gradient(90deg,#1b4332,#2d6a4f);color:#fff;">
                                 <th style="padding:9px 10px;text-align:center;width:32px;font-weight:600;">#</th>
                                 <th style="padding:9px 10px;text-align:left;font-weight:600;">Item</th>
-                                <th style="padding:9px 10px;text-align:center;width:100px;font-weight:600;">Options</th>
+                                <th style="padding:9px 10px;text-align:center;width:120px;font-weight:600;">Size / Variant</th>
                                 <th style="padding:9px 10px;text-align:center;width:45px;font-weight:600;">Qty</th>
                                 <th style="padding:9px 10px;text-align:right;width:80px;font-weight:600;">Unit Price</th>
                                 <th style="padding:9px 10px;text-align:right;width:80px;font-weight:600;">Discount</th>

@@ -73,7 +73,7 @@
                         $unitLabel    = $variantLabel ?? ($item->product?->unit ?? null);
                     @endphp
                     @if($unitLabel)
-                        <br /><small style="color:#757575;">{{ $unitLabel }}</small>
+                        <br /><x-mail-variant :label="$unitLabel" />
                     @endif
                 </td>
                 <td style="padding:10px 12px;color:#374151;border-bottom:1px solid #e8f5e9;text-align:center;">
@@ -137,7 +137,7 @@
         <tr>
             <td>
                 <strong style="color:#1b5e20;">Shipping Address:</strong><br />
-                <span style="color:#374151;">{{ $order->shipping_address }}</span>
+                <span style="color:#374151;">{{ \App\Support\MailText::unlinked($order->shipping_address) }}</span>
             </td>
         </tr>
     </table>

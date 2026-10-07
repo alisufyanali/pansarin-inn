@@ -137,7 +137,7 @@ export default function Index({ stats, flash }: Props) {
                     // variant_name already contains the full label e.g. "100 gm", "50 gm Whole", "30 ml"
                     const variantLabel = item.variant_name?.trim() ?? '';
                     const variantCell  = variantLabel
-                        ? `<td style="padding:3px 6px;border:1px solid #ccc;font-size:11px;white-space:nowrap;color:#444;">${variantLabel}</td>`
+                        ? `<td style="padding:3px 6px;border:1px solid #ccc;font-size:12px;white-space:nowrap;color:#111;font-weight:700;">${variantLabel}</td>`
                         : `<td style="padding:3px 6px;border:1px solid #ccc;font-size:11px;color:#bbb;">—</td>`;
                     const discountCell = Number(item.discount ?? 0) > 0
                         ? `<td style="padding:3px 6px;border:1px solid #ccc;font-size:11px;text-align:right;white-space:nowrap;font-weight:600;color:#c62828;">- Rs ${Number(item.discount).toLocaleString()}</td>`

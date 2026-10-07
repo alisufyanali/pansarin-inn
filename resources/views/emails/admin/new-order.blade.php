@@ -103,7 +103,7 @@
                         @if($order->shipping_address)
                         <p style="margin:6px 0 0;font-size:12px;color:#374151;line-height:1.5;
                                   border-top:1px solid #e8f5e9;padding-top:6px;">
-                            📍 {{ $order->shipping_address }}
+                            📍 {{ \App\Support\MailText::unlinked($order->shipping_address) }}
                         </p>
                         @endif
                     </td>
@@ -142,14 +142,14 @@
         <td style="padding:10px 12px;color:#1f2d1f;
                    border-bottom:1px solid #e8f5e9;vertical-align:top;">
             <span style="font-weight:600;">
-                {{ $item->meta['product_name'] ?? ($item->product->name ?? '—') }}
+                {{ $item->meta['product_name'] ?? ($item->product?->name ?? '—') }}
             </span>
             @if(!empty($item->meta['variant_name']))
-            <br /><span style="font-size:11px;color:#777777;">
-                Variant: {{ $item->meta['variant_name'] }}
-            </span>
+            <br /><x-mail-variant :label="$item->meta['variant_name']" />
             @endif
-            @if(!empty($item->meta['sku']))
+            @if(!empty($item->meta['custom']))
+            <br /><span style="font-size:11px;color:#b45309;">Custom item</span>
+            @elseif(!empty($item->meta['sku']))
             <br /><span style="font-size:11px;color:#aaaaaa;">
                 SKU: {{ $item->meta['sku'] }}
             </span>

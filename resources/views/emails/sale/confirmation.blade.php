@@ -65,8 +65,8 @@
             <tr style="background-color:{{ $index % 2 === 0 ? '#f9fdf9' : '#ffffff' }};">
                 <td style="padding:10px 12px;color:#374151;border-bottom:1px solid #e8f5e9;">
                     {{ $item->meta['product_name'] ?? ($item->product?->name ?? '—') }}
-                    @if(isset($item->meta['variant_name']))
-                        <br /><small style="color:#757575;">({{ $item->meta['variant_name'] }})</small>
+                    @if(!empty($item->meta['variant_name']))
+                        <br /><x-mail-variant :label="$item->meta['variant_name']" />
                     @endif
                 </td>
                 <td style="padding:10px 12px;color:#374151;border-bottom:1px solid #e8f5e9;text-align:center;">
@@ -130,7 +130,7 @@
         <tr>
             <td>
                 <strong style="color:#1b5e20;">Shipping Address:</strong><br />
-                <span style="color:#374151;">{{ $sale->shipping_address }}</span>
+                <span style="color:#374151;">{{ \App\Support\MailText::unlinked($sale->shipping_address) }}</span>
             </td>
         </tr>
     </table>
