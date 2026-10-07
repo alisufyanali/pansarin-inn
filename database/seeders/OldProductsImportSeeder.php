@@ -407,13 +407,14 @@ class OldProductsImportSeeder extends Seeder
      */
     private function firstOrCreateCategory(string $name): array
     {
-        $existing = Category::where('name', $name)->first();
+        // By slug first: the JSON says "Herb", the category is now named "Herbs" (slug herb)
+        $slug     = Str::slug($name);
+        $existing = Category::where('slug', $slug)->first() ?? Category::where('name', $name)->first();
 
         if ($existing) {
             return [$existing, false];
         }
 
-        $slug = Str::slug($name);
         // Guard against slug collision (e.g. two different names with same slug)
         $baseSlug = $slug;
         $counter  = 1;
