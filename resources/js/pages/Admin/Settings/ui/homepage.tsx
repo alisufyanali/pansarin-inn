@@ -84,7 +84,7 @@ export default function HomepageTab({ settings }: { settings: any }) {
                 </div>
                 <div>
                     <label className="text-xs font-bold text-gray-500 uppercase">
-                        Marquee Text
+                        Header Marquee Text
                     </label>
                     <textarea
                         value={data.marquee_text}
@@ -92,8 +92,12 @@ export default function HomepageTab({ settings }: { settings: any }) {
                             setData('marquee_text', e.target.value)
                         }
                         className="w-full rounded-lg border-gray-300"
-                        rows={3}
+                        rows={4}
+                        placeholder={'100% Ayurvedic & Herbal Products\nCash on delivery all over Pakistan'}
                     />
+                    <p className="mt-1 text-xs text-gray-500">
+                        One message per line. They scroll across the green bar at the top of the website.
+                    </p>
                 </div>
             </div>
             <div className="flex justify-end">

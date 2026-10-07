@@ -20,6 +20,10 @@ class HomepageApiController extends Controller
      */
     public const CACHE_KEY        = 'homepage_data_v9';
     public const SLIDES_CACHE_KEY = 'slides_data';
+    public const HEADER_CACHE_KEY = 'header_marquee_v1';
+
+    /** Shown when the admin has not set any header text */
+    public const DEFAULT_HEADER_MESSAGES = ['100% Ayurvedic & Herbal Products'];
 
     // GET /api/homepage — single combined endpoint
     public function index()
@@ -50,6 +54,29 @@ class HomepageApiController extends Controller
         $data = Cache::remember(self::SLIDES_CACHE_KEY, 300, fn () => $this->getBanners());
 
         return response()->json(['success' => true, 'data' => $data]);
+    }
+
+    /**
+     * GET /api/header — storefront top-bar marquee. Admin → UI Settings →
+     * Homepage → Marquee Text, one message per line.
+     */
+    public function header()
+    {
+        $messages = Cache::remember(self::HEADER_CACHE_KEY, 300, function () {
+            $text = (string) \App\Models\UiSetting::where('type', 'marquee_text')->value('value');
+
+            return collect(preg_split('/\R/u', $text))
+                ->map(fn ($line) => trim($line))
+                ->filter(fn ($line) => $line !== '')
+                ->take(10)
+                ->values()
+                ->all();
+        });
+
+        return response()->json([
+            'success' => true,
+            'data'    => ['messages' => $messages ?: self::DEFAULT_HEADER_MESSAGES],
+        ]);
     }
 
     // GET /api/homepage/reviews

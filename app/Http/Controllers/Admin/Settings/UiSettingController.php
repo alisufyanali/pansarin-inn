@@ -144,6 +144,7 @@ class UiSettingController extends Controller
         ]);
 
         \Illuminate\Support\Facades\Cache::forget(\App\Http\Controllers\API\HomepageApiController::CACHE_KEY);
+        \Illuminate\Support\Facades\Cache::forget(\App\Http\Controllers\API\HomepageApiController::HEADER_CACHE_KEY);
 
         return redirect()->route('admin.ui-settings.index')->with('success', 'Homepage updated!');
     }

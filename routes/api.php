@@ -66,6 +66,7 @@ Route::middleware('throttle:api.public')->group(function () {
     Route::get('/homepage/category-products', [ProductApiController::class, 'homepageCategoryProducts']);
     Route::get('/homepage/reviews',           [HomepageApiController::class, 'reviews']);
     Route::get('/slides',                     [HomepageApiController::class, 'slides']);
+    Route::get('/header',                     [HomepageApiController::class, 'header']); // top-bar marquee text
 
     // Site-wide reviews — public read, public write (order-verified)
     Route::get('/reviews',  [SiteReviewApiController::class, 'index']);
