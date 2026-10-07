@@ -118,7 +118,8 @@ class ReturnRequestRepository
 
         foreach ($return->items as $item) {
             $orderItem = $item->orderItem;
-            if (! $orderItem || $item->quantity <= 0) {
+            // Custom items (no product_id) were never in stock
+            if (! $orderItem || ! $orderItem->product_id || $item->quantity <= 0) {
                 continue;
             }
 

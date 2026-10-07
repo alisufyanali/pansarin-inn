@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useForm } from '@inertiajs/react';
-import { ArrowLeft, Plus, Trash2, Package } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Package, PackagePlus } from 'lucide-react';
 import { Link } from '@inertiajs/react';
 import {
     PAYMENT_METHOD_OPTIONS,
@@ -42,7 +42,7 @@ type Product = {
 };
 
 type OrderItem = {
-    product_id: number;
+    product_id: number | null;
     product_variant_id: number | null;
     quantity: number;
     price: number;
@@ -77,7 +77,33 @@ type SaleItem = {
     quantity: number;
     price: number;
     discount: number;
+    /** Custom item bought in from outside — typed name/size, no product */
+    is_custom?: boolean;
+    custom_name?: string;
+    custom_variant?: string;
 };
+
+const BLANK_ITEM: SaleItem = { product_id: '', product_variant_id: '', quantity: 1, price: 0, discount: 0 };
+const BLANK_CUSTOM_ITEM: SaleItem = { ...BLANK_ITEM, is_custom: true, custom_name: '', custom_variant: '' };
+
+/** Saved sale/order line → form row. A line without a product is a custom item. */
+function toFormItem(i: any): SaleItem {
+    const row: SaleItem = {
+        product_id: i.product_id ?? '',
+        product_variant_id: i.product_variant_id ?? '',
+        quantity: i.quantity,
+        price: i.price,
+        discount: i.discount ?? 0,
+    };
+    return i.product_id
+        ? row
+        : {
+            ...row,
+            is_custom: true,
+            custom_name: i.meta?.product_name ?? i.product_name ?? '',
+            custom_variant: i.meta?.variant_name ?? i.variant_name ?? '',
+        };
+}
 
 type SaleFormData = {
     order_id: string | number;
@@ -139,24 +165,12 @@ export default function SaleForm({
     // Build initial items from prefilled order or edit data
     const initialItems: SaleItem[] = useMemo(() => {
         if (isEdit && sale?.items?.length) {
-            return sale.items.map((i: any) => ({
-                product_id: i.product_id,
-                product_variant_id: i.product_variant_id ?? '',
-                quantity: i.quantity,
-                price: i.price,
-                discount: i.discount ?? 0,
-            }));
+            return sale.items.map(toFormItem);
         }
         if (order?.items?.length) {
-            return order.items.map(i => ({
-                product_id: i.product_id,
-                product_variant_id: i.product_variant_id ?? '',
-                quantity: i.quantity,
-                price: i.price,
-                discount: i.discount ?? 0,
-            }));
+            return order.items.map(toFormItem);
         }
-        return [{ product_id: '', product_variant_id: '', quantity: 1, price: 0, discount: 0 }];
+        return [BLANK_ITEM];
     }, []);
 
     const { data, setData, errors, post, put, processing } = useForm<SaleFormData>({
@@ -259,10 +273,11 @@ export default function SaleForm({
     };
 
     const addItem = () => {
-        setData('items', [
-            ...data.items,
-            { product_id: '', product_variant_id: '', quantity: 1, price: 0, discount: 0 },
-        ]);
+        setData('items', [...data.items, BLANK_ITEM]);
+    };
+
+    const addCustomItem = () => {
+        setData('items', [...data.items, BLANK_CUSTOM_ITEM]);
     };
 
     const removeItem = (index: number) => {
@@ -453,13 +468,23 @@ export default function SaleForm({
                         <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                             <Package className="w-4 h-4" /> Sale Items
                         </h3>
-                        <button
-                            type="button"
-                            onClick={addItem}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
-                        >
-                            <Plus className="w-3.5 h-3.5" /> Add Item
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={addCustomItem}
+                                title="An item we don't stock (bought in for this customer) — not linked to products or inventory"
+                                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition"
+                            >
+                                <PackagePlus className="w-3.5 h-3.5" /> Custom Item
+                            </button>
+                            <button
+                                type="button"
+                                onClick={addItem}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
+                            >
+                                <Plus className="w-3.5 h-3.5" /> Add Item
+                            </button>
+                        </div>
                     </div>
 
                     <div className="overflow-x-auto">
@@ -482,6 +507,34 @@ export default function SaleForm({
 
                                     return (
                                         <tr key={index} className="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                                            {item.is_custom ? (
+                                                <>
+                                                    {/* Custom item — typed name, not a catalog product */}
+                                                    <td className="px-3 py-2">
+                                                        <input
+                                                            type="text"
+                                                            value={item.custom_name ?? ''}
+                                                            onChange={e => updateItem(index, 'custom_name', e.target.value)}
+                                                            placeholder="Item name (e.g. Eye Dropper)"
+                                                            maxLength={255}
+                                                            required
+                                                            className="w-full px-2 py-1.5 text-xs rounded-md bg-white dark:bg-gray-800 border border-amber-400 dark:border-amber-600 focus:ring-1 focus:ring-amber-500 outline-none"
+                                                        />
+                                                        <span className="text-[11px] font-medium text-amber-600 dark:text-amber-400 mt-0.5 block">Custom item · no stock</span>
+                                                    </td>
+                                                    <td className="px-3 py-2">
+                                                        <input
+                                                            type="text"
+                                                            value={item.custom_variant ?? ''}
+                                                            onChange={e => updateItem(index, 'custom_variant', e.target.value)}
+                                                            placeholder="Size (optional)"
+                                                            maxLength={100}
+                                                            className="w-full px-2 py-1.5 text-xs rounded-md bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 focus:ring-1 focus:ring-amber-500 outline-none"
+                                                        />
+                                                    </td>
+                                                </>
+                                            ) : (
+                                            <>
                                             {/* Product */}
                                             <td className="px-3 py-2">
                                                 <select
@@ -520,6 +573,8 @@ export default function SaleForm({
                                                     ))}
                                                 </select>
                                             </td>
+                                            </>
+                                            )}
 
                                             {/* Qty */}
                                             <td className="px-3 py-2">

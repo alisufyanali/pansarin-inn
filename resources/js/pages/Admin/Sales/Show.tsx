@@ -47,6 +47,7 @@ interface Sale {
             product_name: string;
             sku: string;
             variant_name: string | null;
+            custom?: boolean;
         };
         product?: {
             name: string;
@@ -239,7 +240,7 @@ export default function Show({ sale }: ShowProps) {
                                                 {item.meta?.product_name || item.product?.name || '-'}
                                             </td>
                                             <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                                                {item.meta?.sku || item.product?.sku || '-'}
+                                                {item.meta?.sku || item.product?.sku || (item.meta?.custom ? 'Custom item' : '-')}
                                             </td>
                                             <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                                                 {item.meta?.variant_name || item.variant?.name || '-'}

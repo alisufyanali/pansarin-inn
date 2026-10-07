@@ -394,7 +394,13 @@ class OrderRepository
 
         // THEN: Create order items and deduct stock
         foreach ($items as $item) {
-            if (empty($item['product_id'])) continue;
+            if (empty($item['product_id'])) {
+                // Custom item bought in from outside — no product, no stock movement
+                if ($line = self::customLine($item)) {
+                    $order->items()->create($line);
+                }
+                continue;
+            }
 
             $product = $products->get($item['product_id']);
             $variant = !empty($item['product_variant_id'])
@@ -443,6 +449,38 @@ class OrderRepository
                 'note'               => 'Order #' . $order->order_number,
             ]);
         }
+    }
+
+    /**
+     * Row data for a custom (non-catalog) order/sale line, or null when it
+     * has no name. Name and size go in meta like a product line, so invoices,
+     * emails and WhatsApp show it the same way.
+     */
+    public static function customLine(array $item): ?array
+    {
+        $name = trim((string) ($item['custom_name'] ?? ''));
+        if ($name === '') {
+            return null;
+        }
+
+        $variant  = trim((string) ($item['custom_variant'] ?? ''));
+        $qty      = (int) $item['quantity'];
+        $price    = (float) $item['price'];
+        $discount = (float) ($item['discount'] ?? 0);
+
+        return [
+            'product_id'         => null,
+            'product_variant_id' => null,
+            'quantity'           => $qty,
+            'price'              => $price,
+            'discount'           => $discount,
+            'subtotal'           => ($price * $qty) - $discount,
+            'meta'               => [
+                'product_name' => $name,
+                'variant_name' => $variant !== '' ? $variant : null,
+                'custom'       => true,
+            ],
+        ];
     }
 
     protected function snapshotFieldsForCustomer(int $customerId, ?string $shippingAddress = null): array

@@ -205,7 +205,8 @@ class Order extends Model
         // Items fresh load karo (booted mein cached ho sakta hai)
         $this->loadMissing('items');
 
-        foreach ($this->items as $item) {
+        // Custom items (no product_id) are bought in from outside and never touch stock
+        foreach ($this->items->whereNotNull('product_id') as $item) {
             // Already stock out hua hai (order placement ya pehle delivery par)? Skip karo
             $alreadyDone = \App\Models\Inventory::where('product_id', $item->product_id)
                 ->when(
@@ -242,7 +243,7 @@ class Order extends Model
     {
         $this->loadMissing('items');
 
-        foreach ($this->items->groupBy(fn ($i) => $i->product_id . '_' . ($i->product_variant_id ?? 'null')) as $group) {
+        foreach ($this->items->whereNotNull('product_id')->groupBy(fn ($i) => $i->product_id . '_' . ($i->product_variant_id ?? 'null')) as $group) {
             $item = $group->first();
 
             $netOut = -(float) \App\Models\Inventory::where('product_id', $item->product_id)

@@ -32,6 +32,8 @@ interface OrderItem {
         sku: string;
         variant_name?: string;
         cost_price?: number;
+        /** Custom item bought in from outside (no catalog product) */
+        custom?: boolean;
     };
     product?: { id: number; name: string; sku: string };
     variant?: { id: number; name: string };
@@ -214,7 +216,9 @@ export default function Show({ order }: { order: Order }) {
                                                         {item.meta.product_name}
                                                     </div>
                                                     <div className="text-gray-400 dark:text-gray-500 text-[11px]">
-                                                        SKU: {item.meta.sku}
+                                                        {item.meta.custom
+                                                            ? <span className="text-amber-600 dark:text-amber-400 font-medium">Custom item</span>
+                                                            : <>SKU: {item.meta.sku}</>}
                                                         {item.meta.variant_name && ` · ${item.meta.variant_name}`}
                                                     </div>
                                                 </td>

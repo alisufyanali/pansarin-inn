@@ -21,7 +21,10 @@ class OrderRequest extends FormRequest
             'customer_id'           => 'required|exists:customers,id',
             'city_id'               => 'required|exists:cities,id',
             'items'                 => 'required|array|min:1',
-            'items.*.product_id'    => 'required|exists:products,id',
+            // A line is a catalog product, or a custom item typed in by name (no inventory)
+            'items.*.product_id'    => 'nullable|required_without:items.*.custom_name|exists:products,id',
+            'items.*.custom_name'   => 'nullable|required_without:items.*.product_id|string|max:255',
+            'items.*.custom_variant' => 'nullable|string|max:100',
             'items.*.product_variant_id' => 'nullable|exists:product_variants,id',
             'items.*.quantity'      => 'required|integer|min:1',
             'items.*.price'         => 'required|numeric|min:0',
@@ -38,6 +41,14 @@ class OrderRequest extends FormRequest
             'shipping_address'      => 'nullable|string',
             'billing_address'       => 'nullable|string',
             'order_note'            => 'nullable|string',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'items.*.product_id.required_without'  => 'Select a product or type a custom item name for each line',
+            'items.*.custom_name.required_without' => 'Select a product or type a custom item name for each line',
         ];
     }
 }

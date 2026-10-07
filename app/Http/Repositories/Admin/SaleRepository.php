@@ -226,7 +226,13 @@ class SaleRepository
             : collect();
 
         foreach ($items as $item) {
-            if (empty($item['product_id'])) continue;
+            if (empty($item['product_id'])) {
+                // Custom item bought in from outside — not a catalog product
+                if ($line = OrderRepository::customLine($item)) {
+                    $sale->items()->create($line);
+                }
+                continue;
+            }
 
             $product  = $products->get($item['product_id']);
             $variant  = !empty($item['product_variant_id'])

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, PackagePlus, Plus, Trash2 } from 'lucide-react';
 import { Link } from '@inertiajs/react';
 import { toast } from 'sonner';
 import { SearchableCustomerSelect, SearchableProductSelect } from '@/components/SearchableSelect';
@@ -48,7 +48,28 @@ type OrderItem = {
   quantity: number;
   price: number;
   discount: number;
+  /** Custom item bought in from outside — typed name/size, no product or stock */
+  is_custom?: boolean;
+  custom_name?: string;
+  custom_variant?: string;
 };
+
+const BLANK_ITEM: OrderItem = { product_id: '', product_variant_id: '', quantity: 1, price: 0, discount: 0 };
+const BLANK_CUSTOM_ITEM: OrderItem = { ...BLANK_ITEM, is_custom: true, custom_name: '', custom_variant: '' };
+
+/** Saved order line → form row. A line without a product is a custom item (name/size in meta). */
+function toFormItem(i: any): OrderItem {
+  const row: OrderItem = {
+    product_id: i.product_id ?? '',
+    product_variant_id: i.product_variant_id ?? '',
+    quantity: i.quantity,
+    price: i.price,
+    discount: i.discount ?? 0,
+  };
+  return i.product_id
+    ? row
+    : { ...row, is_custom: true, custom_name: i.custom_name ?? i.meta?.product_name ?? '', custom_variant: i.custom_variant ?? i.meta?.variant_name ?? '' };
+}
 
 export type OrderFormData = {
   customer_id: string | number;
@@ -87,7 +108,7 @@ export default function OrderForm({
   const { data, setData, errors, post, put, processing } = useForm<OrderFormData>({
     customer_id: order?.customer_id || '',
     city_id: order?.city_id || '',
-    items: order?.items || [{ product_id: '', product_variant_id: '', quantity: 1, price: 0, discount: 0 }],
+    items: order?.items?.length ? order.items.map(toFormItem) : [BLANK_ITEM],
     invoice_discount: order?.invoice_discount || 0,
     shipping_charges: order?.shipping_charges || 0,
     tax: order?.tax || 0,
@@ -163,7 +184,11 @@ export default function OrderForm({
   }
 
   const addItem = () => {
-    setData('items', [...data.items, { product_id: '', product_variant_id: '', quantity: 1, price: 0, discount: 0 }]);
+    setData('items', [...data.items, BLANK_ITEM]);
+  };
+
+  const addCustomItem = () => {
+    setData('items', [...data.items, BLANK_CUSTOM_ITEM]);
   };
 
   const removeItem = (index: number) => {
@@ -479,13 +504,23 @@ export default function OrderForm({
                 {/* Table header with Add Item button — matches Sales module */}
                 <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between bg-white dark:bg-gray-900">
                   <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Order Items</h3>
-                  <button
-                    type="button"
-                    onClick={addItem}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> Add Item
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={addCustomItem}
+                      title="An item we don't stock (bought in for this customer) — not linked to products or inventory"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition"
+                    >
+                      <PackagePlus className="w-3.5 h-3.5" /> Custom Item
+                    </button>
+                    <button
+                      type="button"
+                      onClick={addItem}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Add Item
+                    </button>
+                  </div>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
@@ -503,6 +538,39 @@ export default function OrderForm({
                     <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                       {data.items.map((item, index) => (
                         <tr key={index} className="bg-white dark:bg-gray-900">
+                          {item.is_custom ? (
+                            <>
+                              {/* Custom item — typed name, not a catalog product */}
+                              <td className="px-3 py-2">
+                                <input
+                                  type="text"
+                                  value={item.custom_name ?? ''}
+                                  onChange={(e) => updateItem(index, 'custom_name', e.target.value)}
+                                  placeholder="Item name (e.g. Eye Dropper)"
+                                  maxLength={255}
+                                  required
+                                  className={`w-full px-3 py-1.5 text-sm rounded-md bg-white dark:bg-gray-800 border focus:ring-1 focus:ring-amber-500 outline-none ${
+                                    getItemError(index, 'custom_name') ? 'border-red-500' : 'border-amber-400 dark:border-amber-600'
+                                  }`}
+                                />
+                                <p className="text-[11px] mt-0.5 font-medium text-amber-600 dark:text-amber-400">Custom item · no stock</p>
+                                {getItemError(index, 'custom_name') && (
+                                  <p className="text-red-500 text-xs mt-1">{getItemError(index, 'custom_name')}</p>
+                                )}
+                              </td>
+                              <td className="px-3 py-2">
+                                <input
+                                  type="text"
+                                  value={item.custom_variant ?? ''}
+                                  onChange={(e) => updateItem(index, 'custom_variant', e.target.value)}
+                                  placeholder="Size (optional, e.g. 250 gm)"
+                                  maxLength={100}
+                                  className="w-full px-2 py-1 text-xs rounded bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 focus:ring-1 focus:ring-amber-500 outline-none"
+                                />
+                              </td>
+                            </>
+                          ) : (
+                          <>
                           {/* Product Select */}
                           <td className="px-3 py-2">
                             <SearchableProductSelect
@@ -568,6 +636,8 @@ export default function OrderForm({
                               <p className="text-red-500 text-xs mt-1">{getItemError(index, 'product_variant_id')}</p>
                             )}
                           </td>
+                          </>
+                          )}
 
                           {/* Quantity */}
                           <td className="px-3 py-2">
