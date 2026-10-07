@@ -98,3 +98,12 @@ it('keeps a coupon valid for the whole of its end date', function () {
     $coupon = new Coupon(['is_active' => true, 'end_date' => now()->toDateString()]);
     expect($coupon->isValid())->toBeTrue();
 });
+
+it('charges shipping on every order, however large (no free-shipping threshold)', function () {
+    $this->postJson('/api/orders/guest', guestOrder([], ['quantity' => 10, 'price' => 1000]))
+        ->assertStatus(201);
+
+    $order = Order::sole();
+    expect((float) $order->subtotal)->toBe(10000.0)
+        ->and((float) $order->shipping_charges)->toBe((float) \App\Services\CheckoutPricingService::DEFAULT_SHIPPING);
+});

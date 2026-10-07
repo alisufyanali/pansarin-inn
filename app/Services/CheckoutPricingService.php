@@ -20,15 +20,12 @@ use Illuminate\Validation\ValidationException;
  *  - The coupon discount is recomputed from coupon_code; invoice_discount is ignored.
  *  - redeem_points (logged-in customers only) is checked against the balance
  *    passed in; its rupee value is added to invoice_discount.
- *  - Shipping is the city rate, free above FREE_SHIPPING_ABOVE.
+ *  - Shipping is always the city rate (no free-shipping threshold — owner, 2026-10-07).
  */
 class CheckoutPricingService
 {
     /** Default shipping when no city is chosen — must match DEFAULT_SHIPPING in the frontend (lib/cities.ts). */
     public const DEFAULT_SHIPPING = 250;
-
-    /** Orders above this subtotal ship free — must match the checkout page rule. */
-    public const FREE_SHIPPING_ABOVE = 5000;
 
     public function __construct(
         protected DealPricingService $deals,
@@ -153,9 +150,7 @@ class CheckoutPricingService
         $cityRate = ! empty($data['city_id'])
             ? City::whereKey($data['city_id'])->value('shipping_charges')
             : null;
-        $data['shipping_charges'] = $subtotal > self::FREE_SHIPPING_ABOVE
-            ? 0
-            : (float) ($cityRate ?? self::DEFAULT_SHIPPING);
+        $data['shipping_charges'] = (float) ($cityRate ?? self::DEFAULT_SHIPPING);
 
         $data['breakdown'] = [
             'items' => collect($items)->map(fn ($it) => [
