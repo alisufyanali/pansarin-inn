@@ -228,6 +228,8 @@ class OldProductsImportSeeder extends Seeder
                         'name'              => $item['name'],
                         'urdu_name'         => $item['urdu_name'] ?? null,
                         'scientific_name'   => $item['scientific_name'] ?? null,
+                        'other_name'        => $item['other_name'] ?? null,
+                        'alternative_name'  => $item['alternate_name'] ?? null,
                         'slug'              => $slug,
                         'sku'               => $sku,
                         'unit'              => $item['unit'] ?? null,
