@@ -13,7 +13,7 @@ use Inertia\Inertia;
 
 class FrontendController extends Controller
 {
-    // Settings fetch karne ke liye common method (code clean karne ke liye)
+    // Shared helper that loads the site settings
     private function getSiteSettings()
     {
         $general = GeneralSetting::all()->keyBy('type');

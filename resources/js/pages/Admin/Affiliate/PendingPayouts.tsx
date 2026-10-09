@@ -85,7 +85,7 @@ export default function PendingPayouts({ payouts = [] }: Props) {
         }
     };
 
-    // Gateway string ko safely handle karne ke liye helper
+    // Helper that reads the gateway string safely
     const getGatewayName = (snapshot?: string) => {
         if (!snapshot) return 'Unknown';
         return snapshot.includes('—') ? snapshot.split('—')[0].trim() : snapshot;
@@ -120,7 +120,7 @@ export default function PendingPayouts({ payouts = [] }: Props) {
                                     <tr key={p.id} className="transition-colors hover:bg-gray-50 dark:hover:bg-gray-800">
                                         <td className="p-4 font-medium text-gray-900 dark:text-white">
     <div className="font-semibold">
-        {/* first_name + last_name ki jagah sirf single name field call karein */}
+        {/* users have a single name field (no first_name / last_name) */}
         {p.affiliate?.user?.name || 'Unknown User'}
     </div>
     <div className="text-xs font-normal text-gray-400">{p.affiliate?.user?.email || ''}</div>

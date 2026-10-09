@@ -94,7 +94,7 @@ class AdminAffiliateController extends Controller
 
     public function referralLogs()
     {
-        // Hum nested relationships ko baghair select constraints ke load kar rahe hain
+        // Nested relationships are loaded without select constraints
         $logs = \App\Models\AffiliateCommission::with(['affiliate.user', 'order'])
             ->latest()
             ->get()
@@ -102,11 +102,11 @@ class AdminAffiliateController extends Controller
                 $affiliate = $log->affiliate;
                 $user = $affiliate ? $affiliate->user : null;
 
-                // Agar user mil gaya to naam, warna ID dikhayen debug ke liye
+                // Show the user's name when found, otherwise the ID (for debugging)
                 $name = $user ? trim($user->first_name . ' ' . $user->last_name) : null;
                 
                 if (!$name && $user) {
-                    $name = $user->name; // Agar aapke table mein sirf 'name' column hai
+                    $name = $user->name; // users table has a single 'name' column
                 }
 
                 return [

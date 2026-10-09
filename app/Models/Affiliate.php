@@ -50,10 +50,10 @@ class Affiliate extends Model
      */
     protected static function booted()
     {
-        // Jab bhi affiliate update ho (e.g. balance change ho)
+        // Whenever the affiliate is updated (e.g. the balance changes)
         static::updated(function ($affiliate) {
             if ($affiliate->wasChanged('balance')) {
-                // Wallet check karein, agar nahi hai to create karein aur balance sync karein
+                // Create the wallet if missing, then sync the balance
                 $affiliate->wallet()->updateOrCreate(
                     [
                         'walletable_id'   => $affiliate->id,
@@ -66,7 +66,7 @@ class Affiliate extends Model
             }
         });
 
-        // Jab pehli baar koi naya affiliate join kare, uska wallet 0 balance se create ho jaye
+        // A new affiliate gets a wallet with a 0 balance
         static::created(function ($affiliate) {
             $affiliate->wallet()->create([
                 'balance' => $affiliate->balance ?? 0
@@ -106,7 +106,7 @@ class Affiliate extends Model
     
     /**
      * Get the affiliate's wallet.
-     * (Polymorphic relation agar aap morphOne use kar rahe hain)
+     * (polymorphic relation via morphOne)
      */
     public function wallet()
     {

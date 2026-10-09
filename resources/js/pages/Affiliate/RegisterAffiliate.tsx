@@ -8,8 +8,8 @@ export default function RegisterAffiliate({ isAffiliate }: { isAffiliate: boolea
 
     const handleJoin = () => {
         post(route('affiliate.join.submit'), {
-            onSuccess: () => toast.success('Mubarak ho! Aap partner ban gaye hain.'),
-            onError: () => toast.error('Kuch masla hua, dobara koshish karen.'),
+            onSuccess: () => toast.success('Congratulations! You are now a partner.'),
+            onError: () => toast.error('Something went wrong. Please try again.'),
         });
     };
 
@@ -32,14 +32,14 @@ export default function RegisterAffiliate({ isAffiliate }: { isAffiliate: boolea
                         </div>
 
                         <h1 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white mb-6 leading-tight">
-                            Hamare Saath Mil Kar <br />
-                            <span className="text-blue-600 font-outline-2">Paisa Kamayein</span>
+                            Partner With Us and <br />
+                            <span className="text-blue-600 font-outline-2">Earn Money</span>
                         </h1>
 
                         <p className="text-lg text-gray-500 dark:text-gray-400 mb-10 max-w-2xl leading-relaxed">
-                            Hamare affiliate program ka hissa banien. Har successful referral par 
+                            Join our affiliate program. Earn a 
                             <span className="text-gray-900 dark:text-white font-bold"> 5% flat commission </span> 
-                            hasil karen aur apne network ko grow hote dekhein.
+                            on every successful referral and watch your network grow.
                         </p>
 
                         {/* Features Grid */}
@@ -48,14 +48,14 @@ export default function RegisterAffiliate({ isAffiliate }: { isAffiliate: boolea
                                 <ShieldCheck className="text-green-500 mt-1" size={20} />
                                 <div>
                                     <h4 className="font-bold dark:text-gray-200">Trusted Payments</h4>
-                                    <p className="text-sm text-gray-500">Waqt par aur mehfooz payments.</p>
+                                    <p className="text-sm text-gray-500">On-time, secure payments.</p>
                                 </div>
                             </div>
                             <div className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl">
                                 <Trophy className="text-yellow-500 mt-1" size={20} />
                                 <div>
                                     <h4 className="font-bold dark:text-gray-200">Bonus Rewards</h4>
-                                    <p className="text-sm text-gray-500">Ziada referrals par extra rewards.</p>
+                                    <p className="text-sm text-gray-500">Extra rewards for more referrals.</p>
                                 </div>
                             </div>
                         </div>
@@ -65,7 +65,7 @@ export default function RegisterAffiliate({ isAffiliate }: { isAffiliate: boolea
                             {isAffiliate ? (
                                 <div className="w-full bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-5 rounded-2xl flex items-center justify-center gap-3 text-green-700 dark:text-green-400 font-bold">
                                     <CheckCircle size={24} />
-                                    Aap pehle hi hamare Partner hain!
+                                    You are already our partner!
                                 </div>
                             ) : (
                                 <>

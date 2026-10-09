@@ -109,7 +109,7 @@ class SaleController extends Controller
         }
     }
 
-    // Create sale — direct (bina order ke)
+    // Create sale — direct (without an order)
     public function create()
     {
         return Inertia::render('Admin/Sales/Create', [
@@ -119,7 +119,7 @@ class SaleController extends Controller
         ]);
     }
 
-    // Create sale — order se (Orders Index ka button)
+    // Create sale — from an order (button on the Orders list)
     public function createFromOrder(string $orderId)
     {
         try {

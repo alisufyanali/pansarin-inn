@@ -123,7 +123,7 @@ export default function OrderForm({
     courier_weight: order?.courier_weight || '',
   });
 
-  // FIX: selectedProducts ko properly initialize karo agar edit mode mein hain
+  // In edit mode, start selectedProducts from the order's items
   const [selectedProducts, setSelectedProducts] = useState<{[key: number]: Product}>(() => {
     if (order?.items) {
       const initial: {[key: number]: Product} = {};
@@ -138,7 +138,7 @@ export default function OrderForm({
 
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
-  // Subtotal aur grand total calculate karo
+  // Subtotal and grand total
   const subtotal = data.items.reduce((sum, item) => {
     return sum + (Number(item.price) * Number(item.quantity));
   }, 0);
@@ -155,7 +155,7 @@ export default function OrderForm({
     if (flash?.error)   toast.error(flash.error);
   }, [flash]);
 
-  // Customer select hone par details load karo
+  // Fill in the customer's details when one is selected
   useEffect(() => {
     if (data.customer_id) {
       const customer = customers.find(c => c.id === Number(data.customer_id));
@@ -193,7 +193,7 @@ export default function OrderForm({
 
   const removeItem = (index: number) => {
     const newItems = data.items.filter((_, i) => i !== index);
-    // selectedProducts bhi update karo
+    // Keep selectedProducts in step
     const newSelected = { ...selectedProducts };
     delete newSelected[index];
     // Reindex
@@ -236,7 +236,7 @@ export default function OrderForm({
       };
       setData('items', newItems);
     } else {
-      // Clear karo agar koi product select nahi
+      // No product selected: clear the row
       setSelectedProducts(prev => {
         const updated = { ...prev };
         delete updated[index];
@@ -273,7 +273,7 @@ export default function OrderForm({
     }
   };
 
-  // Items level errors helper - backend se "items.0.product_id" jaise errors handle karo
+  // Per-item errors from the backend, e.g. "items.0.product_id"
   const getItemError = (index: number, field: string): string | undefined => {
     const key = `items.${index}.${field}` as keyof typeof errors;
     return errors[key] as string | undefined;

@@ -70,7 +70,7 @@ class CartApiController extends Controller
             ], 422);
         }
 
-        // Upsert — agar same variant already cart mein hai to quantity add karo
+        // Upsert — if the same variant is already in the cart, add to its quantity
         $cartItem = Cart::where('user_id', $userId)
             ->where('product_variant_id', $variantId)
             ->first();

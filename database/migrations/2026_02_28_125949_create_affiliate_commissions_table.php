@@ -22,7 +22,7 @@ return new class extends Migration
             $table->enum('status', ['pending', 'earned', 'cancelled'])->default('pending');
             $table->timestamps();
 
-            // Ek order ka commission ek hi baar banna chahiye
+            // One commission per order
             $table->unique(['affiliate_id', 'order_id']);
         });
     }

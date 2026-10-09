@@ -15,17 +15,17 @@ class TestRunPlaceOrder extends Seeder
 {
     public function run(): void
     {
-        // 1. Pehle User dhoondhen
+        // 1. Find the user
         $user = User::where('email', 'referral1@example.com')->first();
         $product = Product::where('status', 1)->first();
 
         if (!$user || !$product) {
-            $this->command->error('Test User ya Product nahi mila!');
+            $this->command->error('Test user or product not found!');
             return;
         }
 
-        // 2. Foreign Key error se bachne ke liye Customer record banayen ya dhoondhen
-        // Hum check kar rahe hain ke kya is User ID ka koi Customer pehle se hai?
+        // 2. Find or create the customer record (the order needs it for its foreign key)
+        // Does this user already have a customer record?
         $customer = Customer::firstOrCreate(
             ['user_id' => $user->id],
             [
@@ -36,9 +36,9 @@ class TestRunPlaceOrder extends Seeder
             ]
         );
 
-        // 3. Ab Order create karein (Customer ID use karte hue)
+        // 3. Create the order with the customer ID
         $order = Order::create([
-            'customer_id'      => $customer->id, // Yeh ab 'customers' table ki valid ID hogi
+            'customer_id'      => $customer->id, // a valid customers.id
             'order_number'     => 'ORD-TEST-' . strtoupper(Str::random(5)),
             'subtotal'         => 0,
             'product_discount' => 0,

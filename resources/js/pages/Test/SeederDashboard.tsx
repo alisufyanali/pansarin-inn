@@ -9,7 +9,7 @@ export default function SeederDashboard() {
     const handleAction = (routeName: string, successMsg: string) => {
         post(route(routeName), {
             onSuccess: () => toast.success(successMsg),
-            onError: () => toast.error('Kuch masla hua hai, logs check karein.'),
+            onError: () => toast.error('Something went wrong — check the logs.'),
         });
     };
 
@@ -28,7 +28,7 @@ export default function SeederDashboard() {
                         <h2 className="text-lg font-semibold italic text-gray-700">Place Order</h2>
                     </div>
                     <p className="text-sm text-gray-500 mb-6 italic">
-                        "referral1@example.com" ke liye ek pending order create karein.
+                        Create a pending order for "referral1@example.com".
                     </p>
                     <Button 
                         onClick={() => handleAction('test.place-order', 'Order Placed Successfully!')}
@@ -47,14 +47,14 @@ export default function SeederDashboard() {
                         <h2 className="text-lg font-semibold italic text-gray-700">Deliver & Complete</h2>
                     </div>
                     <p className="text-sm text-gray-500 mb-6 italic">
-                        Pending order ko 'Delivered' mark karein aur commission trigger karein.
+                        Mark the pending order 'Delivered' and trigger the commission.
                     </p>
                     <Button 
                         onClick={() => handleAction('test.deliver-order', 'Order Delivered & Paid!')}
                         disabled={processing}
-                        // "success" ko "default" se badal dein
+                        // "default" instead of "success"
                         variant="default" 
-                        // Yahan green color add kar dein
+                        // green button
                         className="w-full bg-green-600 hover:bg-green-700 text-white"
                     >
                         {processing ? <Loader2 className="animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}

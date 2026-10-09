@@ -40,8 +40,8 @@ interface PayoutHistory {
 
 interface PayoutsProps {
     wallet_balance: string;
-    pending_balance: string; // Controller se pass karein
-    total_paid: string;      // Controller se pass karein
+    pending_balance: string; // from the controller
+    total_paid: string;      // from the controller
     raw_balance: number;
     payment_methods: PaymentMethod[];
     payout_history: PayoutHistory[];
@@ -89,7 +89,7 @@ export default function Payouts({
     };
 
     const handleDeleteMethod = (id: number) => {
-        if (confirm('Kya aap yeh payment method delete karna chahte hain?')) {
+        if (confirm('Are you sure you want to delete this payment method?')) {
             router.delete(route('affiliate.payment-methods.destroy', { id: id }), {
                 preserveScroll: true,
             });
@@ -126,7 +126,7 @@ export default function Payouts({
             <div className="space-y-10 pb-10 px-4 sm:px-0">
                 <div>
                     <h1 className="text-3xl font-black tracking-tight text-gray-900 dark:text-white">Payouts & Wallet</h1>
-                    <p className="text-sm text-gray-500 mt-1">Apni earnings withdraw karein aur payment accounts manage karein.</p>
+                    <p className="text-sm text-gray-500 mt-1">Withdraw your earnings and manage your payment accounts.</p>
                 </div>
 
                 {/* 1. Sync Dynamic Cards Panel */}
@@ -179,12 +179,12 @@ export default function Payouts({
                         {payment_methods.length === 0 ? (
                             <div className="p-8 border border-dashed border-gray-200 dark:border-gray-700 rounded-2xl text-center space-y-4">
                                 <AlertCircle className="w-10 h-10 text-amber-500 mx-auto" />
-                                <p className="text-sm text-gray-600 dark:text-gray-400">Withdraw karne ke liye pehle apna koi Payment Account add karein.</p>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">Add a payment account before you withdraw.</p>
                                 <button 
                                     onClick={() => setShowMethodModal(true)}
                                     className="inline-flex items-center px-5 py-2.5 bg-gray-900 dark:bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-gray-800 transition"
                                 >
-                                    <Plus className="w-4 h-4 mr-2" /> Account Add Karein
+                                    <Plus className="w-4 h-4 mr-2" /> Add Account
                                 </button>
                             </div>
                         ) : (

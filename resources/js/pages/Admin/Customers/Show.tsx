@@ -124,7 +124,7 @@ export default function Show({ customer }: { customer: Customer }) {
                              </div>
                         </SectionCard>
 
-                        {/* WALLET TRANSACTIONS: Wide column mein rakha taake data readable ho */}
+                        {/* WALLET TRANSACTIONS: in the wide column so the data stays readable */}
                         <SectionCard title="Recent Wallet Transactions" icon={Wallet}>
                             <div className="overflow-x-auto -mx-6">
                                 <table className="w-full text-sm text-left border-t border-gray-100 dark:border-gray-800">
@@ -137,7 +137,7 @@ export default function Show({ customer }: { customer: Customer }) {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                                        {/* Dono naming conventions check kar li hain (snake_case aur camelCase) */}
+                                        {/* Handles both naming conventions (snake_case and camelCase) */}
                                         {(customer.wallet?.wallet_transactions || (customer.wallet as any)?.walletTransactions)?.length > 0 ? (
                                             (customer.wallet?.wallet_transactions || (customer.wallet as any)?.walletTransactions).map((t: any) => (
                                                 <tr key={t.id} className="hover:bg-gray-50/50 transition-colors">

@@ -16,10 +16,10 @@ class PayoutController extends Controller
     {
         $affiliate = auth()->user()->affiliate;
 
-        // 1. Available Wallet Balance (Polymorphic Relation se)
+        // 1. Available wallet balance (polymorphic relation)
         $walletBalance = $affiliate->wallet->balance ?? 0;
 
-        // 2. Pending Payouts (Jo requests abhi pending ya processing hain)
+        // 2. Pending payouts (requests still pending or processing)
         $pendingBalance = $affiliate->payoutRequests()
             ->whereIn('status', ['pending', 'processing'])
             ->sum('amount');
@@ -66,7 +66,7 @@ class PayoutController extends Controller
             'wallet_balance'  => number_format($walletBalance, 2),
             'pending_balance' => number_format($pendingBalance, 2),
             'total_paid'      => number_format($totalPaid, 2),
-            'raw_balance'     => $walletBalance, // Frontend submit button check ke liye
+            'raw_balance'     => $walletBalance, // Lets the frontend enable / disable the submit button
             'payment_methods' => $paymentMethods,
             'payout_history'  => $payoutHistory
         ]);
@@ -88,17 +88,17 @@ class PayoutController extends Controller
             ],
             'payment_method_id' => 'required|exists:payment_methods,id,affiliate_id,' . $affiliate->id,
         ], [
-            'amount.max' => 'Aapke wallet mein itna balance maujood nahi hai.',
-            'amount.min' => 'Kam az kam Rs. 500 withdraw kiye ja sakte hain.',
-            'payment_method_id.exists' => 'Muntakhib karda payment method darust nahi hai.',
+            'amount.max' => 'Your wallet does not have enough balance.',
+            'amount.min' => 'The minimum withdrawal is Rs. 500.',
+            'payment_method_id.exists' => 'The selected payment method is not valid.',
         ]);
 
         $amount = $request->amount;
         
-        // Is affiliate ka bna huwa payment method nikalna
+        // Load this affiliate's saved payment method
         $method = $affiliate->paymentMethods()->findOrFail($request->payment_method_id);
 
-        // String snapshot aur detail array snapshot dono ready karna
+        // Prepare both the string snapshot and the detail array snapshot
         $snapshotString = "{$method->type} — {$method->title} ({$method->account_number})";
         
         $detailsSnapshot = [
@@ -107,7 +107,7 @@ class PayoutController extends Controller
             'iban_number'    => $method->iban_number,
         ];
 
-        // 2. Database Transaction taake koi aik query fail ho to sab rollback ho jaye
+        // 2. One transaction, so if any query fails everything rolls back
         DB::transaction(function () use ($wallet, $affiliate, $amount, $method, $snapshotString, $detailsSnapshot) {
 
             // Lock the wallet and re-check the balance — two requests submitted at
@@ -115,15 +115,15 @@ class PayoutController extends Controller
             $lockedBalance = (float) \App\Models\Wallet::whereKey($wallet?->id)->lockForUpdate()->value('balance');
             if (! $wallet || $amount > $lockedBalance) {
                 throw \Illuminate\Validation\ValidationException::withMessages([
-                    'amount' => 'Aapke wallet mein itna balance maujood nahi hai.',
+                    'amount' => 'Your wallet does not have enough balance.',
                 ]);
             }
 
-            // Step A: Wallet balance se amount fauri minus (Freeze) karein
+            // Step A: deduct (freeze) the amount from the wallet right away
             $wallet->decrement('balance', $amount);
             $affiliate->decrement('balance', $amount);
 
-            // Step B: Wallet Transaction Ledger mein entry (Debit Record)
+            // Step B: wallet ledger entry (debit)
             $wallet->transactions()->create([
                 'amount'      => $amount,
                 'type'        => 'debit', 
@@ -132,7 +132,7 @@ class PayoutController extends Controller
                 'status'      => 'pending', 
             ]);
 
-            // Step C: Payout Request create karein
+            // Step C: create the payout request
             $affiliate->payoutRequests()->create([
                 'payment_method_id'        => $method->id,
                 'amount'                   => $amount,
@@ -144,7 +144,7 @@ class PayoutController extends Controller
             ]);
         });
 
-        return redirect()->back()->with('success', 'Withdrawal request kamyabi se submit ho gayi hai aur balance freeze kar diya gaya hai!');
+        return redirect()->back()->with('success', 'Withdrawal request submitted and the amount has been held from your balance!');
     }
 
     public function storePaymentMethod(Request $request)

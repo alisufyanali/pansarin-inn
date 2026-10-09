@@ -3,7 +3,7 @@ import { Save, Coins, Landmark, Hash, Type } from 'lucide-react';
 import toast from "react-hot-toast";
 
 export default function CurrencyTab({ settings }: { settings: any }) {
-    // Controller se aane wala data settings.type.value ki surat mein hai
+    // The controller sends the data as settings.type.value
     const { data, setData, post, errors, processing } = useForm({
         currency_code: settings.currency_code?.value || 'PKR',
         currency_symbol: settings.currency_symbol?.value || 'Rs',

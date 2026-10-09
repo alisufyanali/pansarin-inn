@@ -23,7 +23,7 @@ class AffiliateController extends Controller
         $this->middleware('permission:block.affiliates')->only('updateStatus');
     }
 
-    // 1. Saare Affiliates ki list dikhane ke liye
+    // 1. List all affiliates
     public function index()
     {
         $affiliates = Affiliate::with('user')->latest()->get();
@@ -33,7 +33,7 @@ class AffiliateController extends Controller
         ]);
     }
 
-    // // 2. Payout Requests ki list
+    // // 2. Payout request list
     // public function payoutRequests()
     // {
     //     $payouts = PayoutRequest::with('affiliate.user')
@@ -58,22 +58,22 @@ class AffiliateController extends Controller
         ]);
     }
 
-    // // 4. Payout Approve karne ka logic
+    // // 4. Payout approval logic
     // public function approvePayout($id)
     // {
     //     $payout = PayoutRequest::findOrFail($id);
 
     //     if ($payout->status == 'pending') {
-    //         // Sirf status complete karein, kyunke balance pehle hi kat chuka hai
+    //         // Only mark it complete: the balance was already deducted
     //         $payout->update(['status' => 'completed']);
 
     //         return back()->with('success', 'Payout marked as paid!');
     //     }
 
-    //     return back()->with('error', 'Request pehle hi process ho chuki hai.');
+    //     return back()->with('error', 'This request has already been processed.');
     // }
 
-    // // Ek naya function Reject ke liye bhi hona chahiye
+    // // A separate function is needed for Reject as well
     // public function rejectPayout($id)
     // {
     //     $payout = PayoutRequest::findOrFail($id);
@@ -81,7 +81,7 @@ class AffiliateController extends Controller
     //     if ($payout->status == 'pending') {
     //         $affiliate = $payout->affiliate;
 
-    //         // Paise wapas affiliate ke balance mein daal dein
+    //         // Put the money back into the affiliate's balance
     //         $affiliate->increment('balance', $payout->amount);
 
     //         $payout->update(['status' => 'rejected']);
@@ -92,7 +92,7 @@ class AffiliateController extends Controller
     //     return back()->with('error', 'Invalid action.');
     // }
 
-    // 5. Affiliate ka status toggle (Active/Block)
+    // 5. Toggle the affiliate's status (Active/Block)
     public function updateStatus($id)
     {
         $affiliate = Affiliate::findOrFail($id);
@@ -105,7 +105,7 @@ class AffiliateController extends Controller
 
     public function settings()
     {
-        // Settings ko key-value pair mein convert kar ke bhejein
+        // Send the settings as key => value pairs
         $settings = AffiliateSetting::pluck('value', 'key')->all();
 
         return Inertia::render('Admin/Affiliate/SystemSettings', [

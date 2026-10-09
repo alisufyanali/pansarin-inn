@@ -3,7 +3,7 @@ import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import Form, { type BlogTagFormData } from './Form';
 
-// Database se is_active 0/1 aata hai, isliye number | boolean dono allow karo
+// The database returns is_active as 0/1, so allow number | boolean
 interface EditProps {
     blogTag: Omit<BlogTagFormData, 'is_active'> & {
         id: number;
@@ -17,7 +17,7 @@ export default function Edit({ blogTag }: EditProps) {
         { title: `Edit: ${blogTag.name}`, href: `/admin/blogtags/${blogTag.id}/edit` },
     ];
 
-    // is_active ko explicitly boolean mein convert karo
+    // Convert is_active to a boolean
     const initialData: BlogTagFormData & { id: number } = {
         ...blogTag,
         is_active: Boolean(blogTag.is_active),

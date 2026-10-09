@@ -129,7 +129,7 @@ export default function Form({ category, categories, isEdit = false }: CategoryF
                             </div>
 
                             <div className="space-y-4">
-                                {/* Name + Slug - ek row mein */}
+                                {/* Name + Slug - one row */}
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label className={labelClass}>
@@ -161,7 +161,7 @@ export default function Form({ category, categories, isEdit = false }: CategoryF
                                     </div>
                                 </div>
 
-                                {/* Parent Category + Status - ek row mein */}
+                                {/* Parent Category + Status - one row */}
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label className={labelClass}>Parent Category</label>

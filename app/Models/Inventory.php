@@ -41,12 +41,12 @@ class Inventory extends Model
 
     protected static function booted()
     {
-        // After create — stock add karo
+        // After create — add to stock
         static::created(function (Inventory $inventory) {
             $inventory->syncStock();
         });
 
-        // After update — diff apply karo
+        // After update — apply the difference
         static::updated(function (Inventory $inventory) {
             $old = $inventory->getOriginal('quantity');
             $new = $inventory->quantity;
@@ -56,7 +56,7 @@ class Inventory extends Model
             }
         });
 
-        // After delete — reverse karo
+        // After delete — reverse it
         static::deleted(function (Inventory $inventory) {
             $inventory->adjustStock(-$inventory->quantity);
         });
@@ -65,7 +65,7 @@ class Inventory extends Model
     // ── Stock Sync Methods ────────────────────────────────────────
 
     /**
-     * Naya inventory entry create hone pe product_stocks update karo
+     * Update product_stocks when a new inventory entry is created
      */
     private function syncStock(): void
     {
@@ -73,7 +73,7 @@ class Inventory extends Model
     }
 
     /**
-     * Stock mein delta apply karo — SQLite safe
+     * Apply a delta to the stock — SQLite safe
      */
     private function adjustStock(float $delta): void
     {
@@ -114,7 +114,7 @@ class Inventory extends Model
             })
             ->value('quantity') ?? 0;
 
-        $threshold = 10; // default — product mein stock_alert column nahi
+        $threshold = 10; // default — products have no stock_alert column
 
         $previous = $stock - $delta;
 
@@ -122,7 +122,7 @@ class Inventory extends Model
             try {
                 event(new \App\Events\LowStockAlert($this->product));
             } catch (\Throwable $e) {
-                // Event class nahi bani toh silently skip
+                // Skip quietly when the event class does not exist
             }
         }
     }

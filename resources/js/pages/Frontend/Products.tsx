@@ -12,7 +12,7 @@ export default function Products({ products, categories, siteData }: any) {
         : products.data.filter((p: any) => p.category_id === parseInt(selectedCategory));
 
     return (
-        /* Sidebar hatane ke liye variant="full" ya similar prop use hota hai */
+        /* variant="full" (or similar) hides the sidebar */
         <AppLayout breadcrumbs={[{ title: 'Products', href: '/products' }]}>
             <Head title="Products Catalog" />
 
@@ -111,7 +111,7 @@ export default function Products({ products, categories, siteData }: any) {
                 {/* Empty State */}
                 {filteredProducts.length === 0 && (
                     <div className="text-center py-20 bg-gray-50 dark:bg-gray-900/50 rounded-[2rem] border-2 border-dashed border-gray-100 dark:border-gray-800">
-                        <p className="text-gray-400 font-medium text-lg">Is category mein filhal koi products nahi hain.</p>
+                        <p className="text-gray-400 font-medium text-lg">There are no products in this category yet.</p>
                     </div>
                 )}
             </div>

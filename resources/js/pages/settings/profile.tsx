@@ -47,7 +47,7 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                         description="Update your name and email address"
                     />
 
-                    {/* HTML ka standard form tag use karein kyunke hum useForm hook use kar rahe hain */}
+                    {/* A plain HTML form tag, since the useForm hook does the submitting */}
                     <form onSubmit={submit} className="space-y-6">
                         <div className="grid gap-2">
                             <Label htmlFor="name">Name</Label>

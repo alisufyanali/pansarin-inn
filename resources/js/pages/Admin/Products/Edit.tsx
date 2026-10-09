@@ -53,7 +53,7 @@ export default function Edit({ product, categories, attributes, healthConcerns }
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Edit: ${product.name}`} />
-            {/* errors Inertia se usePage() ke zariye ProductForm ko milte hain automatically */}
+            {/* ProductForm gets the errors from Inertia through usePage() */}
             <ProductForm
                 product={normalizedProduct}
                 categories={categories}

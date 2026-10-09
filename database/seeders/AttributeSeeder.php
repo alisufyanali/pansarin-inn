@@ -12,8 +12,8 @@ class AttributeSeeder extends Seeder
     public function run()
     {
         // ─────────────────────────────────────────
-        // Category IDs fetch karo slug se
-        // (ID hardcode mat karo — future proof)
+        // Look up category IDs by slug
+        // (never hardcode IDs)
         // ─────────────────────────────────────────
         $herbal       = Category::where('slug', 'herb')->first();
         $oils         = Category::where('slug', 'oils')->first();
@@ -140,7 +140,7 @@ class AttributeSeeder extends Seeder
         }
 
         // ═══════════════════════════════════════════
-        // 5. DAWAKHANA — Sirf Quantity
+        // 5. DAWAKHANA — quantity only
         // ═══════════════════════════════════════════
         if ($dawakhana) {
 
@@ -160,7 +160,7 @@ class AttributeSeeder extends Seeder
     }
 
     // ─────────────────────────────────────────
-    // Shared Quantity values (sab categories mein same)
+    // Shared quantity values (same in every category)
     // ─────────────────────────────────────────
     private function quantities(): array
     {

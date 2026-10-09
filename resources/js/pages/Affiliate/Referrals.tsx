@@ -4,7 +4,7 @@ import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import React from 'react';
 
-// 1. Referral Interface define karna
+// 1. Referral type
 interface Referral {
     id: number;
     order_amount: number;

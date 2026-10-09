@@ -17,7 +17,7 @@ export default function Registration({ affiliate_code = '' }: Props) {
         username: '',
         password: '',
         password_confirmation: '',
-        affiliate_code: affiliate_code, // URL se auto-fill hoga, lekin editable rahega
+        affiliate_code: affiliate_code, // filled from the URL, still editable
     });
 
     const submit = (e: React.FormEvent) => {

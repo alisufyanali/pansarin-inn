@@ -21,7 +21,7 @@ interface Props {
 }
 
 export default function BusinessSettings({ settings }: Props) {
-    // Hamare controller ko array of objects chahiye
+    // The controller expects an array of objects
     const { data, setData, post, processing } = useForm({
         settings: settings.length > 0 ? settings : [
             { type: 'tax_system', value: '0', status: 'inactive' },

@@ -15,7 +15,7 @@ export default function Index() {
     const { delete: destroy } = useForm({});
 
     const handleDelete = (id: number) => {
-        if (confirm('Kya aap waqai is page ko delete karna chahte hain?')) {
+        if (confirm('Are you sure you want to delete this page?')) {
             destroy(route('admin.pages.destroy', id), {
                 onSuccess: () => toast.success('Page deleted successfully!'),
             });
@@ -68,7 +68,7 @@ export default function Index() {
         },
     ];
 
-    // CSV Export ke liye headers
+    // CSV export headers
     const csvHeaders = [
         { label: 'Title', key: 'title' },
         { label: 'Slug', key: 'slug' },
@@ -92,7 +92,7 @@ export default function Index() {
 
                 <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800">
                     <DataTableWrapper 
-                        fetchUrl="/admin/pages-data" // Yahan wo URL aayega jo JSON data return kare
+                        fetchUrl="/admin/pages-data" // returns the table data as JSON
                         columns={columns} 
                         csvHeaders={csvHeaders}
                         searchableKeys={['title', 'slug']}

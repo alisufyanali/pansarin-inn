@@ -8,7 +8,7 @@ const breadcrumbs: BreadcrumbItem[] = [
   { title: 'Create', href: '/admin/customers/create' },
 ];
 
-// Types ko update karein taake TypeScript error na de
+// Types kept in step with the props so TypeScript is happy
 interface LocationItem { id: number; name: string; country_id?: number; state_id?: number; }
 interface SimpleItem { id: number; name: string; }
 

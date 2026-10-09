@@ -64,7 +64,7 @@ class WhatsAppSeeder extends Seeder
         // Received: Customer question (30 min later)
         WhatsappMessage::create([
             'from_number' => $phone,
-            'message' => 'Assalam o Alaikum, order kitne din mein deliver hoga?',
+            'message' => 'Assalam o Alaikum, how many days will my order take to deliver?',
             'media_url' => null,
             'is_read' => true,
             'received_at' => $time1->copy()->addMinutes(30),
@@ -77,7 +77,7 @@ class WhatsAppSeeder extends Seeder
             'order_id' => 'Manual-5678',
             'order_total' => 0,
             'delivery_address' => '',
-            'messages' => 'Walaikum Assalam! Apka order 2-3 working days mein deliver ho jayega. Track karne ke liye website check kar sakte hain.',
+            'messages' => 'Walaikum Assalam! Your order will be delivered in 2-3 working days. You can track it on our website.',
             'api_response' => json_encode(['success' => true]),
             'created_at' => $time1->copy()->addMinutes(35),
         ]);
@@ -97,7 +97,7 @@ class WhatsAppSeeder extends Seeder
         // Received: Payment confirmation
         WhatsappMessage::create([
             'from_number' => $phone,
-            'message' => 'Payment kr di hai. Attachment dekh lein',
+            'message' => 'I have made the payment. Please see the attachment.',
             'media_url' => null,
             'is_read' => true,
             'received_at' => $time2,
@@ -119,7 +119,7 @@ class WhatsAppSeeder extends Seeder
             'order_id' => 'Manual-5679',
             'order_total' => 0,
             'delivery_address' => '',
-            'messages' => 'Payment confirm ho gayi hai! Order tomorrow dispatch hoga. Thank you! 👍',
+            'messages' => 'Payment confirmed! Your order will be dispatched tomorrow. Thank you! 👍',
             'api_response' => json_encode(['success' => true]),
             'created_at' => $time2->copy()->addMinutes(10),
         ]);
@@ -142,7 +142,7 @@ class WhatsAppSeeder extends Seeder
         // Received: Recent message (1 hour ago)
         WhatsappMessage::create([
             'from_number' => $phone,
-            'message' => 'Order mil gaya! Bohat acha packing tha. Thank you so much! 🎉',
+            'message' => 'Got my order! The packing was very good. Thank you so much! 🎉',
             'media_url' => null,
             'is_read' => true,
             'received_at' => Carbon::now()->subHour(),
@@ -162,7 +162,7 @@ class WhatsAppSeeder extends Seeder
         // Received: Product inquiry
         WhatsappMessage::create([
             'from_number' => $phone,
-            'message' => 'Salam, mujhe apki Rice ki details chahiye. Kya prices hain?',
+            'message' => 'Salam, I would like details about your rice. What are the prices?',
             'media_url' => null,
             'is_read' => false, // Unread
             'received_at' => $time1,
@@ -171,7 +171,7 @@ class WhatsAppSeeder extends Seeder
         // Received: Follow up
         WhatsappMessage::create([
             'from_number' => $phone,
-            'message' => '10kg ka bag available hai?',
+            'message' => 'Is the 10kg bag available?',
             'media_url' => null,
             'is_read' => false, // Unread
             'received_at' => $time1->copy()->addMinutes(15),
@@ -204,7 +204,7 @@ class WhatsAppSeeder extends Seeder
         // Received: Question about product
         WhatsappMessage::create([
             'from_number' => $phone,
-            'message' => 'Yeh jo spices order ki hain, unki expiry date kya hai?',
+            'message' => 'What is the expiry date of the spices I ordered?',
             'media_url' => null,
             'is_read' => true,
             'received_at' => $time1->copy()->addHours(2),
@@ -217,7 +217,7 @@ class WhatsAppSeeder extends Seeder
             'order_id' => 'Manual-1234',
             'order_total' => 0,
             'delivery_address' => '',
-            'messages' => 'Tamam products fresh hain. Expiry date 12 months hai. Invoice pe bhi mentioned hogi.',
+            'messages' => 'All products are fresh, with a 12-month expiry. It is also on the invoice.',
             'api_response' => json_encode(['success' => true]),
             'created_at' => $time1->copy()->addHours(2)->addMinutes(10),
         ]);
@@ -238,7 +238,7 @@ class WhatsAppSeeder extends Seeder
             'order_id' => 'Manual-1235',
             'order_total' => 0,
             'delivery_address' => '',
-            'messages' => 'Ji bilkul! Aap jo bhi additional items chahiye wo add kar dein. Main order update kar deta hoon.',
+            'messages' => 'Of course! Add any extra items you need and I will update the order.',
             'api_response' => json_encode(['success' => true]),
             'created_at' => Carbon::now()->subDays(4)->setTime(15, 45),
         ]);
@@ -290,7 +290,7 @@ class WhatsAppSeeder extends Seeder
 
         WhatsappMessage::create([
             'from_number' => $phone,
-            'message' => 'Is baar biryani masala ki quantity zyada bhejna please 😊',
+            'message' => 'Please send a bigger quantity of biryani masala this time 😊',
             'media_url' => null,
             'is_read' => true,
             'received_at' => $time2->copy()->addMinutes(10),
@@ -302,7 +302,7 @@ class WhatsAppSeeder extends Seeder
             'order_id' => 'Manual-3456',
             'order_total' => 0,
             'delivery_address' => '',
-            'messages' => 'Sure Sara! Extra pack add kar di hai complimentary. Enjoy! 🎁',
+            'messages' => 'Sure Sara! I have added an extra pack, complimentary. Enjoy! 🎁',
             'api_response' => json_encode(['success' => true]),
             'created_at' => $time2->copy()->addMinutes(15),
         ]);
@@ -310,7 +310,7 @@ class WhatsAppSeeder extends Seeder
         // Recent message - Yesterday
         WhatsappMessage::create([
             'from_number' => $phone,
-            'message' => 'Masala bohat acha tha! Next month phir order karungi InshaAllah',
+            'message' => 'The masala was very good! I will order again next month, InshaAllah',
             'media_url' => null,
             'is_read' => true,
             'received_at' => Carbon::yesterday()->setTime(18, 0),
@@ -344,7 +344,7 @@ class WhatsAppSeeder extends Seeder
 
         WhatsappMessage::create([
             'from_number' => $phone,
-            'message' => 'Bhai order kab tak aayega? Urgent chahiye tha',
+            'message' => 'When will my order arrive? I need it urgently',
             'media_url' => null,
             'is_read' => false, // UNREAD
             'received_at' => $time2,
@@ -352,7 +352,7 @@ class WhatsAppSeeder extends Seeder
 
         WhatsappMessage::create([
             'from_number' => $phone,
-            'message' => 'Please reply karo',
+            'message' => 'Please reply',
             'media_url' => null,
             'is_read' => false, // UNREAD
             'received_at' => $time2->copy()->addMinutes(30),

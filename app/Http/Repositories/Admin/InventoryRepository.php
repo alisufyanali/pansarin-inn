@@ -144,7 +144,7 @@ class InventoryRepository
                 'note'               => $data['note'] ?? null,
             ]);
 
-            // product_stocks — Model events handle karte hain (Inventory::booted)
+            // product_stocks — updated by model events (Inventory::booted)
 
             return $inventory;
         });
@@ -180,7 +180,7 @@ class InventoryRepository
                 'note'       => $data['note']       ?? null,
             ]);
 
-            // product_stocks — Model events handle karte hain (Inventory::booted)
+            // product_stocks — updated by model events (Inventory::booted)
 
             return $inventory;
         });
@@ -192,7 +192,7 @@ class InventoryRepository
         return DB::transaction(function () use ($id) {
             $inventory = $this->find($id);
 
-            // product_stocks — Model deleted event reverse karega automatically
+            // product_stocks — the model's deleted event reverses it automatically
 
             return $inventory->delete();
         });
@@ -201,7 +201,7 @@ class InventoryRepository
     // ── Stats ─────────────────────────────────────────────────────
     public function getStats(): array
     {
-        // price column products table mein nahi — variants ki price se calculate
+        // products have no price column — calculated from variant prices
         $totalValue = \App\Models\ProductVariant::join('product_stocks', function($join) {
                 $join->on('product_stocks.product_variant_id', '=', 'product_variants.id');
             })
@@ -293,7 +293,7 @@ class InventoryRepository
                     'source'             => $data['source'] ?? $this->defaultSource($data['type']),
                     'note'               => $data['note'] ?? null,
                 ]);
-                // product_stocks — Model booted event handle karega automatically
+                // product_stocks — updated automatically by the model's booted event
             }
         });
     }

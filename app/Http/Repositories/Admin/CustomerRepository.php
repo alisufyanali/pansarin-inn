@@ -155,7 +155,7 @@ class CustomerRepository
         return DB::transaction(function () use ($customer, $data) {
             $fullName = $data['first_name'] . ' ' . ($data['last_name'] ?? '');
 
-            // Purana referrer ID store karein taake check kar sakein ke change hua hai ya nahi
+            // Keep the old referrer ID to see whether it changed
             $oldReferredBy = $customer->user->referred_by;
             $newReferredBy = array_key_exists('referred_by', $data) ? $data['referred_by'] : $customer->user->referred_by;
 
@@ -183,17 +183,17 @@ class CustomerRepository
             // 3. Referral Table Sync Logic (The Critical Part)
             if ($oldReferredBy != $newReferredBy) {
                 
-                // Purana referral entry delete karein (kyunke affiliate badal gaya hai)
+                // Delete the old referral entry (the affiliate changed)
                 \App\Models\Referral::where('customer_id', $customer->user_id)->delete();
 
-                // Agar naya referrer select kiya gaya hai, to nayi entry banayein
+                // If a new referrer was chosen, create a new entry
                 if ($newReferredBy) {
                     $newAffiliate = \App\Models\Affiliate::where('user_id', $newReferredBy)->first();
 
                     if ($newAffiliate) {
                         \App\Models\Referral::create([
                             'affiliate_id'             => $newAffiliate->id,
-                            'customer_id'              => $customer->user_id, // Yahan 'user_id' hi use karein jaisa store function mein hai
+                            'customer_id'              => $customer->user_id, // user_id here, same as in store()
                             'order_amount'             => 0,
                             'commission_rate_snapshot' => $newAffiliate->commission_rate,
                             'commission_amount'        => 0,
@@ -229,13 +229,13 @@ class CustomerRepository
         return DB::transaction(function () use ($customer) {
             
             // 1. Referral Status Update (Optional but Recommended)
-            // Agar customer delete ho gaya hai, to uske pending referrals ko 'cancelled' ya 'void' mark kar dein
+            // The customer is being deleted: mark their pending referrals cancelled / void
             \App\Models\Referral::where('customer_id', $customer->user_id)
                 ->where('status', 'pending')
                 ->update(['status' => 'cancelled']);
 
             // 2. Soft Delete User Account
-            // Kyunke customer delete ho raha hai, to uska login (User) bhi delete hona chahiye
+            // Deleting the customer also deletes their login (User)
             if ($customer->user) {
                 $customer->user->delete();
             }

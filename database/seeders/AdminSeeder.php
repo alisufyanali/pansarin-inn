@@ -90,13 +90,13 @@ class AdminSeeder extends Seeder
                 $newUser->syncRoles(['customer']);
                 $customerProfile = $this->createCustomerProfile($newUser, $defaultGroup->id);
 
-                // REFERRALS TABLE MEIN ENTRY
+                // ENTRY IN THE REFERRALS TABLE
                 Referral::updateOrCreate(
                     ['customer_id' => $customerProfile->id], // Customer Profile link
                     [
                         'affiliate_id'             => $affiliate->id,
                         'level'                    => 1,
-                        'status'                   => 'pending', // Abhi order nahi hua isliye pending
+                        'status'                   => 'pending', // pending: no order yet
                         'referral_type'            => 'direct',
                         'commission_rate_snapshot' => $affiliate->commission_rate,
                         'order_amount'             => 0,

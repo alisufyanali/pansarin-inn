@@ -202,12 +202,12 @@ class Order extends Model
      */
     public function reduceStock(): void
     {
-        // Items fresh load karo (booted mein cached ho sakta hai)
+        // Load the items fresh (they may be cached from booted)
         $this->loadMissing('items');
 
         // Custom items (no product_id) are bought in from outside and never touch stock
         foreach ($this->items->whereNotNull('product_id') as $item) {
-            // Already stock out hua hai (order placement ya pehle delivery par)? Skip karo
+            // Already taken out of stock (at order placement or an earlier delivery)? Skip
             $alreadyDone = \App\Models\Inventory::where('product_id', $item->product_id)
                 ->when(
                     $item->product_variant_id,
@@ -224,7 +224,7 @@ class Order extends Model
                 'product_id'         => $item->product_id,
                 'product_variant_id' => $item->product_variant_id ?? null,
                 'type'               => 'out',
-                'quantity'           => -abs($item->quantity), // Model event handle karega stock
+                'quantity'           => -abs($item->quantity), // The model event updates the stock
                 'cost_price'         => null,
                 'reference'          => 'Order #' . $this->order_number,
                 'source'             => 'sale',

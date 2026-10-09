@@ -87,7 +87,7 @@ class NewsletterRepository
     public function store(array $data)
     {
         try {
-            // Admin se add kiye subscribers ko auto-verify karo
+            // Subscribers added by an admin are verified automatically
             if (!isset($data['verified_at'])) {
                 $data['verified_at'] = now();
                 $data['verification_token'] = null;

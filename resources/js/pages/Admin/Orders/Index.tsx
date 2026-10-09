@@ -124,7 +124,7 @@ export default function Index({ stats, flash }: Props) {
             // City: prefer linked city object, fallback to shipping_address first word/line
             let city = order.city?.name ?? '';
             if (!city && (order as any).shipping_address) {
-                // shipping_address se pehli line ya last meaningful word nikaalo
+                // Take the city from the last part of shipping_address
                 const addr: string = (order as any).shipping_address;
                 const lines = addr.split(/[\n,]/).map((s: string) => s.trim()).filter(Boolean);
                 city = lines[lines.length - 1] ?? lines[0] ?? '';

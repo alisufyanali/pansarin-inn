@@ -37,7 +37,7 @@ class OrderSeeder extends Seeder
             $customer = Customer::where('user_id', $refUser->id)->first();
             if (!$customer) continue;
 
-            // Har referral user ke liye 3-5 confirmed delivered orders
+            // 3-5 delivered orders for each referral user
             $historyCount = rand(3, 5);
             for ($k = 0; $k < $historyCount; $k++) {
                 $this->createOrderWithItems($customer, $products, $affiliateService, true);

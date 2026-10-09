@@ -95,7 +95,7 @@ class User extends Authenticatable
     }
 
     /**
-     * 1. Jis Affiliate ne is user ko refer kiya (The Parent)
+     * 1. The affiliate who referred this user (the parent)
      */
     public function referrer()
     {
@@ -103,7 +103,7 @@ class User extends Authenticatable
     }
 
     /**
-     * 2. Wo Users jinko is Affiliate ne refer kiya (The Downline)
+     * 2. The users this affiliate referred (the downline)
      */
     public function referrals()
     {
@@ -111,7 +111,7 @@ class User extends Authenticatable
     }
 
     /**
-     * 3. Affiliate ki earnings (Referral Table se)
+     * 3. The affiliate's earnings (from the referrals table)
      * Jab ye user as an Affiliate kamaye ga
      */
     public function affiliateCommissions()
@@ -120,8 +120,8 @@ class User extends Authenticatable
     }
 
     /**
-     * 4. User ki purchases (Referral Table se)
-     * Jab ye user as a Customer kuch khareeday ga
+     * 4. The user's purchases (from the referrals table)
+     * When this user buys something as a customer
      */
     public function customerPurchases()
     {

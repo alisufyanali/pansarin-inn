@@ -13,7 +13,7 @@ class BlogTagRequest extends FormRequest
 
     public function rules(): array
     {
-        // Edit mode mein id route se milega
+        // In edit mode the id comes from the route
         $blogtag = $this->route('blogtag');
         $id = is_object($blogtag) ? $blogtag->id : $blogtag;
 

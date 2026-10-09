@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useForm } from '@inertiajs/react'; // useForm import karein
+import { useForm } from '@inertiajs/react';
 import { useRef } from 'react';
 
 export default function DeleteUser() {
@@ -81,7 +81,7 @@ export default function DeleteUser() {
                             permanently delete your account.
                         </DialogDescription>
 
-                        {/* Standard HTML form tag use karein */}
+                        {/* A plain HTML form tag */}
                         <form onSubmit={deleteUser} className="space-y-6">
                             <div className="grid gap-2">
                                 <Label

@@ -16,9 +16,9 @@ return new class extends Migration
             $table->foreignId('product_id')->constrained()->onDelete('cascade');
             $table->foreignId('user_id')->nullable()->constrained()->onDelete('set null'); // Nullable for guests
 
-            $table->string('customer_name'); // Guest ke liye name
+            $table->string('customer_name'); // name (for guests)
             $table->string('customer_email')->nullable();
-            $table->string('order_number')->nullable(); // Order verify karne ke liye
+            $table->string('order_number')->nullable(); // to verify the purchase
             $table->string('title')->nullable();
 
             $table->integer('rating')->default(5);
@@ -27,8 +27,8 @@ return new class extends Migration
             $table->unsignedInteger('helpful_count')->default(0);
             $table->text('admin_reply')->nullable();
             $table->timestamp('admin_replied_at')->nullable();
-            $table->boolean('is_verified')->default(false); // Backend check karega
-            $table->boolean('status')->default(false); // Admin approve karega ya nahi
+            $table->boolean('is_verified')->default(false); // set by the backend
+            $table->boolean('status')->default(false); // approved by an admin
             $table->boolean('show_on_homepage')->default(false)->index();
             $table->timestamps();
             $table->softDeletes();

@@ -214,7 +214,7 @@ export default function InventoryForm({ inventory, products = [], isEdit = false
                     </h1>
                     {isBulkMode && (
                         <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-0.5 font-medium">
-                            Bulk mode — sab variants ek saath
+                            Bulk mode — all variants at once
                         </p>
                     )}
                 </div>

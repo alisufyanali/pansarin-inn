@@ -20,7 +20,7 @@ export type BlogFormData = {
     social_image?: File | null;
     social_description?: string;
     tags?: number[];
-    error?: string; // global error ke liye
+    error?: string; // global (non-field) error
 };
 
 interface BlogTag {
@@ -125,7 +125,7 @@ export default function Form({
                 backUrl="/admin/blogs"
             />
 
-            {/* Global error banner (catch block se aane wala generic error) */}
+            {/* Global error banner (generic error from the catch block) */}
             {errors.error && (
                 <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 dark:bg-red-900/30 dark:border-red-700 dark:text-red-400">
                     {errors.error}

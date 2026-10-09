@@ -19,7 +19,7 @@ return new class extends Migration
             $table->timestamp('replied_at')->nullable();
             $table->timestamps();
 
-            $table->unique(['order_id', 'customer_id']); // ek order par ek hi review
+            $table->unique(['order_id', 'customer_id']); // one review per order
             $table->index('status');
         });
     }

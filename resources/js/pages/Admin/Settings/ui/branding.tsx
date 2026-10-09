@@ -21,8 +21,8 @@ export default function BrandingTab({ settings }: { settings: any }) {
         header_color: settings.header_color || '#27ae60',
         footer_color: settings.footer_color || '#1a1a1a',
         font: settings.font || 'Inter',
-        // Yahan hum File object nahi rakh sakte refresh par, 
-        // lekin hum isay null rakhenge taaki controller purana data overwrite na kare
+        // A File object cannot survive a refresh, so this stays null
+        // and the controller keeps the existing image
         home_top_logo: null as File | null, 
         fav_ext: null as File | null,
     });

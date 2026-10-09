@@ -11,7 +11,7 @@ use Inertia\Inertia;
 class PayoutController extends Controller
 {
     /**
-     * Pending Payout Requests ki list dikhane ke liye
+     * List pending payout requests
      */
     public function index()
     {
@@ -27,35 +27,35 @@ class PayoutController extends Controller
     }
 
     /**
-     * Payout Request ko Approve (Mark as Paid) karne ke liye
+     * Approve a payout request (mark as paid)
      */
     public function approve($id)
     {
         $payoutRequest = PayoutRequest::where('status', 'pending')->findOrFail($id);
 
         DB::transaction(function () use ($payoutRequest) {
-            // 1. Payout Request ka status completed karein
+            // 1. Mark the payout request completed
             $payoutRequest->update([
                 'status' => 'completed',
                 'processed_at' => now(),
             ]);
 
-            // 2. Wallet Transaction Ledger mein status ko 'completed' ya 'success' mark karein
-            // Agar aapke paas transaction table alag track ho rahi hai:
+            // 2. Mark the wallet ledger entry as completed / success
+            // When the transaction is tracked in its own table:
             $payoutRequest->affiliate->wallet->transactions()
                 ->where('status', 'pending')
                 ->where('amount', $payoutRequest->amount)
                 ->latest()
                 ->update([
-                    'status' => 'success', // ya 'completed' jo bhi aapke system mein hai
+                    'status' => 'success', // or 'completed', whichever the system uses
                 ]);
         });
 
-        return redirect()->back()->with('success', 'Payout request kamyabi se approve ho gayi hai!');
+        return redirect()->back()->with('success', 'Payout request approved successfully!');
     }
 
     /**
-     * Payout Request ko Reject karne aur balance refund karne ke liye
+     * Reject a payout request and refund the balance
      */
     public function reject(Request $request, $id)
     {
@@ -68,29 +68,29 @@ class PayoutController extends Controller
         $wallet = $affiliate->wallet;
 
         DB::transaction(function () use ($payoutRequest, $affiliate, $wallet, $request) {
-            // 1. Request status rejected mark karein aur reason save karein
+            // 1. Mark the request rejected and save the reason
             $payoutRequest->update([
                 'status' => 'rejected',
                 'admin_note' => $request->admin_note,
                 'processed_at' => now(),
             ]);
 
-            // 2. WALLET TABLE: Balance wapas refund (increment) karein
+            // 2. WALLET TABLE: refund the balance (increment)
             $wallet->increment('balance', $payoutRequest->amount);
 
-            // 3. AFFILIATE TABLE: Balance wapas sync/increment karein
+            // 3. AFFILIATE TABLE: sync / increment the balance back
             $affiliate->increment('balance', $payoutRequest->amount);
 
-            // 4. Wallet Ledger mein Rejection/Refund ki entry dalein
+            // 4. Add a rejection / refund entry to the wallet ledger
             $wallet->transactions()->create([
                 'amount' => $payoutRequest->amount,
-                'type' => 'credit', // Ab balance wapas aa raha hai to credit hoga
+                'type' => 'credit', // The balance comes back, so it is a credit
                 'action' => 'refund',
                 'description' => 'Payout rejected: ' . $request->admin_note,
                 'status' => 'success',
             ]);
         });
 
-        return redirect()->back()->with('success', 'Payout request reject kar di gayi hai aur balance refund ho gaya hai.');
+        return redirect()->back()->with('success', 'Payout request rejected and the balance refunded.');
     }
 }

@@ -39,7 +39,7 @@ export default function ProductCatalog({ products, affiliateCode, storefrontUrl,
                             <Package className="text-blue-600" size={32} /> 
                             Product Catalog
                         </h1>
-                        <p className="text-gray-500 mt-1">Apne pasandida products promote karen aur commission kamayein.</p>
+                        <p className="text-gray-500 mt-1">Promote the products you like and earn commission.</p>
                     </div>
                     <div className="bg-blue-600 text-white px-6 py-3 rounded-2xl shadow-lg shadow-blue-500/20 flex items-center gap-3">
                         <Tag size={20} />
@@ -47,14 +47,14 @@ export default function ProductCatalog({ products, affiliateCode, storefrontUrl,
                     </div>
                 </div>
 
-                {/* Quick Search Placeholder (Aage ke liye) */}
+                {/* Quick search placeholder (for later) */}
                 <div className="relative group">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-600 transition-colors" size={20} />
                     <input 
                         type="text" 
                         placeholder="Search products..." 
                         className="w-full pl-12 pr-4 py-4 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 outline-none transition-all dark:text-white"
-                        disabled // Abhi disable hai, polish phase mein filter logic add karenge
+                        disabled // Disabled for now — filtering comes later
                     />
                 </div>
 

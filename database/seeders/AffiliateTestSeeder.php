@@ -14,15 +14,15 @@ class AffiliateTestSeeder extends Seeder
 {
     public function run(AffiliateService $affiliateService): void
     {
-        // 1. Referral User ko dhoonden (referral1@example.com)
+        // 1. Find the referral user (referral1@example.com)
         $user = User::where('email', 'referral1@example.com')->first();
         
         if (!$user) {
-            $this->command->error('Referral user not found. Pehle AdminSeeder run karein.');
+            $this->command->error('Referral user not found. Run AdminSeeder first.');
             return;
         }
 
-        // 2. Customer profile dhoonden ya banayen
+        // 2. Find or create the customer profile
         $customer = Customer::firstOrCreate(
             ['user_id' => $user->id],
             [
@@ -33,7 +33,7 @@ class AffiliateTestSeeder extends Seeder
             ]
         );
 
-        // 3. Aik Dummy Order create karein
+        // 3. Create a dummy order
         $order = Order::create([
             'customer_id'      => $customer->id,
             'order_number'     => 'ORD-' . strtoupper(Str::random(8)),
@@ -49,14 +49,14 @@ class AffiliateTestSeeder extends Seeder
 
         $this->command->info("Order Created: {$order->order_number}");
 
-        // 4. Status ko 'delivered' mark karein
+        // 4. Mark it delivered
         $order->update([
             'status' => 'delivered',
             'payment_status' => 'paid'
         ]);
 
-        // 5. Affiliate Service Trigger karein
-        // Ye wahi method hai jo aapke OrderController ke update mein call hota hai
+        // 5. Trigger the affiliate service
+        // The same method OrderController::update calls
         $affiliateService->updateReferral($order);
 
         // 6. Verification log

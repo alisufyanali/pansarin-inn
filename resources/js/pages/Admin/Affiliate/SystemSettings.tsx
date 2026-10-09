@@ -31,7 +31,7 @@ export default function SystemSettings({ settings }: SettingsProps) {
         post(route('admin.affiliate.settings.update'), {
             preserveScroll: true,
             onSuccess: () => {
-                // Aap yahan success notification add kar sakte hain
+                // A success notification can go here
             },
         });
     };

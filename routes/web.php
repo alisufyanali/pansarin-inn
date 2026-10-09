@@ -37,7 +37,7 @@ Route::middleware(['auth', 'staff', 'permission:run-maintenance'])->group(functi
         }
     });
 
-    // Temporary routes - production mein hamesha hatana!
+    // Temporary routes — always remove in production!
     Route::get('/run-build-clear', function () {
         Artisan::call('config:clear');
         Artisan::call('cache:clear');
@@ -46,27 +46,27 @@ Route::middleware(['auth', 'staff', 'permission:run-maintenance'])->group(functi
         Artisan::call('optimize:clear');
 
         return 'Cache cleared successfully! ✅<br><br>'.
-               'Ab apne local machine par:<br>'.
-               '1. npm run build chalao<br>'.
-               '2. public/build folder upload karo CPanel par<br>'.
-               '3. public/hot file delete karo (agar hai)<br>'.
-               '4. Phir browser cache clear karo (Ctrl+Shift+Delete)';
+               'Now, on your local machine:<br>'.
+               '1. Run npm run build<br>'.
+               '2. Upload the public/build folder to cPanel<br>'.
+               '3. Delete the public/hot file (if it exists)<br>'.
+               '4. Clear the browser cache (Ctrl+Shift+Delete)';
     });
 
-    // Hot file delete karne ke liye
+    // Deletes the hot file
     Route::get('/remove-hot-file', function () {
         $hotFile = public_path('hot');
 
         if (file_exists($hotFile)) {
             unlink($hotFile);
 
-            return 'Hot file deleted successfully! ✅<br>Ab browser cache clear karo aur page refresh karo.';
+            return 'Hot file deleted successfully! ✅<br>Now clear the browser cache and refresh the page.';
         }
 
         return 'Hot file already deleted! ✅';
     });
 
-    // Build files check karne ke liye
+    // Checks the build files
     Route::get('/check-build', function () {
         $manifestPath = public_path('build/manifest.json');
         $hotPath = public_path('hot');

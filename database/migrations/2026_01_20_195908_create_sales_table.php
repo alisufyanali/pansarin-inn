@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('customer_name')->nullable();
             $table->string('customer_phone', 20)->nullable();
             $table->string('customer_email')->nullable();
-            $table->string('sale_code')->unique(); // Order code se generate hoga
+            $table->string('sale_code')->unique(); // generated from the order number
 
             // Amounts
             $table->decimal('subtotal', 12, 2)->default(0); // Total before any discounts

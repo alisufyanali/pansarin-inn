@@ -169,7 +169,7 @@ class CourierService
                 'consignment_phone_two'      => '',
                 'consignment_phone_three'    => '',
                 'consignment_address'        => $order->shipping_address ?? '',
-                'special_instructions'       => 'CALL ZAROOR KARIEN AND DELIVER ZAROOR KAREIN',
+                'special_instructions'       => 'PLEASE CALL BEFORE DELIVERY AND MAKE SURE TO DELIVER',
                 'shipment_type'              => 'overnight',
                 'return_address'             => config('services.leopard.return_address'),
                 'return_city'                => config('services.leopard.return_city', 592),

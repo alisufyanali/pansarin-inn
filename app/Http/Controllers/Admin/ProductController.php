@@ -60,7 +60,7 @@ class ProductController extends Controller
         ]);
     }
 
-    // ── API: Category ke attributes fetch karo (AJAX) ──
+    // ── API: fetch a category's attributes (AJAX) ──
     public function getAttributesByCategory(Request $request)
     {
         $categoryId = $request->get('category_id');

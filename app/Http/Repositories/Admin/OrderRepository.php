@@ -132,7 +132,7 @@ class OrderRepository
                 'order_note'       => $data['order_note'] ?? null,
             ]);
 
-            // Purane items ka stock wapas karo (reverse inventory)
+            // Put the old items' stock back (reverse inventory)
             // Net-based: an order already restocked (e.g. cancelled) is not restocked twice
             $order->load('items');
             $order->restoreStock('order_edit', 'Order edit reversal #');
@@ -153,7 +153,7 @@ class OrderRepository
             Cache::forget('order_stats');
             $order = Order::with('items')->findOrFail($id);
 
-            // Stock wapas karo — net-based, so an already cancelled order is not restocked twice
+            // Put stock back — net-based, so an already cancelled order is not restocked twice
             $order->restoreStock('order_delete', 'Order deleted #');
 
             $order->items()->delete();
@@ -442,7 +442,7 @@ class OrderRepository
                 ],
             ]);
 
-            // Stock deduct karo — Inventory entry create karo (booted event stock update karega)
+            // Take stock out — an Inventory entry (its booted event updates the stock)
             \App\Models\Inventory::create([
                 'product_id'         => $item['product_id'],
                 'product_variant_id' => $item['product_variant_id'] ?? null,

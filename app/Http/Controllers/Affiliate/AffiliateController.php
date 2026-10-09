@@ -21,7 +21,7 @@ class AffiliateController extends Controller
         $user = Auth::user();
 
         if ($user->hasRole('affiliate')) {
-            return redirect()->route('affiliate.dashboard')->with('message', 'Aap pehle se affiliate hain.');
+            return redirect()->route('affiliate.dashboard')->with('message', 'You are already an affiliate.');
         }
 
         // Applications wait for admin approval; the affiliate role is given on approval
@@ -66,7 +66,7 @@ class AffiliateController extends Controller
         // 1. Products to share (commission is a fixed amount per delivered order)
         $products = $this->shareableProducts($affiliate, 10);
 
-        // 2. REAL STATS: Direct affiliate table se balance aur commissions table se total
+        // 2. REAL STATS: balance from the affiliate table, totals from the commissions table
         $totalEarnings = \App\Models\AffiliateCommission::where('affiliate_id', $affiliate->id)
             ->where('status', 'earned')
             ->sum('commission_amount');
@@ -133,11 +133,11 @@ class AffiliateController extends Controller
         $refCode = $request->query('ref');
         $productSlug = $request->query('product');
 
-        // 1. Agar URL mein ref hai to cookie update/set karein
+        // 1. If the URL has a ref, set / update the cookie
         if ($refCode) {
             cookie()->queue('affiliate_ref', $refCode, 60 * 24 * 30);
         } else {
-            // 2. Agar URL mein nahi hai, to purani cookie se code uthayein
+            // 2. Otherwise take the code from the existing cookie
             $refCode = $request->cookie('affiliate_ref');
         }
 
@@ -149,7 +149,7 @@ class AffiliateController extends Controller
             }
         }
 
-        // 4. Inertia ko affiliate_code bhejien (chahe URL se ho ya Cookie se)
+        // 4. Pass affiliate_code to Inertia (from the URL or the cookie)
         return Inertia::render('Affiliate/Registration', [
             'affiliate_code' => $refCode ?? '' 
         ]);
@@ -230,16 +230,16 @@ class AffiliateController extends Controller
         $user = auth()->user();
         $affiliate = $user->affiliate;
 
-        // 1. Customer confirm karein jo is affiliate ne refer kiya ho
+        // 1. Make sure the customer was referred by this affiliate
         $customerUser = User::where('id', $id)
             ->where('referred_by', $user->id)
             ->firstOrFail();
 
-        // 2. Is customer ke saare commission records (orders) uthayein
-        // Hum 'AffiliateCommission' table use karenge jo hamari service ne bhari hai
+        // 2. Load all of this customer's commission records (orders)
+        // Uses the AffiliateCommission table that the commission service fills
         $commissions = \App\Models\AffiliateCommission::where('affiliate_id', $affiliate->id)
             ->whereHas('order', function($q) use ($id) {
-                // Hum order ke zariye customer ki user_id match kar rahe hain
+                // Match the customer's user_id through the order
                 $q->whereHas('customer', function($sub) use ($id) {
                     $sub->where('user_id', $id);
                 });
@@ -275,7 +275,7 @@ class AffiliateController extends Controller
         $user = auth()->user();
         $affiliate = $user->affiliate;
 
-        // Check karein agar affiliate record nahi hai (security)
+        // Security: stop if there is no affiliate record
         if (!$affiliate) {
             return redirect()->route('home');
         }
