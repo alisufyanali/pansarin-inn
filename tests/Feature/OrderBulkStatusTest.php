@@ -78,3 +78,24 @@ it('filters the orders list by city and status', function () {
     expect($ids(['city_id' => $this->hyderabad->id]))->toBe([$h->id])
         ->and($ids(['city_id' => $this->karachi->id, 'status' => 'pending']))->toBe([$k1->id]);
 });
+
+it('counts only orders not yet moved to Sales in the stat cards, like the list', function () {
+    bulkOrder('pending', $this->karachi);
+    bulkOrder('processing', $this->karachi);
+    $moved = bulkOrder('pending', $this->karachi);
+    $moved->update(['payment_status' => 'paid']);
+
+    $stats = fn () => app(OrderRepository::class)->getStats();
+    expect($stats())->toMatchArray(['total' => 3, 'pending' => 2, 'processing' => 1, 'totalRevenue' => 500.0]);
+
+    $sale = \App\Models\Sale::create([
+        'order_id' => $moved->id, 'customer_id' => $this->customer->id,
+        'delivery_status' => 'pending', 'payment_status' => 'paid',
+    ]);
+    // Straight away — no stale cache
+    expect($stats())->toMatchArray(['total' => 2, 'pending' => 1, 'processing' => 1, 'totalRevenue' => 0.0]);
+
+    // Deleting the sale puts the order back
+    $sale->delete();
+    expect($stats()['total'])->toBe(3);
+});

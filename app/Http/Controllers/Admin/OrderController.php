@@ -308,8 +308,6 @@ class OrderController extends Controller
             }
         }
 
-        \Illuminate\Support\Facades\Cache::forget('order_stats');
-
         return response()->json(['updated' => $updated, 'skipped' => $skipped]);
     }
 

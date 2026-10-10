@@ -7,7 +7,6 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductStock;
 use App\Models\ProductVariant;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -65,7 +64,6 @@ class OrderRepository
     public function store(array $data): Order
     {
         return DB::transaction(function () use ($data) {
-            Cache::forget('order_stats');
             $snapshots = $this->snapshotFieldsForCustomer(
                 (int) $data['customer_id'],
                 $data['shipping_address'] ?? null
@@ -151,7 +149,6 @@ class OrderRepository
     public function delete($id): bool
     {
         return DB::transaction(function () use ($id) {
-            Cache::forget('order_stats');
             $order = Order::with('items')->findOrFail($id);
 
             // Put stock back — net-based, so an already cancelled order is not restocked twice
@@ -181,25 +178,28 @@ class OrderRepository
     }
 
     // ── Stats ─────────────────────────────────────────────────────
+    /**
+     * Stat cards on the orders screen — the same orders the list shows by
+     * default: ones not yet moved to Sales. Not cached, so the numbers always
+     * match the list (one aggregate query).
+     */
     public function getStats(): array
     {
-        return Cache::remember('order_stats', 300, function () {
-            $counts = Order::selectRaw("
-                COUNT(*) as total,
-                SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
-                SUM(CASE WHEN status = 'processing' THEN 1 ELSE 0 END) as processing,
-                SUM(CASE WHEN status = 'delivered' THEN 1 ELSE 0 END) as delivered,
-                SUM(CASE WHEN payment_status = 'paid' THEN grand_total ELSE 0 END) as totalRevenue
-            ")->first();
+        $counts = Order::doesntHave('sales')->selectRaw("
+            COUNT(*) as total,
+            SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+            SUM(CASE WHEN status = 'processing' THEN 1 ELSE 0 END) as processing,
+            SUM(CASE WHEN status = 'delivered' THEN 1 ELSE 0 END) as delivered,
+            SUM(CASE WHEN payment_status = 'paid' THEN grand_total ELSE 0 END) as totalRevenue
+        ")->first();
 
-            return [
-                'total'        => (int) $counts->total,
-                'pending'      => (int) $counts->pending,
-                'processing'   => (int) $counts->processing,
-                'delivered'    => (int) $counts->delivered,
-                'totalRevenue' => (float) $counts->totalRevenue,
-            ];
-        });
+        return [
+            'total'        => (int) $counts->total,
+            'pending'      => (int) $counts->pending,
+            'processing'   => (int) $counts->processing,
+            'delivered'    => (int) $counts->delivered,
+            'totalRevenue' => (float) $counts->totalRevenue,
+        ];
     }
 
     // ── Products for Form ─────────────────────────────────────────
