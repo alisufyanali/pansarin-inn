@@ -80,6 +80,12 @@ class Order extends Model
         return $this->hasMany(Sale::class);
     }
 
+    /** Courier booking attempts, newest first */
+    public function courierBookings()
+    {
+        return $this->hasMany(CourierBooking::class)->latest('id');
+    }
+
     // ── Helpers ───────────────────────────────────────────────────
 
     /**

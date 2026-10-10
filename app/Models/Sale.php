@@ -43,6 +43,12 @@ class Sale extends Model
         return $this->belongsTo(Order::class);
     }
 
+    /** Courier booking attempts for this sale's order, newest first */
+    public function courierBookings()
+    {
+        return $this->hasMany(CourierBooking::class, 'order_id', 'order_id')->latest('id');
+    }
+
     public function customer()
     {
         return $this->belongsTo(Customer::class);

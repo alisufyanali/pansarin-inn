@@ -238,6 +238,7 @@ Route::middleware(['auth', 'verified', 'staff'])->prefix('admin')->name('admin.'
     Route::get('sales/create-from-order/{order}', [SaleController::class, 'createFromOrder'])->name('sales.create-from-order');
     Route::get('sales-data', [SaleController::class, 'getData'])->name('sales.data');
     Route::get('sales-stats', [SaleController::class, 'stats'])->name('sales.stats');
+    Route::post('sales/{sale}/book-courier', [SaleController::class, 'bookCourier'])->name('sales.book-courier');
     Route::patch('sales/{sale}/delivery-status', [SaleController::class, 'updateDeliveryStatus'])->name('sales.delivery-status');
     Route::patch('sales/{sale}/payment-status', [SaleController::class, 'updatePaymentStatus'])->name('sales.payment-status');
     Route::post('sales/bulk-payment-status', [SaleController::class, 'bulkUpdatePaymentStatus'])->name('sales.bulk-payment-status');

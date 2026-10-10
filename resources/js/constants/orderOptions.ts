@@ -11,15 +11,17 @@ export const PAYMENT_METHOD_OPTIONS = [
   { value: 'jazzcash',         label: 'JazzCash' },
 ] as const;
 
+// Leopards, PostEx and Movex are booked online when the sale is created
+// (CourierService); the "(manual)" ones are arranged by hand.
 export const SHIPPING_METHOD_OPTIONS = [
-  { value: 'leopard', label: 'Leopard Courier' },
-  { value: 'cc',      label: 'Call Courier' },
-  { value: 'pp',      label: 'Pakistan Post' },
+  { value: 'leopard', label: 'Leopards Courier' },
   { value: 'px',      label: 'PostEx' },
   { value: 'movex',   label: 'Movex' },
-  { value: 'tcs',     label: 'TCS' },
-  { value: 'trax',    label: 'TRAX' },
-  { value: 'rider',   label: 'Rider' },
+  { value: 'cc',      label: 'Call Courier (manual)' },
+  { value: 'pp',      label: 'Pakistan Post (manual)' },
+  { value: 'tcs',     label: 'TCS (manual)' },
+  { value: 'trax',    label: 'TRAX (manual)' },
+  { value: 'rider',   label: 'Rider (manual)' },
 ] as const;
 
 export const PAYMENT_STATUS_OPTIONS = [

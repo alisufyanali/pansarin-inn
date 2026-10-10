@@ -56,6 +56,8 @@ return [
 
     'postex' => [
         'api_token' => env('POSTEX_API_TOKEN'),
+        // Pickup address in the PostEx merchant portal (001, 002, …)
+        'pickup_address_code' => env('POSTEX_PICKUP_ADDRESS_CODE', '001'),
     ],
 
     'leopard' => [

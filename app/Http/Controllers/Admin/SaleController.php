@@ -26,6 +26,7 @@ class SaleController extends Controller
             'bulkUpdateDeliveryStatus',
             'bulkSendReviewEmail',
             'bulkSendReviewWhatsApp',
+            'bookCourier',
         ]);
         $this->middleware('permission:delete.sales')->only(['destroy']);
         $this->middleware('permission:view.sales')->only(['index', 'show', 'getData', 'stats']);
@@ -208,18 +209,12 @@ class SaleController extends Controller
                             $order->refresh();
                         }
 
-                        Log::info('COURIER ATTEMPT', [
-                            'sale_id'         => $sale->id,
-                            'order_id'        => $sale->order_id,
-                            'shipping_method' => $order->shipping_method ?? 'NULL',
-                            'courier_weight'  => $order->courier_weight ?? 'NULL',
-                        ]);
-
-                        if ($order->shipping_method && in_array($order->shipping_method, ['movex', 'px', 'leopard', 'cc', 'tcs', 'trax', 'rider'])) {
-                            $tracking = app(\App\Services\CourierService::class)->book($order, $sale);
-                            if ($tracking) {
-                                $order->update(['shipping_response' => $tracking]);
-                            }
+                        // Leopards / PostEx / Movex book through their API; others are arranged by hand.
+                        // Every attempt is saved in courier_bookings (shown on the sale page).
+                        $booking = app(\App\Services\CourierService::class)->book($order, $sale);
+                        if ($booking && ! $booking->isBooked()) {
+                            $courierError = "Sale created, but the {$booking->courierName()} booking failed: {$booking->message} "
+                                          . 'Open the sale to fix it and retry.';
                         }
                     }
                 } catch (\Exception $e) {
@@ -227,6 +222,7 @@ class SaleController extends Controller
                         'trace' => $e->getTraceAsString(),
                     ]);
                     // Don't fail sale creation if courier fails
+                    $courierError = 'Sale created, but the courier booking failed: ' . $e->getMessage();
                 }
 
                 // Send Sale Confirmation Email (Queued)
@@ -260,11 +256,50 @@ class SaleController extends Controller
                 }
             }
 
+            if (! empty($courierError) && isset($sale)) {
+                return to_route('admin.sales.show', $sale->id)->with('error', $courierError);
+            }
+
             return to_route('admin.sales.index')->with('success', 'Sale created successfully!');
         } catch (\Exception $e) {
             Log::error('Sale store failed', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return back()->with('error', 'Failed to create sale. Please try again.');
         }
+    }
+
+    /**
+     * POST /admin/sales/{sale}/book-courier — book (or retry) the parcel with
+     * the sale's courier, using the sale's current city and address. Never
+     * books twice: an order that already has a tracking number is left alone.
+     */
+    public function bookCourier(string $id)
+    {
+        $sale  = \App\Models\Sale::with('order', 'city')->findOrFail($id);
+        $order = $sale->order;
+
+        if (! $order) {
+            return back()->with('error', 'This sale has no order to book.');
+        }
+
+        // The courier chosen on the sale is the one to book with (weight lives on the order)
+        if ($sale->shipping_method && $sale->shipping_method !== $order->shipping_method) {
+            $order->update(['shipping_method' => $sale->shipping_method]);
+        }
+
+        if (! \App\Services\CourierService::supports($order->shipping_method)) {
+            return back()->with('error', 'This courier has no online booking — book it by hand.');
+        }
+
+        $existing = $order->courierBookings()->where('status', 'booked')->first();
+        if ($existing) {
+            return back()->with('error', "Already booked with {$existing->courierName()} — tracking {$existing->tracking_number}.");
+        }
+
+        $booking = app(\App\Services\CourierService::class)->book($order, $sale);
+
+        return $booking->isBooked()
+            ? back()->with('success', "Booked with {$booking->courierName()} — tracking {$booking->tracking_number}.")
+            : back()->with('error', "{$booking->courierName()} booking failed: {$booking->message}");
     }
 
     public function show(string $id)

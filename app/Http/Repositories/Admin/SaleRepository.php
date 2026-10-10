@@ -50,7 +50,7 @@ class SaleRepository
 
     public function find($id)
     {
-        return Sale::with(['customer', 'order', 'items.product', 'items.variant'])->findOrFail($id);
+        return Sale::with(['customer', 'order', 'items.product', 'items.variant', 'courierBookings'])->findOrFail($id);
     }
 
     public function store(array $data): Sale

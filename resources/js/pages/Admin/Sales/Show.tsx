@@ -1,7 +1,25 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, Edit, Truck, CreditCard, MapPin, Package } from 'lucide-react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { ArrowLeft, Edit, Truck, CreditCard, MapPin, Package, RefreshCw, CheckCircle2, XCircle } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
+
+/** One courier booking attempt (courier_bookings) */
+interface CourierBooking {
+    id: number;
+    courier: string;
+    status: 'booked' | 'failed';
+    tracking_number: string | null;
+    destination_city: string | null;
+    message: string | null;
+    http_status: number | null;
+    response: Record<string, unknown> | null;
+    created_at: string;
+}
+
+/** Couriers that book online (CourierService); the rest are arranged by hand */
+const API_COURIERS: Record<string, string> = { leopard: 'Leopards', px: 'PostEx', movex: 'Movex' };
 
 interface Sale {
     id: number;
@@ -59,6 +77,7 @@ interface Sale {
     }>;
     created_at: string;
     updated_at: string;
+    courier_bookings?: CourierBooking[];
 }
 
 interface ShowProps {
@@ -66,6 +85,27 @@ interface ShowProps {
 }
 
 export default function Show({ sale }: ShowProps) {
+    const { flash } = usePage<{ flash?: { success?: string; error?: string } }>().props;
+    const [booking, setBooking] = useState(false);
+
+    useEffect(() => {
+        if (flash?.success) toast.success(flash.success);
+        if (flash?.error)   toast.error(flash.error, { duration: 8000 });
+    }, [flash]);
+
+    const bookings  = sale.courier_bookings ?? [];
+    const booked    = bookings.find(b => b.status === 'booked');
+    const latest    = bookings[0];
+    const canBook   = !!sale.shipping_method && sale.shipping_method in API_COURIERS && !booked;
+
+    const bookCourier = () => {
+        setBooking(true);
+        router.post(`/admin/sales/${sale.id}/book-courier`, {}, {
+            preserveScroll: true,
+            onFinish: () => setBooking(false),
+        });
+    };
+
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Sales', href: '/admin/sales' },
         { title: sale.sale_code, href: `/admin/sales/${sale.id}` },
@@ -196,6 +236,85 @@ export default function Show({ sale }: ShowProps) {
                                 </div>
                             </div>
                         </div>
+                    </div>
+
+                    {/* Courier booking — tracking number, or why it failed + retry */}
+                    <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6">
+                        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                            <div className="flex items-center gap-2">
+                                <Truck className="w-5 h-5 text-blue-500" />
+                                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Courier Booking</h2>
+                            </div>
+                            {canBook && (
+                                <button
+                                    type="button"
+                                    onClick={bookCourier}
+                                    disabled={booking}
+                                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white transition"
+                                >
+                                    <RefreshCw className={`w-4 h-4 ${booking ? 'animate-spin' : ''}`} />
+                                    {booking ? 'Booking…' : latest ? 'Retry booking' : `Book with ${API_COURIERS[sale.shipping_method!]}`}
+                                </button>
+                            )}
+                        </div>
+
+                        {booked ? (
+                            <div className="flex items-start gap-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-4">
+                                <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                                <div>
+                                    <p className="text-sm font-semibold text-green-800 dark:text-green-300">
+                                        Booked with {API_COURIERS[booked.courier] ?? booked.courier}
+                                        {booked.destination_city && ` → ${booked.destination_city}`}
+                                    </p>
+                                    <p className="text-lg font-bold font-mono text-gray-900 dark:text-white mt-1">{booked.tracking_number}</p>
+                                    <p className="text-xs text-gray-500 mt-1">{new Date(booked.created_at).toLocaleString()}</p>
+                                </div>
+                            </div>
+                        ) : latest ? (
+                            <div className="flex items-start gap-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4">
+                                <XCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                                <div>
+                                    <p className="text-sm font-semibold text-red-800 dark:text-red-300">Not booked — {API_COURIERS[latest.courier] ?? latest.courier} said:</p>
+                                    <p className="text-sm text-red-700 dark:text-red-300 mt-1">{latest.message}</p>
+                                    <p className="text-xs text-gray-500 mt-2">Fix the city or address with <span className="font-medium">Edit Sale</span>, then press <span className="font-medium">Retry booking</span>.</p>
+                                </div>
+                            </div>
+                        ) : (
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                                {!sale.shipping_method
+                                    ? 'No courier chosen for this sale.'
+                                    : sale.shipping_method in API_COURIERS
+                                        ? 'Not booked yet.'
+                                        : 'This courier has no online booking — arrange the parcel by hand.'}
+                            </p>
+                        )}
+
+                        {bookings.length > 0 && (
+                            <details className="mt-4">
+                                <summary className="text-xs font-medium text-gray-500 cursor-pointer select-none">
+                                    All attempts ({bookings.length}) and the courier's full answers
+                                </summary>
+                                <div className="mt-2 space-y-2">
+                                    {bookings.map(b => (
+                                        <div key={b.id} className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-xs">
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <span className={`px-2 py-0.5 rounded-full font-semibold ${b.status === 'booked' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{b.status}</span>
+                                                <span className="font-medium text-gray-800 dark:text-gray-200">{API_COURIERS[b.courier] ?? b.courier}</span>
+                                                {b.tracking_number && <span className="font-mono">{b.tracking_number}</span>}
+                                                {b.http_status && <span className="text-gray-400">HTTP {b.http_status}</span>}
+                                                <span className="text-gray-400 ml-auto">{new Date(b.created_at).toLocaleString()}</span>
+                                            </div>
+                                            {b.message && <p className="mt-1 text-gray-600 dark:text-gray-400">{b.message}</p>}
+                                            {b.response && (
+                                                <pre className="mt-2 max-h-48 overflow-auto rounded bg-gray-50 dark:bg-gray-800 p-2 text-[11px] text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-all">
+                                                    {JSON.stringify(b.response, null, 2)}
+                                                </pre>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </details>
+                        )}
                     </div>
 
                     {/* Shipping Address */}
