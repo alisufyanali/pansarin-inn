@@ -1,6 +1,6 @@
 # Architecture — Pansari Inn (backend)
 
-> Last verified against code: 2026-09-30.
+> Last verified against code: 2026-10-10.
 
 ## Stack
 
@@ -9,14 +9,14 @@
 | Backend framework | Laravel | ^12.0 (`composer.json`) — installed 12.53 |
 | PHP | PHP | `composer.json` says `^8.2`, but `composer.lock` needs **>= 8.4** (Laragon CLI 8.2 fails `platform_check`; use `D:\laragon\bin\php\php-8.4\php.exe`) |
 | Admin UI | Inertia.js + React | inertia-laravel ^2.0, @inertiajs/react ^2.2, React ^19.2 |
-| Storefront | Next.js (separate repo `Pansarii-Frontend`) | see that repo's docs |
+| Storefront | Next.js (separate repo `D:\laragon\www\pansariinn.com`) | see that repo's docs |
 | Auth | Sanctum (customer API tokens) + Fortify (admin/affiliate web login) | Sanctum ^4.2, Fortify ^1.30 |
 | Roles/Permissions | Spatie Laravel Permission | ^6.23 |
 | Queue | `QUEUE_CONNECTION=sync` in production | jobs run inside the request |
-| Real-time | Reverb/Pusher packages installed; only `OrderShipped` notification broadcasts | no `config/broadcasting.php` published |
+| Real-time | Reverb/Pusher packages installed but no broadcaster configured; the admin bell polls `/admin/notifications/unread` every 20 s | no `config/broadcasting.php` published |
 | Build / CSS | Vite ^7, Tailwind CSS ^4, TypeScript ^5.9 | `package.json` |
 | Other | Telescope ^5.17 (gate empty in non-local), dompdf, PhpSpreadsheet, Spatie MediaLibrary, Ziggy, Wayfinder | `composer.json` |
-| Tests | Pest 4 on SQLite `:memory:` | 32 test files, 170 tests passing (2026-09-30) |
+| Tests | Pest 4 on SQLite `:memory:` | 51 test files, 254 tests passing (2026-10-10); Meta Cloud API faked, stray HTTP blocked |
 
 ---
 
@@ -36,14 +36,15 @@
 ```
 pansarin-inn/
 ├── app/
-│   ├── Console/Commands/     BackfillFlatVariantAttributes, BackfillPowderAdditional,
-│   │                         CustomersImportCommand (customers:import), CustomersImportRescueCommand
+│   ├── Console/Commands/     BackfillFlatVariantAttributes, BackfillOtherNames (backfill:other-names),
+│   │                         BackfillPowderAdditional, CustomersImportCommand (customers:import),
+│   │                         CustomersImportRescueCommand, FixVariantLabels (orders:fix-variant-labels)
 │   ├── Events/ Listeners/    LowStockAlert → SendLowStockNotification
 │   ├── Helpers/              PhoneHelper, SequenceGenerator
 │   ├── Http/
 │   │   ├── Controllers/
-│   │   │   ├── Admin/        40 files (incl. Admin/Affiliate/PayoutController, Admin/Settings/*)
-│   │   │   ├── API/          23 customer/storefront API controllers
+│   │   │   ├── Admin/        38 entries (incl. Admin/Affiliate/PayoutController, Admin/Settings/*)
+│   │   │   ├── API/          25 customer/storefront API controllers (incl. ReturnApiController, SlugIndexController)
 │   │   │   ├── Affiliate/    Affiliate dashboard, catalogue, payouts (role:affiliate)
 │   │   │   └── Settings/     Account settings (profile, password, 2FA)
 │   │   ├── Middleware/       EnsurePasswordChanged, EnsureStaff, HandleAppearance,
@@ -52,15 +53,17 @@ pansarin-inn/
 │   │   └── Requests/Admin/   FormRequests for admin writes
 │   ├── Jobs/                 Order/Sale email + WhatsApp jobs, bulk WhatsApp
 │   ├── Mail/  Notifications/ Mailables; database notifications for the admin bell
-│   ├── Models/               75 models
+│   ├── Models/               77 models (incl. CourierBooking)
 │   ├── Observers/            OrderObserver (loyalty points on delivery)
 │   ├── Rules/                SafeImage (upload validation without fileinfo)
-│   ├── Services/             AffiliateService, CheckoutPricingService, CourierService,
-│   │                         CustomerIdentityService, CustomerLegacyImportService,
-│   │                         DealPricingService, WhatsAppService
+│   ├── Services/             AffiliateService, CheckoutPricingService, CourierService (+ CourierBookingFailed),
+│   │                         CustomerIdentityService, CustomerLegacyImportService, DealPricingService,
+│   │                         LoyaltyRedemptionService, OrderReturnService, SearchSuggestionService,
+│   │                         WhatsAppService
 │   └── Support/              OrderMailRecipient, SortInput
 ├── bootstrap/app.php         Middleware aliases (password.changed, staff) + API exception shield
-├── database/migrations/      102 files
+├── database/migrations/      88 files — one per table since 2026-10-07, plus data-only migrations
+├── database/seeders/         incl. CategorySeeder (all 14), BlogCategorySeeder, BlogSeeder, ProductBlogSeeder
 ├── resources/js/pages/       Admin/*, Affiliate/*, auth, settings (Inertia)
 ├── resources/views/          mail-layout component + emails/*
 └── routes/
@@ -111,7 +114,9 @@ Reset link (`ResetPassword::createUrlUsing` in `AppServiceProvider`): customers 
 | POST | /api/reviews/{id}/helpful | 1 vote per IP per review (30 days) |
 | GET | /api/homepage, /homepage/category-products, /homepage/reviews, /slides | |
 | GET/POST | /api/reviews | site reviews; POST `api.reviews` |
-| GET | /api/blog-categories, /blog-tags, /blogs, /blogs/{slug} | |
+| GET | /api/blog-categories, /blog-tags, /blogs, /blogs/{slug} | blogs `per_page` 1–50 |
+| GET | /api/header | admin marquee messages, cached 5 min |
+| GET | /api/slugs | live product/blog slugs for storefront 404/308 checks |
 | GET | /api/offers | active **coupons** |
 | GET | /api/deals, /deals/{slug} | active admin **Product Deals** with products |
 | POST | /api/contact, /newsletter/subscribe | `api.forms` (5/min) |
@@ -128,7 +133,7 @@ Reset link (`ResetPassword::createUrlUsing` in `AppServiceProvider`): customers 
 | POST | /api/logout (`api.logout`), POST /api/change-password (`password.change`) |
 | GET | /api/user; PUT /api/profile (phone change moves username + customer phone) |
 | GET/POST/PATCH/DELETE | /api/cart[/{id}] (items include `deal_price`, `deal`) |
-| GET/POST | /api/orders; GET /api/orders/{id}; PATCH /api/orders/{id}/cancel |
+| GET/POST | /api/orders; GET /api/orders/{id} (both include `returns` eligibility); PATCH /api/orders/{id}/cancel |
 | GET/POST/DELETE | /api/wishlist[/{id}] |
 | POST/GET | /api/affiliate/apply-me, /api/affiliate/status |
 | GET | /api/rewards; GET/POST /api/returns; GET/POST /api/support; notifications (index, `{id}/read`, read-all) |
@@ -159,7 +164,10 @@ Reset link (`ResetPassword::createUrlUsing` in `AppServiceProvider`): customers 
 | `product_variants` | `price`, `sale_price`, `additional` (surcharge), `attributes` JSON, `status` |
 | `product_stocks` / `inventories` | stock level / movement log; Inventory model events keep `product_stocks` in sync |
 | `orders` | `order_number` UNIQUE (`ORDER-{seq}`), `coupon_code`, `delivered_at`, customer snapshots |
-| `order_items` | `deal_id` (nullable), `discount` (deal line discount), `meta` (names, sku, cost, deal_title, deal_units) |
+| `order_items` | `product_id` null for **custom items**; `deal_id` (nullable), `discount` (deal line discount), `meta` (names, sku, cost, deal_title, deal_units) |
+| `courier_bookings` | every booking attempt per sale: courier, tracking number, message, HTTP status, request (no keys), full response |
+| `categories` | `sort_order` (owner display order); 14 storefront categories |
+| `blogs` | `meta_title` varchar(60); `thumbnail` path under `storage/` (deleted with the blog) |
 | `sales` / `sale_items` | fulfilment records; `sales.order_id` links to the order |
 | `coupons` | `usage_count`, `usage_limit`, `per_user_limit`, `apply_to` (order/product/category) |
 | `deals` / `deal_product` | admin Product Deals; pivot `custom_discount`, `stock_limit`, `sold_count` |
@@ -182,17 +190,26 @@ Reset link (`ResetPassword::createUrlUsing` in `AppServiceProvider`): customers 
 1. Item price must be ≥ the variant base price (`sale_price ?? price`); capped at `final_price` (+ `additional`). A lower price is accepted only if a deal explains it.
 2. `DealPricingService::applyToLines()` turns active deals into line discounts (percentage/flash_sale/fixed per unit, buy_x_get_y free units, bundle when all products present; honours window, `max_uses`, `min_purchase_amount`, `stock_limit`).
 3. Coupon recomputed from `coupon_code` (client `invoice_discount` ignored).
-4. Shipping: city rate, default 250, free above 5000 (post-deal subtotal).
+4. Shipping: city rate, default 250 — never free (owner, 2026-10-07).
 `OrderRepository::store()` then locks stock rows, redeems the coupon and deals (`usage_count`, `per_user_limit`, `current_uses`, `max_uses_per_user`, `sold_count`) inside the transaction.
 
 ### Stock
 - Stock is deducted when the order is placed (Inventory `out`, reference = order_number). `Order::reduceStock()` on delivery only fills in for orders without that entry.
 - Cancelling an order (`Order::booted`) → `restoreStock()` (net-based, idempotent), `releaseCoupon()`, `releaseDeals()`.
-- Completing a return request restocks returned quantities once (`RETURN-{id}` reference).
+- Completing a return request restocks returned quantities once (`RETURN-{id}` reference), never more than the order still has out.
+- Custom items (`product_id` null) never touch stock.
+
+### Returns (`OrderReturnService`)
+- `eligibility()` is the one rule set for `GET /api/orders` and `POST /api/returns`: delivered, within 7 days, not a guest order, no earlier request.
+- Completed request → restock + take back points in proportion to the value returned; everything back → order becomes Returned.
+- Order marked Returned (order screen, bulk status, or its sale) → restock all remaining, take back earned points, give back spent points, reverse affiliate commission. Idempotent; balances never below zero.
+
+### Courier booking (`CourierService`)
+Leopards / PostEx / Movex destinations are looked up by city name in the courier's own city list (cached a day, spelling variants). Unknown city → booking stops with a message (never another city). Every attempt is saved in `courier_bookings`; the sale page offers Book / Retry and never books the same order twice.
 - Low-stock alert fires only when stock crosses the threshold (10).
 
 ### Order ↔ Sale
-A Sale linked to an order mirrors `delivered` / `cancelled` onto the Order (`Sale::syncOrderStatus`), which triggers loyalty points (`OrderObserver`), affiliate commission and stock hooks. Return window = 7 days from `sale.delivery_datetime ?? orders.delivered_at`.
+A Sale linked to an order mirrors `delivered` / `cancelled` / `returned` onto the Order (a new sale shows the customer at least "processing") (`Sale::syncOrderStatus`), which triggers loyalty points (`OrderObserver`), affiliate commission and stock hooks. Return window = 7 days from `sale.delivery_datetime ?? orders.delivered_at`.
 
 ### Affiliate (referral) program
 Storefront keeps `?ref=CODE` and sends it with register/orders → `AffiliateService::attachReferral()` sets `users.referred_by` (first referral only; guest orders only for newly created accounts). On delivery, the referring **active** affiliate earns a fixed amount per order (`Affiliate::commissionPerOrder()`), once per order.

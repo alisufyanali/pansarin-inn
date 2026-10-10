@@ -126,7 +126,7 @@ class RewardsApiController extends Controller
         return [
             'enabled'         => $rate > 0,
             'rupee_per_point' => $rate,
-            'min_points'      => $this->redemption->minPoints(), // points for Rs 1 (50 at the default rate)
+            'min_points'      => $this->redemption->minPoints(), // points for Rs 1 (1 at the default rate)
             'balance'         => $balance,
             'balance_value'   => $this->redemption->valueOf($balance),
         ];

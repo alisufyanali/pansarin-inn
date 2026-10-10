@@ -6,7 +6,7 @@
 - **Language**: Hinglish (Roman Urdu + English), concise answers
 - **Workflow**: diagnose from code → targeted fix → Pest test → verify → commit per fix → update these docs
 - **Branch**: work happens on `sufyan`; `master` is the main branch
-- **Frontend repo**: `D:\laragon\www\Pansarii-Frontend` (docs in its `docs/project/`)
+- **Frontend repo**: `D:\laragon\www\pansariinn.com` (docs in its `docs/project/`; default branch `main`)
 
 ---
 
@@ -28,6 +28,12 @@
 | Native `$file->move()` + `SafeImage` for uploads | Production lacks `fileinfo` |
 | `QUEUE_CONNECTION=sync` | Shared hosting, no worker; mail/WhatsApp failures wrapped in try/catch |
 | Order numbers from 50001 | Continue legacy CodeIgniter numbering |
+| No free shipping on any amount (2026-10-07) | Owner: always the city rate, default 250 (`CheckoutPricingService::DEFAULT_SHIPPING`, same as storefront `lib/cities.ts`) |
+| 1 reward point = Rs 1 (2026-10-10) | Owner; earning stays 1 point per Rs 100 (`loyalty_points_per_rupee` 0.01) |
+| Returns reverse points + commission automatically, money refund stays manual | `OrderReturnService`, idempotent, balances never below zero; guest orders cannot be returned online |
+| Courier cities looked up by name in the courier's own list | Hard-coded Leopards ids were wrong (Islamabad went as Gwadar); an unknown city stops the booking instead of sending it elsewhere |
+| One migration per table (2026-10-07) | Schema readable in one place; live is deployed fresh |
+| Blog seed posts copy the product image to `storage/blogs/` | Deleting a blog deletes its thumbnail file — a shared product image would be lost |
 
 ---
 
@@ -45,6 +51,9 @@
 - **Deactivating a user** (`status=0`) blocks logins and deletes their Sanctum tokens (`User::booted`). There is no admin UI toggle for `users.status` yet.
 - **Raw `json_extract()`** returns quoted values on MySQL but bare values on SQLite — compare JSON attributes in PHP or with Laravel `->` paths.
 - **routes/test.php** is only registered when `APP_ENV=local` — production `.env` must say `production`.
+- **Notifications are database-only** — no broadcaster is configured (`BROADCAST_DRIVER` is ignored by Laravel 11+); the admin bell polls `/admin/notifications/unread` every 20 s.
+- **Blog API caps `per_page` at 50**; `blogs.meta_title` is `varchar(60)`.
+- **Custom order items** have `product_id = null` — anything that walks order items for stock, products or reports must skip them.
 
 ---
 
@@ -62,7 +71,7 @@
 - [ ] Meaning of `product_variants.price` (cost vs selling)
 - [ ] Manjistha duplicate product merge
 - [ ] VPS move (async queue, cron)
-- [x] Loyalty redemption — 50 points = Rs 1, spent at checkout (2026-09-30); customer wallet spending still open
+- [x] Loyalty redemption — spent at checkout (2026-09-30); 1 point = Rs 1 since 2026-10-10; customer wallet spending still open
 - [x] Homepage "Combo Deals" — `/api/homepage` now returns `combo_deals` (admin deals, bundles first); storefront must switch from static data
 
 ---
@@ -78,4 +87,6 @@
 | 2026-09-29 | Product Deals wired end-to-end (DealPricingService, CheckoutPricingService, /api/deals, /api/checkout/quote, admin toggle/duplicate/edit fix) |
 | 2026-09-30 | Affiliate referral program (apply → approve → ref tracking → fixed commission); WhatsApp webhook reliability fix (missing Http import, batches, dedupe, media); docs refreshed from code |
 | 2026-09-30 | Homepage `combo_deals` from admin deals (`/api/deals?type=`), loyalty redemption at checkout (50 pts = Rs 1) |
+| 2026-10-02…09 | Other-names backfill; live notification bell; custom order items; no free shipping; `/api/header`; 4 new categories + CategorySeeder with all 14; orders→sales list split, sales date range; product data rebuilt (557); migrations one per table; English-only messages |
+| 2026-10-10 | Courier city lookup + `courier_bookings`; order filters + bulk status; returns reverse points/commission (`OrderReturnService`); 1 point = Rs 1; `ProductBlogSeeder` (14 SEO posts). Docs refreshed from code — 254 tests passing |
 | 2026-10-01 | QA batch: reviews publish instantly with is_verified; price filter/sort by card price (was 500); homepage review title/verified/photos; empty categories hidden + Spiecs retired; search suggestions; GET /api/slugs + reserved product slugs; other/alternative names in API; PKR wording |
