@@ -36,6 +36,7 @@ class OrderRepository
 
         if ($request->filled('status'))         $query->where('status', $request->status);
         if ($request->filled('payment_status')) $query->where('payment_status', $request->payment_status);
+        if ($request->filled('city_id'))        $query->where('city_id', $request->integer('city_id'));
 
         // Once a sale is made from an order it lives under Sales — hide it here
         // unless asked (with_sale=1), so new orders are not mixed with done ones.

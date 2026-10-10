@@ -17,7 +17,7 @@ class OrderController extends Controller
     public function __construct(protected OrderRepository $orderRepository)
     {
         $this->middleware('permission:create.orders')->only(['create', 'store']);
-        $this->middleware('permission:edit.orders')->only(['edit', 'update', 'updateStatus', 'updatePaymentStatus', 'bulkSendEmail', 'bulkSendWhatsApp']);
+        $this->middleware('permission:edit.orders')->only(['edit', 'update', 'updateStatus', 'updatePaymentStatus', 'bulkSendEmail', 'bulkSendWhatsApp', 'bulkUpdateStatus']);
         $this->middleware('permission:delete.orders')->only(['destroy']);
         $this->middleware('permission:view.orders')->only(['index', 'show', 'getData', 'track']);
     }
@@ -25,7 +25,9 @@ class OrderController extends Controller
     public function index(Request $request)
     {
         return Inertia::render('Admin/Orders/Index', [
-            'stats' => $this->orderRepository->getStats(),
+            'stats'  => $this->orderRepository->getStats(),
+            // City filter on the list
+            'cities' => City::orderBy('name')->get(['id', 'name']),
         ]);
     }
 
@@ -246,19 +248,7 @@ class OrderController extends Controller
             $from  = $order->status;
             $to    = $validated['status'];
 
-            // ── Transition whitelist ──────────────────────────────
-            // Blocks semantically invalid jumps that could corrupt
-            // stock or payment records.
-            $blocked = [
-                // Cancelled orders cannot be re-activated
-                'cancelled' => ['pending', 'processing', 'shipped', 'delivered'],
-                // Delivered orders cannot go backward
-                'delivered' => ['pending', 'processing'],
-                // Refunded orders cannot be re-activated
-                'refunded'  => ['pending', 'processing', 'shipped', 'delivered'],
-            ];
-
-            if (isset($blocked[$from]) && in_array($to, $blocked[$from])) {
+            if (self::isBlockedTransition($from, $to)) {
                 return back()->with('error', "Cannot change status from \"{$from}\" to \"{$to}\".");
             }
 
@@ -268,6 +258,59 @@ class OrderController extends Controller
             Log::error('Order updateStatus failed', ['id' => $id, 'message' => $e->getMessage()]);
             return back()->with('error', 'Failed to update order status.');
         }
+    }
+
+    /**
+     * Status jumps that would corrupt stock or payment records: a cancelled or
+     * refunded order cannot be re-activated, a delivered one cannot go back.
+     */
+    private static function isBlockedTransition(string $from, string $to): bool
+    {
+        $blocked = [
+            'cancelled' => ['pending', 'processing', 'shipped', 'delivered'],
+            'delivered' => ['pending', 'processing'],
+            'refunded'  => ['pending', 'processing', 'shipped', 'delivered'],
+        ];
+
+        return in_array($to, $blocked[$from] ?? [], true);
+    }
+
+    /**
+     * POST /admin/orders/bulk-status — set the status of the ticked orders.
+     * Each order goes through the normal update (stock, coupon, commission
+     * events run); orders the rules do not allow are skipped and listed.
+     */
+    public function bulkUpdateStatus(Request $request)
+    {
+        $validated = $request->validate([
+            'ids'    => 'required|array|min:1|max:500',
+            'ids.*'  => 'integer|exists:orders,id',
+            'status' => 'required|in:pending,processing,shipped,delivered,cancelled,refunded',
+        ]);
+        $to = $validated['status'];
+
+        $updated = 0;
+        $skipped = [];
+        foreach (\App\Models\Order::whereIn('id', $validated['ids'])->get() as $order) {
+            if ($order->status === $to) {
+                continue;
+            }
+            if (self::isBlockedTransition($order->status, $to)) {
+                $skipped[] = "{$order->order_number} ({$order->status})";
+                continue;
+            }
+            try {
+                $this->orderRepository->updateStatus($order->id, $to);
+                $updated++;
+            } catch (\Throwable $e) {
+                Log::error('Bulk order status failed', ['order' => $order->order_number, 'message' => $e->getMessage()]);
+                $skipped[] = "{$order->order_number} (error)";
+            }
+        }
+
+        \Illuminate\Support\Facades\Cache::forget('order_stats');
+
+        return response()->json(['updated' => $updated, 'skipped' => $skipped]);
     }
 
     public function updatePaymentStatus(Request $request, string $id)

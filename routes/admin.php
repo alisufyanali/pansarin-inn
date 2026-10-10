@@ -123,6 +123,7 @@ Route::middleware(['auth', 'verified', 'staff'])->prefix('admin')->name('admin.'
     Route::post('orders/{order}/payment', [OrderController::class, 'updatePaymentStatus'])->name('orders.updatePayment');
     Route::post('orders/bulk-send-email', [OrderController::class, 'bulkSendEmail'])->name('orders.bulk-email');
     Route::post('orders/bulk-send-whatsapp', [OrderController::class, 'bulkSendWhatsApp'])->name('orders.bulk-whatsapp');
+    Route::post('orders/bulk-status', [OrderController::class, 'bulkUpdateStatus'])->name('orders.bulk-status');
 
     // Order Reviews
     Route::resource('order-reviews', OrderReviewController::class);

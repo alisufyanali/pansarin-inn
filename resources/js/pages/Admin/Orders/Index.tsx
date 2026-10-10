@@ -1,7 +1,7 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/react';
-import { PlusCircle, ShoppingCart, Clock, TrendingUp, CheckCircle, DollarSign, ShoppingBag, Printer, Mail, MessageCircle } from 'lucide-react';
+import { Head, Link, router } from '@inertiajs/react';
+import { PlusCircle, ShoppingCart, Clock, TrendingUp, CheckCircle, DollarSign, ShoppingBag, Printer, Mail, MessageCircle, ListChecks } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
 import DataTableWrapper from '@/components/DataTableWrapper';
 import { CommonColumns } from '@/components/TableColumns';
@@ -58,8 +58,23 @@ interface Stats {
 
 interface Props {
     stats: Stats;
+    /** For the City filter */
+    cities: Array<{ id: number; name: string }>;
     flash?: { success?: string; error?: string };
 }
+
+/**
+ * Bulk status options. "Confirmed" is the processing status and "Returned"
+ * the refunded one — same values the order form and track page use.
+ */
+const BULK_STATUS_OPTIONS = [
+    { value: 'pending',    label: 'Pending',    color: 'text-yellow-600' },
+    { value: 'processing', label: 'Confirmed',  color: 'text-blue-600' },
+    { value: 'shipped',    label: 'Shipped',    color: 'text-purple-600' },
+    { value: 'delivered',  label: 'Delivered',  color: 'text-green-600' },
+    { value: 'cancelled',  label: 'Cancelled',  color: 'text-red-600' },
+    { value: 'refunded',   label: 'Returned',   color: 'text-gray-600' },
+] as const;
 
 const STATUS_COLORS: Record<string, string> = {
     pending:    'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
@@ -77,8 +92,12 @@ const PAYMENT_COLORS: Record<string, string> = {
     refunded:       'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400',
 };
 
-export default function Index({ stats, flash }: Props) {
+export default function Index({ stats, cities = [], flash }: Props) {
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+    const [statusDropdown, setStatusDropdown] = useState(false);
+    const [statusSaving, setStatusSaving] = useState(false);
+    const statusRef = useRef<HTMLDivElement>(null);
+    const tableRefresh = useRef<(() => void) | null>(null);
     const [allRows, setAllRows] = useState<Order[]>([]);
     // Orders already turned into a sale are hidden unless this is ticked
     const [showConverted, setShowConverted] = useState(false);
@@ -236,6 +255,38 @@ export default function Index({ stats, flash }: Props) {
             toast.success(`Email queued for ${res.data.sent} order(s).`);
         } catch {
             toast.error('Failed to send emails.');
+        }
+    }
+
+    // Close the status dropdown on an outside click
+    useEffect(() => {
+        function handler(e: MouseEvent) {
+            if (statusRef.current && !statusRef.current.contains(e.target as Node)) setStatusDropdown(false);
+        }
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
+
+    async function handleBulkStatus(status: string, label: string) {
+        setStatusDropdown(false);
+        if (selectedIds.size === 0) { toast.error('Please select at least one order.'); return; }
+        if (!confirm(`Mark ${selectedIds.size} order(s) as "${label}"?`)) return;
+
+        setStatusSaving(true);
+        try {
+            const res = await axios.post<{ updated: number; skipped: string[] }>('/admin/orders/bulk-status', { ids: [...selectedIds], status });
+            const { updated, skipped } = res.data;
+            if (updated) toast.success(`${updated} order(s) marked ${label}.`);
+            if (skipped.length) {
+                toast.error(`Not changed (status rules): ${skipped.join(', ')}`, { duration: 8000 });
+            }
+            if (!updated && !skipped.length) toast(`Already ${label}.`);
+            tableRefresh.current?.();
+            router.reload({ only: ['stats'] });
+        } catch {
+            toast.error('Failed to update the order status.');
+        } finally {
+            setStatusSaving(false);
         }
     }
 
@@ -401,6 +452,34 @@ export default function Index({ stats, flash }: Props) {
                                     <MessageCircle className="w-4 h-4" />
                                     WhatsApp ({selectedIds.size})
                                 </button>
+
+                                {/* Status for all ticked orders */}
+                                <div className="relative" ref={statusRef}>
+                                    <button
+                                        onClick={() => setStatusDropdown(o => !o)}
+                                        disabled={statusSaving}
+                                        className="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 disabled:bg-amber-300 text-white rounded-xl font-semibold transition-all shadow-md"
+                                    >
+                                        <ListChecks className="w-4 h-4" />
+                                        {statusSaving ? 'Updating…' : `Status (${selectedIds.size})`}
+                                    </button>
+                                    {statusDropdown && (
+                                        <div className="absolute top-full mt-2 right-0 z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl min-w-[190px] overflow-hidden">
+                                            <div className="px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
+                                                Set Order Status
+                                            </div>
+                                            {BULK_STATUS_OPTIONS.map(opt => (
+                                                <button
+                                                    key={opt.value}
+                                                    onClick={() => handleBulkStatus(opt.value, opt.label)}
+                                                    className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium ${opt.color}`}
+                                                >
+                                                    {opt.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             </>
                         )}
                         <Link
@@ -439,6 +518,15 @@ export default function Index({ stats, flash }: Props) {
                         columns={columns}
                         csvHeaders={csvHeaders}
                         searchableKeys={['order_number', 'customer.first_name', 'status']}
+                        refreshRef={tableRefresh}
+                        additionalFilters={[
+                            { name: 'status', label: 'Status', type: 'select', options: BULK_STATUS_OPTIONS.map(o => ({ value: o.value, label: o.label })) },
+                            { name: 'payment_status', label: 'Payment', type: 'select', options: [
+                                { value: 'unpaid', label: 'Unpaid' }, { value: 'paid', label: 'Paid' },
+                                { value: 'partially_paid', label: 'Partially Paid' }, { value: 'refunded', label: 'Refunded' },
+                            ] },
+                            { name: 'city_id', label: 'City', type: 'select', options: cities.map(c => ({ value: String(c.id), label: c.name })) },
+                        ]}
                         onDataLoaded={(rows: Order[]) => {
                             setAllRows(rows);
                             setSelectedIds(new Set());
