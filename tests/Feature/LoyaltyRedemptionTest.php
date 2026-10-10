@@ -26,13 +26,16 @@ beforeEach(function () {
         ->findOrCreateByPhone(\App\Helpers\PhoneHelper::normalize('03009990000'), ['first_name' => 'Ali']);
     $this->user->update(['must_change_password' => false]);
     LoyaltyPoint::updateOrCreate(['customer_id' => $this->customer->id], ['balance' => 1234]);
+    // These tests cover the redemption mechanics at a 50-points-per-rupee rate;
+    // the default (1 point = Rs 1) has its own test below.
+    GeneralSetting::updateOrCreate(['type' => 'loyalty_redemption_rate'], ['value' => '0.02']);
 
     $this->item = [
         'product_id' => $product->id, 'product_variant_id' => $variant->id, 'quantity' => 1, 'price' => 1000,
     ];
 });
 
-it('quotes a redemption at 50 points per rupee without deducting', function () {
+it('quotes a redemption at a 50-points-per-rupee rate without deducting', function () {
     $this->actingAs($this->user, 'sanctum')
         ->postJson('/api/rewards/redeem', ['points' => 1234, 'amount' => 1000])
         ->assertOk()
@@ -93,4 +96,17 @@ it('refuses to redeem when the admin turned redemption off', function () {
         ->postJson('/api/orders', ['items' => [$this->item], 'shipping_address' => 'X', 'redeem_points' => 1000])
         ->assertStatus(422);
     expect(Order::count())->toBe(0);
+});
+
+it('values a point at Rs 1 by default: Rs 5,000 of shopping earns Rs 50', function () {
+    GeneralSetting::where('type', 'loyalty_redemption_rate')->delete();   // nothing set: the default applies
+    $svc = app(\App\Services\LoyaltyRedemptionService::class);
+
+    expect($svc->rate())->toBe(1.0)
+        ->and($svc->valueOf(50))->toBe(50.0)    // 50 points from a Rs 5,000 order
+        ->and($svc->minPoints())->toBe(1);
+
+    $this->actingAs($this->user, 'sanctum')
+        ->postJson('/api/rewards/redeem', ['points' => 50, 'amount' => 1000])
+        ->assertOk()->assertJsonPath('data.discount', 50);
 });

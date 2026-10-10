@@ -61,6 +61,15 @@ class ReturnApiController extends Controller
             return response()->json(['success' => false, 'message' => 'This order does not belong to you.'], 403);
         }
 
+        // Owner 2026-10-10: no online returns for orders placed as a guest
+        // (guest checkout leaves user_id empty, even though it creates an account)
+        if ($order->user_id === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Orders placed without signing in cannot be returned online. Please contact us on WhatsApp.',
+            ], 403);
+        }
+
         $order->loadMissing('sale');
 
         // Must be delivered

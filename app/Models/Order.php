@@ -198,6 +198,12 @@ class Order extends Model
                 app(\App\Services\LoyaltyRedemptionService::class)->refund($order);
                 $order->releaseDeals();
             }
+
+            // Returned (refunded): stock back, earned points taken back, spent
+            // points given back, affiliate commission reversed — each only once.
+            if ($order->wasChanged('status') && $order->status === 'refunded') {
+                app(\App\Services\OrderReturnService::class)->reverseOrder($order);
+            }
         });
     }
 
@@ -247,6 +253,26 @@ class Order extends Model
      * Put back whatever this order took out of stock. Idempotent: the net
      * quantity already moved for the order is what gets reversed.
      */
+    /**
+     * Units of a product/variant this order still has out of stock: taken out
+     * when it was placed, minus whatever already came back (cancel / edit /
+     * Returned restocks, and completed return requests — 'RETURN-{id}').
+     */
+    public function stockStillOut(int $productId, ?int $variantId): int
+    {
+        $references = array_merge(
+            [$this->order_number, 'Order #' . $this->order_number],
+            ReturnRequest::where('order_id', $this->id)->pluck('id')->map(fn ($id) => 'RETURN-' . $id)->all()
+        );
+
+        $net = -(float) Inventory::where('product_id', $productId)
+            ->when($variantId, fn ($q) => $q->where('product_variant_id', $variantId), fn ($q) => $q->whereNull('product_variant_id'))
+            ->whereIn('reference', $references)
+            ->sum('quantity');
+
+        return max(0, (int) round($net));
+    }
+
     public function restoreStock(string $source = 'order_cancel', string $notePrefix = 'Order cancelled #'): void
     {
         $this->loadMissing('items');
@@ -254,14 +280,7 @@ class Order extends Model
         foreach ($this->items->whereNotNull('product_id')->groupBy(fn ($i) => $i->product_id . '_' . ($i->product_variant_id ?? 'null')) as $group) {
             $item = $group->first();
 
-            $netOut = -(float) \App\Models\Inventory::where('product_id', $item->product_id)
-                ->when(
-                    $item->product_variant_id,
-                    fn ($q) => $q->where('product_variant_id', $item->product_variant_id),
-                    fn ($q) => $q->whereNull('product_variant_id')
-                )
-                ->whereIn('reference', [$this->order_number, 'Order #' . $this->order_number])
-                ->sum('quantity');
+            $netOut = $this->stockStillOut($item->product_id, $item->product_variant_id);
 
             if ($netOut <= 0) continue;
 

@@ -11,13 +11,13 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Owner decision (2026-09-30): 50 points = Rs 1 → Rs 0.02 per point.
+        // Owner decision (2026-10-10): 1 point = Rs 1 (was 50 points = Rs 1 on 2026-09-30).
         // Only fills an unset / disabled rate so an admin-chosen value is kept.
         $rate = DB::table('general_settings')->where('type', 'loyalty_redemption_rate')->value('value');
         if ($rate === null || (float) $rate <= 0) {
             DB::table('general_settings')->updateOrInsert(
                 ['type' => 'loyalty_redemption_rate'],
-                ['value' => '0.02', 'updated_at' => now(), 'created_at' => now()]
+                ['value' => '1', 'updated_at' => now(), 'created_at' => now()]
             );
         }
     }

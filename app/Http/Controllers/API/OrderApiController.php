@@ -99,6 +99,8 @@ class OrderApiController extends Controller
                 'coupon_error'   => $errors['coupon_code'],
                 'points_error'   => $errors['redeem_points'],
                 'points_balance' => $balance,
+                // Rupee value of the balance at the admin's rate (checkout shows it)
+                'points_value'   => $balance !== null ? app(\App\Services\LoyaltyRedemptionService::class)->valueOf($balance) : null,
             ]),
         ]);
     }

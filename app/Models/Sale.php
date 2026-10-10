@@ -125,6 +125,9 @@ class Sale extends Model
             $order->update(['status' => 'delivered']);
         } elseif ($this->delivery_status === 'cancelled' && in_array($order->status, ['pending', 'processing', 'shipped'])) {
             $order->update(['status' => 'cancelled']);
+        } elseif ($this->delivery_status === 'returned' && ! in_array($order->status, ['cancelled', 'refunded'])) {
+            // Parcel came back (after delivery or returned by the courier): the order is Returned
+            $order->update(['status' => 'refunded']);
         }
     }
 

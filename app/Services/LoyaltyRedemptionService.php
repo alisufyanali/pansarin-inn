@@ -12,7 +12,7 @@ use Illuminate\Validation\ValidationException;
  * Spending loyalty points at checkout.
  *
  * Value per point comes from the loyalty_redemption_rate setting
- * (Admin → Loyalty Settings, Rs per point; default 0.02 = 50 points for Rs 1,
+ * (Admin → Loyalty Settings, Rs per point; default 1 = 1 point for Rs 1,
  * 0 = redemption off). Points only buy whole rupees, so only the points that
  * turn into rupees are spent. The discount is capped at the order amount
  * after deals and coupon (never shipping), and is added to the order's
@@ -24,7 +24,8 @@ use Illuminate\Validation\ValidationException;
  */
 class LoyaltyRedemptionService
 {
-    public const DEFAULT_RATE = 0.02;
+    /** Owner 2026-10-10: 1 point = Rs 1 (with 1 point per Rs 100 spent, Rs 5,000 earns Rs 50) */
+    public const DEFAULT_RATE = 1.0;
 
     /** Rs per point; 0 means redemption is switched off. */
     public function rate(): float
