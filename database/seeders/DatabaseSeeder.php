@@ -33,6 +33,7 @@ class DatabaseSeeder extends Seeder
             NewsletterSeeder::class,
             BlogCategorySeeder::class,
             BlogSeeder::class,
+            ProductBlogSeeder::class,
             ProductReviewSeeder::class,
             DealSeeder::class,
             AffiliateSeeder::class,
