@@ -107,7 +107,9 @@ class Order extends Model
     public static function mapDeliveryStatusToDisplay(string $deliveryStatus): string
     {
         return match ($deliveryStatus) {
-            'pending', 'processing', 'shipped', 'delivered', 'cancelled' => $deliveryStatus,
+            // A sale exists, so the order is confirmed and being prepared — never "pending" to the customer
+            'pending'    => 'processing',
+            'processing', 'shipped', 'delivered', 'cancelled' => $deliveryStatus,
             'returned' => 'cancelled',
             default      => 'pending',
         };

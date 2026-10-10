@@ -176,3 +176,21 @@ it('(track) is public: works without auth:sanctum token', function () {
 
     $response->assertStatus(200);
 });
+
+it('(track) shows processing once a sale is made from the order, then follows the delivery status', function () {
+    $track = fn () => $this->getJson('/api/orders/track?' . http_build_query([
+        'order_number' => $this->order->order_number,
+        'phone'        => '923001111111',
+    ]))->assertOk()->json('data.status');
+
+    expect($track())->toBe('pending'); // no sale yet
+
+    $sale = \App\Models\Sale::create([
+        'order_id' => $this->order->id, 'customer_id' => $this->customer->id,
+        'delivery_status' => 'pending', 'payment_status' => 'unpaid',
+    ]);
+    expect($track())->toBe('processing'); // sale made, delivery still pending
+
+    $sale->update(['delivery_status' => 'shipped']);
+    expect($track())->toBe('shipped');
+});
