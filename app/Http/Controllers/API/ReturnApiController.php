@@ -7,7 +7,6 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\ReturnRequest;
 use App\Models\ReturnRequestItem;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -61,41 +60,16 @@ class ReturnApiController extends Controller
             return response()->json(['success' => false, 'message' => 'This order does not belong to you.'], 403);
         }
 
-        // Owner 2026-10-10: no online returns for orders placed as a guest
-        // (guest checkout leaves user_id empty, even though it creates an account)
-        if ($order->user_id === null) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Orders placed without signing in cannot be returned online. Please contact us on WhatsApp.',
-            ], 403);
-        }
-
         $order->loadMissing('sale');
 
-        // Must be delivered
-        if ($order->display_status !== 'delivered') {
+        // Same rules My Orders uses for the Return button: delivered, within the
+        // return window, not a guest order (owner 2026-10-10), no earlier request
+        $eligibility = app(\App\Services\OrderReturnService::class)->eligibility($order, $user->id);
+        if (! $eligibility['can_return']) {
             return response()->json([
                 'success' => false,
-                'message' => 'Returns can only be initiated for delivered orders.',
-            ], 422);
-        }
-
-        // 7-day return window from the actual delivery time. updated_at is only a
-        // last resort for old orders delivered before delivered_at existed.
-        $deliveredAt = $order->sale?->delivery_datetime ?? $order->delivered_at ?? $order->updated_at;
-        if (Carbon::now()->diffInDays($deliveredAt, true) > 7) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Return window has expired. Returns must be requested within 7 days of delivery.',
-            ], 422);
-        }
-
-        // Block duplicate return requests for same order
-        if (ReturnRequest::where('order_id', $order->id)->where('user_id', $user->id)->exists()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'A return request for this order has already been submitted.',
-            ], 422);
+                'message' => $eligibility['reason'],
+            ], $order->user_id === null ? 403 : 422);
         }
 
         // Validate that all submitted order_item_ids belong to this order

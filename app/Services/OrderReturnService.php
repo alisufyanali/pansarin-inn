@@ -30,7 +30,48 @@ use Illuminate\Support\Facades\Log;
  */
 class OrderReturnService
 {
+    /** Days after delivery a customer can ask for a return */
+    public const RETURN_DAYS = 7;
+
     public function __construct(private LoyaltyRedemptionService $redemption) {}
+
+    // ── Can the customer return it? ───────────────────────────────
+
+    /**
+     * Whether this signed-in customer can request a return of the order, why
+     * not, and their existing request. My Orders and POST /api/returns both use
+     * it, so the button and the API always agree.
+     *
+     * @return array{can_return: bool, reason: ?string, last_day: ?string, request: ?array}
+     */
+    public function eligibility(Order $order, int $userId): array
+    {
+        $existing = ReturnRequest::where('order_id', $order->id)->where('user_id', $userId)->latest('id')->first();
+        $deliveredAt = $order->sale?->delivery_datetime ?? $order->delivered_at ?? $order->updated_at;
+        $lastDay = $deliveredAt ? \Illuminate\Support\Carbon::parse($deliveredAt)->addDays(self::RETURN_DAYS) : null;
+
+        $reason = match (true) {
+            $existing !== null                  => 'A return request for this order has already been submitted.',
+            $order->user_id === null            => 'Orders placed without signing in cannot be returned online. Please contact us on WhatsApp.',
+            $order->display_status !== 'delivered' => 'Returns can only be requested for delivered orders.',
+            $lastDay === null || now()->greaterThan($lastDay)
+                                                => 'Return window has expired. Returns must be requested within ' . self::RETURN_DAYS . ' days of delivery.',
+            default                             => null,
+        };
+
+        return [
+            'can_return' => $reason === null,
+            'reason'     => $reason,
+            'last_day'   => $lastDay?->toDateString(),
+            'request'    => $existing ? [
+                'id'            => $existing->id,
+                'status'        => $existing->status,
+                'refund_amount' => $existing->refund_amount !== null ? (float) $existing->refund_amount : null,
+                'admin_note'    => $existing->admin_note,
+                'created_at'    => $existing->created_at,
+            ] : null,
+        ];
+    }
 
     // ── Return requests ───────────────────────────────────────────
 

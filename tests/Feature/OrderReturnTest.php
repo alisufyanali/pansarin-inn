@@ -133,3 +133,22 @@ it('lets a signed-in customer request a return of a delivered order', function (
 
     expect(ReturnRequest::sole()->status)->toBe('pending');
 });
+
+it('tells My Orders when the Return button applies, then shows the request instead', function () {
+    $orders = fn () => $this->actingAs($this->user, 'sanctum')->getJson('/api/orders')->assertOk()->json('data.0.returns');
+
+    expect($orders()['can_return'])->toBeFalse()                      // not delivered yet
+        ->and($orders()['reason'])->toContain('delivered orders');
+
+    ($this->deliver)();
+    expect($orders())->toMatchArray(['can_return' => true, 'reason' => null, 'request' => null]);
+
+    $this->actingAs($this->user, 'sanctum')->postJson('/api/returns', [
+        'order_id' => $this->order->id, 'reason_category' => 'not_needed',
+        'items' => [['order_item_id' => $this->order->items()->first()->id, 'quantity' => 2]],
+    ])->assertSuccessful();
+
+    $after = $orders();
+    expect($after['can_return'])->toBeFalse()
+        ->and($after['request']['status'])->toBe('pending');
+});

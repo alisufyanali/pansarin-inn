@@ -167,7 +167,7 @@ class OrderApiController extends Controller
 
         return response()->json([
             'success' => true,
-            'data'    => $orders->map(fn ($o) => $this->formatOrder($o)),
+            'data'    => $orders->map(fn ($o) => $this->formatOrder($o, returnsFor: $request->user()->id)),
             'meta'    => [
                 'total'        => $orders->total(),
                 'per_page'     => $orders->perPage(),
@@ -198,7 +198,7 @@ class OrderApiController extends Controller
 
         return response()->json([
             'success' => true,
-            'data'    => $this->formatOrder($order, detailed: true),
+            'data'    => $this->formatOrder($order, detailed: true, returnsFor: $request->user()->id),
         ]);
     }
 
@@ -530,7 +530,8 @@ class OrderApiController extends Controller
     }
 
     // ── Format Helper ─────────────────────────────────────────────
-    private function formatOrder(Order $o, bool $detailed = false, bool $accountCreated = false): array
+    /** @param int|null $returnsFor signed-in user — adds whether they can return the order (My Orders) */
+    private function formatOrder(Order $o, bool $detailed = false, bool $accountCreated = false, ?int $returnsFor = null): array
     {
         $base = [
             'id'              => $o->id,
@@ -552,6 +553,10 @@ class OrderApiController extends Controller
             'customer_email'  => $o->customer_email ?? $o->customer?->email,
             'customer_phone'  => $o->customer_phone ?? $o->customer?->phone,
         ];
+
+        if ($returnsFor !== null) {
+            $base['returns'] = app(\App\Services\OrderReturnService::class)->eligibility($o, $returnsFor);
+        }
 
         if ($detailed) {
             $base['items']            = $o->items->map(fn ($item) => [
