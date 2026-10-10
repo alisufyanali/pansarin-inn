@@ -64,11 +64,18 @@ export default function DataTableWrapper({
   // Refs
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  // Always the newest reloadData (current filters, search, page size, URL).
+  // Anything that reloads later — the page's refreshRef, the Actions cell after
+  // a delete — goes through this, so it never reloads with filters from an
+  // earlier render (that showed "No records found" while the filters said All).
+  const latestReload = useRef<(page?: number, limit?: number) => Promise<void>>(async () => {});
+  const reloadLatest = useCallback((page?: number, limit?: number) => latestReload.current(page, limit), []);
+
   // Memoized values
-  const tableColumns = useMemo(() => 
-    columns.map(col => 
-      col.name === "Actions" 
-        ? { ...col, cell: (row: any) => col.cell(row, reloadData) }
+  const tableColumns = useMemo(() =>
+    columns.map(col =>
+      col.name === "Actions"
+        ? { ...col, cell: (row: any) => col.cell(row, reloadLatest) }
         : col
     ),
     [columns]
@@ -307,6 +314,7 @@ export default function DataTableWrapper({
       abortControllerRef.current = null;
     }
   }, [fetchUrl, filters, filterText, currentPage, perPage]);
+  latestReload.current = reloadData;
 
   // Debounced filter effects
   useEffect(() => {
@@ -320,7 +328,7 @@ export default function DataTableWrapper({
   // Initial load and cleanup
   useEffect(() => {
     reloadData(1, perPage);
-    if (refreshRef) refreshRef.current = () => reloadData(1, perPage);
+    if (refreshRef) refreshRef.current = () => latestReload.current(1);
 
     return () => {
       if (abortControllerRef.current) {
@@ -329,11 +337,9 @@ export default function DataTableWrapper({
     };
   }, []);
 
-  // A page can change fetchUrl (e.g. Sales date range): load page 1 of the new URL,
-  // and keep refreshRef pointing at the current URL rather than the first one.
+  // A page can change fetchUrl (e.g. Sales date range): load page 1 of the new URL
   const firstUrl = useRef(fetchUrl);
   useEffect(() => {
-    if (refreshRef) refreshRef.current = () => reloadData(1, perPage);
     if (fetchUrl === firstUrl.current) return;
     firstUrl.current = fetchUrl;
     reloadData(1, perPage);
