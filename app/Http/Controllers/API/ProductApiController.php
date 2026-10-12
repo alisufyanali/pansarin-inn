@@ -177,8 +177,10 @@ class ProductApiController extends Controller
             ->orderBy('sort_order')   // owner's order (Admin → Categories)
             ->orderBy('name')
             ->get(['id', 'name', 'slug', 'image', 'parent_id'])
-            // Storefront lists only categories a customer can shop (empty ones stay in admin)
-            ->filter(fn ($c) => $c->products_count > 0 || $c->children->isNotEmpty())
+            // Storefront lists only categories a customer can shop (empty ones stay in admin);
+            // ?include_empty=1 (the "all categories" page) returns every active one
+            ->when(! request()->boolean('include_empty'),
+                fn ($cats) => $cats->filter(fn ($c) => $c->products_count > 0 || $c->children->isNotEmpty()))
             ->values();
 
         return response()->json([
