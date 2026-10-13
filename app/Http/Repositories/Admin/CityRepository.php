@@ -3,11 +3,42 @@
 namespace App\Http\Repositories\Admin;
 
 use App\Models\City;
+use App\Models\Country;
+use App\Models\State;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class CityRepository
 {
+    /** Province (form value) → state name used by StateSeeder */
+    private const PROVINCE_STATES = [
+        'sindh'        => 'Sindh',
+        'punjab'       => 'Punjab',
+        'kpk'          => 'Khyber Pakhtunkhwa',
+        'balochistan'  => 'Balochistan',
+        'gilgit'       => 'Gilgit-Baltistan',
+        'azad_kashmir' => 'Azad Jammu and Kashmir',
+    ];
+
+    /**
+     * cities.state_id is required, but the admin form only asks for the province —
+     * fill it from the province so a new city (e.g. Mastung) can be saved.
+     */
+    private function withState(array $data): array
+    {
+        if (empty($data['province']) || ! isset(self::PROVINCE_STATES[$data['province']])) {
+            return $data;
+        }
+
+        $countryId = Country::firstOrCreate(['name' => 'Pakistan'], ['code' => 'PK'])->id;
+        $data['state_id'] = State::firstOrCreate(
+            ['name' => self::PROVINCE_STATES[$data['province']]],
+            ['country_id' => $countryId],
+        )->id;
+
+        return $data;
+    }
+
     public function getAll()
     {
         return City::latest()->get();
@@ -60,7 +91,7 @@ class CityRepository
     public function store(array $data)
     {
         try {
-            return City::create($data);
+            return City::forceCreate($this->withState(array_intersect_key($data, array_flip(['name', 'shipping_charges', 'province']))));
         } catch (\Exception $e) {
             Log::error('City creation error: '.$e->getMessage());
             throw $e;
@@ -71,7 +102,7 @@ class CityRepository
     {
         try {
             $city = $this->find($id);
-            $city->update($data);
+            $city->forceFill($this->withState(array_intersect_key($data, array_flip(['name', 'shipping_charges', 'province']))))->save();
 
             return $city;
         } catch (\Exception $e) {
