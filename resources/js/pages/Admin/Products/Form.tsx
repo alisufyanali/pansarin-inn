@@ -114,6 +114,43 @@ const CharCount = ({ val, max, warn }: { val: string; max: number; warn?: number
     </div>
 );
 
+// Tags as chips: Enter or comma adds one (Enter no longer submits the form),
+// Backspace on an empty box removes the last. Stored as "a, b, c" like before.
+const TagInput = ({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) => {
+    const [draft, setDraft] = useState('');
+    const tags = value.split(',').map((t) => t.trim()).filter(Boolean);
+    const save = (next: string[]) => onChange(next.join(', '));
+
+    const add = (raw: string) => {
+        const fresh = raw.split(',').map((t) => t.trim()).filter(Boolean)
+            .filter((t, i, all) => all.findIndex((x) => x.toLowerCase() === t.toLowerCase()) === i)
+            .filter((t) => !tags.some((x) => x.toLowerCase() === t.toLowerCase()));
+        if (fresh.length) save([...tags, ...fresh]);
+        setDraft('');
+    };
+
+    return (
+        <div className={cx.input + " flex flex-wrap items-center gap-2 !py-2 cursor-text"}
+            onClick={(e) => (e.currentTarget.querySelector('input') as HTMLInputElement | null)?.focus()}>
+            {tags.map((t) => (
+                <span key={t} className="inline-flex items-center gap-1 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 px-3 py-1 text-xs font-medium">
+                    {t}
+                    <button type="button" aria-label={`Remove ${t}`} onClick={() => save(tags.filter((x) => x !== t))}
+                        className="hover:text-red-600"><X className="w-3 h-3" /></button>
+                </span>
+            ))}
+            <input type="text" value={draft} placeholder={tags.length ? '' : placeholder}
+                onChange={(e) => e.target.value.includes(',') ? add(e.target.value) : setDraft(e.target.value)}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); add(draft); }
+                    else if (e.key === 'Backspace' && draft === '' && tags.length) save(tags.slice(0, -1));
+                }}
+                onBlur={() => draft.trim() && add(draft)}
+                className="flex-1 min-w-[8rem] bg-transparent outline-none text-sm py-1" />
+        </div>
+    );
+};
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function cartesian(arrays: AttrValue[][]): AttrValue[][] {
     return arrays.reduce<AttrValue[][]>((acc, curr) => acc.flatMap((c) => curr.map((v) => [...c, v])), [[]]);
@@ -799,7 +836,7 @@ export default function ProductForm({ product, categories, attributes = [], heal
                                     <CharCount val={data.meta_description} max={160} warn={150} />
                                 </Field>
                                 <Field label="Meta Keywords"><input type="text" placeholder="keyword1, keyword2" value={data.meta_keywords} onChange={(e) => setData('meta_keywords', e.target.value)} className={cx.input} /></Field>
-                                <Field label="Tags"><input type="text" placeholder="tag1, tag2" value={data.tags} onChange={(e) => setData('tags', e.target.value)} className={cx.input} /></Field>
+                                <Field label="Tags" hint="(press Enter after each tag)"><TagInput placeholder="e.g. Skin, Allergy, Health" value={data.tags} onChange={(v) => setData('tags', v)} /></Field>
                                 <Field label="Schema Markup"><textarea value={data.schema_markup} onChange={(e) => setData('schema_markup', e.target.value)} rows={3} className={cx.input + " resize-none font-mono text-xs"} /></Field>
                                 <Field label="Social Image">
                                     <ImageUpload id="social_image" preview={socialPrev} height="h-28" hint="1200x630px recommended"
